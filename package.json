@@ -1,0 +1,43 @@
+{
+  "name": "superface-parser",
+  "version": "0.0.0",
+  "description": "Level 5 autonomous, self-driving API client, https://superface.ai",
+  "main": "dist/superface-parser.js",
+  "source": "src/index.ts",
+  "module": "dist/superface-parser.modern.js",
+  "unpkg": "dist/superface-parser.umd.js",
+  "browser": "dist/superface-parser.umd.js",
+  "types": "dist/index.d.ts",
+  "repository": "https://github.com/superindustries/superface-parser.git",
+  "author": "Superface Team",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "build": "microbundle --tsconfig tsconfig.release.json",
+    "watch": "yarn build --watch",
+    "clean": "rimraf dist/",
+    "prebuild": "yarn clean",
+    "test": "jest",
+    "lint": "eslint src/",
+    "format": "prettier -c src/",
+    "format:fix": "prettier --write src/"
+  },
+  "devDependencies": {
+    "@types/jest": "^25.2.1",
+    "@typescript-eslint/eslint-plugin": "^2.33.0",
+    "@typescript-eslint/parser": "^2.33.0",
+    "eslint": "^7.0.0",
+    "eslint-config-prettier": "^6.11.0",
+    "eslint-import-resolver-typescript": "^2.0.0",
+    "eslint-plugin-import": "^2.20.2",
+    "eslint-plugin-jest": "^23.11.0",
+    "eslint-plugin-simple-import-sort": "^5.0.3",
+    "jest": "^26.0.1",
+    "microbundle": "^0.12.0",
+    "prettier": "^2.0.5",
+    "rimraf": "^3.0.2"
+  },
+  "dependencies": {
+    "superface": "file:../superface"
+  }
+}
