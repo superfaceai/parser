@@ -1106,6 +1106,13 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
+"@superindustries/superface@^0.0.1-test":
+  version "0.0.1-test"
+  resolved "https://npm.pkg.github.com/download/@superindustries/superface/0.0.1-test/c5aa2b63b151e4f382a5c2b0641597d91a769f02ad6c6fac1d28915e5f660fde#dcfa877bd9615b5071fbcd466a60536291ad7bc9"
+  integrity sha512-OpKLsxRHkNgaR9QeBgsGFFP86TSX8L8z3xPUthRj1pdftaqLmMMoGmSw6JzcZzFkIH8ufI0C9ad0RE25/s1w/A==
+  dependencies:
+    vm2 "^3.9.2"
+
 "@types/babel__core@^7.1.7":
   version "7.1.7"
   resolved "https://registry.yarnpkg.com/@types/babel__core/-/babel__core-7.1.7.tgz#1dacad8840364a57c98d0dd4855c6dd3752c6b89"
@@ -6129,9 +6136,6 @@ stylehacks@^4.0.0:
     postcss "^7.0.0"
     postcss-selector-parser "^3.0.0"
 
-"superface@file:../superface":
-  version "0.0.0"
-
 supports-color@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/supports-color/-/supports-color-2.0.0.tgz#535d045ce6b6363fa40117084629995e9df324c7"
@@ -6573,6 +6577,11 @@ vlq@^0.2.2:
   version "0.2.3"
   resolved "https://registry.yarnpkg.com/vlq/-/vlq-0.2.3.tgz#8f3e4328cf63b1540c0d67e1b2778386f8975b26"
   integrity sha512-DRibZL6DsNhIgYQ+wNdWDL2SL3bKPlVrRiBqV5yuMm++op8W4kGFtaQfCs4KEJn0wBZcHVHJ3eoywX8983k1ow==
+
+vm2@^3.9.2:
+  version "3.9.2"
+  resolved "https://registry.yarnpkg.com/vm2/-/vm2-3.9.2.tgz#a4085d2d88a808a1b3c06d5478c2db3222a9cc30"
+  integrity sha512-nzyFmHdy2FMg7mYraRytc2jr4QBaUY3TEGe3q3bK8EgS9WC98wxn2jrPxS/ruWm+JGzrEIIeufKweQzVoQEd+Q==
 
 w3c-hr-time@^1.0.2:
   version "1.0.2"
