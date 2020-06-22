@@ -6,7 +6,7 @@ export function transpileScript(
   input: string
 ): { output: string; sourceMap: string } {
   // This will transpile the code, generate a source map and run transformers
-  let { outputText, sourceMapText } = ts.transpileModule(input, {
+  const { outputText, sourceMapText } = ts.transpileModule(input, {
     compilerOptions: {
       allowJs: true,
       target: SCRIPT_OUTPUT_TARGET,
@@ -17,9 +17,16 @@ export function transpileScript(
     },
   });
 
+  // Strip the source mapping comment from the end of the output
+  const outputTextStripped = outputText
+    .replace('//# sourceMappingURL=module.js.map', '')
+    .trimRight();
+  // `sourceMapText` will be here because we requested it by setting the compiler flag
+  const sourceMapJson: { mappings: string } = JSON.parse(sourceMapText!!);
+
   return {
-    output: outputText,
-    sourceMap: sourceMapText!!, // will be here because we requested it by setting the compiler flag
+    output: outputTextStripped,
+    sourceMap: sourceMapJson.mappings,
   };
 }
 
@@ -43,7 +50,7 @@ const AFTER_TRANSFORMERS: ts.TransformerFactory<ts.SourceFile>[] = [
       }
 
       // The transformer will visit the root node and the visitor will drive the recursion.
-      let result = ts.visitNode(root, dummyVisitor.bind(null, 0));
+      const result = ts.visitNode(root, dummyVisitor.bind(null, 0));
       console.debug(stringTree);
       return result;
     };
