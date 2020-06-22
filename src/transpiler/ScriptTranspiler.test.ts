@@ -1,7 +1,7 @@
 import * as st from './ScriptTranspiler';
 
 test('transpiler debug', () => {
-  let { output, sourceMap } = st.transpileScript(
+  const { output, sourceMap } = st.transpileScript(
     `let a = { hello: 1, world: 2 + "3" }
 console.log(a)`
   );
@@ -17,7 +17,7 @@ console.log(a);`
 });
 
 test('transpiler ES2020', () => {
-  let { output, sourceMap } = st.transpileScript(
+  const { output, sourceMap } = st.transpileScript(
     `let nullishCoalescing = undefined ?? (false ?? "truthy")
 		let optionalChaining = console?.log?.(nullishCoalescing)`
   );
