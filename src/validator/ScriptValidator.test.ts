@@ -84,8 +84,10 @@ describe('ScriptValidator', () => {
     );
     invalid(
       'shorthand ++ and --',
-      'let x = 1; x++ + --x',
+      'let x = 1; x++ + --x + ++x + x--',
 
+      'Use += instead',
+      'Use -= instead',
       'Use += instead',
       'Use -= instead'
     );
@@ -165,7 +167,7 @@ describe('ScriptValidator', () => {
       `{ "a": 1, "b": true, "c": "hi", "d": null, "e": [1, "a"], "f": { "a": -1 } }`
     );
     valid(
-      'let and const and assignment operators',
+      'const, let and assignment operators',
       `
       const x = 41;
       let y = 43;
@@ -188,7 +190,7 @@ describe('ScriptValidator', () => {
       '1 < 2 <= 3 > 4 >= 5 === 6 !== 7'
     );
     valid(
-      'desctructuring',
+      'destructuring',
       `
       const { x, y, z } = { x: 1, y: 2, z: "foo" }
       const [a, b, c] = [1, 2, "foo"]

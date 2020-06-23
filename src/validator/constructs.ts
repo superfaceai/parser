@@ -50,28 +50,28 @@ registerForbiddenRules([
   {
     kind: ts.SyntaxKind.PrefixUnaryExpression,
     predicate: (node): boolean =>
-      (node as ts.PrefixUnaryExpression).operator ==
+      (node as ts.PrefixUnaryExpression).operator ===
       ts.SyntaxKind.PlusPlusToken,
     hint: 'Use += instead',
   },
   {
     kind: ts.SyntaxKind.PrefixUnaryExpression,
     predicate: (node): boolean =>
-      (node as ts.PrefixUnaryExpression).operator ==
+      (node as ts.PrefixUnaryExpression).operator ===
       ts.SyntaxKind.MinusMinusToken,
     hint: 'Use -= instead',
   },
   {
     kind: ts.SyntaxKind.PostfixUnaryExpression,
     predicate: (node): boolean =>
-      (node as ts.PostfixUnaryExpression).operator ==
+      (node as ts.PostfixUnaryExpression).operator ===
       ts.SyntaxKind.PlusPlusToken,
     hint: 'Use += instead',
   },
   {
     kind: ts.SyntaxKind.PostfixUnaryExpression,
     predicate: (node): boolean =>
-      (node as ts.PostfixUnaryExpression).operator ==
+      (node as ts.PostfixUnaryExpression).operator ===
       ts.SyntaxKind.MinusMinusToken,
     hint: 'Use -= instead',
   },

@@ -21,7 +21,7 @@ export class ScriptValidationReport {
   errors: ValidationError[] = [];
 
   public get isValid(): boolean {
-    return this.errors.length == 0;
+    return this.errors.length === 0;
   }
 
   public addError(
