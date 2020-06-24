@@ -2,7 +2,7 @@ import {
   MappingAST,
   ParsedProfile,
   Result,
-} from '@superindustries/superface/src';
+} from '@superindustries/superface';
 
 import { MapValidationError } from './errors';
 
