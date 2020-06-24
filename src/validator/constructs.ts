@@ -21,8 +21,10 @@ export const FORBIDDEN_CONSTRUCTS: {
       predicate: (node: ts.VariableDeclarationList): boolean =>
         (node.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) === 0,
       hint: (source: string, node: ts.VariableDeclarationList): string => {
-        const declarations = source.substring(node.declarations.pos, node.declarations.end).trim();
-        return `Use \`const ${declarations}\` or \`let ${declarations}\` instead`
+        const declarations = source
+          .substring(node.declarations.pos, node.declarations.end)
+          .trim();
+        return `Use \`const ${declarations}\` or \`let ${declarations}\` instead`;
       },
     },
   ],
@@ -33,12 +35,14 @@ export const FORBIDDEN_CONSTRUCTS: {
         if (node.name) {
           name = source.substring(node.name.pos, node.name.end).trim();
         } else {
-          name = "anon"
+          name = 'anon';
         }
-        const parameters = source.substring(node.parameters.pos, node.parameters.end).trim();
+        const parameters = source
+          .substring(node.parameters.pos, node.parameters.end)
+          .trim();
 
-        return `Use \`const ${name} = (${parameters}) => { /* body */ }\` instead`
-      }
+        return `Use \`const ${name} = (${parameters}) => { /* body */ }\` instead`;
+      },
     },
   ],
   [ts.SyntaxKind.EqualsEqualsToken]: [
@@ -46,9 +50,11 @@ export const FORBIDDEN_CONSTRUCTS: {
       hint: (source: string, node: ts.BinaryOperatorToken): string => {
         const parent = node.parent as ts.BinaryExpression;
         const left = source.substring(parent.left.pos, parent.left.end).trim();
-        const right = source.substring(parent.right.pos, parent.right.end).trim();
+        const right = source
+          .substring(parent.right.pos, parent.right.end)
+          .trim();
         return `Use \`${left} === ${right}\` instead`;
-      }
+      },
     },
   ],
   [ts.SyntaxKind.ExclamationEqualsToken]: [
@@ -56,9 +62,11 @@ export const FORBIDDEN_CONSTRUCTS: {
       hint: (source: string, node: ts.BinaryOperatorToken): string => {
         const parent = node.parent as ts.BinaryExpression;
         const left = source.substring(parent.left.pos, parent.left.end).trim();
-        const right = source.substring(parent.right.pos, parent.right.end).trim();
+        const right = source
+          .substring(parent.right.pos, parent.right.end)
+          .trim();
         return `Use \`${left} !== ${right}\` instead`;
-      }
+      },
     },
   ],
   [ts.SyntaxKind.PrefixUnaryExpression]: [
@@ -66,17 +74,21 @@ export const FORBIDDEN_CONSTRUCTS: {
       predicate: (node: ts.PrefixUnaryExpression): boolean =>
         node.operator === ts.SyntaxKind.PlusPlusToken,
       hint: (source: string, node: ts.PrefixUnaryExpression): string => {
-        const operand = source.substring(node.operand.pos, node.operand.end).trim();
+        const operand = source
+          .substring(node.operand.pos, node.operand.end)
+          .trim();
         return `Use \`${operand} += 1\` or \`${operand}++\` instead`;
-      }
+      },
     },
     {
       predicate: (node: ts.PrefixUnaryExpression): boolean =>
         node.operator === ts.SyntaxKind.MinusMinusToken,
-        hint: (source: string, node: ts.PrefixUnaryExpression): string => {
-          const operand = source.substring(node.operand.pos, node.operand.end).trim();
-          return `Use \`${operand} -= 1\` or \`${operand}--\` instead`;
-        }
+      hint: (source: string, node: ts.PrefixUnaryExpression): string => {
+        const operand = source
+          .substring(node.operand.pos, node.operand.end)
+          .trim();
+        return `Use \`${operand} -= 1\` or \`${operand}--\` instead`;
+      },
     },
   ],
 };

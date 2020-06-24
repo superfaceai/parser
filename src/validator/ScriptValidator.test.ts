@@ -13,7 +13,8 @@ declare global {
 expect.extend({
   toBeValidScript(script: string, ...errors: string[]) {
     function formatError(err: ValidationError): string {
-      return `${err.message} (hint: ${err.hint})`;
+      const hint = err.hint ?? 'not provided';
+      return `${err.message} (hint: ${hint})`;
     }
 
     const report = validateScript(script);
@@ -73,7 +74,6 @@ function valid(name: string, script: string): void {
   });
 }
 
-// prettier-ignore
 describe('ScriptValidator', () => {
   describe('ForbidenConstructs', () => {
     invalid(
@@ -95,11 +95,9 @@ describe('ScriptValidator', () => {
       let x = 1;
       ++x;
       --x;
-      `
-      ,
-
+      `,
       'Use `x += 1` or `x++` instead',
-      'Use `x -= 1` or `x--` instead',
+      'Use `x -= 1` or `x--` instead'
     );
     invalid(
       'function declarations',
@@ -145,7 +143,7 @@ describe('ScriptValidator', () => {
       }
       let x = new Foo();
       `,
-      
+
       'ClassDeclaration construct is not supported',
       'Constructor construct is not supported',
       'ThisKeyword construct is not supported',
@@ -187,10 +185,7 @@ describe('ScriptValidator', () => {
       y /= 2;
       `
     );
-    valid(
-      'arithmetic',
-      '-1 + (+2) - 3 / 4 * 5 % 6 ** 2'
-    );
+    valid('arithmetic', '-1 + (+2) - 3 / 4 * 5 % 6 ** 2');
     valid(
       'postfix ++ and --',
       `
@@ -198,11 +193,8 @@ describe('ScriptValidator', () => {
       x++;
       x--;
       `
-    )
-    valid(
-      'bitwise',
-      '~1 & 2 | 3 ^ 4 >> 1 << 2 >>> 3'
     );
+    valid('bitwise', '~1 & 2 | 3 ^ 4 >> 1 << 2 >>> 3');
     valid(
       'comparison (but only strict equality)',
       '1 < 2 <= 3 > 4 >= 5 === 6 !== 7'
@@ -230,14 +222,8 @@ describe('ScriptValidator', () => {
       }
       `
     );
-    valid(
-      'rest parameter',
-      '(x, ...rest) => rest.length'
-    );
-    valid(
-      'template strings',
-      '(x, y) => `${x} and ${y}`'
-    );
+    valid('rest parameter', '(x, ...rest) => rest.length');
+    valid('template strings', '(x, y) => `${x} and ${y}`');
     valid(
       'loops',
       `
