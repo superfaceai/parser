@@ -1,0 +1,10 @@
+{
+  "version": "v1",
+  "packages": {
+    "superface": {
+      "signature": "7d35a8e10dd1e00ac56f7accfd037189",
+      "file": true,
+      "replaced": "file:../superface"
+    }
+  }
+}
