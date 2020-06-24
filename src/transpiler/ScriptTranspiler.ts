@@ -23,7 +23,9 @@ const AFTER_TRANSFORMERS: ts.TransformerFactory<ts.SourceFile>[] = [
 
       // The transformer will visit the root node and the visitor will drive the recursion.
       const result = ts.visitNode(root, dummyVisitor.bind(null, 0));
-      console.debug(stringTree);
+      if (process.env.LOG_LEVEL === 'debug') {
+        console.debug(stringTree);
+      }
 
       return result;
     };
@@ -52,7 +54,7 @@ export function transpileScript(
   
   // `sourceMapText` will be here because we requested it by setting the compiler flag
   if (!sourceMapText) {
-    throw "Source map text is not present"
+    throw 'Source map text is not present'
   }
   const sourceMapJson: { mappings: string } = JSON.parse(sourceMapText);
 

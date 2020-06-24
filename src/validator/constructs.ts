@@ -24,6 +24,7 @@ export const FORBIDDEN_CONSTRUCTS: {
         const declarations = source
           .substring(node.declarations.pos, node.declarations.end)
           .trim();
+
         return `Use \`const ${declarations}\` or \`let ${declarations}\` instead`;
       },
     },
@@ -53,6 +54,7 @@ export const FORBIDDEN_CONSTRUCTS: {
         const right = source
           .substring(parent.right.pos, parent.right.end)
           .trim();
+
         return `Use \`${left} === ${right}\` instead`;
       },
     },
@@ -65,6 +67,7 @@ export const FORBIDDEN_CONSTRUCTS: {
         const right = source
           .substring(parent.right.pos, parent.right.end)
           .trim();
+
         return `Use \`${left} !== ${right}\` instead`;
       },
     },
@@ -77,6 +80,7 @@ export const FORBIDDEN_CONSTRUCTS: {
         const operand = source
           .substring(node.operand.pos, node.operand.end)
           .trim();
+
         return `Use \`${operand} += 1\` or \`${operand}++\` instead`;
       },
     },
@@ -87,6 +91,7 @@ export const FORBIDDEN_CONSTRUCTS: {
         const operand = source
           .substring(node.operand.pos, node.operand.end)
           .trim();
+
         return `Use \`${operand} -= 1\` or \`${operand}--\` instead`;
       },
     },

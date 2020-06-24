@@ -14,6 +14,7 @@ expect.extend({
   toBeValidScript(script: string, ...errors: string[]) {
     function formatError(err: ValidationError): string {
       const hint = err.hint ?? 'not provided';
+
       return `${err.message} (hint: ${hint})`;
     }
 
