@@ -29,6 +29,7 @@ module.exports = {
     'import/newline-after-import': 'error',
     'import/no-duplicates': 'error',
     'no-multiple-empty-lines': 'error',
+    'quotes': ['error', 'single', { avoidEscape: true, allowTemplateLiterals: false }]
   },
   settings: {
     'import/parsers': {

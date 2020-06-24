@@ -1,8 +1,4 @@
-import {
-  MappingAST,
-  ParsedProfile,
-  Result,
-} from '@superindustries/superface';
+import { MappingAST, ParsedProfile, Result } from '@superindustries/superface';
 
 import { MapValidationError } from './errors';
 

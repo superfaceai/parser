@@ -1,84 +1,60 @@
 import * as ts from 'typescript';
 
 // Hint for forbidden construct attached to the report
-export interface ForbiddenConstructHint {
-  // Kind of the node for quick initial filtering
-  kind: ts.SyntaxKind;
+export interface ForbiddenConstructHint<T extends ts.Node = ts.Node> {
   // Should return true if this rule applies to given node.
-  // The predicate can assume that the node is of `kind` type.
+  // The predicate can assume that the node is of `kind` type as defined in the constant below.
   //
   // If not specified, it is treated as if it always returned `true`.
-  predicate?(node: ts.Node): boolean;
+  predicate?(node: T): boolean;
   // Hint to attach to the reporter error.
   hint: string;
 }
 
 // Forbidden syntax kinds with additional report hint
-export const FORBIDDEN_CONSTRUCTS: Map<
-  ts.SyntaxKind,
-  ForbiddenConstructHint[]
-> = new Map();
-
-function registerForbiddenRules(rules: ForbiddenConstructHint[]): void {
-  rules.forEach(rule => {
-    if (!FORBIDDEN_CONSTRUCTS.has(rule.kind)) {
-      FORBIDDEN_CONSTRUCTS.set(rule.kind, []);
-    }
-
-    FORBIDDEN_CONSTRUCTS.get(rule.kind)?.push(rule);
-  });
-}
-registerForbiddenRules([
-  {
-    kind: ts.SyntaxKind.VariableDeclarationList,
-    predicate: (node): boolean =>
-      (node.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) === 0,
-    hint: 'Use const or let instead',
-  },
-  {
-    kind: ts.SyntaxKind.FunctionDeclaration,
-    hint: 'Use arrow functions instead',
-  },
-  {
-    kind: ts.SyntaxKind.EqualsEqualsToken,
-    hint: 'Use === instead',
-  },
-  {
-    kind: ts.SyntaxKind.ExclamationEqualsToken,
-    hint: 'Use !== instead',
-  },
-  {
-    kind: ts.SyntaxKind.PrefixUnaryExpression,
-    predicate: (node): boolean =>
-      (node as ts.PrefixUnaryExpression).operator ===
-      ts.SyntaxKind.PlusPlusToken,
-    hint: 'Use += instead',
-  },
-  {
-    kind: ts.SyntaxKind.PrefixUnaryExpression,
-    predicate: (node): boolean =>
-      (node as ts.PrefixUnaryExpression).operator ===
-      ts.SyntaxKind.MinusMinusToken,
-    hint: 'Use -= instead',
-  },
-  {
-    kind: ts.SyntaxKind.PostfixUnaryExpression,
-    predicate: (node): boolean =>
-      (node as ts.PostfixUnaryExpression).operator ===
-      ts.SyntaxKind.PlusPlusToken,
-    hint: 'Use += instead',
-  },
-  {
-    kind: ts.SyntaxKind.PostfixUnaryExpression,
-    predicate: (node): boolean =>
-      (node as ts.PostfixUnaryExpression).operator ===
-      ts.SyntaxKind.MinusMinusToken,
-    hint: 'Use -= instead',
-  },
-]);
+export const FORBIDDEN_CONSTRUCTS: {
+  [kind in ts.SyntaxKind]?: ForbiddenConstructHint[];
+} = {
+  [ts.SyntaxKind.VariableDeclarationList]: [
+    {
+      predicate: (node): boolean =>
+        (node.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) === 0,
+      hint: 'Use const or let instead',
+    },
+  ],
+  [ts.SyntaxKind.FunctionDeclaration]: [
+    { hint: 'Use arrow functions instead' },
+  ],
+  [ts.SyntaxKind.EqualsEqualsToken]: [{ hint: 'Use === instead' }],
+  [ts.SyntaxKind.ExclamationEqualsToken]: [{ hint: 'Use !== instead' }],
+  [ts.SyntaxKind.PrefixUnaryExpression]: [
+    {
+      predicate: (node: ts.PrefixUnaryExpression): boolean =>
+        node.operator === ts.SyntaxKind.PlusPlusToken,
+      hint: 'Use += instead',
+    },
+    {
+      predicate: (node: ts.PrefixUnaryExpression): boolean =>
+        node.operator === ts.SyntaxKind.MinusMinusToken,
+      hint: 'Use -= instead',
+    },
+  ],
+  [ts.SyntaxKind.PostfixUnaryExpression]: [
+    {
+      predicate: (node: ts.PostfixUnaryExpression): boolean =>
+        node.operator === ts.SyntaxKind.PlusPlusToken,
+      hint: 'Use += instead',
+    },
+    {
+      predicate: (node: ts.PostfixUnaryExpression): boolean =>
+        node.operator === ts.SyntaxKind.MinusMinusToken,
+      hint: 'Use -= instead',
+    },
+  ],
+};
 
 // Explicitly allowed syntax, all other syntax kinds are rejected
-export const ALLOWED_SYNTAX: Set<ts.SyntaxKind> = new Set<ts.SyntaxKind>([
+export const ALLOWED_SYNTAX: ts.SyntaxKind[] = [
   ts.SyntaxKind.EndOfFileToken,
   // ts.SyntaxKind.SingleLineCommentTrivia,
   // ts.SyntaxKind.MultiLineCommentTrivia,
@@ -230,8 +206,8 @@ export const ALLOWED_SYNTAX: Set<ts.SyntaxKind> = new Set<ts.SyntaxKind>([
   // ts.SyntaxKind.GlobalKeyword, // global
   // ts.SyntaxKind.BigIntKeyword, // bigint
   // ts.SyntaxKind.OfKeyword, // of
-  // ts.SyntaxKind.QualifiedName, // ????
-  // ts.SyntaxKind.ComputedPropertyName, // ????
+  // ts.SyntaxKind.QualifiedName,
+  // ts.SyntaxKind.ComputedPropertyName,
   // ts.SyntaxKind.TypeParameter, // (arg: type, arg2: type2)
   ts.SyntaxKind.Parameter, // (arg, arg2)
   // ts.SyntaxKind.Decorator, // @decorator
@@ -438,4 +414,4 @@ export const ALLOWED_SYNTAX: Set<ts.SyntaxKind> = new Set<ts.SyntaxKind>([
   //   ts.SyntaxKind.LastJSDocNode,
   //   ts.SyntaxKind.FirstJSDocTagNode,
   //   ts.SyntaxKind.LastJSDocTagNode,
-]);
+];

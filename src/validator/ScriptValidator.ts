@@ -56,21 +56,16 @@ export function validateScript(input: string): ScriptValidationReport {
   let debugTree = '';
   let debugDepth = 0;
   function nodeVisitor<T extends ts.Node>(node: T): void {
-    let debugTreeIndent = '';
-    for (let i = 0; i < debugDepth; i++) {
-      debugTreeIndent += '\t';
-    }
-    debugTree += `${debugTreeIndent}NODE ${
-      ts.SyntaxKind[node.kind]
-    } "${input
+    const nodeCode = input
       .substring(node.pos, node.end)
-      .replace('\n', ' ')
-      .replace('\r', '')
-      .trim()}"`;
+      .replace('\r\n', ' ')
+      .trim();
+    const treeIndent = ''.padStart(debugDepth, '\t');
+    debugTree += `${treeIndent}NODE ${ts.SyntaxKind[node.kind]} "${nodeCode}"`;
 
     // Go over forbidden constructs and check if any of them applies
     let anyRuleBroken = false;
-    const rules = FORBIDDEN_CONSTRUCTS.get(node.kind) ?? [];
+    const rules = FORBIDDEN_CONSTRUCTS[node.kind] ?? [];
     for (const rule of rules) {
       if (rule.predicate?.(node) ?? true) {
         anyRuleBroken = true;
@@ -88,7 +83,7 @@ export function validateScript(input: string): ScriptValidationReport {
     }
 
     // If none of the rules applied, but the syntax is not valid anyway, add an error without a hint
-    if (!anyRuleBroken && !ALLOWED_SYNTAX.has(node.kind)) {
+    if (!anyRuleBroken && !ALLOWED_SYNTAX.includes(node.kind)) {
       debugTree += ' [S]';
 
       report.addError(
@@ -106,7 +101,9 @@ export function validateScript(input: string): ScriptValidationReport {
     debugDepth -= 1;
   }
   nodeVisitor(rootNode);
-  console.debug(debugTree);
+  if (process.env.LOG_LEVEL === 'debug') {
+    console.debug(debugTree);
+  }
 
   return report;
 }

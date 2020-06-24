@@ -1,17 +1,21 @@
-import { validateScript } from './ScriptValidator';
+import { validateScript, ValidationError } from './ScriptValidator';
 
 // Declare custom matcher for sake of Typescript
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
     interface Matchers<R> {
-      valid(...errors: string[]): R;
+      toBeValidScript(...errors: string[]): R;
     }
   }
 }
 // Add the actual custom matcher
 expect.extend({
-  valid(script: string, ...errors: string[]) {
+  toBeValidScript(script: string, ...errors: string[]) {
+    function formatError(err: ValidationError): string {
+      return `${err.message} (hint: ${err.hint})`;
+    }
+
     const report = validateScript(script);
 
     let pass = true;
@@ -23,16 +27,18 @@ expect.extend({
 
       if (report.isValid === true) {
         pass = !pass;
-        message = `expected to fail`;
+        message = 'expected to fail';
       } else {
         for (let i = 0; i < errors.length; i++) {
-          let err = report.errors[i];
+          const err = report.errors[i];
           if (
             !err.message.includes(errors[i]) &&
             !err.hint?.includes(errors[i])
           ) {
             pass = !pass;
-            message = `expected to find hint "${errors[i]}" in "${err.message} (hint: ${err.hint})"`;
+            message = `expected to find hint "${errors[i]}" in "${formatError(
+              err
+            )}"`;
             break;
           }
         }
@@ -41,9 +47,10 @@ expect.extend({
       // Expecting to pass
       if (report.isValid === false) {
         pass = !pass;
-        message = `expected to pass, errors: ${report.errors
-          .map(e => `\n\t${e.message} (hint: ${e.hint})`)
-          .join('')}`;
+        const messages = report.errors
+          .map(err => `\n\t${formatError(err)}`)
+          .join('');
+        message = `expected to pass, errors: ${messages}`;
       }
     }
 
@@ -56,13 +63,13 @@ expect.extend({
 
 function invalid(name: string, script: string, ...errors: string[]): void {
   it(name, () => {
-    expect(script).not.valid(...errors);
+    expect(script).not.toBeValidScript(...errors);
   });
 }
 
 function valid(name: string, script: string): void {
   it(name, () => {
-    expect(script).valid();
+    expect(script).toBeValidScript();
   });
 }
 
@@ -164,7 +171,7 @@ describe('ScriptValidator', () => {
   describe('Valid scripts', () => {
     valid(
       'JSON',
-      `{ "a": 1, "b": true, "c": "hi", "d": null, "e": [1, "a"], "f": { "a": -1 } }`
+      '{ "a": 1, "b": true, "c": "hi", "d": null, "e": [1, "a"], "f": { "a": -1 } }'
     );
     valid(
       'const, let and assignment operators',
