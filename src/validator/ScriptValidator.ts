@@ -74,7 +74,7 @@ export function validateScript(input: string): ScriptValidationReport {
           `${ts.SyntaxKind[node.kind]} construct is not supported`,
           ValidationErrorType.ForbiddenConstruct,
           node,
-          rule.hint
+          rule.hint(input, node)
         );
       }
     }

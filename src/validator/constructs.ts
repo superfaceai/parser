@@ -8,47 +8,75 @@ export interface ForbiddenConstructHint<T extends ts.Node = ts.Node> {
   // If not specified, it is treated as if it always returned `true`.
   predicate?(node: T): boolean;
   // Hint to attach to the reporter error.
-  hint: string;
+  hint(source: string, node: T): string;
 }
 
 // Forbidden syntax kinds with additional report hint
 export const FORBIDDEN_CONSTRUCTS: {
   [kind in ts.SyntaxKind]?: ForbiddenConstructHint[];
 } = {
+  // TODO: Hint formatting can be improved to handle multiline strings gracefully.
   [ts.SyntaxKind.VariableDeclarationList]: [
     {
-      predicate: (node): boolean =>
+      predicate: (node: ts.VariableDeclarationList): boolean =>
         (node.flags & (ts.NodeFlags.Let | ts.NodeFlags.Const)) === 0,
-      hint: 'Use const or let instead',
+      hint: (source: string, node: ts.VariableDeclarationList): string => {
+        const declarations = source.substring(node.declarations.pos, node.declarations.end).trim();
+        return `Use \`const ${declarations}\` or \`let ${declarations}\` instead`
+      },
     },
   ],
   [ts.SyntaxKind.FunctionDeclaration]: [
-    { hint: 'Use arrow functions instead' },
+    {
+      hint: (source: string, node: ts.FunctionDeclaration): string => {
+        let name;
+        if (node.name) {
+          name = source.substring(node.name.pos, node.name.end).trim();
+        } else {
+          name = "anon"
+        }
+        const parameters = source.substring(node.parameters.pos, node.parameters.end).trim();
+
+        return `Use \`const ${name} = (${parameters}) => { /* body */ }\` instead`
+      }
+    },
   ],
-  [ts.SyntaxKind.EqualsEqualsToken]: [{ hint: 'Use === instead' }],
-  [ts.SyntaxKind.ExclamationEqualsToken]: [{ hint: 'Use !== instead' }],
+  [ts.SyntaxKind.EqualsEqualsToken]: [
+    {
+      hint: (source: string, node: ts.BinaryOperatorToken): string => {
+        const parent = node.parent as ts.BinaryExpression;
+        const left = source.substring(parent.left.pos, parent.left.end).trim();
+        const right = source.substring(parent.right.pos, parent.right.end).trim();
+        return `Use \`${left} === ${right}\` instead`;
+      }
+    },
+  ],
+  [ts.SyntaxKind.ExclamationEqualsToken]: [
+    {
+      hint: (source: string, node: ts.BinaryOperatorToken): string => {
+        const parent = node.parent as ts.BinaryExpression;
+        const left = source.substring(parent.left.pos, parent.left.end).trim();
+        const right = source.substring(parent.right.pos, parent.right.end).trim();
+        return `Use \`${left} !== ${right}\` instead`;
+      }
+    },
+  ],
   [ts.SyntaxKind.PrefixUnaryExpression]: [
     {
       predicate: (node: ts.PrefixUnaryExpression): boolean =>
         node.operator === ts.SyntaxKind.PlusPlusToken,
-      hint: 'Use += instead',
+      hint: (source: string, node: ts.PrefixUnaryExpression): string => {
+        const operand = source.substring(node.operand.pos, node.operand.end).trim();
+        return `Use \`${operand} += 1\` or \`${operand}++\` instead`;
+      }
     },
     {
       predicate: (node: ts.PrefixUnaryExpression): boolean =>
         node.operator === ts.SyntaxKind.MinusMinusToken,
-      hint: 'Use -= instead',
-    },
-  ],
-  [ts.SyntaxKind.PostfixUnaryExpression]: [
-    {
-      predicate: (node: ts.PostfixUnaryExpression): boolean =>
-        node.operator === ts.SyntaxKind.PlusPlusToken,
-      hint: 'Use += instead',
-    },
-    {
-      predicate: (node: ts.PostfixUnaryExpression): boolean =>
-        node.operator === ts.SyntaxKind.MinusMinusToken,
-      hint: 'Use -= instead',
+        hint: (source: string, node: ts.PrefixUnaryExpression): string => {
+          const operand = source.substring(node.operand.pos, node.operand.end).trim();
+          return `Use \`${operand} -= 1\` or \`${operand}--\` instead`;
+        }
     },
   ],
 };

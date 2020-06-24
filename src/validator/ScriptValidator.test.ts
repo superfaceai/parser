@@ -86,29 +86,32 @@ describe('ScriptValidator', () => {
       'non-strict equality',
       '1 == 1 && 1 != 2',
 
-      'Use === instead',
-      'Use !== instead'
+      'Use `1 === 1` instead',
+      'Use `1 !== 2` instead'
     );
     invalid(
-      'shorthand ++ and --',
-      'let x = 1; x++ + --x + ++x + x--',
+      'prefix ++ and --',
+      `
+      let x = 1;
+      ++x;
+      --x;
+      `
+      ,
 
-      'Use += instead',
-      'Use -= instead',
-      'Use += instead',
-      'Use -= instead'
+      'Use `x += 1` or `x++` instead',
+      'Use `x -= 1` or `x--` instead',
     );
     invalid(
       'function declarations',
-      'function foo() {}',
+      'function foo(a, b) {}',
 
-      'Use arrow functions instead'
+      'Use `const foo = (a, b) => { /* body */ }` instead'
     );
     invalid(
       'var keyword',
       'var x = 45',
 
-      'Use const or let instead'
+      'Use `const x = 45` or `let x = 45` instead'
     );
     invalid(
       'import and export',
@@ -188,6 +191,14 @@ describe('ScriptValidator', () => {
       'arithmetic',
       '-1 + (+2) - 3 / 4 * 5 % 6 ** 2'
     );
+    valid(
+      'postfix ++ and --',
+      `
+      let x = 0;
+      x++;
+      x--;
+      `
+    )
     valid(
       'bitwise',
       '~1 & 2 | 3 ^ 4 >> 1 << 2 >>> 3'
