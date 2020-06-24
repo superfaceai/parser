@@ -1,5 +1,5 @@
 {
-  "name": "superface-parser",
+  "name": "@superindustries/superface-parser",
   "version": "0.0.0",
   "description": "Level 5 autonomous, self-driving API client, https://superface.ai",
   "main": "dist/superface-parser.js",
@@ -11,7 +11,13 @@
   "repository": "https://github.com/superindustries/superface-parser.git",
   "author": "Superface Team",
   "license": "MIT",
-  "private": true,
+  "private": false,
+  "files": [
+    "dist/**/*"
+  ],
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com/"
+  },
   "scripts": {
     "build": "microbundle --tsconfig tsconfig.release.json",
     "watch": "yarn build --watch",
