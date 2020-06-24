@@ -211,6 +211,8 @@ describe('ScriptValidator', () => {
       `
       const x = { "a": 1, "b": 2 }
       const y = { ...x, "a": 3 }
+      const a = [1, 2, 3]
+      const b = [...a, 4, 5]
       `
     );
     valid(
