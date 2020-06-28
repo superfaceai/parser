@@ -1,4 +1,4 @@
-import { Location, Span, Source } from './source';
+import { Location, Source, Span } from './source';
 
 function computeVisualizeBlockSpan(
   body: string,

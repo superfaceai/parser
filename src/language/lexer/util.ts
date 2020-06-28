@@ -153,13 +153,15 @@ export function checkKeywordLiteral<T>(
   ret: T,
   charAfterPredicate?: (_: number) => boolean
 ): { value: T; length: number } | null {
-  if (str.slice(0, keyword.length) === keyword) {
+  if (str.startsWith(keyword)) {
     const checkPredicate =
-      charAfterPredicate ?? ((char: number) => !isValidIdentifierChar(char));
+      charAfterPredicate ??
+      ((char: number): boolean => !isValidIdentifierChar(char));
     const charAfter = str.charCodeAt(keyword.length);
     if (!checkPredicate(charAfter)) {
       return null;
     }
+
     return {
       value: ret,
       length: keyword.length,

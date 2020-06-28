@@ -1,19 +1,19 @@
 import { Span } from '../source';
 import {
-  LexerTokenKind,
-  LexerTokenData,
-  SeparatorTokenData,
-  SeparatorValue,
-  OperatorTokenData,
+  CommentTokenData,
   DecoratorTokenData,
   DecoratorValue,
-  LiteralTokenData,
-  OperatorValue,
+  DocTokenData,
+  IdentifierTokenData,
   KeywordTokenData,
   KeywordValue,
-  IdentifierTokenData,
-  CommentTokenData,
-  DocTokenData,
+  LexerTokenData,
+  LexerTokenKind,
+  LiteralTokenData,
+  OperatorTokenData,
+  OperatorValue,
+  SeparatorTokenData,
+  SeparatorValue,
 } from './token';
 import * as util from './util';
 
@@ -284,7 +284,7 @@ export function tryParseDecorator(
     return new ParseError(
       LexerTokenKind.DECORATOR,
       { start: 0, end: 2 },
-      `Expected one of [safe, unsafe, idempotent]`
+      'Expected one of [safe, unsafe, idempotent]'
     );
   }
 
@@ -356,7 +356,7 @@ export function tryParseDoc(slice: string): ParseResult<DocTokenData> {
 
   let eatenChars = startingDocChars;
   let docSliceRest = slice.slice(startingDocChars);
-  while (true) {
+  for (;;) {
     const nondocChars = util.countStarting(
       char => !util.isDocChar(char),
       docSliceRest
@@ -401,6 +401,7 @@ export function tryParseComment(slice: string): ParseResult<CommentTokenData> {
       char => !util.isNewline(char),
       commentSlice
     );
+
     return [
       {
         kind: LexerTokenKind.COMMENT,

@@ -1,20 +1,22 @@
+import { Source } from '../source';
 import { Lexer } from './lexer';
 import {
-  LexerTokenKind,
-  SeparatorTokenData,
-  OperatorTokenData,
-  LiteralTokenData,
-  DecoratorTokenData,
-  LexerTokenData,
-  LexerToken,
-  KeywordTokenData,
-  IdentifierTokenData,
   CommentTokenData,
-  SeparatorValue,
+  DecoratorTokenData,
   formatTokenData,
+  IdentifierTokenData,
+  KeywordTokenData,
+  LexerToken,
+  // is eslint retarded?
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  LexerTokenData,
   LexerTokenDataType,
+  LexerTokenKind,
+  LiteralTokenData,
+  OperatorTokenData,
+  SeparatorTokenData,
+  SeparatorValue,
 } from './token';
-import { Source } from '../source';
 
 // Declare custom matcher for sake of Typescript
 declare global {
@@ -44,28 +46,21 @@ expect.extend({
       switch (data.kind) {
         case LexerTokenKind.SEPARATOR:
           if (
-            (actual.data as SeparatorTokenData).separator !==
-            (data as SeparatorTokenData).separator
+            (actual.data as SeparatorTokenData).separator !== data.separator
           ) {
             pass = false;
             message = errorMessage();
           }
           break;
         case LexerTokenKind.OPERATOR:
-          if (
-            (actual.data as OperatorTokenData).operator !==
-            (data as OperatorTokenData).operator
-          ) {
+          if ((actual.data as OperatorTokenData).operator !== data.operator) {
             pass = false;
             message = errorMessage();
           }
           break;
 
         case LexerTokenKind.LITERAL:
-          if (
-            (actual.data as LiteralTokenData).literal !==
-            (data as LiteralTokenData).literal
-          ) {
+          if ((actual.data as LiteralTokenData).literal !== data.literal) {
             pass = false;
             message = errorMessage();
           }
@@ -73,8 +68,7 @@ expect.extend({
 
         case LexerTokenKind.DECORATOR:
           if (
-            (actual.data as DecoratorTokenData).decorator !==
-            (data as DecoratorTokenData).decorator
+            (actual.data as DecoratorTokenData).decorator !== data.decorator
           ) {
             pass = false;
             message = errorMessage();
@@ -82,10 +76,7 @@ expect.extend({
           break;
 
         case LexerTokenKind.KEYWORD:
-          if (
-            (actual.data as KeywordTokenData).keyword !==
-            (data as KeywordTokenData).keyword
-          ) {
+          if ((actual.data as KeywordTokenData).keyword !== data.keyword) {
             pass = false;
             message = errorMessage();
           }
@@ -93,8 +84,7 @@ expect.extend({
 
         case LexerTokenKind.IDENTIFIER:
           if (
-            (actual.data as IdentifierTokenData).identifier !==
-            (data as IdentifierTokenData).identifier
+            (actual.data as IdentifierTokenData).identifier !== data.identifier
           ) {
             pass = false;
             message = errorMessage();
@@ -102,10 +92,7 @@ expect.extend({
           break;
 
         case LexerTokenKind.COMMENT:
-          if (
-            (actual.data as CommentTokenData).comment !==
-            (data as CommentTokenData).comment
-          ) {
+          if ((actual.data as CommentTokenData).comment !== data.comment) {
             pass = false;
             message = errorMessage();
           }
@@ -141,7 +128,7 @@ describe('lexer', () => {
         'EOF',
       ];
 
-      for (let expected of expectedTokens) {
+      for (const expected of expectedTokens) {
         const actual = lexer.advance();
 
         expect(actual).toHaveTokenData({
@@ -169,7 +156,7 @@ describe('lexer', () => {
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
 
-      for (let expected of expectedTokens) {
+      for (const expected of expectedTokens) {
         const actual = lexer.advance();
 
         if (typeof expected === 'object') {
@@ -206,7 +193,7 @@ describe('lexer', () => {
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
 
-      for (let expected of expectedTokens) {
+      for (const expected of expectedTokens) {
         const actual = lexer.advance();
 
         if (typeof expected === 'object') {
@@ -231,7 +218,7 @@ describe('lexer', () => {
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
 
-      for (let expected of expectedTokens) {
+      for (const expected of expectedTokens) {
         const actual = lexer.advance();
 
         if (typeof expected === 'object') {
@@ -260,7 +247,7 @@ describe('lexer', () => {
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
 
-      for (let expected of expectedTokens) {
+      for (const expected of expectedTokens) {
         const actual = lexer.advance();
 
         if (typeof expected === 'object') {
@@ -285,7 +272,7 @@ describe('lexer', () => {
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
 
-      for (let expected of expectedTokens) {
+      for (const expected of expectedTokens) {
         const actual = lexer.advance();
 
         if (typeof expected === 'object') {
@@ -322,12 +309,12 @@ describe('lexer', () => {
         },
         {
           kind: LexerTokenKind.DOC,
-          doc: `as 'a zxc ''awe 'z 's''''' was`,
+          doc: "as 'a zxc ''awe 'z 's''''' was",
         },
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
 
-      for (let expected of expectedTokens) {
+      for (const expected of expectedTokens) {
         const actual = lexer.advance();
 
         expect(actual).toHaveTokenData(expected);
@@ -353,14 +340,14 @@ describe('lexer', () => {
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
 
-      for (let expected of expectedTokens) {
+      for (const expected of expectedTokens) {
         const actual = lexer.advance();
 
         expect(actual).toHaveTokenData(expected);
       }
     });
 
-    xit('complex', () => {
+    it('complex', () => {
       const lexer = new Lexer(
         new Source(
           `'''
@@ -457,8 +444,10 @@ describe('lexer', () => {
         )
       );
 
-      for (let token of lexer.generator()) {
-        console.debug(token.formatDebug());
+      for (const token of lexer.generator()) {
+        // console.debug(token.formatDebug());
+        // Doesn't throw
+        expect(token).toBeDefined();
       }
     });
   });
@@ -490,8 +479,11 @@ describe('lexer', () => {
   });
 
   describe('errors', () => {
+    // Allow this lint error because we want to call `format` on the error object and check the output line-by-line
+    /* eslint-disable jest/no-try-expect */
     it('before', () => {
       const lexer = new Lexer(new Source('before\n\t@safes'));
+
       try {
         lexer.advance();
         lexer.advance();
@@ -577,5 +569,7 @@ describe('lexer', () => {
         expect(formatLines[3]).toMatch(' | \t^^    ');
       }
     });
+
+    /* eslint-enable jest/no-try-expect */
   });
 });

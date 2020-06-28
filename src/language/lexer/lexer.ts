@@ -1,10 +1,8 @@
+import { SyntaxError } from '../error';
+import { Source } from '../source';
+import * as rules from './rules';
 import { LexerToken, LexerTokenKind } from './token';
 import * as util from './util';
-
-import { Source } from '../source';
-import { SyntaxError } from '../error';
-
-import * as rules from './rules';
 
 /// Lexer tokenizes input string into tokens.
 ///
@@ -43,6 +41,7 @@ export class Lexer {
     // Specialcase the first token
     if (this.currentToken.isSOF() && this.currentToken.next === null) {
       this.lookahead();
+
       return this.currentToken;
     }
 
@@ -67,9 +66,13 @@ export class Lexer {
   }
 
   /// Returns a generator adaptor that produces generator-compatible values.
-  generator() {
+  generator(): Generator<LexerToken, LexerToken, void> {
+    // This rule is intended to catch assigning this to a variable when an arrow function would suffice
+    // Generators cannot be defined using an arrow function and thus don't preserve `this`
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     const lexer = this;
-    function* generatorClosure() {
+
+    function* generatorClosure(): Generator<LexerToken, LexerToken, void> {
       let currentToken = lexer.advance();
 
       while (!currentToken.isEOF()) {
