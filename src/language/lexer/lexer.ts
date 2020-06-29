@@ -66,13 +66,15 @@ export class Lexer {
   }
 
   /// Returns a generator adaptor that produces generator-compatible values.
-  generator(): Generator<LexerToken, LexerToken, void> {
+  ///
+  /// The generator yields the result of `advance()` until `EOF` token is found, at which point it returns the `EOF` token.
+  [Symbol.iterator](): Generator<LexerToken, LexerToken> {
     // This rule is intended to catch assigning this to a variable when an arrow function would suffice
     // Generators cannot be defined using an arrow function and thus don't preserve `this`
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const lexer = this;
 
-    function* generatorClosure(): Generator<LexerToken, LexerToken, void> {
+    function* generatorClosure(): Generator<LexerToken, LexerToken> {
       let currentToken = lexer.advance();
 
       while (!currentToken.isEOF()) {

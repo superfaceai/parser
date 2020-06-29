@@ -444,7 +444,7 @@ describe('lexer', () => {
         )
       );
 
-      for (const token of lexer.generator()) {
+      for (const token of lexer) {
         // console.debug(token.formatDebug());
         // Doesn't throw
         expect(token).toBeDefined();
