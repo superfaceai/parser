@@ -109,6 +109,10 @@ export function tryParseOperator(
       operatorValue = '-';
       break;
 
+    case 33: // !
+      operatorValue = '!';
+      break;
+
     default:
       return null;
   }

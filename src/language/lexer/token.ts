@@ -22,7 +22,7 @@ export type SeparatorValue =
   | SeparatorBracket
   | SeparatorBrace;
 
-export type OperatorValue = ':' | '+' | '-';
+export type OperatorValue = ':' | '+' | '-' | '!';
 export type LiteralValue = number | boolean | string;
 export type DecoratorValue = 'safe' | 'unsafe' | 'idempotent';
 export type KeywordValue =
