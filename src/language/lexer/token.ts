@@ -36,10 +36,7 @@ export type IdentifierValue = string;
 export type DocValue = string;
 export type CommentValue = string;
 
-export interface LexerTokenData {
-  kind: LexerTokenKind;
-}
-export function formatTokenData(data: LexerTokenDataType): string {
+export function formatTokenData(data: LexerTokenData): string {
   switch (data.kind) {
     case LexerTokenKind.SEPARATOR:
       return `SEP ${data.separator}`;
@@ -60,40 +57,40 @@ export function formatTokenData(data: LexerTokenDataType): string {
   }
 }
 
-export interface SeparatorTokenData extends LexerTokenData {
+export interface SeparatorTokenData {
   kind: LexerTokenKind.SEPARATOR;
   separator: SeparatorValue;
 }
-export interface OperatorTokenData extends LexerTokenData {
+export interface OperatorTokenData {
   kind: LexerTokenKind.OPERATOR;
   operator: OperatorValue;
 }
-export interface LiteralTokenData extends LexerTokenData {
+export interface LiteralTokenData {
   kind: LexerTokenKind.LITERAL;
   literal: LiteralValue;
 }
-export interface DecoratorTokenData extends LexerTokenData {
+export interface DecoratorTokenData {
   kind: LexerTokenKind.DECORATOR;
   decorator: DecoratorValue;
 }
-export interface KeywordTokenData extends LexerTokenData {
+export interface KeywordTokenData {
   kind: LexerTokenKind.KEYWORD;
   keyword: KeywordValue;
 }
-export interface IdentifierTokenData extends LexerTokenData {
+export interface IdentifierTokenData {
   kind: LexerTokenKind.IDENTIFIER;
   identifier: IdentifierValue;
 }
-export interface DocTokenData extends LexerTokenData {
+export interface DocTokenData {
   kind: LexerTokenKind.DOC;
   doc: DocValue;
 }
-export interface CommentTokenData extends LexerTokenData {
+export interface CommentTokenData {
   kind: LexerTokenKind.COMMENT;
   comment: CommentValue;
 }
 
-export type LexerTokenDataType =
+export type LexerTokenData =
   | SeparatorTokenData
   | OperatorTokenData
   | LiteralTokenData
@@ -104,7 +101,7 @@ export type LexerTokenDataType =
   | CommentTokenData;
 export class LexerToken {
   /// Data of the token.
-  readonly data: LexerTokenDataType;
+  readonly data: LexerTokenData;
 
   /// Span of the source code which this token covers.
   readonly span: Span;
@@ -116,7 +113,7 @@ export class LexerToken {
   next: LexerToken | null;
 
   constructor(
-    data: LexerTokenDataType,
+    data: LexerTokenData,
     span: Span,
     location: Location,
     last: LexerToken | null

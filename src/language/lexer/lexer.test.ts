@@ -3,17 +3,19 @@ import { Lexer } from './lexer';
 import {
   CommentTokenData,
   DecoratorTokenData,
+  DecoratorValue,
   formatTokenData,
   IdentifierTokenData,
+  IdentifierValue,
   KeywordTokenData,
+  KeywordValue,
   LexerToken,
-  // is eslint retarded?
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   LexerTokenData,
-  LexerTokenDataType,
   LexerTokenKind,
   LiteralTokenData,
+  LiteralValue,
   OperatorTokenData,
+  OperatorValue,
   SeparatorTokenData,
   SeparatorValue,
 } from './token';
@@ -23,13 +25,13 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
     interface Matchers<R> {
-      toHaveTokenData<D extends LexerTokenData>(data: D): R;
+      toHaveTokenData(data: LexerTokenData): R;
     }
   }
 }
 // Add the actual custom matcher
 expect.extend({
-  toHaveTokenData(actual: LexerToken, data: LexerTokenDataType) {
+  toHaveTokenData(actual: LexerToken, data: LexerTokenData) {
     function errorMessage(): string {
       return `Expected (${formatTokenData(
         data
@@ -140,7 +142,7 @@ describe('lexer', () => {
 
     it('operators', () => {
       const lexer = new Lexer(new Source(': + : - : ++ :: --'));
-      const expectedTokens = [
+      const expectedTokens: (LexerTokenData | OperatorValue)[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
         ':',
         '+',
@@ -176,7 +178,7 @@ describe('lexer', () => {
           'true false\n1 0x10 0xFa 0b10 0o10 10 10.1 1234 "abcd" false'
         )
       );
-      const expectedTokens = [
+      const expectedTokens: (LexerTokenData | LiteralValue)[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
         true,
         false,
@@ -209,7 +211,7 @@ describe('lexer', () => {
 
     it('decorators', () => {
       const lexer = new Lexer(new Source('@safe @unsafe @idempotent @safe'));
-      const expectedTokens = [
+      const expectedTokens: (LexerTokenData | DecoratorValue)[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
         'safe',
         'unsafe',
@@ -236,7 +238,7 @@ describe('lexer', () => {
       const lexer = new Lexer(
         new Source('usecase field map Number String \n\tBoolean')
       );
-      const expectedTokens = [
+      const expectedTokens: (LexerTokenData | KeywordValue)[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
         'usecase',
         'field',
@@ -263,7 +265,7 @@ describe('lexer', () => {
 
     it('identifiers', () => {
       const lexer = new Lexer(new Source('ident my fier pls'));
-      const expectedTokens = [
+      const expectedTokens: (LexerTokenData | IdentifierValue)[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
         'ident',
         'my',
@@ -298,7 +300,7 @@ describe('lexer', () => {
         ''''''as 'a zxc ''awe 'z 's''''' was''''''
       `)
       );
-      const expectedTokens = [
+      const expectedTokens: LexerTokenData[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
         { kind: LexerTokenKind.DOC, doc: 'line doc comment' },
         {
@@ -330,7 +332,7 @@ describe('lexer', () => {
         asdf
       `)
       );
-      const expectedTokens = [
+      const expectedTokens: LexerTokenData[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
         { kind: LexerTokenKind.COMMENT, comment: ' line comment' },
         { kind: LexerTokenKind.COMMENT, comment: '' },
