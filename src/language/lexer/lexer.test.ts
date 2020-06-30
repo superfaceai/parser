@@ -18,6 +18,7 @@ import {
   OperatorValue,
   SeparatorTokenData,
   SeparatorValue,
+  StringTokenData,
   StringValue,
 } from './token';
 
@@ -64,6 +65,13 @@ expect.extend({
 
         case LexerTokenKind.LITERAL:
           if ((actual.data as LiteralTokenData).literal !== data.literal) {
+            pass = false;
+            message = errorMessage();
+          }
+          break;
+
+        case LexerTokenKind.STRING:
+          if ((actual.data as StringTokenData).string !== data.string) {
             pass = false;
             message = errorMessage();
           }

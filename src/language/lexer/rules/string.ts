@@ -43,6 +43,71 @@ function resolveStringLiteralEscape(
   };
 }
 
+function transformBlockStringValue(string: string): string {
+  let predecingEmptyLines = 0;
+  let foundNonemptyLine = false;
+
+  let followingEmptyLines = 0;
+
+  let commonIndentChar: number | null = null;
+  let commonIndent: number | null = null;
+
+  const lines = string.split('\n');
+  for (const line of lines) {
+    if (line.trim() === '') {
+      // Count empty lines
+      if (!foundNonemptyLine) {
+        predecingEmptyLines += 1;
+      }
+      followingEmptyLines += 1;
+    } else {
+      foundNonemptyLine = true;
+      followingEmptyLines = 0;
+
+      // Handle common ident
+      if (commonIndent === 0) {
+        // Once we find a line with 0 indent, don't bother with indent anymore
+        continue;
+      }
+
+      // Handle first non-empty line
+      if (commonIndentChar === null) {
+        const firstChar = line.charCodeAt(0);
+        if (util.isWhitespace(firstChar)) {
+          commonIndent = util.countStarting(char => char === firstChar, line);
+          commonIndentChar = firstChar;
+        } else {
+          commonIndent = 0;
+        }
+
+        continue;
+      }
+
+      // Handle non-first non-empty lines
+      commonIndent = Math.min(
+        commonIndentChar,
+        util.countStarting(char => char === commonIndentChar, line)
+      );
+    }
+  }
+
+  const filteredLines = lines.slice(
+    predecingEmptyLines,
+    lines.length - followingEmptyLines
+  );
+
+  let output = '';
+  if (commonIndent !== null) {
+    // Type inference fails without this intermediate variable.
+    const c = commonIndent;
+    output = filteredLines.map(l => l.slice(c)).join('\n');
+  } else {
+    output = filteredLines.join('\n');
+  }
+
+  return output;
+}
+
 /// Tries to parse a string literal token at current position.
 ///
 /// Returns `null` if the current position cannot contain a string literal.
@@ -103,10 +168,10 @@ export function tryParseStringLiteral(
 
   // Closure to reduce repeating
   const eatChars = (count: number, add?: boolean | string): void => {
-    if (typeof add === 'boolean') {
-      resultString += restSlice.slice(0, count);
-    } else if (typeof add === 'string') {
+    if (typeof add === 'string') {
       resultString += add;
+    } else if (add ?? true) {
+      resultString += restSlice.slice(0, count);
     }
 
     restSlice = restSlice.slice(count);
@@ -164,6 +229,9 @@ export function tryParseStringLiteral(
   }
 
   // TODO: transform in case it's a block string
+  if (startingQuoteChars === 3) {
+    resultString = transformBlockStringValue(resultString);
+  }
 
   return [
     {
