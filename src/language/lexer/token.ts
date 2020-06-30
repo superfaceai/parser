@@ -1,17 +1,21 @@
 import { Location, Span } from '../source';
+import * as util from './util';
 
 /// Enum describing the different kinds of tokens that the lexer emits.
 export const enum LexerTokenKind {
   SEPARATOR, // SOF/EOF, (), [], {}
-  OPERATOR, // :, +, -
-  LITERAL, // number, string or boolean, though boolean literals are basically just keywords
+  OPERATOR, // :, !, +, -
+  LITERAL, // number or boolean
+  STRING, // string literals - separate because it makes later stages easier
   DECORATOR, // @safe, @unsafe, @idempotent
   KEYWORD, // usecase, field, map, Number, String, Boolean
   IDENTIFIER, // a-z A-Z _
-  DOC, // ' and '''
   COMMENT, // line comments (# foo)
 }
 
+export type LexerScanRule<T> = [T, (_: number) => boolean];
+
+// Separators
 export type SeparatorFile = 'SOF' | 'EOF';
 export type SeparatorParen = '(' | ')';
 export type SeparatorBracket = '[' | ']';
@@ -21,41 +25,68 @@ export type SeparatorValue =
   | SeparatorParen
   | SeparatorBracket
   | SeparatorBrace;
+export const SEPARATORS: {
+  [P in SeparatorParen | SeparatorBracket | SeparatorBrace]: LexerScanRule<P>;
+} = {
+  '(': ['(', util.isAny],
+  ')': [')', util.isAny],
+  '[': ['[', util.isAny],
+  ']': [']', util.isAny],
+  '{': ['{', util.isAny],
+  '}': ['}', util.isAny],
+};
 
+// Operators
 export type OperatorValue = ':' | '+' | '-' | '!';
-export type LiteralValue = number | boolean | string;
+export const OPERATORS: { [P in OperatorValue]: LexerScanRule<P> } = {
+  ':': [':', util.isAny],
+  '+': ['+', util.isAny],
+  '-': ['-', util.isAny],
+  '!': ['!', util.isAny],
+};
+
+// Literals
+export const LITERALS_BOOL: {
+  [x: string]: LexerScanRule<boolean>;
+} = {
+  true: [true, util.isNotValidIdentifierChar],
+  false: [false, util.isNotValidIdentifierChar],
+};
+export type LiteralValue = number | boolean;
+export type StringValue = string;
+
+// Decorators
 export type DecoratorValue = 'safe' | 'unsafe' | 'idempotent';
+export const DECORATORS: { [P in DecoratorValue]: LexerScanRule<P> } = {
+  safe: ['safe', util.isNotValidIdentifierChar],
+  unsafe: ['unsafe', util.isNotValidIdentifierChar],
+  idempotent: ['idempotent', util.isNotValidIdentifierChar],
+};
+
+// Keywords
 export type KeywordValue =
   | 'usecase'
   | 'field'
-  | 'map'
+  | 'model'
   | 'Number'
   | 'String'
-  | 'Boolean';
+  | 'Boolean'
+  | 'Enum';
+// Not the pretties, but centralizes keywords here and doesn't allow for desync between `KeywordValue` type and `KEYWORDS` value.
+export const KEYWORDS: { [P in KeywordValue]: LexerScanRule<P> } = {
+  usecase: ['usecase', util.isNotValidIdentifierChar],
+  field: ['field', util.isNotValidIdentifierChar],
+  model: ['model', util.isNotValidIdentifierChar],
+  Number: ['Number', util.isNotValidIdentifierChar],
+  String: ['String', util.isNotValidIdentifierChar],
+  Boolean: ['Boolean', util.isNotValidIdentifierChar],
+  Enum: ['Enum', util.isNotValidIdentifierChar],
+};
+
 export type IdentifierValue = string;
-export type DocValue = string;
 export type CommentValue = string;
 
-export function formatTokenData(data: LexerTokenData): string {
-  switch (data.kind) {
-    case LexerTokenKind.SEPARATOR:
-      return `SEP ${data.separator}`;
-    case LexerTokenKind.OPERATOR:
-      return `OP ${data.operator}`;
-    case LexerTokenKind.LITERAL:
-      return `LIT ${data.literal}`;
-    case LexerTokenKind.DECORATOR:
-      return `DEC ${data.decorator}`;
-    case LexerTokenKind.KEYWORD:
-      return `KEY ${data.keyword}`;
-    case LexerTokenKind.IDENTIFIER:
-      return `ID ${data.identifier}`;
-    case LexerTokenKind.DOC:
-      return `DOC ${data.doc}`;
-    case LexerTokenKind.COMMENT:
-      return `COM ${data.comment}`;
-  }
-}
+// Token datas //
 
 export interface SeparatorTokenData {
   kind: LexerTokenKind.SEPARATOR;
@@ -69,6 +100,10 @@ export interface LiteralTokenData {
   kind: LexerTokenKind.LITERAL;
   literal: LiteralValue;
 }
+export interface StringTokenData {
+  kind: LexerTokenKind.STRING;
+  string: StringValue;
+}
 export interface DecoratorTokenData {
   kind: LexerTokenKind.DECORATOR;
   decorator: DecoratorValue;
@@ -81,10 +116,6 @@ export interface IdentifierTokenData {
   kind: LexerTokenKind.IDENTIFIER;
   identifier: IdentifierValue;
 }
-export interface DocTokenData {
-  kind: LexerTokenKind.DOC;
-  doc: DocValue;
-}
 export interface CommentTokenData {
   kind: LexerTokenKind.COMMENT;
   comment: CommentValue;
@@ -94,11 +125,35 @@ export type LexerTokenData =
   | SeparatorTokenData
   | OperatorTokenData
   | LiteralTokenData
+  | StringTokenData
   | DecoratorTokenData
   | KeywordTokenData
   | IdentifierTokenData
-  | DocTokenData
   | CommentTokenData;
+
+export function formatTokenData(data: LexerTokenData): string {
+  switch (data.kind) {
+    case LexerTokenKind.SEPARATOR:
+      return `SEP ${data.separator}`;
+    case LexerTokenKind.OPERATOR:
+      return `OP ${data.operator}`;
+    case LexerTokenKind.LITERAL:
+      return `LIT ${data.literal}`;
+    case LexerTokenKind.STRING:
+      return `STR ${data.string}`;
+    case LexerTokenKind.DECORATOR:
+      return `DEC ${data.decorator}`;
+    case LexerTokenKind.KEYWORD:
+      return `KEY ${data.keyword}`;
+    case LexerTokenKind.IDENTIFIER:
+      return `ID ${data.identifier}`;
+    case LexerTokenKind.COMMENT:
+      return `COM ${data.comment}`;
+  }
+}
+
+// Token class //
+
 export class LexerToken {
   /// Data of the token.
   readonly data: LexerTokenData;
@@ -108,21 +163,10 @@ export class LexerToken {
   /// Location in the formatted source code of this token.
   readonly location: Location;
 
-  /// Tokens form a doubly-linked list.
-  readonly last: LexerToken | null;
-  next: LexerToken | null;
-
-  constructor(
-    data: LexerTokenData,
-    span: Span,
-    location: Location,
-    last: LexerToken | null
-  ) {
+  constructor(data: LexerTokenData, span: Span, location: Location) {
     this.data = data;
     this.span = span;
     this.location = location;
-    this.last = last;
-    this.next = null;
   }
 
   isSOF(): boolean {

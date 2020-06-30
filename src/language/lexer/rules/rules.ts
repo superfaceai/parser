@@ -1,21 +1,22 @@
-import { Span } from '../source';
+import { Span } from '../../source';
 import {
   CommentTokenData,
+  DECORATORS,
   DecoratorTokenData,
-  DecoratorValue,
-  DocTokenData,
   IdentifierTokenData,
+  KEYWORDS,
   KeywordTokenData,
-  KeywordValue,
+  LexerScanRule,
   LexerTokenData,
   LexerTokenKind,
+  LITERALS_BOOL,
   LiteralTokenData,
+  OPERATORS,
   OperatorTokenData,
-  OperatorValue,
+  SEPARATORS,
   SeparatorTokenData,
-  SeparatorValue,
-} from './token';
-import * as util from './util';
+} from '../token';
+import * as util from '../util';
 
 /// Error returned internally by the lexer `tryParse*` methods.
 export class ParseError {
@@ -33,7 +34,24 @@ export class ParseError {
   }
 }
 
-type ParseResult<T extends LexerTokenData> = ([T, number] | null) | ParseError;
+export type ParseResult<T extends LexerTokenData> =
+  | ([T, number] | null)
+  | ParseError;
+
+function tryParseScannerRules<T>(
+  slice: string,
+  rules: { [x: string]: LexerScanRule<T> }
+): { value: T; length: number } | null {
+  let result = null;
+  for (const [key, [word, predicate]] of Object.entries(rules)) {
+    result = util.checkKeywordLiteral<T>(slice, key, word, predicate) ?? null;
+    if (result ?? false) {
+      break;
+    }
+  }
+
+  return result;
+}
 
 /// Tries to parse a separator token at current position.
 ///
@@ -52,38 +70,17 @@ export function tryParseSeparator(
     ];
   }
 
-  const charCode = slice.charCodeAt(0);
-  let separator: SeparatorValue;
-  switch (charCode) {
-    case 40: // (
-      separator = '(';
-      break;
-    case 41: // )
-      separator = ')';
-      break;
-    case 91: // [
-      separator = '[';
-      break;
-    case 93: // ]
-      separator = ']';
-      break;
-    case 123: // {
-      separator = '{';
-      break;
-    case 125: // }
-      separator = '}';
-      break;
-
-    default:
-      return null;
+  const parsed = tryParseScannerRules(slice, SEPARATORS);
+  if (parsed === null) {
+    return null;
   }
 
   return [
     {
       kind: LexerTokenKind.SEPARATOR,
-      separator,
+      separator: parsed.value,
     },
-    1,
+    parsed.length,
   ];
 }
 
@@ -93,85 +90,32 @@ export function tryParseSeparator(
 export function tryParseOperator(
   slice: string
 ): ParseResult<OperatorTokenData> {
-  const charCode = slice.charCodeAt(0);
-
-  let operatorValue: OperatorValue;
-  switch (charCode) {
-    case 58: // :
-      operatorValue = ':';
-      break;
-
-    case 43:
-      operatorValue = '+';
-      break;
-
-    case 45: // -
-      operatorValue = '-';
-      break;
-
-    case 33: // !
-      operatorValue = '!';
-      break;
-
-    default:
-      return null;
+  const parsed = tryParseScannerRules(slice, OPERATORS);
+  if (parsed === null) {
+    return null;
   }
 
   return [
     {
       kind: LexerTokenKind.OPERATOR,
-      operator: operatorValue,
+      operator: parsed.value,
     },
-    operatorValue.length,
+    parsed.length,
   ];
 }
 
 function tryParseLiteralBoolean(slice: string): ParseResult<LiteralTokenData> {
-  const keywordLiteralBool =
-    util.checkKeywordLiteral(slice, 'true', true) ??
-    util.checkKeywordLiteral(slice, 'false', false);
-  if (keywordLiteralBool !== null) {
-    return [
-      {
-        kind: LexerTokenKind.LITERAL,
-        literal: keywordLiteralBool.value,
-      },
-      keywordLiteralBool.length,
-    ];
-  }
-
-  return null;
-}
-
-function tryParseLiteralString(slice: string): ParseResult<LiteralTokenData> {
-  if (!util.isStringLiteralChar(slice.charCodeAt(0))) {
+  const parsed = tryParseScannerRules(slice, LITERALS_BOOL);
+  if (parsed === null) {
     return null;
-  }
-
-  const stringSlice = slice.slice(1);
-  const literalStringLength = util.countStarting(
-    char => !util.isStringLiteralChar(char),
-    stringSlice
-  );
-
-  const nextChar = stringSlice.charCodeAt(literalStringLength);
-  if (isNaN(nextChar)) {
-    return new ParseError(
-      LexerTokenKind.LITERAL,
-      { start: 0, end: literalStringLength + 1 },
-      'Unexpected EOF'
-    );
-  }
-  if (!util.isStringLiteralChar(nextChar)) {
-    throw 'Invalid lexer state. This in an error in the lexer.';
   }
 
   return [
     {
       kind: LexerTokenKind.LITERAL,
-      literal: stringSlice.slice(0, literalStringLength),
+      literal: parsed.value,
     },
-    1 + literalStringLength + 1,
+    parsed.length,
   ];
 }
 
@@ -185,8 +129,8 @@ function tryParseLiteralNumber(slice: string): ParseResult<LiteralTokenData> {
     16,
     _ => true
   ) ??
-    util.checkKeywordLiteral(slice, '0b', 2, _ => true) ??
-    util.checkKeywordLiteral(slice, '0o', 8, _ => true) ?? {
+    util.checkKeywordLiteral(slice, '0b', 2, util.isAny) ??
+    util.checkKeywordLiteral(slice, '0o', 8, util.isAny) ?? {
       value: 10,
       length: 0,
     };
@@ -252,11 +196,7 @@ function tryParseLiteralNumber(slice: string): ParseResult<LiteralTokenData> {
 ///
 /// Returns an error if parsing fails.
 export function tryParseLiteral(slice: string): ParseResult<LiteralTokenData> {
-  return (
-    tryParseLiteralBoolean(slice) ??
-    tryParseLiteralString(slice) ??
-    tryParseLiteralNumber(slice)
-  );
+  return tryParseLiteralBoolean(slice) ?? tryParseLiteralNumber(slice);
 }
 
 /// Tries to parse a decorator token at current position.
@@ -270,34 +210,23 @@ export function tryParseDecorator(
   if (!util.isDecoratorChar(slice.charCodeAt(0))) {
     return null;
   }
-  const decoratorSlice = slice.slice(1);
 
-  const decoratorKeyword =
-    util.checkKeywordLiteral<DecoratorValue>(decoratorSlice, 'safe', 'safe') ??
-    util.checkKeywordLiteral<DecoratorValue>(
-      decoratorSlice,
-      'unsafe',
-      'unsafe'
-    ) ??
-    util.checkKeywordLiteral<DecoratorValue>(
-      decoratorSlice,
-      'idempotent',
-      'idempotent'
-    );
-  if (decoratorKeyword === null) {
+  const parsed = tryParseScannerRules(slice.slice(1), DECORATORS);
+  if (parsed === null) {
     return new ParseError(
       LexerTokenKind.DECORATOR,
       { start: 0, end: 2 },
-      'Expected one of [safe, unsafe, idempotent]'
+      `Expected one of [${Object.keys(DECORATORS).join(', ')}]`
     );
   }
 
   return [
     {
       kind: LexerTokenKind.DECORATOR,
-      decorator: decoratorKeyword.value,
+      decorator: parsed.value,
     },
-    decoratorKeyword.length + 1,
+    // + 1 for decorator char
+    1 + parsed.length,
   ];
 }
 
@@ -305,23 +234,17 @@ export function tryParseDecorator(
 ///
 /// Returns `null` if the current position cannot contain a keyword.
 export function tryParseKeyword(slice: string): ParseResult<KeywordTokenData> {
-  const keyword =
-    util.checkKeywordLiteral<KeywordValue>(slice, 'usecase', 'usecase') ??
-    util.checkKeywordLiteral<KeywordValue>(slice, 'field', 'field') ??
-    util.checkKeywordLiteral<KeywordValue>(slice, 'map', 'map') ??
-    util.checkKeywordLiteral<KeywordValue>(slice, 'Number', 'Number') ??
-    util.checkKeywordLiteral<KeywordValue>(slice, 'String', 'String') ??
-    util.checkKeywordLiteral<KeywordValue>(slice, 'Boolean', 'Boolean');
-  if (keyword === null) {
+  const parsed = tryParseScannerRules(slice, KEYWORDS);
+  if (parsed === null) {
     return null;
   }
 
   return [
     {
       kind: LexerTokenKind.KEYWORD,
-      keyword: keyword.value,
+      keyword: parsed.value,
     },
-    keyword.length,
+    parsed.length,
   ];
 }
 
@@ -342,56 +265,6 @@ export function tryParseIdentifier(
       identifier: slice.slice(0, identLength),
     },
     identLength,
-  ];
-}
-
-/// Tries to parse a doc token at current position.
-///
-/// Returns `null` if the current position cannot contain a doc.
-///
-/// Returns an error if parsing fails.
-export function tryParseDoc(slice: string): ParseResult<DocTokenData> {
-  const startingDocChars = util.countStartingDocChars(slice);
-  // TODO: Limit to only single and triple groups?
-
-  if (startingDocChars === 0) {
-    return null;
-  }
-
-  let eatenChars = startingDocChars;
-  let docSliceRest = slice.slice(startingDocChars);
-  for (;;) {
-    const nondocChars = util.countStarting(
-      char => !util.isDocChar(char),
-      docSliceRest
-    );
-    docSliceRest = docSliceRest.slice(nondocChars);
-    eatenChars += nondocChars;
-
-    const docChars = util.countStartingDocChars(docSliceRest);
-    if (docChars >= startingDocChars) {
-      eatenChars += startingDocChars;
-      break;
-    } else {
-      docSliceRest = docSliceRest.slice(docChars);
-      eatenChars += docChars;
-    }
-
-    if (docSliceRest.length === 0) {
-      return new ParseError(
-        LexerTokenKind.DOC,
-        { start: 0, end: eatenChars },
-        'Unexpected EOF'
-      );
-    }
-  }
-
-  return [
-    {
-      kind: LexerTokenKind.DOC,
-      doc: slice.slice(startingDocChars, eatenChars - startingDocChars),
-    },
-    eatenChars,
   ];
 }
 

@@ -17,6 +17,8 @@ export function countStarting(
   return position;
 }
 
+// Common scanner checks
+
 export function isLetter(char: number): boolean {
   // A-Z, a-z
   return (char >= 65 && char <= 90) || (char >= 97 && char <= 122);
@@ -125,28 +127,34 @@ export function countStartingWithNewlines(
 }
 
 export function isStringLiteralChar(char: number): boolean {
-  // "
-  return char === 34;
+  // ", '
+  return char === 34 || char === 39;
+}
+export function isStringLiteralEscapeChar(char: number): boolean {
+  // \
+  return char === 92;
 }
 export function isDecoratorChar(char: number): boolean {
   // @
   return char === 64;
 }
-export function isDocChar(char: number): boolean {
-  // '
-  return char === 39;
-}
-export const countStartingDocChars = countStarting.bind(undefined, isDocChar);
-
 export function isCommentChar(char: number): boolean {
   // #
   return char === 35;
 }
 
+// Keyword scanner checks
+export function isAny(_: number): boolean {
+  return true;
+}
+export function isNotValidIdentifierChar(char: number): boolean {
+  return !isValidIdentifierChar(char);
+}
+
 /// Checks if the following characters match the specified keyword and are followed
 /// by a character matching an optional predicate.
 ///
-/// If the predicate is not specified, the default predicate is `!isValidIdentifierChar`
+/// If the predicate is not specified, the default predicate is `isNotValidIdentifierChar`
 export function checkKeywordLiteral<T>(
   str: string,
   keyword: string,
@@ -154,10 +162,9 @@ export function checkKeywordLiteral<T>(
   charAfterPredicate?: (_: number) => boolean
 ): { value: T; length: number } | null {
   if (str.startsWith(keyword)) {
-    const checkPredicate =
-      charAfterPredicate ??
-      ((char: number): boolean => !isValidIdentifierChar(char));
+    const checkPredicate = charAfterPredicate ?? isNotValidIdentifierChar;
     const charAfter = str.charCodeAt(keyword.length);
+
     if (!checkPredicate(charAfter)) {
       return null;
     }

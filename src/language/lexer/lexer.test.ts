@@ -18,6 +18,7 @@ import {
   OperatorValue,
   SeparatorTokenData,
   SeparatorValue,
+  StringValue,
 } from './token';
 
 // Declare custom matcher for sake of Typescript
@@ -177,9 +178,7 @@ describe('lexer', () => {
 
     it('literals', () => {
       const lexer = new Lexer(
-        new Source(
-          'true false\n1 0x10 0xFa 0b10 0o10 10 10.1 1234 "abcd" false'
-        )
+        new Source('true false\n1 0x10 0xFa 0b10 0o10 10 10.1 1234 false')
       );
       const expectedTokens: (LexerTokenData | LiteralValue)[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
@@ -193,7 +192,6 @@ describe('lexer', () => {
         10,
         10.1,
         1234,
-        'abcd',
         false,
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
@@ -207,6 +205,49 @@ describe('lexer', () => {
           expect(actual).toHaveTokenData({
             kind: LexerTokenKind.LITERAL,
             literal: expected,
+          });
+        }
+      }
+    });
+
+    it('strings', () => {
+      const lexer = new Lexer(
+        new Source(
+          `
+          "asdf \\n \\" \\r \\t \\\\"
+          """
+          asdf block string "" ''
+          """
+          ""
+
+          'asdf \\''
+          '''
+          asdf block string '' escaped
+          '''
+          ''
+          `
+        )
+      );
+      const expectedTokens: (LexerTokenData | StringValue)[] = [
+        { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
+        'asdf \n " \r \t \\',
+        'asdf block string "" \'\'',
+        '',
+        "asdf '",
+        "asdf block string '' escaped",
+        '',
+        { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
+      ];
+
+      for (const expected of expectedTokens) {
+        const actual = lexer.advance();
+
+        if (typeof expected === 'object') {
+          expect(actual).toHaveTokenData(expected);
+        } else {
+          expect(actual).toHaveTokenData({
+            kind: LexerTokenKind.STRING,
+            string: expected,
           });
         }
       }
@@ -239,16 +280,17 @@ describe('lexer', () => {
 
     it('keywords', () => {
       const lexer = new Lexer(
-        new Source('usecase field map Number String \n\tBoolean')
+        new Source('usecase field model Number String \n\tBoolean Enum')
       );
       const expectedTokens: (LexerTokenData | KeywordValue)[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
         'usecase',
         'field',
-        'map',
+        'model',
         'Number',
         'String',
         'Boolean',
+        'Enum',
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
 
@@ -267,13 +309,18 @@ describe('lexer', () => {
     });
 
     it('identifiers', () => {
-      const lexer = new Lexer(new Source('ident my fier pls'));
+      const lexer = new Lexer(
+        new Source('ident my fier pls usecaseNOT modelout boolean')
+      );
       const expectedTokens: (LexerTokenData | IdentifierValue)[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
         'ident',
         'my',
         'fier',
         'pls',
+        'usecaseNOT',
+        'modelout',
+        'boolean',
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
 
@@ -288,41 +335,6 @@ describe('lexer', () => {
             identifier: expected,
           });
         }
-      }
-    });
-
-    it('docs', () => {
-      const lexer = new Lexer(
-        new Source(`
-        'line doc comment'
-        '''
-        block doc comment
-
-        stuff
-        '''
-        ''''''as 'a zxc ''awe 'z 's''''' was''''''
-      `)
-      );
-      const expectedTokens: LexerTokenData[] = [
-        { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
-        { kind: LexerTokenKind.DOC, doc: 'line doc comment' },
-        {
-          kind: LexerTokenKind.DOC,
-          doc: `block doc comment
-
-        stuff`,
-        },
-        {
-          kind: LexerTokenKind.DOC,
-          doc: "as 'a zxc ''awe 'z 's''''' was",
-        },
-        { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
-      ];
-
-      for (const expected of expectedTokens) {
-        const actual = lexer.advance();
-
-        expect(actual).toHaveTokenData(expected);
       }
     });
 
@@ -352,7 +364,7 @@ describe('lexer', () => {
       }
     });
 
-    it('complex', () => {
+    it('is valid complex', () => {
       const lexer = new Lexer(
         new Source(
           `'''
@@ -470,16 +482,21 @@ describe('lexer', () => {
       expect(() => lexer.advance()).toThrow('Unexpected EOF');
     });
 
+    it('block string literal', () => {
+      const lexer = new Lexer(new Source("'''asdf''"));
+      expect(() => lexer.advance()).toThrow('Unexpected EOF');
+    });
+
+    it('string escape sequence', () => {
+      const lexer = new Lexer(new Source('"asdf \\x"'));
+      expect(() => lexer.advance()).toThrow('Invalid escape sequence');
+    });
+
     it('decorator', () => {
       const lexer = new Lexer(new Source('@afe'));
       expect(() => lexer.advance()).toThrow(
         'Expected one of [safe, unsafe, idempotent]'
       );
-    });
-
-    it('doc string', () => {
-      const lexer = new Lexer(new Source("'asdf"));
-      expect(() => lexer.advance()).toThrow('Unexpected EOF');
     });
   });
 

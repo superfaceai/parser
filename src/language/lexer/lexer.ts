@@ -14,6 +14,8 @@ export class Lexer {
   source: Source;
 
   private currentToken: LexerToken;
+  private nextToken: LexerToken | null;
+
   /// Indexed from 1
   private currentLine: number;
   // Character offset in the source.body at which current line begins.
@@ -28,24 +30,25 @@ export class Lexer {
         separator: 'SOF',
       },
       { start: 0, end: 0 },
-      { line: 1, column: 1 },
-      null
+      { line: 1, column: 1 }
     );
+    this.nextToken = null;
 
     this.currentLine = 1;
     this.currentLineStart = 0;
   }
 
-  /// Advances the lexer, returning the current token.
+  /// Advances the lexer returning the current token.
   advance(): LexerToken {
     // Specialcase the first token
-    if (this.currentToken.isSOF() && this.currentToken.next === null) {
+    if (this.currentToken.isSOF() && this.nextToken === null) {
       this.lookahead();
 
       return this.currentToken;
     }
 
     this.currentToken = this.lookahead();
+    this.nextToken = null;
 
     return this.currentToken;
   }
@@ -58,11 +61,11 @@ export class Lexer {
     }
 
     // read next token if not read already
-    if (this.currentToken.next === null) {
-      this.currentToken.next = this.readNextToken();
+    if (this.nextToken === null) {
+      this.nextToken = this.readNextToken();
     }
 
-    return this.currentToken.next;
+    return this.nextToken;
   }
 
   /// Returns a generator adaptor that produces generator-compatible values.
@@ -108,10 +111,10 @@ export class Lexer {
       rules.tryParseSeparator(slice) ??
       rules.tryParseOperator(slice) ??
       rules.tryParseLiteral(slice) ??
+      rules.tryParseStringLiteral(slice) ??
       rules.tryParseDecorator(slice) ??
       rules.tryParseKeyword(slice) ??
       rules.tryParseIdentifier(slice) ??
-      rules.tryParseDoc(slice) ??
       rules.tryParseComment(slice);
 
     // Didn't parse as any known token
@@ -148,8 +151,7 @@ export class Lexer {
     return new LexerToken(
       tokenParseResult[0],
       { start, end: start + tokenParseResult[1] },
-      location,
-      this.currentToken
+      location
     );
   }
 
