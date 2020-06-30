@@ -33,7 +33,7 @@ _Note: There is no distinction between integers and floats in javascript, so the
 
 String literals a bit special. During lexing, string literals and doc comments are treated the same, since they share syntax.
 
-String literals support single (`'`) and double quotes (`"`). Inside these quotes, only a limited set of characters is supported, others must be escaped. Additionally, literals can be triple-quoted (`'''` or `"""`). These literals allow all characters (except for other triple quotes) inside, but do not allow escaping.
+String literals support single (`'`) and double quotes (`"`). Inside these quotes, only a limited set of characters is supported, others can be escaped (`\n, \r, \t, \\, \', \"`). Additionally, literals can be triple-quoted (`'''` or `"""`). These literals allow all characters (except for other triple quotes) inside, but do not allow escaping.
 
 ## Decorators
 
@@ -49,9 +49,8 @@ It is possible to merge these with keywords, but it might make semantical analys
 
 Keywords are identifiers specially defined in the language. Defined keywords are:
 
-- `usecase` and `model`
+- `usecase`, `model` and `field`
 - `input`, `result` and `async`
-- `field`
 - `Number`, `String`, `Boolean` and `Enum`
 
 ## Identifier

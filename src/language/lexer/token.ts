@@ -68,6 +68,9 @@ export type KeywordValue =
   | 'usecase'
   | 'field'
   | 'model'
+  | 'input'
+  | 'result'
+  | 'async'
   | 'Number'
   | 'String'
   | 'Boolean'
@@ -75,8 +78,11 @@ export type KeywordValue =
 // Not the pretties, but centralizes keywords here and doesn't allow for desync between `KeywordValue` type and `KEYWORDS` value.
 export const KEYWORDS: { [P in KeywordValue]: LexerScanRule<P> } = {
   usecase: ['usecase', util.isNotValidIdentifierChar],
-  field: ['field', util.isNotValidIdentifierChar],
   model: ['model', util.isNotValidIdentifierChar],
+  field: ['field', util.isNotValidIdentifierChar],
+  input: ['input', util.isNotValidIdentifierChar],
+  result: ['result', util.isNotValidIdentifierChar],
+  async: ['async', util.isNotValidIdentifierChar],
   Number: ['Number', util.isNotValidIdentifierChar],
   String: ['String', util.isNotValidIdentifierChar],
   Boolean: ['Boolean', util.isNotValidIdentifierChar],

@@ -288,13 +288,18 @@ describe('lexer', () => {
 
     it('keywords', () => {
       const lexer = new Lexer(
-        new Source('usecase field model Number String \n\tBoolean Enum')
+        new Source(
+          'usecase field model input result async Number String \n\tBoolean Enum'
+        )
       );
       const expectedTokens: (LexerTokenData | KeywordValue)[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
         'usecase',
         'field',
         'model',
+        'input',
+        'result',
+        'async',
         'Number',
         'String',
         'Boolean',
