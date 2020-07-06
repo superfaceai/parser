@@ -17,6 +17,7 @@ Operators operate on arguments (usually identifiers or literals). Defined operat
 
 - `:` - assignment
 - `!` - non-null assertion
+- `|` - type union operator
 - `+` and `-`
 
 ## Literals
@@ -50,10 +51,10 @@ It is possible to merge these with keywords, but it might make semantical analys
 Keywords are identifiers specially defined in the language. Defined keywords are:
 
 - `usecase`, `model` and `field`
-- `input`, `result` and `async`
+- `input`, `result`, `errors`, and `async`
 - `Number`, `String`, `Boolean` and `Enum`
 
-## Identifier
+## Identifiers
 
 Identifiers are user-defined names. Allowed identifiers have format: `[_a-zA-Z]+`
 

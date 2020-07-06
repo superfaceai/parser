@@ -43,7 +43,7 @@ export const OPERATORS: { [P in OperatorValue]: LexerScanRule<P> } = {
   '+': ['+', util.isAny],
   '-': ['-', util.isAny],
   '!': ['!', util.isAny],
-  '|': ['|', util.isAny]
+  '|': ['|', util.isAny],
 };
 
 // Literals
@@ -72,6 +72,7 @@ export type KeywordValue =
   | 'input'
   | 'result'
   | 'async'
+  | 'errors'
   | 'Number'
   | 'String'
   | 'Boolean'
@@ -84,6 +85,7 @@ export const KEYWORDS: { [P in KeywordValue]: LexerScanRule<P> } = {
   input: ['input', util.isNotValidIdentifierChar],
   result: ['result', util.isNotValidIdentifierChar],
   async: ['async', util.isNotValidIdentifierChar],
+  errors: ['errors', util.isNotValidIdentifierChar],
   Number: ['Number', util.isNotValidIdentifierChar],
   String: ['String', util.isNotValidIdentifierChar],
   Boolean: ['Boolean', util.isNotValidIdentifierChar],
