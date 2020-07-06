@@ -150,13 +150,14 @@ describe('lexer', () => {
     });
 
     it('operators', () => {
-      const lexer = new Lexer(new Source(': ! + : - : ++ :: -- !!'));
+      const lexer = new Lexer(new Source(': ! + : | - : ++ :: -- !! ||'));
       const expectedTokens: (LexerTokenData | OperatorValue)[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
         ':',
         '!',
         '+',
         ':',
+        '|',
         '-',
         ':',
         '+',
@@ -167,6 +168,8 @@ describe('lexer', () => {
         '-',
         '!',
         '!',
+        '|',
+        '|',
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
 
