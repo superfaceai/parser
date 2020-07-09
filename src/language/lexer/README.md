@@ -46,17 +46,9 @@ Decorators, or alternatively attributes, are keyword-like values prefixed with `
 
 It is possible to merge these with keywords, but it might make semantical analysis a little bit easier later on.
 
-## Keywords
-
-Keywords are identifiers specially defined in the language. Defined keywords are:
-
-- `usecase`, `model` and `field`
-- `input`, `result`, `errors`, and `async`
-- `Number`, `String`, `Boolean` and `Enum`
-
 ## Identifiers
 
-Identifiers are user-defined names. Allowed identifiers have format: `[_a-zA-Z]+`
+Identifiers are user-defined names. Allowed identifiers have format: `[_a-zA-Z]+`. Keywords are also parsed as identifiers, since all keywords are soft/scoped.
 
 ## Comments
 
