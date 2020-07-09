@@ -12,9 +12,9 @@ import {
 	OperatorTokenData,
 	SeparatorTokenData,
 	IdentifierValue,
-} from '../lexer/token';
-import { BufferedIterator } from './util';
-import { Location, Span } from '../source';
+} from '../../lexer/token';
+import { BufferedIterator } from '../util';
+import { Location, Span } from '../../source';
 
 export type RuleResultMatch<T> = {
 	kind: 'match',

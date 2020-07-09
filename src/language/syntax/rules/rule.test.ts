@@ -1,5 +1,5 @@
-import { BufferedIterator } from "./util";
-import { LexerToken, LexerTokenKind, LexerTokenData } from "../lexer/token";
+import { BufferedIterator } from "../util";
+import { LexerToken, LexerTokenKind, LexerTokenData } from "../../lexer/token";
 import { SyntaxRule, LexerTokenMatch } from './rule';
 
 // Ensures that token spans are correctly ordered
