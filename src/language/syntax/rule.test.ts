@@ -177,6 +177,68 @@ describe('syntax rule factory', () => {
 				}
 			)
 		});
+
+		it('should match identifier rule with filter', () => {
+			const tokens: ReadonlyArray<LexerToken> = [
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'usecase' })
+			]
+			const buf = new BufferedIterator(
+				tokens[Symbol.iterator]()
+			)
+	
+			const rule = SyntaxRule.identifier('usecase');
+	
+			expect(
+				rule.tryMatch(buf)
+			).toStrictEqual(
+				{
+					kind: 'match',
+					match: tokMatch(tokens[0])
+				}
+			)
+		});
+	
+		it('shouldn\'t match identifier rule with filter', () => {
+			const tokens: ReadonlyArray<LexerToken> = [
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'usecase' })
+			]
+			const buf = new BufferedIterator(
+				tokens[Symbol.iterator]()
+			)
+	
+			const rule = SyntaxRule.identifier('field');
+	
+			expect(
+				rule.tryMatch(buf)
+			).toStrictEqual(
+				{
+					kind: 'nomatch',
+					rule,
+					token: tokens[0]
+				}
+			)
+		});
+
+		it('shouldn\'t match identififer rule', () => {
+			const tokens: ReadonlyArray<LexerToken> = [
+				tesTok({ kind: LexerTokenKind.DECORATOR, decorator: 'safe' })
+			]
+			const buf = new BufferedIterator(
+				tokens[Symbol.iterator]()
+			)
+	
+			const rule = SyntaxRule.identifier();
+	
+			expect(
+				rule.tryMatch(buf)
+			).toStrictEqual(
+				{
+					kind: 'nomatch',
+					rule,
+					token: tokens[0]
+				}
+			)
+		});
 	});
 	
 	describe('literal', () => {
@@ -264,90 +326,6 @@ describe('syntax rule factory', () => {
 			)
 		});
 	})
-	
-	describe('keyword', () => {
-		it('shouldn\'t match keyword', () => {
-			const tokens: ReadonlyArray<LexerToken> = [
-				tesTok({ kind: LexerTokenKind.DECORATOR, decorator: 'safe' })
-			]
-			const buf = new BufferedIterator(
-				tokens[Symbol.iterator]()
-			)
-	
-			const rule = SyntaxRule.keyword();
-	
-			expect(
-				rule.tryMatch(buf)
-			).toStrictEqual(
-				{
-					kind: 'nomatch',
-					rule,
-					token: tokens[0]
-				}
-			)
-		});
-		
-		it('should match keyword rule', () => {
-			const tokens: ReadonlyArray<LexerToken> = [
-				tesTok({ kind: LexerTokenKind.KEYWORD, keyword: 'field' })
-			]
-			const buf = new BufferedIterator(
-				tokens[Symbol.iterator]()
-			)
-	
-			const rule = SyntaxRule.keyword();
-	
-			expect(
-				rule.tryMatch(buf)
-			).toStrictEqual(
-				{
-					kind: 'match',
-					match: tokMatch(tokens[0])
-				}
-			)
-		});
-		
-		it('should match keyword rule with filter', () => {
-			const tokens: ReadonlyArray<LexerToken> = [
-				tesTok({ kind: LexerTokenKind.KEYWORD, keyword: 'usecase' })
-			]
-			const buf = new BufferedIterator(
-				tokens[Symbol.iterator]()
-			)
-	
-			const rule = SyntaxRule.keyword('usecase');
-	
-			expect(
-				rule.tryMatch(buf)
-			).toStrictEqual(
-				{
-					kind: 'match',
-					match: tokMatch(tokens[0])
-				}
-			)
-		});
-	
-		it('shouldn\'t match keyword rule with filter', () => {
-			const tokens: ReadonlyArray<LexerToken> = [
-				tesTok({ kind: LexerTokenKind.KEYWORD, keyword: 'usecase' })
-			]
-			const buf = new BufferedIterator(
-				tokens[Symbol.iterator]()
-			)
-	
-			const rule = SyntaxRule.keyword('field');
-	
-			expect(
-				rule.tryMatch(buf)
-			).toStrictEqual(
-				{
-					kind: 'nomatch',
-					rule,
-					token: tokens[0]
-				}
-			)
-		});
-	});
 
 	describe('or', () => {
 		it('should match first rule', () => {
@@ -392,13 +370,13 @@ describe('syntax rule factory', () => {
 
 		it('should match third rule', () => {
 			const tokens: ReadonlyArray<LexerToken> = [
-				tesTok({ kind: LexerTokenKind.KEYWORD, keyword: 'usecase' })
+				tesTok({ kind: LexerTokenKind.DECORATOR, decorator: 'safe' })
 			]
 			const buf = new BufferedIterator(
 				tokens[Symbol.iterator]()
 			)
 	
-			const rule = SyntaxRule.identifier().or(SyntaxRule.literal()).or(SyntaxRule.keyword('usecase'));
+			const rule = SyntaxRule.identifier().or(SyntaxRule.literal()).or(SyntaxRule.decorator('safe'));
 	
 			expect(
 				rule.tryMatch(buf)
@@ -412,7 +390,7 @@ describe('syntax rule factory', () => {
 
 		it('shouldn\'t match any rule', () => {
 			const tokens: ReadonlyArray<LexerToken> = [
-				tesTok({ kind: LexerTokenKind.KEYWORD, keyword: 'result' })
+				tesTok({ kind: LexerTokenKind.DECORATOR, decorator: 'safe' })
 			]
 			const buf = new BufferedIterator(
 				tokens[Symbol.iterator]()
@@ -435,7 +413,7 @@ describe('syntax rule factory', () => {
 	describe('followed by', () => {
 		it('should match three rules', () => {
 			const tokens: ReadonlyArray<LexerToken> = [
-				tesTok({ kind: LexerTokenKind.KEYWORD, keyword: 'result' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'result' }),
 				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
 				tesTok({ kind: LexerTokenKind.LITERAL, literal: 1 })
 			]
@@ -443,7 +421,7 @@ describe('syntax rule factory', () => {
 				tokens[Symbol.iterator]()
 			)
 	
-			const rule = SyntaxRule.keyword('result').followedBy(
+			const rule = SyntaxRule.identifier('result').followedBy(
 				SyntaxRule.operator(':')
 			).andBy(
 				SyntaxRule.literal()
@@ -461,7 +439,7 @@ describe('syntax rule factory', () => {
 
 		it('shouldn\'t match first rule', () => {
 			const tokens: ReadonlyArray<LexerToken> = [
-				tesTok({ kind: LexerTokenKind.KEYWORD, keyword: 'result' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'result' }),
 				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
 				tesTok({ kind: LexerTokenKind.LITERAL, literal: 1 })
 			]
@@ -469,7 +447,7 @@ describe('syntax rule factory', () => {
 				tokens[Symbol.iterator]()
 			)
 	
-			const firstRule = SyntaxRule.keyword('field')
+			const firstRule = SyntaxRule.identifier('field')
 			const rule = firstRule.followedBy(
 				SyntaxRule.operator(':')
 			).followedBy(
@@ -489,16 +467,16 @@ describe('syntax rule factory', () => {
 
 		it('shouldn\'t match second rule', () => {
 			const tokens: ReadonlyArray<LexerToken> = [
-				new LexerToken({ kind: LexerTokenKind.KEYWORD, keyword: 'result' }, { start: 0, end: 6 }, { line: 0, column: 0 }),
-				new LexerToken({ kind: LexerTokenKind.OPERATOR, operator: ':' }, { start: 6, end: 7 }, { line: 0, column: 0 }),
-				new LexerToken({ kind: LexerTokenKind.LITERAL, literal: 1 }, { start: 8, end: 9 }, { line: 0, column: 0 })
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'result' }),
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
+				tesTok({ kind: LexerTokenKind.LITERAL, literal: 1 })
 			]
 			const buf = new BufferedIterator(
 				tokens[Symbol.iterator]()
 			)
 			
 			const secondRule = SyntaxRule.operator('+')
-			const rule = SyntaxRule.keyword('result').followedBy(
+			const rule = SyntaxRule.identifier('result').followedBy(
 				secondRule
 			).followedBy(
 				SyntaxRule.literal()
@@ -517,7 +495,7 @@ describe('syntax rule factory', () => {
 
 		it('shouldn\'t match third rule', () => {
 			const tokens: ReadonlyArray<LexerToken> = [
-				tesTok({ kind: LexerTokenKind.KEYWORD, keyword: 'result' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'result' }),
 				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
 				tesTok({ kind: LexerTokenKind.LITERAL, literal: 1 })
 			]
@@ -526,7 +504,7 @@ describe('syntax rule factory', () => {
 			)
 	
 			const thirdRule = SyntaxRule.identifier()
-			const rule = SyntaxRule.keyword('result').followedBy(
+			const rule = SyntaxRule.identifier('result').followedBy(
 				SyntaxRule.operator(':')
 			).followedBy(
 				thirdRule
@@ -547,14 +525,14 @@ describe('syntax rule factory', () => {
 	describe('repeat', () => {
 		it('should match 1 repetition', () => {
 			const tokens: ReadonlyArray<LexerToken> = [
-				tesTok({ kind: LexerTokenKind.KEYWORD, keyword: 'field' }), tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'identifier' })
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }), tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'identifier' })
 			]
 			const buf = new BufferedIterator(
 				tokens[Symbol.iterator]()
 			)
 	
 			const rule = SyntaxRule.repeat(
-				SyntaxRule.keyword().followedBy(
+				SyntaxRule.identifier('field').followedBy(
 					SyntaxRule.identifier()
 				)
 			)
@@ -573,16 +551,16 @@ describe('syntax rule factory', () => {
 
 		it('should match 3 repetititons', () => {
 			const tokens: ReadonlyArray<LexerToken> = [
-				tesTok({ kind: LexerTokenKind.KEYWORD, keyword: 'field' }), tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'identifier' }),
-				tesTok({ kind: LexerTokenKind.KEYWORD, keyword: 'field' }), tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'identifier' }),
-				tesTok({ kind: LexerTokenKind.KEYWORD, keyword: 'field' }), tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'identifier' })
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }), tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'identifier' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }), tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'identifier' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }), tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'identifier' })
 			]
 			const buf = new BufferedIterator(
 				tokens[Symbol.iterator]()
 			)
 	
 			const rule = SyntaxRule.repeat(
-				SyntaxRule.keyword().followedBy(
+				SyntaxRule.identifier('field').followedBy(
 					SyntaxRule.identifier()
 				)
 			)
@@ -607,7 +585,7 @@ describe('syntax rule factory', () => {
 				tokens[Symbol.iterator]()
 			)
 	
-			const innerRule = SyntaxRule.keyword()
+			const innerRule = SyntaxRule.identifier()
 			const rule = SyntaxRule.repeat(
 				innerRule
 			)
@@ -627,9 +605,9 @@ describe('syntax rule factory', () => {
 	describe('optional', () => {
 		it('should match 0 or more repetitions', () => {
 			const tokens: ReadonlyArray<LexerToken> = [
-				tesTok({ kind: LexerTokenKind.KEYWORD, keyword: 'field' }),
-				tesTok({ kind: LexerTokenKind.KEYWORD, keyword: 'field' }),
-				tesTok({ kind: LexerTokenKind.KEYWORD, keyword: 'field' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
 			]
 			const buf = new BufferedIterator(
 				tokens[Symbol.iterator]()
@@ -637,7 +615,7 @@ describe('syntax rule factory', () => {
 	
 			const rule = SyntaxRule.optional(
 				SyntaxRule.repeat(
-					SyntaxRule.keyword()
+					SyntaxRule.identifier('field')
 				)
 			)
 

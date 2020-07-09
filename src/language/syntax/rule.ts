@@ -2,7 +2,6 @@ import {
 	LexerTokenKind,
 	LexerToken,
 	DecoratorValue,
-	KeywordValue,
 	OperatorValue,
 	SeparatorValue,
 	LexerTokenData,
@@ -10,9 +9,9 @@ import {
 	LiteralTokenData,
 	StringTokenData,
 	DecoratorTokenData,
-	KeywordTokenData,
 	OperatorTokenData,
 	SeparatorTokenData,
+	IdentifierValue,
 } from '../lexer/token';
 import { BufferedIterator } from './util';
 import { Location, Span } from '../source';
@@ -89,32 +88,28 @@ export abstract class SyntaxRule<T> {
 
 	// Factory methods for basic rules
 
-	static separator(separator?: SeparatorValue): SyntaxRule<LexerTokenMatch<SeparatorTokenData>> {
+	static separator(separator?: SeparatorValue): SyntaxRuleSeparator {
 		return new SyntaxRuleSeparator(separator);
 	}
 
-	static operator(operator?: OperatorValue): SyntaxRule<LexerTokenMatch<OperatorTokenData>> {
+	static operator(operator?: OperatorValue): SyntaxRuleOperator {
 		return new SyntaxRuleOperator(operator);
 	}
 
-	static identifier(): SyntaxRule<LexerTokenMatch<IdentifierTokenData>> {
-		return new SyntaxRuleIdentifier();
+	static identifier(identifier?: IdentifierValue): SyntaxRuleIdentifier {
+		return new SyntaxRuleIdentifier(identifier);
 	}
 	
-	static literal(): SyntaxRule<LexerTokenMatch<LiteralTokenData>> {
+	static literal(): SyntaxRuleLiteral {
 		return new SyntaxRuleLiteral()
 	}
 
-	static string(): SyntaxRule<LexerTokenMatch<StringTokenData>> {
+	static string(): SyntaxRuleString {
 		return new SyntaxRuleString();
 	}
 
-	static decorator(decorator?: DecoratorValue): SyntaxRule<LexerTokenMatch<DecoratorTokenData>> {
+	static decorator(decorator?: DecoratorValue): SyntaxRuleDecorator {
 		return new SyntaxRuleDecorator(decorator);
-	}
-
-	static keyword(keyword?: KeywordValue): SyntaxRule<LexerTokenMatch<KeywordTokenData>> {
-		return new SyntaxRuleKeyword(keyword);
 	}
 
 	// Combinators
@@ -124,8 +119,8 @@ export abstract class SyntaxRule<T> {
 	}
 
 	/**
-	 * To cascade multiple `followed` rules, use `.by` method
-	 * on the `SyntaxRuleFollowedBy` object that is returned.
+	 * To cascade multiple `followed` rules, use `.andBy` method on the
+	 * `SyntaxRuleFollowedBy` object that is returned to flatten nested tuples.
 	 */
 	followedBy<R>(rule: SyntaxRule<R>): SyntaxRuleFollowedBy<[T], R> {
 		return new SyntaxRuleFollowedBy(this.map(m => [m]), rule);
@@ -213,16 +208,26 @@ export class SyntaxRuleOperator extends SyntaxRule<LexerTokenMatch<OperatorToken
 }
 
 export class SyntaxRuleIdentifier extends SyntaxRule<LexerTokenMatch<IdentifierTokenData>> {
+	readonly identifier?: IdentifierValue;
+
+	constructor(identifier?: IdentifierValue) {
+		super();
+
+		this.identifier = identifier;
+	}
+
 	tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<LexerTokenMatch<IdentifierTokenData>> {
 		return this.simpleTryMatchBoilerplate(
 			tokens,
 			token => {
 				if (token.data.kind === LexerTokenKind.IDENTIFIER) {
-					return {
-						data: token.data,
-						span: token.span,
-						location: token.location
-					};
+					if (this.identifier === undefined || token.data.identifier === this.identifier) {
+						return {
+							data: token.data,
+							span: token.span,
+							location: token.location
+						};
+					}
 				}
 
 				return null;
@@ -231,7 +236,7 @@ export class SyntaxRuleIdentifier extends SyntaxRule<LexerTokenMatch<IdentifierT
 	}
 
 	toStringDepth(depth: number): string {
-		return INDENT_CHAR.repeat(depth) + 'ID\n'
+		return INDENT_CHAR.repeat(depth) + 'ID' + (this.identifier ?? '<ANY>') + '\n'
 	}
 }
 
@@ -311,39 +316,6 @@ export class SyntaxRuleDecorator extends SyntaxRule<LexerTokenMatch<DecoratorTok
 
 	toStringDepth(depth: number): string {
 		return INDENT_CHAR.repeat(depth) + 'DEC ' + (this.decorator ?? '<ANY>')
-	}
-}
-
-export class SyntaxRuleKeyword extends SyntaxRule<LexerTokenMatch<KeywordTokenData>> {
-	readonly filter?: KeywordValue;
-
-	constructor(filter?: KeywordValue) {
-		super();
-		this.filter = filter;
-	}
-	
-	tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<LexerTokenMatch<KeywordTokenData>> {
-		return this.simpleTryMatchBoilerplate(
-			tokens,
-			token => {
-				if (token.data.kind === LexerTokenKind.KEYWORD) {
-					if (this.filter === undefined || token.data.keyword === this.filter) {
-	
-						return {
-							data: token.data,
-							span: token.span,
-							location: token.location
-						}
-					}
-				}
-
-				return null;
-			}
-		)
-	}
-
-	toStringDepth(depth: number): string {
-		return INDENT_CHAR.repeat(depth) + 'KEY ' + (this.filter ?? '<ANY>') + '\n'
 	}
 }
 
