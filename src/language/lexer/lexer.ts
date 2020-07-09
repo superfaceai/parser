@@ -113,7 +113,6 @@ export class Lexer {
       rules.tryParseLiteral(slice) ??
       rules.tryParseStringLiteral(slice) ??
       rules.tryParseDecorator(slice) ??
-      rules.tryParseKeyword(slice) ??
       rules.tryParseIdentifier(slice) ??
       rules.tryParseComment(slice);
 

@@ -7,8 +7,6 @@ import {
   formatTokenData,
   IdentifierTokenData,
   IdentifierValue,
-  KeywordTokenData,
-  KeywordValue,
   LexerToken,
   LexerTokenData,
   LexerTokenKind,
@@ -81,13 +79,6 @@ expect.extend({
           if (
             (actual.data as DecoratorTokenData).decorator !== data.decorator
           ) {
-            pass = false;
-            message = errorMessage();
-          }
-          break;
-
-        case LexerTokenKind.KEYWORD:
-          if ((actual.data as KeywordTokenData).keyword !== data.keyword) {
             pass = false;
             message = errorMessage();
           }
@@ -289,13 +280,13 @@ describe('lexer', () => {
       }
     });
 
-    it('keywords', () => {
+    it('soft keywords', () => {
       const lexer = new Lexer(
         new Source(
           'usecase field model input result async errors Number String \n\tBoolean Enum'
         )
       );
-      const expectedTokens: (LexerTokenData | KeywordValue)[] = [
+      const expectedTokens: (LexerTokenData | IdentifierValue)[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
         'usecase',
         'field',
@@ -318,8 +309,8 @@ describe('lexer', () => {
           expect(actual).toHaveTokenData(expected);
         } else {
           expect(actual).toHaveTokenData({
-            kind: LexerTokenKind.KEYWORD,
-            keyword: expected,
+            kind: LexerTokenKind.IDENTIFIER,
+            identifier: expected,
           });
         }
       }

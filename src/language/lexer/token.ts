@@ -8,7 +8,6 @@ export const enum LexerTokenKind {
   LITERAL, // number or boolean
   STRING, // string literals - separate because it makes later stages easier
   DECORATOR, // @safe, @unsafe, @idempotent
-  KEYWORD, // usecase, field, map, Number, String, Boolean
   IDENTIFIER, // a-z A-Z _
   COMMENT, // line comments (# foo)
 }
@@ -64,34 +63,6 @@ export const DECORATORS: { [P in DecoratorValue]: LexerScanRule<P> } = {
   idempotent: ['idempotent', util.isNotValidIdentifierChar],
 };
 
-// Keywords
-export type KeywordValue =
-  | 'usecase'
-  | 'field'
-  | 'model'
-  | 'input'
-  | 'result'
-  | 'async'
-  | 'errors'
-  | 'Number'
-  | 'String'
-  | 'Boolean'
-  | 'Enum';
-// Not the pretties, but centralizes keywords here and doesn't allow for desync between `KeywordValue` type and `KEYWORDS` value.
-export const KEYWORDS: { [P in KeywordValue]: LexerScanRule<P> } = {
-  usecase: ['usecase', util.isNotValidIdentifierChar],
-  model: ['model', util.isNotValidIdentifierChar],
-  field: ['field', util.isNotValidIdentifierChar],
-  input: ['input', util.isNotValidIdentifierChar],
-  result: ['result', util.isNotValidIdentifierChar],
-  async: ['async', util.isNotValidIdentifierChar],
-  errors: ['errors', util.isNotValidIdentifierChar],
-  Number: ['Number', util.isNotValidIdentifierChar],
-  String: ['String', util.isNotValidIdentifierChar],
-  Boolean: ['Boolean', util.isNotValidIdentifierChar],
-  Enum: ['Enum', util.isNotValidIdentifierChar],
-};
-
 export type IdentifierValue = string;
 export type CommentValue = string;
 
@@ -117,10 +88,6 @@ export interface DecoratorTokenData {
   kind: LexerTokenKind.DECORATOR;
   decorator: DecoratorValue;
 }
-export interface KeywordTokenData {
-  kind: LexerTokenKind.KEYWORD;
-  keyword: KeywordValue;
-}
 export interface IdentifierTokenData {
   kind: LexerTokenKind.IDENTIFIER;
   identifier: IdentifierValue;
@@ -136,7 +103,6 @@ export type LexerTokenData =
   | LiteralTokenData
   | StringTokenData
   | DecoratorTokenData
-  | KeywordTokenData
   | IdentifierTokenData
   | CommentTokenData;
 
@@ -152,8 +118,6 @@ export function formatTokenData(data: LexerTokenData): string {
       return `STR ${data.string}`;
     case LexerTokenKind.DECORATOR:
       return `DEC ${data.decorator}`;
-    case LexerTokenKind.KEYWORD:
-      return `KEY ${data.keyword}`;
     case LexerTokenKind.IDENTIFIER:
       return `ID ${data.identifier}`;
     case LexerTokenKind.COMMENT:

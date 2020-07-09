@@ -4,8 +4,6 @@ import {
   DECORATORS,
   DecoratorTokenData,
   IdentifierTokenData,
-  KEYWORDS,
-  KeywordTokenData,
   LexerScanRule,
   LexerTokenData,
   LexerTokenKind,
@@ -227,24 +225,6 @@ export function tryParseDecorator(
     },
     // + 1 for decorator char
     1 + parsed.length,
-  ];
-}
-
-/// Tries to parse a keyword token at current position.
-///
-/// Returns `null` if the current position cannot contain a keyword.
-export function tryParseKeyword(slice: string): ParseResult<KeywordTokenData> {
-  const parsed = tryParseScannerRules(slice, KEYWORDS);
-  if (parsed === null) {
-    return null;
-  }
-
-  return [
-    {
-      kind: LexerTokenKind.KEYWORD,
-      keyword: parsed.value,
-    },
-    parsed.length,
   ];
 }
 
