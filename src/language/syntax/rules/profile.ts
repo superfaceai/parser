@@ -363,7 +363,7 @@ usecase ident @deco {
 export const USECASE_DEFINITION: SyntaxRule<ProfileUseCaseDefinitionNode> = SyntaxRule.identifier('usecase').followedBy(
 	SyntaxRule.identifier()
 ).andBy(
-	SyntaxRule.decorator()
+	SyntaxRule.optional(SyntaxRule.decorator())
 ).andBy(
 	SyntaxRule.separator('{')
 ).andBy(
@@ -373,10 +373,12 @@ export const USECASE_DEFINITION: SyntaxRule<ProfileUseCaseDefinitionNode> = Synt
 ).andBy(
 	SyntaxRule.identifier('result').followedBy(TYPE_ASSIGNMENT)
 ).andBy(
-	SyntaxRule.identifier('async').followedBy(
-		SyntaxRule.identifier('result')
-	).andBy(
-		TYPE_ASSIGNMENT
+	SyntaxRule.optional(
+		SyntaxRule.identifier('async').followedBy(
+			SyntaxRule.identifier('result')
+		).andBy(
+			TYPE_ASSIGNMENT
+		)
 	)
 ).andBy(
 	SyntaxRule.optional(
@@ -397,7 +399,7 @@ export const USECASE_DEFINITION: SyntaxRule<ProfileUseCaseDefinitionNode> = Synt
 		const [
 			usecaseKey,
 			name,
-			safety,
+			maybeSafety,
 			/* sepStart */,
 			maybeInput,
 			[/* _resultKey */, resultType],
@@ -408,7 +410,7 @@ export const USECASE_DEFINITION: SyntaxRule<ProfileUseCaseDefinitionNode> = Synt
 			matches as [
 				LexerTokenMatch<IdentifierTokenData>,
 				LexerTokenMatch<IdentifierTokenData>,
-				LexerTokenMatch<DecoratorTokenData>,
+				LexerTokenMatch<DecoratorTokenData> | undefined,
 				LexerTokenMatch<SeparatorTokenData>,
 				[LexerTokenMatch<IdentifierTokenData>, Type] | undefined,
 				[LexerTokenMatch<IdentifierTokenData>, Type],
@@ -425,7 +427,7 @@ export const USECASE_DEFINITION: SyntaxRule<ProfileUseCaseDefinitionNode> = Synt
 		return {
 			kind: 'UseCaseDefinitionNode',
 			useCaseName: name.data.identifier,
-			safety: safety.data.decorator,
+			safety: maybeSafety?.data.decorator,
 			input,
 			result: resultType,
 			asyncResult,
@@ -497,10 +499,17 @@ export const PROFILE_DOCUMENT: SyntaxRule<ProfileDocumentNode> = PROFILE.followe
 			]
 		) // TODO: Won't need `as` cast in Typescript 4
 
+		let spanEnd = profile.span!.end
+		if (definitions !== undefined) {
+			spanEnd = definitions[definitions.length - 1].span!.end
+		}
+
 		return {
 			kind: 'ProfileDocumentNode',
 			profile,
-			definitions: definitions ?? []
+			definitions: definitions ?? [],
+			location: profile.location,
+			span: { start: profile.span!.start, end: spanEnd }
 		}
 	}
 )

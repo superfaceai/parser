@@ -1,9 +1,11 @@
 import * as rules from './profile';
-import { LexerToken, LexerTokenData, LexerTokenKind, IdentifierTokenData, LiteralTokenData, StringTokenData } from '../../lexer/token';
+import { LexerToken, LexerTokenData, LexerTokenKind, IdentifierTokenData, LiteralTokenData, StringTokenData, DecoratorTokenData } from '../../lexer/token';
 import { BufferedIterator } from '../util';
 import { Location, Span } from '../../source';
 
-// Ensures that token spans are correctly ordered
+// Ensures that token spans are correctly ordered in delcaration order
+// while also making sure that their spans and locations are random enough so that
+// equality checks find when a wrong span or location is calculated.
 let TES_TOK_STATE = 0
 beforeEach(() => {
 	TES_TOK_STATE = 0
@@ -656,6 +658,291 @@ describe('syntax rules', () => {
 							]
 						}, tokens[2], tokens[4])
 					}, tokens[0], tokens[4])
+				}
+			)
+		});
+	});
+
+	describe('usecase', () => {
+		it('should parse minimum usecase', () => {
+			const tokens: ReadonlyArray<LexerToken> = [
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'usecase' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'usecase' }),
+				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'result' }),
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
+				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+			]
+			const buf = new BufferedIterator(
+				tokens[Symbol.iterator]()
+			)
+
+			const rule = rules.USECASE_DEFINITION
+
+			expect(
+				rule.tryMatch(buf)
+			).toStrictEqual(
+				{
+					kind: 'match',
+					match: tesMatch({
+						kind: 'UseCaseDefinitionNode',
+						useCaseName: (tokens[1].data as IdentifierTokenData).identifier,
+						safety: undefined,
+						input: undefined,
+						result: tesMatch({
+							kind: 'ModelTypeNode',
+							name: (tokens[5].data as IdentifierTokenData).identifier
+						}, tokens[5]),
+						asyncResult: undefined,
+						errors: undefined
+					}, tokens[0], tokens[6])
+				}
+			)
+		});
+
+		it('should parse full usecase', () => {
+			const tokens: ReadonlyArray<LexerToken> = [
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'usecase' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'usecase' }),
+				tesTok({ kind: LexerTokenKind.DECORATOR, decorator: 'safe' }),
+				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'input' }), // 4
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'Boolean' }),
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
+
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'result' }), // 8
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
+
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'async' }), // 11
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'result' }),
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
+				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'Number' }),
+				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
+
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'errors' }), // 20
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
+				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '[' }),
+
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'String' }), // 23
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
+
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'Enum' }), // 25
+				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+				tesTok({ kind: LexerTokenKind.LITERAL, literal: true}),
+				tesTok({ kind: LexerTokenKind.LITERAL, literal: 1 }),
+				tesTok({ kind: LexerTokenKind.LITERAL, literal: 2 }),
+				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+
+				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: ']' }),
+
+				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }), // 32
+			]
+			const buf = new BufferedIterator(
+				tokens[Symbol.iterator]()
+			)
+
+			const rule = rules.USECASE_DEFINITION
+
+			expect(
+				rule.tryMatch(buf)
+			).toStrictEqual(
+				{
+					kind: 'match',
+					match: tesMatch({
+						kind: 'UseCaseDefinitionNode',
+						useCaseName: (tokens[1].data as IdentifierTokenData).identifier,
+						safety: (tokens[2].data as DecoratorTokenData).decorator,
+						input: tesMatch({
+							kind: 'NonNullTypeNode',
+							type: tesMatch({
+								kind: 'ScalarTypeNode',
+								name: 'boolean'
+							}, tokens[6])
+						}, tokens[6], tokens[7]),
+						result: tesMatch({
+							kind: 'ModelTypeNode',
+							name: (tokens[10].data as IdentifierTokenData).identifier
+						}, tokens[10]),
+						asyncResult: tesMatch({
+							kind: 'NonNullTypeNode',
+							type: tesMatch({
+								kind: 'ObjectTypeNode',
+								fields: [
+									tesMatch({
+										kind: 'FieldDefinitionNode',
+										fieldName: tesMatch({
+											kind: 'FieldNameNode',
+											fieldName: (tokens[15].data as IdentifierTokenData).identifier
+										}, tokens[15]),
+										type: tesMatch({
+											kind: 'ScalarTypeNode',
+											name: 'number'
+										}, tokens[17])
+									}, tokens[15], tokens[17]),
+								]
+							}, tokens[14], tokens[18])
+						}, tokens[14], tokens[19]),
+						errors: [
+							tesMatch({
+								kind: 'NonNullTypeNode',
+								type: tesMatch({
+									kind: 'ScalarTypeNode',
+									name: 'string'
+								}, tokens[23])
+							}, tokens[23], tokens[24]),
+							tesMatch({
+								kind: 'EnumTypeNode',
+								enumValues: [
+									(tokens[27].data as LiteralTokenData).literal,
+									(tokens[28].data as LiteralTokenData).literal,
+									(tokens[29].data as LiteralTokenData).literal,
+								]
+							}, tokens[25], tokens[30])
+						],
+					}, tokens[0], tokens[32])
+				}
+			)
+		});
+	});
+
+	describe('document', () => {
+		it('should parse profile id', () => {
+			const tokens: ReadonlyArray<LexerToken> = [
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
+				tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
+			]
+			const buf = new BufferedIterator(
+				tokens[Symbol.iterator]()
+			)
+
+			const rule = rules.PROFILE_ID
+
+			expect(
+				rule.tryMatch(buf)
+			).toStrictEqual(
+				{
+					kind: 'match',
+					match: tesMatch({
+						kind: 'ProfileIdNode',
+						profileId: (tokens[2].data as StringTokenData).string,
+					}, tokens[0], tokens[2])
+				}
+			)
+		});
+
+		it('should parse profile', () => {
+			const tokens: ReadonlyArray<LexerToken> = [
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
+				tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
+			]
+			const buf = new BufferedIterator(
+				tokens[Symbol.iterator]()
+			)
+
+			const rule = rules.PROFILE
+
+			expect(
+				rule.tryMatch(buf)
+			).toStrictEqual(
+				{
+					kind: 'match',
+					match: tesMatch({
+						kind: 'ProfileNode',
+						profileId: tesMatch({
+							kind: 'ProfileIdNode',
+							profileId: (tokens[2].data as StringTokenData).string,
+						}, tokens[0], tokens[2])
+					}, tokens[0], tokens[2])
+				}
+			)
+		});
+
+		it('should parse profile document', () => {
+			const tokens: ReadonlyArray<LexerToken> = [
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
+				tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
+
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
+				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'usecase' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'usecase' }),
+				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'result' }),
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
+				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+			]
+			const buf = new BufferedIterator(
+				tokens[Symbol.iterator]()
+			)
+
+			const rule = rules.PROFILE_DOCUMENT
+
+			expect(
+				rule.tryMatch(buf)
+			).toStrictEqual(
+				{
+					kind: 'match',
+					match: tesMatch({
+						kind: 'ProfileDocumentNode',
+						profile: tesMatch({
+							kind: 'ProfileNode',
+							profileId: tesMatch({
+								kind: 'ProfileIdNode',
+								profileId: (tokens[2].data as StringTokenData).string,
+							}, tokens[0], tokens[2])
+						}, tokens[0], tokens[2]),
+						definitions: [
+							tesMatch({
+								kind: 'NamedModelDefinitionNode',
+								modelName: tesMatch({
+									kind: 'ModelTypeNode',
+									name: (tokens[4].data as IdentifierTokenData).identifier
+								}, tokens[4]),
+								type: tesMatch({
+									kind: 'ObjectTypeNode',
+									fields: [
+										tesMatch({
+											kind: 'FieldDefinitionNode',
+											fieldName: tesMatch({
+												kind: 'FieldNameNode',
+												fieldName: (tokens[6].data as IdentifierTokenData).identifier
+											}, tokens[6]),
+											type: undefined
+										}, tokens[6])
+									]
+								}, tokens[5], tokens[7])
+							}, tokens[3], tokens[7]),
+
+							tesMatch({
+								kind: 'UseCaseDefinitionNode',
+								useCaseName: (tokens[9].data as IdentifierTokenData).identifier,
+								safety: undefined,
+								input: undefined,
+								result: tesMatch({
+									kind: 'ModelTypeNode',
+									name: (tokens[13].data as IdentifierTokenData).identifier
+								}, tokens[13]),
+								asyncResult: undefined,
+								errors: undefined
+							}, tokens[8], tokens[14])
+						]
+					}, tokens[0], tokens[14])
 				}
 			)
 		});
