@@ -87,8 +87,10 @@ describe('syntax rule factory', () => {
 			).toStrictEqual(
 				{
 					kind: 'nomatch',
-					rule,
-					token: tokens[0]
+					attempts: [{
+						rule,
+						token: tokens[0]
+					}]
 				}
 			)
 		});
@@ -150,8 +152,10 @@ describe('syntax rule factory', () => {
 			).toStrictEqual(
 				{
 					kind: 'nomatch',
-					rule: rule,
-					token: tokens[0]
+					attempts: [{
+						rule,
+						token: tokens[0]
+					}]
 				}
 			)
 		});
@@ -213,8 +217,10 @@ describe('syntax rule factory', () => {
 			).toStrictEqual(
 				{
 					kind: 'nomatch',
-					rule,
-					token: tokens[0]
+					attempts: [{
+						rule,
+						token: tokens[0]
+					}]
 				}
 			)
 		});
@@ -234,8 +240,10 @@ describe('syntax rule factory', () => {
 			).toStrictEqual(
 				{
 					kind: 'nomatch',
-					rule,
-					token: tokens[0]
+					attempts: [{
+						rule,
+						token: tokens[0]
+					}]
 				}
 			)
 		});
@@ -403,8 +411,16 @@ describe('syntax rule factory', () => {
 			).toStrictEqual(
 				{
 					kind: 'nomatch',
-					rule,
-					token: tokens[0]
+					attempts: [
+						{
+							rule: rule.first,
+							token: tokens[0]
+						},
+						{
+							rule: rule.second,
+							token: tokens[0]
+						},
+					]
 				}
 			)
 		});
@@ -459,8 +475,10 @@ describe('syntax rule factory', () => {
 			).toStrictEqual(
 				{
 					kind: 'nomatch',
-					rule: firstRule,
-					token: tokens[0]
+					attempts: [{
+						rule: firstRule,
+						token: tokens[0]
+					}]
 				}
 			)
 		});
@@ -487,8 +505,10 @@ describe('syntax rule factory', () => {
 			).toStrictEqual(
 				{
 					kind: 'nomatch',
-					rule: secondRule,
-					token: tokens[1]
+					attempts: [{
+						rule: secondRule,
+						token: tokens[1]
+					}]
 				}
 			)
 		});
@@ -515,8 +535,10 @@ describe('syntax rule factory', () => {
 			).toStrictEqual(
 				{
 					kind: 'nomatch',
-					rule: thirdRule,
-					token: tokens[2]
+					attempts: [{
+						rule: thirdRule,
+						token: tokens[2]
+					}]
 				}
 			)
 		});
@@ -595,8 +617,10 @@ describe('syntax rule factory', () => {
 			).toStrictEqual(
 				{
 					kind: 'nomatch',
-					rule: innerRule,
-					token: undefined
+					attempts: [{
+						rule: innerRule,
+						token: undefined
+					}]
 				}
 			)
 		});

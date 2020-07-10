@@ -22,8 +22,9 @@ export type RuleResultMatch<T> = {
 }
 export type RuleResultNoMatch = {
 	kind: 'nomatch',
-	rule: SyntaxRule<any>,
-	token?: LexerToken
+	/** Pairs of rules and tokens that were attempted by failed */
+	attempts: { rule: SyntaxRule<any>, token?: LexerToken }[]
+	// TODO: Partial match?
 }
 export type RuleResult<T> = RuleResultMatch<T> | RuleResultNoMatch;
 
@@ -70,8 +71,10 @@ export abstract class SyntaxRule<T> {
 
 		return {
 			kind: 'nomatch',
-			rule: this,
-			token: next.value
+			attempts: [{
+				rule: this,
+				token: next.value
+			}]
 		}
 	}
 
@@ -348,8 +351,10 @@ export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
 
 		return {
 			kind: 'nomatch',
-			rule: this,
-			token: tokens.peek().value
+			attempts: [
+				...firstMatch.attempts,
+				...secondMatch.attempts
+			]
 		}
 	}
 
@@ -482,8 +487,12 @@ export class SyntaxRuleRepeat<R> extends SyntaxRule<R[]> {
 
 		return {
 			kind: 'nomatch',
-			rule: this.rule,
-			token: tokens.peek().value
+			attempts: [
+				{
+					rule: this.rule,
+					token: tokens.peek().value
+				}
+			]
 		}
 	}
 
