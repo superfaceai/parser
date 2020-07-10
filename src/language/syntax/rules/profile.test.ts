@@ -1088,6 +1088,8 @@ describe('syntax rules', () => {
 
 		it('should parse profile document', () => {
 			const tokens: ReadonlyArray<LexerToken> = [
+				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: 'SOF' }),
+
 				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
 				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
 				tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
@@ -1123,16 +1125,16 @@ describe('syntax rules', () => {
 							kind: 'ProfileNode',
 							profileId: tesMatch({
 								kind: 'ProfileIdNode',
-								profileId: (tokens[2].data as StringTokenData).string,
-							}, tokens[0], tokens[2])
-						}, tokens[0], tokens[2]),
+								profileId: (tokens[3].data as StringTokenData).string,
+							}, tokens[1], tokens[3])
+						}, tokens[1], tokens[3]),
 						definitions: [
 							tesMatch({
 								kind: 'NamedModelDefinitionNode',
 								modelName: tesMatch({
 									kind: 'ModelTypeNode',
 									name: (tokens[4].data as IdentifierTokenData).identifier
-								}, tokens[4]),
+								}, tokens[5]),
 								type: tesMatch({
 									kind: 'ObjectTypeNode',
 									fields: [
@@ -1140,28 +1142,28 @@ describe('syntax rules', () => {
 											kind: 'FieldDefinitionNode',
 											fieldName: tesMatch({
 												kind: 'FieldNameNode',
-												fieldName: (tokens[6].data as IdentifierTokenData).identifier
-											}, tokens[6]),
+												fieldName: (tokens[7].data as IdentifierTokenData).identifier
+											}, tokens[7]),
 											type: undefined
-										}, tokens[6])
+										}, tokens[7])
 									]
-								}, tokens[5], tokens[7])
-							}, tokens[3], tokens[7]),
+								}, tokens[6], tokens[8])
+							}, tokens[4], tokens[8]),
 
 							tesMatch({
 								kind: 'UseCaseDefinitionNode',
-								useCaseName: (tokens[9].data as IdentifierTokenData).identifier,
+								useCaseName: (tokens[10].data as IdentifierTokenData).identifier,
 								safety: undefined,
 								input: undefined,
 								result: tesMatch({
 									kind: 'ModelTypeNode',
-									name: (tokens[13].data as IdentifierTokenData).identifier
-								}, tokens[13]),
+									name: (tokens[14].data as IdentifierTokenData).identifier
+								}, tokens[14]),
 								asyncResult: undefined,
 								errors: undefined
-							}, tokens[8], tokens[14])
+							}, tokens[9], tokens[15])
 						]
-					}, tokens[0], tokens[14])
+					}, tokens[1], tokens[15])
 				}
 			)
 		});

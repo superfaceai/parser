@@ -525,7 +525,7 @@ export const PROFILE: SyntaxRule<ProfileNode> = documentedNode(
 )
 
 export const DOCUMENT_DEFINITION: SyntaxRule<DocumentDefinition> = USECASE_DEFINITION.or(REUSABLE_FIELD_DEFINITION).or(NAMED_MODEL_DEFINITION);
-export const PROFILE_DOCUMENT: SyntaxRule<ProfileDocumentNode> = PROFILE.followedBy(
+export const PROFILE_DOCUMENT: SyntaxRule<ProfileDocumentNode> = SyntaxRule.separator('SOF').followedBy(PROFILE).andBy(
 	SyntaxRule.optional(
 		SyntaxRule.repeat(
 			DOCUMENT_DEFINITION
@@ -533,8 +533,9 @@ export const PROFILE_DOCUMENT: SyntaxRule<ProfileDocumentNode> = PROFILE.followe
 	)
 ).map(
 	(matches): ProfileDocumentNode => {
-		const [profile, definitions] = (
+		const [/* SOF */, profile, definitions] = (
 			matches as [
+				LexerTokenMatch<SeparatorTokenData>,
 				ProfileNode,
 				DocumentDefinition[] | undefined
 			]
