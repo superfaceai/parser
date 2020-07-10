@@ -539,6 +539,34 @@ describe('syntax rules', () => {
 			const tokens: ReadonlyArray<LexerToken> = [
 				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
 				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+			]
+			const buf = new BufferedIterator(
+				tokens[Symbol.iterator]()
+			)
+
+			const rule = rules.REUSABLE_FIELD_DEFINITION
+
+			expect(
+				rule.tryMatch(buf)
+			).toStrictEqual(
+				{
+					kind: 'match',
+					match: tesMatch({
+						kind: 'ReusableFieldDefinitionNode',
+						fieldName: tesMatch({
+							kind: 'FieldNameNode',
+							fieldName: (tokens[1].data as IdentifierTokenData).identifier
+						}, tokens[1]),
+						type: undefined
+					}, tokens[0], tokens[1])
+				}
+			)
+		});
+
+		it('should parse reusable field with type', () => {
+			const tokens: ReadonlyArray<LexerToken> = [
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
 				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
 				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
 				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
@@ -582,6 +610,34 @@ describe('syntax rules', () => {
 
 	describe('model', () => {
 		it('should parse named model', () => {
+			const tokens: ReadonlyArray<LexerToken> = [
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' })
+			]
+			const buf = new BufferedIterator(
+				tokens[Symbol.iterator]()
+			)
+
+			const rule = rules.NAMED_MODEL_DEFINITION
+
+			expect(
+				rule.tryMatch(buf)
+			).toStrictEqual(
+				{
+					kind: 'match',
+					match: tesMatch({
+						kind: 'NamedModelDefinitionNode',
+						modelName: tesMatch({
+							kind: 'ModelTypeNode',
+							name: (tokens[1].data as IdentifierTokenData).identifier
+						}, tokens[1]),
+						type: undefined
+					}, tokens[0], tokens[1])
+				}
+			)
+		});
+		
+		it('should parse named model with type', () => {
 			const tokens: ReadonlyArray<LexerToken> = [
 				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
 				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),

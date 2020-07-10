@@ -297,13 +297,15 @@ FIELD_DEFINITION_MUT.rule = FIELD_DEFINITION;
 /** * Construct of form: `field ident: type` or `field ident { fields... }` */
 export const REUSABLE_FIELD_DEFINITION: SyntaxRule<ReusableFieldDefinitionNode> = SyntaxRule.identifier('field').followedBy(
 	FIELD_NAME
-).andBy(TYPE_ASSIGNMENT).map(
+).andBy(
+	SyntaxRule.optional(TYPE_ASSIGNMENT)
+).map(
 	(matches): ReusableFieldDefinitionNode => {
 		const [keyword, fieldName, type] = (
 			matches as [
 				LexerTokenMatch<IdentifierTokenData>,
 				FieldNameNode,
-				Type
+				Type | undefined
 			]
 		) // TODO: Won't need `as` cast in Typescript 4
 
@@ -312,7 +314,7 @@ export const REUSABLE_FIELD_DEFINITION: SyntaxRule<ReusableFieldDefinitionNode> 
 			fieldName,
 			type,
 			location: keyword.location,
-			span: { start: keyword.span.start, end: type.span!.end }
+			span: { start: keyword.span.start, end: (type ?? fieldName).span!.end }
 		}
 	}
 )
@@ -323,14 +325,14 @@ export const REUSABLE_FIELD_DEFINITION: SyntaxRule<ReusableFieldDefinitionNode> 
 export const NAMED_MODEL_DEFINITION: SyntaxRule<NamedModelDefinitionNode> = SyntaxRule.identifier('model').followedBy(
 	MODEL_TYPE
 ).andBy(
-	TYPE_ASSIGNMENT
+	SyntaxRule.optional(TYPE_ASSIGNMENT)
 ).map(
 	(matches): NamedModelDefinitionNode => {
 		const [keyword, modelName, type] = (
 			matches as [
 				LexerTokenMatch<IdentifierTokenData>,
 				ModelTypeNode,
-				Type
+				Type | undefined
 			]
 		) // TODO: Won't need `as` cast in Typescript 4
 
@@ -339,7 +341,7 @@ export const NAMED_MODEL_DEFINITION: SyntaxRule<NamedModelDefinitionNode> = Synt
 			modelName,
 			type,
 			location: keyword.location,
-			span: { start: keyword.span.start, end: type.span!.end }
+			span: { start: keyword.span.start, end: (type ?? modelName).span!.end }
 		}
 	}
 )
