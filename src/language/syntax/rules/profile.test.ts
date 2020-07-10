@@ -535,6 +535,36 @@ describe('syntax rules', () => {
 			)
 		});
 
+		it('should parse field with documentation', () => {
+			const tokens: ReadonlyArray<LexerToken> = [
+				tesTok({ kind: LexerTokenKind.STRING, string: 'Title\n\nDescription' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+			]
+			const buf = new BufferedIterator(
+				tokens[Symbol.iterator]()
+			)
+
+			const rule = rules.FIELD_DEFINITION
+
+			expect(
+				rule.tryMatch(buf)
+			).toStrictEqual(
+				{
+					kind: 'match',
+					match: tesMatch({
+						kind: 'FieldDefinitionNode',
+						fieldName: tesMatch({
+							kind: 'FieldNameNode',
+							fieldName: (tokens[1].data as IdentifierTokenData).identifier
+						}, tokens[1]),
+						type: undefined,
+						title: 'Title',
+						description: 'Description'
+					}, tokens[0], tokens[1])
+				}
+			)
+		});
+
 		it('should parse reusable field', () => {
 			const tokens: ReadonlyArray<LexerToken> = [
 				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
@@ -603,6 +633,37 @@ describe('syntax rules', () => {
 							]
 						}, tokens[3], tokens[5])
 					}, tokens[0], tokens[5])
+				}
+			)
+		});
+
+		it('should parse reusable field documentation', () => {
+			const tokens: ReadonlyArray<LexerToken> = [
+				tesTok({ kind: LexerTokenKind.STRING, string: 'Description' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+			]
+			const buf = new BufferedIterator(
+				tokens[Symbol.iterator]()
+			)
+
+			const rule = rules.REUSABLE_FIELD_DEFINITION
+
+			expect(
+				rule.tryMatch(buf)
+			).toStrictEqual(
+				{
+					kind: 'match',
+					match: tesMatch({
+						kind: 'ReusableFieldDefinitionNode',
+						fieldName: tesMatch({
+							kind: 'FieldNameNode',
+							fieldName: (tokens[2].data as IdentifierTokenData).identifier
+						}, tokens[2]),
+						type: undefined,
+						title: undefined,
+						description: 'Description'
+					}, tokens[0], tokens[2])
 				}
 			)
 		});
@@ -714,6 +775,37 @@ describe('syntax rules', () => {
 							]
 						}, tokens[2], tokens[4])
 					}, tokens[0], tokens[4])
+				}
+			)
+		});
+
+		it('should parse named model with documentation', () => {
+			const tokens: ReadonlyArray<LexerToken> = [
+				tesTok({ kind: LexerTokenKind.STRING, string: 'Title\n\nDescription' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' })
+			]
+			const buf = new BufferedIterator(
+				tokens[Symbol.iterator]()
+			)
+
+			const rule = rules.NAMED_MODEL_DEFINITION
+
+			expect(
+				rule.tryMatch(buf)
+			).toStrictEqual(
+				{
+					kind: 'match',
+					match: tesMatch({
+						kind: 'NamedModelDefinitionNode',
+						modelName: tesMatch({
+							kind: 'ModelTypeNode',
+							name: (tokens[2].data as IdentifierTokenData).identifier
+						}, tokens[2]),
+						type: undefined,
+						title: 'Title',
+						description: 'Description'
+					}, tokens[0], tokens[2])
 				}
 			)
 		});
@@ -867,6 +959,46 @@ describe('syntax rules', () => {
 				}
 			)
 		});
+
+		it('should parse usecase with documentation', () => {
+			const tokens: ReadonlyArray<LexerToken> = [
+				tesTok({ kind: LexerTokenKind.STRING, string: 'Title\n\nDescription' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'usecase' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'usecase' }),
+				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'result' }),
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
+				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+			]
+			const buf = new BufferedIterator(
+				tokens[Symbol.iterator]()
+			)
+
+			const rule = rules.USECASE_DEFINITION
+
+			expect(
+				rule.tryMatch(buf)
+			).toStrictEqual(
+				{
+					kind: 'match',
+					match: tesMatch({
+						kind: 'UseCaseDefinitionNode',
+						useCaseName: (tokens[1].data as IdentifierTokenData).identifier,
+						safety: undefined,
+						input: undefined,
+						result: tesMatch({
+							kind: 'ModelTypeNode',
+							name: (tokens[6].data as IdentifierTokenData).identifier
+						}, tokens[6]),
+						asyncResult: undefined,
+						errors: undefined,
+						title: 'Title',
+						description: 'Description'
+					}, tokens[0], tokens[7])
+				}
+			)
+		});
 	});
 
 	describe('document', () => {
@@ -919,6 +1051,37 @@ describe('syntax rules', () => {
 							profileId: (tokens[2].data as StringTokenData).string,
 						}, tokens[0], tokens[2])
 					}, tokens[0], tokens[2])
+				}
+			)
+		});
+
+		it('should parse profile with documentation', () => {
+			const tokens: ReadonlyArray<LexerToken> = [
+				tesTok({ kind: LexerTokenKind.STRING, string: 'Title\n\nDescription' }),
+				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
+				tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
+			]
+			const buf = new BufferedIterator(
+				tokens[Symbol.iterator]()
+			)
+
+			const rule = rules.PROFILE
+
+			expect(
+				rule.tryMatch(buf)
+			).toStrictEqual(
+				{
+					kind: 'match',
+					match: tesMatch({
+						kind: 'ProfileNode',
+						profileId: tesMatch({
+							kind: 'ProfileIdNode',
+							profileId: (tokens[3].data as StringTokenData).string,
+						}, tokens[1], tokens[3]),
+						title: 'Title',
+						description: 'Description'
+					}, tokens[0], tokens[3])
 				}
 			)
 		});

@@ -17,10 +17,40 @@ import {
 	ProfileProfileIdNode,
 	ProfileNode,
 	ProfileDocumentNode,
-	DocumentDefinition
+	DocumentDefinition,
+	DocumentedNode,
+	ProfileASTNodeBase
 } from '@superindustries/language';
 import { LexerTokenKind, SeparatorTokenData, OperatorTokenData, IdentifierTokenData, DecoratorTokenData, StringTokenData, LiteralTokenData } from '../../lexer/token';
 import { extractDocumentation } from '../util';
+
+// HELPER RULES //
+
+function documentedNode<N extends (DocumentedNode & ProfileASTNodeBase), R extends SyntaxRule<N>>(rule: R): SyntaxRule<N> {
+	return SyntaxRule.optional(
+		SyntaxRule.string()
+	).followedBy(
+		rule
+	).map(
+		(matches): N => {
+			const [maybeDoc, result] = (
+				matches as [
+					LexerTokenMatch<StringTokenData>,
+					N
+				]
+			); // TODO: Won't need `as` cast in Typescript 4
+			if (maybeDoc !== undefined) {
+				const doc = extractDocumentation(maybeDoc.data.string);
+				result.title = doc.title;
+				result.description = doc.description
+				result.location = maybeDoc.location
+				result.span!.start = maybeDoc.span.start
+			}
+
+			return result;
+		}
+	)
+}
 
 // MUTABLE RULES //
 
@@ -270,80 +300,86 @@ export const FIELD_NAME: SyntaxRule<FieldNameNode> = SyntaxRule.identifier().map
 	}
 )
 /** Construct of form: `ident: type`, `ident { fields... }` or `ident` */
-export const FIELD_DEFINITION: SyntaxRule<FieldDefinitionNode> = FIELD_NAME.followedBy(
-	SyntaxRule.optional(
-		TYPE_ASSIGNMENT
-	)
-).map(
-	(matches): FieldDefinitionNode => {
-		const [fieldName, maybeType] = (
-			matches as [
-				FieldNameNode,
-				Type | undefined
-			]
-		); // TODO: Won't need `as` cast in Typescript 4
+export const FIELD_DEFINITION: SyntaxRule<FieldDefinitionNode> = documentedNode(
+	FIELD_NAME.followedBy(
+		SyntaxRule.optional(
+			TYPE_ASSIGNMENT
+		)
+	).map(
+		(matches): FieldDefinitionNode => {
+			const [fieldName, maybeType] = (
+				matches as [
+					FieldNameNode,
+					Type | undefined
+				]
+			); // TODO: Won't need `as` cast in Typescript 4
 
-		return {
-			kind: 'FieldDefinitionNode',
-			fieldName,
-			type: maybeType,
-			location: fieldName.location,
-			span: { start: fieldName.span!.start, end: maybeType?.span!.end ?? fieldName.span!.end }
+			return {
+				kind: 'FieldDefinitionNode',
+				fieldName,
+				type: maybeType,
+				location: fieldName.location,
+				span: { start: fieldName.span!.start, end: maybeType?.span!.end ?? fieldName.span!.end }
+			}
 		}
-	}
+	)
 )
 FIELD_DEFINITION_MUT.rule = FIELD_DEFINITION;
 
 /** * Construct of form: `field ident: type` or `field ident { fields... }` */
-export const REUSABLE_FIELD_DEFINITION: SyntaxRule<ReusableFieldDefinitionNode> = SyntaxRule.identifier('field').followedBy(
-	FIELD_NAME
-).andBy(
-	SyntaxRule.optional(TYPE_ASSIGNMENT)
-).map(
-	(matches): ReusableFieldDefinitionNode => {
-		const [keyword, fieldName, type] = (
-			matches as [
-				LexerTokenMatch<IdentifierTokenData>,
-				FieldNameNode,
-				Type | undefined
-			]
-		) // TODO: Won't need `as` cast in Typescript 4
+export const REUSABLE_FIELD_DEFINITION: SyntaxRule<ReusableFieldDefinitionNode> = documentedNode(
+	SyntaxRule.identifier('field').followedBy(
+		FIELD_NAME
+	).andBy(
+		SyntaxRule.optional(TYPE_ASSIGNMENT)
+	).map(
+		(matches): ReusableFieldDefinitionNode => {
+			const [keyword, fieldName, type] = (
+				matches as [
+					LexerTokenMatch<IdentifierTokenData>,
+					FieldNameNode,
+					Type | undefined
+				]
+			) // TODO: Won't need `as` cast in Typescript 4
 
-		return {
-			kind: 'ReusableFieldDefinitionNode',
-			fieldName,
-			type,
-			location: keyword.location,
-			span: { start: keyword.span.start, end: (type ?? fieldName).span!.end }
+			return {
+				kind: 'ReusableFieldDefinitionNode',
+				fieldName,
+				type,
+				location: keyword.location,
+				span: { start: keyword.span.start, end: (type ?? fieldName).span!.end }
+			}
 		}
-	}
+	)
 )
 
 // MODEL //
 
 /** Construct of form: `model ident: type` or `model ident { fields... }` */
-export const NAMED_MODEL_DEFINITION: SyntaxRule<NamedModelDefinitionNode> = SyntaxRule.identifier('model').followedBy(
-	MODEL_TYPE
-).andBy(
-	SyntaxRule.optional(TYPE_ASSIGNMENT)
-).map(
-	(matches): NamedModelDefinitionNode => {
-		const [keyword, modelName, type] = (
-			matches as [
-				LexerTokenMatch<IdentifierTokenData>,
-				ModelTypeNode,
-				Type | undefined
-			]
-		) // TODO: Won't need `as` cast in Typescript 4
+export const NAMED_MODEL_DEFINITION: SyntaxRule<NamedModelDefinitionNode> = documentedNode(
+	SyntaxRule.identifier('model').followedBy(
+		MODEL_TYPE
+	).andBy(
+		SyntaxRule.optional(TYPE_ASSIGNMENT)
+	).map(
+		(matches): NamedModelDefinitionNode => {
+			const [keyword, modelName, type] = (
+				matches as [
+					LexerTokenMatch<IdentifierTokenData>,
+					ModelTypeNode,
+					Type | undefined
+				]
+			) // TODO: Won't need `as` cast in Typescript 4
 
-		return {
-			kind: 'NamedModelDefinitionNode',
-			modelName,
-			type,
-			location: keyword.location,
-			span: { start: keyword.span.start, end: (type ?? modelName).span!.end }
+			return {
+				kind: 'NamedModelDefinitionNode',
+				modelName,
+				type,
+				location: keyword.location,
+				span: { start: keyword.span.start, end: (type ?? modelName).span!.end }
+			}
 		}
-	}
+	)
 )
 
 // USECASE //
@@ -362,82 +398,84 @@ usecase ident @deco {
 }
 ```
 */
-export const USECASE_DEFINITION: SyntaxRule<ProfileUseCaseDefinitionNode> = SyntaxRule.identifier('usecase').followedBy(
-	SyntaxRule.identifier()
-).andBy(
-	SyntaxRule.optional(SyntaxRule.decorator())
-).andBy(
-	SyntaxRule.separator('{')
-).andBy(
-	SyntaxRule.optional(
-		SyntaxRule.identifier('input').followedBy(TYPE_ASSIGNMENT)
-	)
-).andBy(
-	SyntaxRule.identifier('result').followedBy(TYPE_ASSIGNMENT)
-).andBy(
-	SyntaxRule.optional(
-		SyntaxRule.identifier('async').followedBy(
-			SyntaxRule.identifier('result')
-		).andBy(
-			TYPE_ASSIGNMENT
+export const USECASE_DEFINITION: SyntaxRule<ProfileUseCaseDefinitionNode> = documentedNode(
+	SyntaxRule.identifier('usecase').followedBy(
+		SyntaxRule.identifier()
+	).andBy(
+		SyntaxRule.optional(SyntaxRule.decorator())
+	).andBy(
+		SyntaxRule.separator('{')
+	).andBy(
+		SyntaxRule.optional(
+			SyntaxRule.identifier('input').followedBy(TYPE_ASSIGNMENT)
 		)
-	)
-).andBy(
-	SyntaxRule.optional(
-		SyntaxRule.identifier('errors').followedBy(
-			SyntaxRule.operator(':')
-		).andBy(
-			SyntaxRule.separator('[')
-		).andBy(
-			SyntaxRule.repeat(TYPE)
-		).andBy(
-			SyntaxRule.separator(']')
+	).andBy(
+		SyntaxRule.identifier('result').followedBy(TYPE_ASSIGNMENT)
+	).andBy(
+		SyntaxRule.optional(
+			SyntaxRule.identifier('async').followedBy(
+				SyntaxRule.identifier('result')
+			).andBy(
+				TYPE_ASSIGNMENT
+			)
 		)
-	)
-).andBy(
-	SyntaxRule.separator('}')
-).map(
-	(matches): ProfileUseCaseDefinitionNode => {
-		const [
-			usecaseKey,
-			name,
-			maybeSafety,
-			/* sepStart */,
-			maybeInput,
-			[/* _resultKey */, resultType],
-			maybeAsyncResult,
-			maybeErrors,
-			sepEnd
-		] = (
-			matches as [
-				LexerTokenMatch<IdentifierTokenData>,
-				LexerTokenMatch<IdentifierTokenData>,
-				LexerTokenMatch<DecoratorTokenData> | undefined,
-				LexerTokenMatch<SeparatorTokenData>,
-				[LexerTokenMatch<IdentifierTokenData>, Type] | undefined,
-				[LexerTokenMatch<IdentifierTokenData>, Type],
-				[LexerTokenMatch<IdentifierTokenData>, LexerTokenMatch<IdentifierTokenData>, Type] | undefined,
-				[LexerTokenMatch<IdentifierTokenData>, LexerTokenMatch<OperatorTokenData>, LexerTokenMatch<SeparatorTokenData>, Type[], LexerTokenMatch<SeparatorTokenData>] | undefined,
-				LexerTokenMatch<SeparatorTokenData>
-			]
-		) // TODO: Won't need `as` cast in Typescript 4
+	).andBy(
+		SyntaxRule.optional(
+			SyntaxRule.identifier('errors').followedBy(
+				SyntaxRule.operator(':')
+			).andBy(
+				SyntaxRule.separator('[')
+			).andBy(
+				SyntaxRule.repeat(TYPE)
+			).andBy(
+				SyntaxRule.separator(']')
+			)
+		)
+	).andBy(
+		SyntaxRule.separator('}')
+	).map(
+		(matches): ProfileUseCaseDefinitionNode => {
+			const [
+				usecaseKey,
+				name,
+				maybeSafety,
+				/* sepStart */,
+				maybeInput,
+				[/* _resultKey */, resultType],
+				maybeAsyncResult,
+				maybeErrors,
+				sepEnd
+			] = (
+				matches as [
+					LexerTokenMatch<IdentifierTokenData>,
+					LexerTokenMatch<IdentifierTokenData>,
+					LexerTokenMatch<DecoratorTokenData> | undefined,
+					LexerTokenMatch<SeparatorTokenData>,
+					[LexerTokenMatch<IdentifierTokenData>, Type] | undefined,
+					[LexerTokenMatch<IdentifierTokenData>, Type],
+					[LexerTokenMatch<IdentifierTokenData>, LexerTokenMatch<IdentifierTokenData>, Type] | undefined,
+					[LexerTokenMatch<IdentifierTokenData>, LexerTokenMatch<OperatorTokenData>, LexerTokenMatch<SeparatorTokenData>, Type[], LexerTokenMatch<SeparatorTokenData>] | undefined,
+					LexerTokenMatch<SeparatorTokenData>
+				]
+			) // TODO: Won't need `as` cast in Typescript 4
 
-		const input: Type | undefined = maybeInput?.[1]
-		const asyncResult: Type | undefined = maybeAsyncResult?.[2]
-		const errors: Type[] | undefined = maybeErrors?.[3]
+			const input: Type | undefined = maybeInput?.[1]
+			const asyncResult: Type | undefined = maybeAsyncResult?.[2]
+			const errors: Type[] | undefined = maybeErrors?.[3]
 
-		return {
-			kind: 'UseCaseDefinitionNode',
-			useCaseName: name.data.identifier,
-			safety: maybeSafety?.data.decorator,
-			input,
-			result: resultType,
-			asyncResult,
-			errors,
-			location: usecaseKey.location,
-			span: { start: usecaseKey.span.start, end: sepEnd.span.end }
+			return {
+				kind: 'UseCaseDefinitionNode',
+				useCaseName: name.data.identifier,
+				safety: maybeSafety?.data.decorator,
+				input,
+				result: resultType,
+				asyncResult,
+				errors,
+				location: usecaseKey.location,
+				span: { start: usecaseKey.span.start, end: sepEnd.span.end }
+			}
 		}
-	}
+	)
 )
 
 // DOCUMENT //
@@ -466,23 +504,24 @@ export const PROFILE_ID: SyntaxRule<ProfileProfileIdNode> = SyntaxRule.identifie
 	}
 )
 
-export const PROFILE: SyntaxRule<ProfileNode> = SyntaxRule.optional(SyntaxRule.string()).followedBy(PROFILE_ID).map(
-	(matches): ProfileNode => {
-		const [maybeDoc, profileId] = (
-			matches as [
-				LexerTokenMatch<StringTokenData> | undefined,
-				ProfileProfileIdNode
-			]
-		) // TODO: Won't need `as` cast in Typescript 4
+export const PROFILE: SyntaxRule<ProfileNode> = documentedNode(
+	SyntaxRule.optional(SyntaxRule.string()).followedBy(PROFILE_ID).map(
+		(matches): ProfileNode => {
+			const [maybeDoc, profileId] = (
+				matches as [
+					LexerTokenMatch<StringTokenData> | undefined,
+					ProfileProfileIdNode
+				]
+			) // TODO: Won't need `as` cast in Typescript 4
 
-		return {
-			kind: 'ProfileNode',
-			profileId,
-			location: maybeDoc?.location ?? profileId.location,
-			span: { start: maybeDoc?.span.start ?? profileId.span!.start, end: profileId.span!.end },
-			...extractDocumentation(maybeDoc?.data.string)
+			return {
+				kind: 'ProfileNode',
+				profileId,
+				location: maybeDoc?.location ?? profileId.location,
+				span: { start: maybeDoc?.span.start ?? profileId.span!.start, end: profileId.span!.end }
+			}
 		}
-	}
+	)
 )
 
 export const DOCUMENT_DEFINITION: SyntaxRule<DocumentDefinition> = USECASE_DEFINITION.or(REUSABLE_FIELD_DEFINITION).or(NAMED_MODEL_DEFINITION);
