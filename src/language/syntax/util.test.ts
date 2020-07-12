@@ -77,7 +77,7 @@ describe('buffered iterator', () => {
 		const innerIter = inner[Symbol.iterator]();
 		let counter = 0;
 		const innerWrap = {
-			next() {
+			next(): IteratorResult<number> {
 				if (counter >= inner.length + 1) {
 					throw 'next called after inner iterator exhausted'
 				}

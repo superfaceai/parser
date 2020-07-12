@@ -1,20 +1,20 @@
 import {
-	LexerTokenKind,
-	LexerToken,
-	DecoratorValue,
-	OperatorValue,
-	SeparatorValue,
-	LexerTokenData,
-	IdentifierTokenData,
-	LiteralTokenData,
-	StringTokenData,
 	DecoratorTokenData,
-	OperatorTokenData,
-	SeparatorTokenData,
+	DecoratorValue,
+	IdentifierTokenData,
 	IdentifierValue,
+	LexerToken,
+	LexerTokenData,
+	LexerTokenKind,
+	LiteralTokenData,
+	OperatorTokenData,
+	OperatorValue,
+	SeparatorTokenData,
+	SeparatorValue,
+	StringTokenData,
 } from '../../lexer/token';
-import { BufferedIterator } from '../util';
 import { Location, Span } from '../../source';
+import { BufferedIterator } from '../util';
 
 export type RuleResultMatch<T> = {
 	kind: 'match',
@@ -22,7 +22,9 @@ export type RuleResultMatch<T> = {
 }
 export type RuleResultNoMatch = {
 	kind: 'nomatch',
+	
 	/** Pairs of rules and tokens that were attempted by failed */
+	/* eslint-disable-next-line @typescript-eslint/no-explicit-any */ // cannot be unknown :(
 	attempts: { rule: SyntaxRule<any>, token?: LexerToken }[]
 	// TODO: Partial match?
 }
@@ -91,6 +93,10 @@ export abstract class SyntaxRule<T> {
 
 	// Factory methods for basic rules
 
+	// SyntaxRule class doesn't have to provide these functions, but they are usefull.
+	// There is no way to cause a ReferenceError because the classes (below) are declared
+	// before these functions can be called, so this lint is wrong.
+	/* eslint-disable @typescript-eslint/no-use-before-define */
 	static separator(separator?: SeparatorValue): SyntaxRuleSeparator {
 		return new SyntaxRuleSeparator(separator);
 	}
@@ -140,6 +146,7 @@ export abstract class SyntaxRule<T> {
 	static optional<R>(rule: SyntaxRule<R>): SyntaxRuleOptional<R> {
 		return new SyntaxRuleOptional(rule);
 	}
+	/* eslint-enable @typescript-eslint/no-use-before-define */
 }
 
 // Basic nodes //
@@ -399,6 +406,7 @@ export class SyntaxRuleFollowedBy<F extends unknown[], S> extends SyntaxRule<(F[
 		const secondMatch = this.second.tryMatch(tokens);
 		if (secondMatch.kind === 'nomatch') {
 			tokens.restore(save);
+			
 			return secondMatch;
 		}
 
@@ -466,7 +474,7 @@ export class SyntaxRuleRepeat<R> extends SyntaxRule<R[]> {
 	tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R[]> {
 		// Count the matches separately, because there are rules that produce empty `nodes`
 		let matchCount = 0;
-		let matches: R[] = []
+		const matches: R[] = []
 		
 		for (;;) {
 			const match = this.rule.tryMatch(tokens);
@@ -497,7 +505,7 @@ export class SyntaxRuleRepeat<R> extends SyntaxRule<R[]> {
 	}
 
 	toStringDepth(depth: number): string {
-		let res = INDENT_CHAR.repeat(depth) + `rule MANY\n`;
+		let res = INDENT_CHAR.repeat(depth) + 'rule MANY\n';
 		res += this.rule.toStringDepth(depth + 1);
 
 		return res;

@@ -1,6 +1,6 @@
-import { BufferedIterator } from "../util";
-import { LexerToken, LexerTokenKind, LexerTokenData } from "../../lexer/token";
-import { SyntaxRule, LexerTokenMatch } from './rule';
+import { LexerToken, LexerTokenData,LexerTokenKind } from '../../lexer/token';
+import { BufferedIterator } from '../util';
+import { LexerTokenMatch,SyntaxRule } from './rule';
 
 // Ensures that token spans are correctly ordered
 let TES_TOK_STATE = 0

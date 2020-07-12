@@ -52,7 +52,7 @@ export class BufferedIterator<T> implements IterableIterator<T> {
 	*
 	* This function will throw if this position cannot be restored.
 */
-	restore(position: number) {
+	restore(position: number): void {
 		if (!Number.isInteger(position) || position < 0) {
 			throw 'position must be a non-negative integer'
 		}
@@ -66,7 +66,7 @@ export class BufferedIterator<T> implements IterableIterator<T> {
 		this.position = position;
 	}
 
-	forget() {
+	forget(): void {
 		const placesToForget = this.buffer.length - (this.absolutePosition - this.position);
 		this.buffer = this.buffer.slice(placesToForget);
 
@@ -90,6 +90,7 @@ export class BufferedIterator<T> implements IterableIterator<T> {
 			const nextValue = this.it.next();
 			if (nextValue.done === true) {
 				this.done = true;
+				
 				return {
 					done: true,
 					value: undefined
@@ -111,6 +112,7 @@ export class BufferedIterator<T> implements IterableIterator<T> {
 		// this.position < this.absolutePosition
 		const bufferIndex = this.buffer.length - (this.absolutePosition - this.position);
 		this.position += 1;
+		
 		return {
 			done: false,
 			value: this.buffer[bufferIndex]
