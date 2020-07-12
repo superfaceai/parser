@@ -482,7 +482,7 @@ export const USECASE_DEFINITION: SyntaxRule<ProfileUseCaseDefinitionNode> = docu
 
 /** `profile: string` */
 export const PROFILE_ID: SyntaxRule<ProfileProfileIdNode> = SyntaxRule.identifier('profile').followedBy(
-	SyntaxRuleSeparator.operator(':')
+	SyntaxRuleSeparator.operator('=')
 ).andBy(
 	SyntaxRule.string()
 ).map(

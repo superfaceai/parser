@@ -1005,7 +1005,7 @@ describe('syntax rules', () => {
 		it('should parse profile id', () => {
 			const tokens: ReadonlyArray<LexerToken> = [
 				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
-				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
 				tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
 			]
 			const buf = new BufferedIterator(
@@ -1030,7 +1030,7 @@ describe('syntax rules', () => {
 		it('should parse profile', () => {
 			const tokens: ReadonlyArray<LexerToken> = [
 				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
-				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
 				tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
 			]
 			const buf = new BufferedIterator(
@@ -1059,7 +1059,7 @@ describe('syntax rules', () => {
 			const tokens: ReadonlyArray<LexerToken> = [
 				tesTok({ kind: LexerTokenKind.STRING, string: 'Title\n\nDescription' }),
 				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
-				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
 				tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
 			]
 			const buf = new BufferedIterator(
@@ -1091,7 +1091,7 @@ describe('syntax rules', () => {
 				tesTok({ kind: LexerTokenKind.SEPARATOR, separator: 'SOF' }),
 
 				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
-				tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
+				tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
 				tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
 
 				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),

@@ -2,7 +2,7 @@ import { Source } from "./source"
 import { parseProfile } from "./syntax/parser"
 
 it('should parse simple profile into AST', () => {
-	const input = `profile: "http://superface.ai/profile/conversation/SendMessage"
+	const input = `profile = "http://superface.ai/profile/conversation/SendMessage"
 
 	'Send single conversation message'
 	usecase SendMessage {
