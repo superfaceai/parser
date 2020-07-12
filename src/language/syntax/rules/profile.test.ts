@@ -1,7 +1,7 @@
-import * as rules from './profile';
-import { LexerToken, LexerTokenData, LexerTokenKind, IdentifierTokenData, LiteralTokenData, StringTokenData, DecoratorTokenData } from '../../lexer/token';
-import { BufferedIterator } from '../util';
+import { DecoratorTokenData, IdentifierTokenData, LexerToken, LexerTokenData, LexerTokenKind, LiteralTokenData, StringTokenData } from '../../lexer/token';
 import { Location, Span } from '../../source';
+import { BufferedIterator } from '../util';
+import * as rules from './profile';
 
 // Ensures that token spans are correctly ordered in delcaration order
 // while also making sure that their spans and locations are random enough so that
@@ -111,7 +111,7 @@ describe('syntax rules', () => {
 					kind: 'match',
 					match: tesMatch({
 						kind: 'EnumTypeNode',
-    					enumValues: [
+						enumValues: [
 							(tokens[2].data as LiteralTokenData).literal,
 							(tokens[3].data as LiteralTokenData).literal,
 							(tokens[4].data as StringTokenData).string,
@@ -170,7 +170,7 @@ describe('syntax rules', () => {
 					kind: 'match',
 					match: tesMatch({
 						kind: 'ObjectTypeNode',
-    					fields: [
+						fields: [
 							tesMatch({
 								kind: 'FieldDefinitionNode',
 								fieldName: tesMatch({

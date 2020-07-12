@@ -1,28 +1,27 @@
-import { SyntaxRule, SyntaxRuleMutable, LexerTokenMatch, SyntaxRuleSeparator } from './rule';
-
 import {
-	ScalarTypeNode,
-	ModelTypeNode,
-	ObjectTypeNode,
-	EnumTypeNode,
-	ListTypeNode,
-	NonNullTypeNode,
-	UnionTypeNode,
-	Type,
-	FieldDefinitionNode,
-	FieldNameNode,
-	ReusableFieldDefinitionNode,
-	NamedModelDefinitionNode,
-	ProfileUseCaseDefinitionNode,
-	ProfileProfileIdNode,
-	ProfileNode,
-	ProfileDocumentNode,
 	DocumentDefinition,
 	DocumentedNode,
-	ProfileASTNodeBase
-} from '@superindustries/language';
-import { LexerTokenKind, SeparatorTokenData, OperatorTokenData, IdentifierTokenData, DecoratorTokenData, StringTokenData, LiteralTokenData } from '../../lexer/token';
+	EnumTypeNode,
+	FieldDefinitionNode,
+	FieldNameNode,
+	ListTypeNode,
+	ModelTypeNode,
+	NamedModelDefinitionNode,
+	NonNullTypeNode,
+	ObjectTypeNode,
+	ProfileASTNodeBase,
+	ProfileDocumentNode,
+	ProfileNode,
+	ProfileProfileIdNode,
+	ProfileUseCaseDefinitionNode,
+	ReusableFieldDefinitionNode,
+	ScalarTypeNode,
+	Type,
+	UnionTypeNode} from '@superindustries/language';
+
+import { DecoratorTokenData, IdentifierTokenData, LexerTokenKind, LiteralTokenData,OperatorTokenData, SeparatorTokenData, StringTokenData } from '../../lexer/token';
 import { extractDocumentation } from '../util';
+import { LexerTokenMatch, SyntaxRule, SyntaxRuleMutable, SyntaxRuleSeparator } from './rule';
 
 // HELPER RULES //
 
@@ -117,7 +116,7 @@ export const ENUM_TYPE: SyntaxRule<EnumTypeNode> = SyntaxRule.identifier('Enum')
 			]
 		); // TODO: Won't need `as` cast in Typescript 4
 
-		let enumValues: (string | number | boolean)[] = []
+		const enumValues: (string | number | boolean)[] = []
 		values.forEach(v => {
 			switch (v.data.kind) {
 				case LexerTokenKind.IDENTIFIER:
@@ -253,7 +252,7 @@ export const UNION_TYPE: SyntaxRule<UnionTypeNode> = NON_UNION_TYPE.followedBy(
 			]
 		) // TODO: Won't need `as` cast in Typescript 4
 
-		let types = [firstType, secondType]
+		const types = [firstType, secondType]
 		restPairs?.forEach(([_op, type]) => types.push(type))
 
 		return {
