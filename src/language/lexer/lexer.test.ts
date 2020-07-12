@@ -141,7 +141,7 @@ describe('lexer', () => {
     });
 
     it('operators', () => {
-      const lexer = new Lexer(new Source(': ! + : | - : ++ :: -- !! ||'));
+      const lexer = new Lexer(new Source(': ! + : | = - : ++ :: -- !! || =='));
       const expectedTokens: (LexerTokenData | OperatorValue)[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
         ':',
@@ -149,6 +149,7 @@ describe('lexer', () => {
         '+',
         ':',
         '|',
+        '=',
         '-',
         ':',
         '+',
@@ -161,6 +162,8 @@ describe('lexer', () => {
         '!',
         '|',
         '|',
+        '=',
+        '=',
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
 
@@ -382,7 +385,7 @@ describe('lexer', () => {
         for more details.
         '''
         
-        profile: "https://superface.ai/profiles/superface/Map"
+        profile = "https://superface.ai/profiles/superface/Map"
         
         #
         # Use cases

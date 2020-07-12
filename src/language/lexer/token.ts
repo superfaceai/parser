@@ -4,7 +4,7 @@ import * as util from './util';
 /// Enum describing the different kinds of tokens that the lexer emits.
 export const enum LexerTokenKind {
   SEPARATOR, // SOF/EOF, (), [], {}
-  OPERATOR, // :, !, +, -
+  OPERATOR, // :, !, +, -, |, =
   LITERAL, // number or boolean
   STRING, // string literals - separate because it makes later stages easier
   DECORATOR, // @safe, @unsafe, @idempotent
@@ -36,13 +36,14 @@ export const SEPARATORS: {
 };
 
 // Operators
-export type OperatorValue = ':' | '+' | '-' | '!' | '|';
+export type OperatorValue = ':' | '+' | '-' | '!' | '|' | '=';
 export const OPERATORS: { [P in OperatorValue]: LexerScanRule<P> } = {
   ':': [':', util.isAny],
   '+': ['+', util.isAny],
   '-': ['-', util.isAny],
   '!': ['!', util.isAny],
   '|': ['|', util.isAny],
+  '=': ['=', util.isAny],
 };
 
 // Literals

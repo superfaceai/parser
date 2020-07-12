@@ -51,10 +51,10 @@ export function transpileScript(
   const outputTextStripped = outputText
     .replace('//# sourceMappingURL=module.js.map', '')
     .trimRight();
-  
+
   // `sourceMapText` will be here because we requested it by setting the compiler flag
   if (!sourceMapText) {
-    throw 'Source map text is not present'
+    throw 'Source map text is not present';
   }
   const sourceMapJson: { mappings: string } = JSON.parse(sourceMapText);
 
