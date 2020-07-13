@@ -25,18 +25,6 @@ export function isLetter(char: number): boolean {
 }
 export const countStartingLetters = countStarting.bind(undefined, isLetter);
 
-export function isValidIdentififerStartChar(char: number): boolean {
-  // _
-  return char === 95 || isLetter(char);
-}
-export function isValidIdentifierChar(char: number): boolean {
-  return isValidIdentififerStartChar(char) || isDecimalNumber(char);
-}
-export const countStartingIdentifierChars = countStarting.bind(
-  undefined,
-  isValidIdentifierChar
-);
-
 export function isBinaryNumber(char: number): boolean {
   // 0, 1
   return char === 48 || char === 49;
@@ -83,6 +71,18 @@ export function countStartingNumbersRadix(str: string, radix: number): number {
 export function isDecimalSeparator(char: number): boolean {
   return char === 46;
 }
+
+export function isValidIdentififerStartChar(char: number): boolean {
+  // _
+  return char === 95 || isLetter(char);
+}
+export function isValidIdentifierChar(char: number): boolean {
+  return isValidIdentififerStartChar(char) || isDecimalNumber(char);
+}
+export const countStartingIdentifierChars = countStarting.bind(
+  undefined,
+  isValidIdentifierChar
+);
 
 export function isWhitespace(char: number): boolean {
   // tab, space, BOM, newline
