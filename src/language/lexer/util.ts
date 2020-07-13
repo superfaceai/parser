@@ -25,9 +25,12 @@ export function isLetter(char: number): boolean {
 }
 export const countStartingLetters = countStarting.bind(undefined, isLetter);
 
-export function isValidIdentifierChar(char: number): boolean {
+export function isValidIdentififerStartChar(char: number): boolean {
   // _
   return char === 95 || isLetter(char);
+}
+export function isValidIdentifierChar(char: number): boolean {
+  return isValidIdentififerStartChar(char) || isDecimalNumber(char);
 }
 export const countStartingIdentifierChars = countStarting.bind(
   undefined,

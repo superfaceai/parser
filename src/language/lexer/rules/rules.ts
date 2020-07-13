@@ -234,6 +234,10 @@ export function tryParseDecorator(
 export function tryParseIdentifier(
   slice: string
 ): ParseResult<IdentifierTokenData> {
+  if (!util.isValidIdentififerStartChar(slice.charCodeAt(0))) {
+    return null;
+  }
+
   const identLength = util.countStartingIdentifierChars(slice);
   if (identLength === 0) {
     return null;

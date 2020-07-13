@@ -321,7 +321,7 @@ describe('lexer', () => {
 
     it('identifiers', () => {
       const lexer = new Lexer(
-        new Source('ident my fier pls usecaseNOT modelout boolean')
+        new Source('ident my fier pls usecaseNOT modelout boolean b00lean a123456789_0')
       );
       const expectedTokens: (LexerTokenData | IdentifierValue)[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
@@ -332,6 +332,8 @@ describe('lexer', () => {
         'usecaseNOT',
         'modelout',
         'boolean',
+        'b00lean',
+        'a123456789_0',
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
 
@@ -508,6 +510,19 @@ describe('lexer', () => {
       expect(() => lexer.advance()).toThrow(
         'Expected one of [safe, unsafe, idempotent]'
       );
+    });
+
+    it('identifiers starting with a number', () => {
+      const lexer = new Lexer(new Source('1ident'));
+      lexer.advance(); // SOF
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.LITERAL,
+        literal: 1
+      });
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.IDENTIFIER,
+        identifier: 'ident'
+      });
     });
   });
 
