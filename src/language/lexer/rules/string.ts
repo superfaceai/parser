@@ -4,7 +4,7 @@ import { ParseError, ParseResult } from './rules';
 
 function resolveStringLiteralEscape(
   slice: string
-): { length: number; value: string } | null {
+): { length: number; value: string } | undefined {
   const firstChar = slice.charCodeAt(0);
 
   let result;
@@ -34,7 +34,7 @@ function resolveStringLiteralEscape(
       break;
 
     default:
-      return null;
+      return undefined;
   }
 
   return {
@@ -108,17 +108,19 @@ function transformBlockStringValue(string: string): string {
   return output;
 }
 
-/// Tries to parse a string literal token at current position.
-///
-/// Returns `null` if the current position cannot contain a string literal.
-///
-/// Returns an error if parsing fails.
+/**
+ * Tries to parse a string literal token at current position.
+ *
+ * Returns `null` if the current position cannot contain a string literal.
+ *
+ * Returns an error if parsing fails.
+ */
 export function tryParseStringLiteral(
   slice: string
 ): ParseResult<StringTokenData> {
   const firstChar = slice.charCodeAt(0);
   if (!util.isStringLiteralChar(firstChar)) {
-    return null;
+    return undefined;
   }
 
   let startingQuoteChars = util.countStarting(
@@ -152,7 +154,7 @@ export function tryParseStringLiteral(
     startingQuoteChars = 3;
   }
 
-  /// non-block strings allow escaping characters, so the predicate must different
+  /** non-block strings allow escaping characters, so the predicate must different */
   let nonquotePredicate: (_: number) => boolean;
   if (startingQuoteChars === 1) {
     nonquotePredicate = (char: number): boolean =>
@@ -199,7 +201,7 @@ export function tryParseStringLiteral(
       eatChars(1, false);
 
       const escapeResult = resolveStringLiteralEscape(restSlice);
-      if (escapeResult === null) {
+      if (escapeResult === undefined) {
         return new ParseError(
           LexerTokenKind.STRING,
           { start: 0, end: eatenChars + 1 },

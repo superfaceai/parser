@@ -33,17 +33,17 @@ export class ParseError {
 }
 
 export type ParseResult<T extends LexerTokenData> =
-  | ([T, number] | null)
+  | ([T, number] | undefined)
   | ParseError;
 
 function tryParseScannerRules<T>(
   slice: string,
-  rules: { [x: string]: LexerScanRule<T> }
-): { value: T; length: number } | null {
-  let result = null;
+  rules: Record<string, LexerScanRule<T>>
+): { value: T; length: number } | undefined {
+  let result = undefined;
   for (const [key, [word, predicate]] of Object.entries(rules)) {
-    result = util.checkKeywordLiteral<T>(slice, key, word, predicate) ?? null;
-    if (result ?? false) {
+    result = util.checkKeywordLiteral<T>(slice, key, word, predicate);
+    if (result) {
       break;
     }
   }
@@ -69,8 +69,8 @@ export function tryParseSeparator(
   }
 
   const parsed = tryParseScannerRules(slice, SEPARATORS);
-  if (parsed === null) {
-    return null;
+  if (parsed === undefined) {
+    return undefined;
   }
 
   return [
@@ -89,8 +89,8 @@ export function tryParseOperator(
   slice: string
 ): ParseResult<OperatorTokenData> {
   const parsed = tryParseScannerRules(slice, OPERATORS);
-  if (parsed === null) {
-    return null;
+  if (parsed === undefined) {
+    return undefined;
   }
 
   return [
@@ -104,8 +104,8 @@ export function tryParseOperator(
 
 function tryParseLiteralBoolean(slice: string): ParseResult<LiteralTokenData> {
   const parsed = tryParseScannerRules(slice, LITERALS_BOOL);
-  if (parsed === null) {
-    return null;
+  if (parsed === undefined) {
+    return undefined;
   }
 
   return [
@@ -146,7 +146,7 @@ function tryParseLiteralNumber(slice: string): ParseResult<LiteralTokenData> {
         'Expected a number following integer base prefix'
       );
     } else {
-      return null;
+      return undefined;
     }
   }
   numberLiteralLength += startingNumbers;
@@ -206,11 +206,11 @@ export function tryParseDecorator(
   slice: string
 ): ParseResult<DecoratorTokenData> {
   if (!util.isDecoratorChar(slice.charCodeAt(0))) {
-    return null;
+    return undefined;
   }
 
   const parsed = tryParseScannerRules(slice.slice(1), DECORATORS);
-  if (parsed === null) {
+  if (parsed === undefined) {
     return new ParseError(
       LexerTokenKind.DECORATOR,
       { start: 0, end: 2 },
@@ -235,12 +235,12 @@ export function tryParseIdentifier(
   slice: string
 ): ParseResult<IdentifierTokenData> {
   if (!util.isValidIdentififerStartChar(slice.charCodeAt(0))) {
-    return null;
+    return undefined;
   }
 
   const identLength = util.countStartingIdentifierChars(slice);
   if (identLength === 0) {
-    return null;
+    return undefined;
   }
 
   return [
@@ -271,6 +271,6 @@ export function tryParseComment(slice: string): ParseResult<CommentTokenData> {
       length + 1,
     ];
   } else {
-    return null;
+    return undefined;
   }
 }

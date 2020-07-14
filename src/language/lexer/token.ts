@@ -1,7 +1,7 @@
 import { Location, Span } from '../source';
 import * as util from './util';
 
-/// Enum describing the different kinds of tokens that the lexer emits.
+/** Enum describing the different kinds of tokens that the lexer emits. */
 export const enum LexerTokenKind {
   SEPARATOR, // SOF/EOF, (), [], {}
   OPERATOR, // :, !, +, -, |, =
@@ -47,9 +47,7 @@ export const OPERATORS: { [P in OperatorValue]: LexerScanRule<P> } = {
 };
 
 // Literals
-export const LITERALS_BOOL: {
-  [x: string]: LexerScanRule<boolean>;
-} = {
+export const LITERALS_BOOL: Record<string, LexerScanRule<boolean>> = {
   true: [true, util.isNotValidIdentifierChar],
   false: [false, util.isNotValidIdentifierChar],
 };
@@ -129,19 +127,14 @@ export function formatTokenData(data: LexerTokenData): string {
 // Token class //
 
 export class LexerToken {
-  /// Data of the token.
-  readonly data: LexerTokenData;
-
-  /// Span of the source code which this token covers.
-  readonly span: Span;
-  /// Location in the formatted source code of this token.
-  readonly location: Location;
-
-  constructor(data: LexerTokenData, span: Span, location: Location) {
-    this.data = data;
-    this.span = span;
-    this.location = location;
-  }
+  constructor(
+    /** Data of the token. */
+    readonly data: LexerTokenData,
+    /** Span of the source code which this token covers. */
+    readonly span: Span,
+    /** Location in the formatted source code of this token. */
+    readonly location: Location
+  ) {}
 
   isSOF(): boolean {
     return (

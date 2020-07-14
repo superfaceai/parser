@@ -4,26 +4,24 @@ import * as rules from './rules';
 import { LexerToken, LexerTokenKind } from './token';
 import * as util from './util';
 
-/// Lexer tokenizes input string into tokens.
-///
-/// The lexer generates a stream of tokens, always starting with SEPARATOR SOF and always ending with SEPARATOR EOF.
-/// The stream can be consumed by calling `advance`. After each advance, `lookahead` will provide access to the next
-/// token without consuming it and will update the current tokens `next` field as well.
-/// After EOF is emitted, all further calls to `advance` and `lookahead` will return the same EOF.
+/**
+ * Lexer tokenizes input string into tokens.
+ *
+ * The lexer generates a stream of tokens, always starting with SEPARATOR SOF and always ending with SEPARATOR EOF.
+ * The stream can be consumed by calling `advance`. After each advance, `lookahead` will provide access to the next
+ * token without consuming it and will update the current tokens `next` field as well.
+ * After EOF is emitted, all further calls to `advance` and `lookahead` will return the same EOF.
+ */
 export class Lexer {
-  source: Source;
-
   private currentToken: LexerToken;
   private nextToken: LexerToken | null;
 
-  /// Indexed from 1
+  /** Indexed from 1 */
   private currentLine: number;
   // Character offset in the source.body at which current line begins.
   private currentLineStart: number;
 
-  constructor(source: Source) {
-    this.source = source;
-
+  constructor(readonly source: Source) {
     this.currentToken = new LexerToken(
       {
         kind: LexerTokenKind.SEPARATOR,
@@ -38,7 +36,7 @@ export class Lexer {
     this.currentLineStart = 0;
   }
 
-  /// Advances the lexer returning the current token.
+  /** Advances the lexer returning the current token. */
   advance(): LexerToken {
     // Specialcase the first token
     if (this.currentToken.isSOF() && this.nextToken === null) {
@@ -53,7 +51,7 @@ export class Lexer {
     return this.currentToken;
   }
 
-  /// Returns the next token without advancing the lexer.
+  /** Returns the next token without advancing the lexer. */
   lookahead(): LexerToken {
     // EOF forever
     if (this.currentToken.isEOF()) {
@@ -68,9 +66,11 @@ export class Lexer {
     return this.nextToken;
   }
 
-  /// Returns a generator adaptor that produces generator-compatible values.
-  ///
-  /// The generator yields the result of `advance()` until `EOF` token is found, at which point it returns the `EOF` token.
+  /**
+   * Returns a generator adaptor that produces generator-compatible values.
+   *
+   * The generator yields the result of `advance()` until `EOF` token is found, at which point it returns the `EOF` token.
+   */
   [Symbol.iterator](): Generator<LexerToken, LexerToken> {
     // This rule is intended to catch assigning this to a variable when an arrow function would suffice
     // Generators cannot be defined using an arrow function and thus don't preserve `this`
@@ -91,7 +91,7 @@ export class Lexer {
     return generatorClosure();
   }
 
-  /// Reads the next token following the `currentToken`.
+  /** Reads the next token following the `currentToken`. */
   private readNextToken(): LexerToken {
     // Compute the start of the next token by ignoring whitespace after last token.
     const start =
@@ -117,7 +117,7 @@ export class Lexer {
       rules.tryParseComment(slice);
 
     // Didn't parse as any known token
-    if (tokenParseResult === null) {
+    if (tokenParseResult === undefined) {
       throw new SyntaxError(
         this.source,
         location,
@@ -154,8 +154,10 @@ export class Lexer {
     );
   }
 
-  /// Returns the count from `countStarting` and updates inner state
-  /// with the newlines encountered.
+  /**
+   * Returns the count from `countStarting` and updates inner state
+   * with the newlines encountered.
+   */
   private countStartingWithNewlines(
     predicate: (_: number) => boolean,
     start: number,

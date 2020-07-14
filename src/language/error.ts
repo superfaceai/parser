@@ -13,12 +13,8 @@ function computeVisualizeBlockSpan(
   // This finds the last newline before the innerLine newline or -1
   let start = 0;
   if (innerLineStart !== 0) {
-    if (start === -1) {
-      start = 0;
-    } else {
-      start = body.slice(0, innerLineStart - 1).lastIndexOf('\n') + 1;
-      lineOffset = -1;
-    }
+    start = body.slice(0, innerLineStart - 1).lastIndexOf('\n') + 1;
+    lineOffset = -1;
   }
 
   // Find end of the vis block slice, which is one line after the inner line, or until EOF
@@ -92,20 +88,18 @@ function generateErrorVisualization(
 }
 
 export class SyntaxError {
-  /// Input source that is being parsed.
-  readonly source: Source;
-
-  /// Location of the error.
-  readonly location: Location;
-  /// Span of the error.
-  readonly span: Span;
-  /// Additional message attached to the error.
+  /** Additional message attached to the error. */
   readonly detail: string;
 
-  constructor(source: Source, location: Location, span: Span, detail?: string) {
-    this.source = source;
-    this.location = location;
-    this.span = span;
+  constructor(
+    /** Input source that is being parsed. */
+    readonly source: Source,
+    /** Location of the error. */
+    readonly location: Location,
+    /** Span of the error. */
+    readonly span: Span,
+    detail?: string
+  ) {
     this.detail = detail ?? 'Invalid or unexpected token';
   }
 
