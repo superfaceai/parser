@@ -16,20 +16,16 @@ import {
 } from '../token';
 import * as util from '../util';
 
-/// Error returned internally by the lexer `tryParse*` methods.
+/** Error returned internally by the lexer `tryParse*` methods. */
 export class ParseError {
-  /// Kind of the errored token.
-  readonly kind: LexerTokenKind;
-  /// Span of the errored token.
-  readonly span: Span;
-  /// Optional detail message.
-  readonly detail?: string;
-
-  constructor(kind: LexerTokenKind, span: Span, detail?: string) {
-    this.kind = kind;
-    this.span = span;
-    this.detail = detail;
-  }
+  constructor(
+    /** Kind of the errored token. */
+    readonly kind: LexerTokenKind,
+    /** Span of the errored token. */
+    readonly span: Span,
+    /** Optional detail message. */
+    readonly detail?: string
+  ) {}
 }
 
 export type ParseResult<T extends LexerTokenData> =
@@ -51,9 +47,11 @@ function tryParseScannerRules<T>(
   return result;
 }
 
-/// Tries to parse a separator token at current position.
-///
-/// Returns `null` if the current position cannot contain a separator.
+/**
+ * Tries to parse a separator token at current position.
+ *
+ * Returns `null` if the current position cannot contain a separator.
+ */
 export function tryParseSeparator(
   slice: string
 ): ParseResult<SeparatorTokenData> {
@@ -82,9 +80,11 @@ export function tryParseSeparator(
   ];
 }
 
-/// Tries to parse an operator token at current position.
-///
-/// Returns `null` if the current position cannot contain an operator.
+/**
+ * Tries to parse an operator token at current position.
+ *
+ * Returns `null` if the current position cannot contain an operator.
+ */
 export function tryParseOperator(
   slice: string
 ): ParseResult<OperatorTokenData> {
@@ -188,20 +188,24 @@ function tryParseLiteralNumber(slice: string): ParseResult<LiteralTokenData> {
   ];
 }
 
-/// Tries to parse a literal token at current position.
-///
-/// Returns `null` if the current position cannot contain a literal.
-///
-/// Returns an error if parsing fails.
+/**
+ * Tries to parse a literal token at current position.
+ *
+ * Returns `null` if the current position cannot contain a literal.
+ *
+ * Returns an error if parsing fails.
+ */
 export function tryParseLiteral(slice: string): ParseResult<LiteralTokenData> {
   return tryParseLiteralBoolean(slice) ?? tryParseLiteralNumber(slice);
 }
 
-/// Tries to parse a decorator token at current position.
-///
-/// Returns `null` if the current position cannot contain a decorator.
-///
-/// Returns an error if parsing fails.
+/**
+ * Tries to parse a decorator token at current position.
+ *
+ * Returns `null` if the current position cannot contain a decorator.
+ *
+ * Returns an error if parsing fails.
+ */
 export function tryParseDecorator(
   slice: string
 ): ParseResult<DecoratorTokenData> {
@@ -228,9 +232,11 @@ export function tryParseDecorator(
   ];
 }
 
-/// Tries to parse an identifier token at current position.
-///
-/// Returns `null` if the current position cannot contain an identifier.
+/**
+ * Tries to parse an identifier token at current position.
+ *
+ * Returns `null` if the current position cannot contain an identifier.
+ */
 export function tryParseIdentifier(
   slice: string
 ): ParseResult<IdentifierTokenData> {
@@ -252,9 +258,11 @@ export function tryParseIdentifier(
   ];
 }
 
-/// Tries to parse a comment token at current position.
-///
-/// Returns `null` if the current position cannot contain a comment.
+/**
+ * Tries to parse a comment token at current position.
+ *
+ * Returns `null` if the current position cannot contain a comment.
+ */
 export function tryParseComment(slice: string): ParseResult<CommentTokenData> {
   if (util.isCommentChar(slice.charCodeAt(0))) {
     const commentSlice = slice.slice(1);
