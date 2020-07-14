@@ -50,7 +50,7 @@ function tryParseScannerRules<T>(
 /**
  * Tries to parse a separator token at current position.
  *
- * Returns `null` if the current position cannot contain a separator.
+ * Returns `undefined` if the current position cannot contain a separator.
  */
 export function tryParseSeparator(
   slice: string
@@ -83,7 +83,7 @@ export function tryParseSeparator(
 /**
  * Tries to parse an operator token at current position.
  *
- * Returns `null` if the current position cannot contain an operator.
+ * Returns `undefined` if the current position cannot contain an operator.
  */
 export function tryParseOperator(
   slice: string
@@ -191,7 +191,7 @@ function tryParseLiteralNumber(slice: string): ParseResult<LiteralTokenData> {
 /**
  * Tries to parse a literal token at current position.
  *
- * Returns `null` if the current position cannot contain a literal.
+ * Returns `undefined` if the current position cannot contain a literal.
  *
  * Returns an error if parsing fails.
  */
@@ -202,7 +202,7 @@ export function tryParseLiteral(slice: string): ParseResult<LiteralTokenData> {
 /**
  * Tries to parse a decorator token at current position.
  *
- * Returns `null` if the current position cannot contain a decorator.
+ * Returns `undefined` if the current position cannot contain a decorator.
  *
  * Returns an error if parsing fails.
  */
@@ -235,7 +235,7 @@ export function tryParseDecorator(
 /**
  * Tries to parse an identifier token at current position.
  *
- * Returns `null` if the current position cannot contain an identifier.
+ * Returns `undefined` if the current position cannot contain an identifier.
  */
 export function tryParseIdentifier(
   slice: string
@@ -261,7 +261,7 @@ export function tryParseIdentifier(
 /**
  * Tries to parse a comment token at current position.
  *
- * Returns `null` if the current position cannot contain a comment.
+ * Returns `undefined` if the current position cannot contain a comment.
  */
 export function tryParseComment(slice: string): ParseResult<CommentTokenData> {
   if (util.isCommentChar(slice.charCodeAt(0))) {

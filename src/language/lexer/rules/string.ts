@@ -49,8 +49,8 @@ function transformBlockStringValue(string: string): string {
 
   let followingEmptyLines = 0;
 
-  let commonIndentChar: number | null = null;
-  let commonIndent: number | null = null;
+  let commonIndentChar: number | undefined = undefined;
+  let commonIndent: number | undefined = undefined;
 
   const lines = string.split('\n');
   for (const line of lines) {
@@ -71,7 +71,7 @@ function transformBlockStringValue(string: string): string {
       }
 
       // Handle first non-empty line
-      if (commonIndentChar === null) {
+      if (commonIndentChar === undefined) {
         const firstChar = line.charCodeAt(0);
         if (util.isWhitespace(firstChar)) {
           commonIndent = util.countStarting(char => char === firstChar, line);
@@ -97,10 +97,11 @@ function transformBlockStringValue(string: string): string {
   );
 
   let output = '';
-  if (commonIndent !== null) {
-    // Type inference fails without this intermediate variable.
-    const c = commonIndent;
-    output = filteredLines.map(l => l.slice(c)).join('\n');
+  if (commonIndent !== undefined) {
+    // Note that this map closure only works because slice accepts undefined.
+    // Otherwise, we'd need to create an itermediate variable that would tell TS that
+    // commonIndent isn't undefined at the point when the closure is created.
+    output = filteredLines.map(l => l.slice(commonIndent)).join('\n');
   } else {
     output = filteredLines.join('\n');
   }
@@ -111,7 +112,7 @@ function transformBlockStringValue(string: string): string {
 /**
  * Tries to parse a string literal token at current position.
  *
- * Returns `null` if the current position cannot contain a string literal.
+ * Returns `undefined` if the current position cannot contain a string literal.
  *
  * Returns an error if parsing fails.
  */
