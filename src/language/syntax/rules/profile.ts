@@ -1,23 +1,22 @@
 import {
 	DocumentDefinition,
 	DocumentedNode,
-	EnumTypeNode,
+	EnumDefinitionNode,
 	FieldDefinitionNode,
-	FieldNameNode,
-	ListTypeNode,
-	ModelTypeNode,
+	ListDefinitionNode,
+	ModelReferenceNode,
+	NamedFieldDefinitionNode,
 	NamedModelDefinitionNode,
-	NonNullTypeNode,
-	ObjectTypeNode,
+	NonNullDefinitionNode,
+	ObjectDefinitionNode,
+	PrimitiveTypeNode,
 	ProfileASTNodeBase,
 	ProfileDocumentNode,
+	ProfileIdNode,
 	ProfileNode,
-	ProfileProfileIdNode,
-	ProfileUseCaseDefinitionNode,
-	ReusableFieldDefinitionNode,
-	ScalarTypeNode,
 	Type,
-	UnionTypeNode} from '@superindustries/language';
+	UnionDefinitionNode,
+	UseCaseDefinitionNode} from '@superindustries/language';
 
 import { DecoratorTokenData, IdentifierTokenData, LexerTokenKind, LiteralTokenData,OperatorTokenData, SeparatorTokenData, StringTokenData } from '../../lexer/token';
 import { extractDocumentation } from '../util';
@@ -60,13 +59,13 @@ const FIELD_DEFINITION_MUT = new SyntaxRuleMutable<FieldDefinitionNode>();
 // TYPES //
 
 /** From keywords: `Boolean`, `Number` and `String` */
-export const SCALAR_TYPE: SyntaxRule<ScalarTypeNode> = SyntaxRule.identifier('Boolean').or(
+export const PRIMITIVE_TYPE: SyntaxRule<PrimitiveTypeNode> = SyntaxRule.identifier('Boolean').or(
 	SyntaxRule.identifier('Number')
 ).or(
 	SyntaxRule.identifier('String')
 ).map(
-	(keywordMatch): ScalarTypeNode => {
-		let name: ScalarTypeNode['name']
+	(keywordMatch): PrimitiveTypeNode => {
+		let name: PrimitiveTypeNode['name']
 		
 		switch (keywordMatch.data.identifier) {
 			case 'Number':
@@ -84,7 +83,7 @@ export const SCALAR_TYPE: SyntaxRule<ScalarTypeNode> = SyntaxRule.identifier('Bo
 		}
 
 		return {
-			kind: 'ScalarTypeNode',
+			kind: 'PrimitiveType',
 			name,
 			span: keywordMatch.span,
 			location: keywordMatch.location
@@ -93,7 +92,7 @@ export const SCALAR_TYPE: SyntaxRule<ScalarTypeNode> = SyntaxRule.identifier('Bo
 );
 
 /** Construct of form: `enum { values... }` */
-export const ENUM_TYPE: SyntaxRule<EnumTypeNode> = SyntaxRule.identifier('Enum').followedBy(
+export const ENUM_DEFINITION: SyntaxRule<EnumDefinitionNode> = SyntaxRule.identifier('Enum').followedBy(
 	SyntaxRule.separator('{')
 ).andBy(
 	SyntaxRule.repeat(
@@ -106,7 +105,7 @@ export const ENUM_TYPE: SyntaxRule<EnumTypeNode> = SyntaxRule.identifier('Enum')
 ).andBy(
 	SyntaxRule.separator('}')
 ).map(
-	(matches): EnumTypeNode => {
+	(matches): EnumDefinitionNode => {
 		const [keyword, /* sepStart */, values, sepEnd] = (
 			matches as [
 				LexerTokenMatch<IdentifierTokenData>,
@@ -137,8 +136,8 @@ export const ENUM_TYPE: SyntaxRule<EnumTypeNode> = SyntaxRule.identifier('Enum')
 		})
 
 		return {
-			kind: 'EnumTypeNode',
-			enumValues,
+			kind: 'EnumDefinition',
+			values: enumValues,
 			location: keyword.location,
 			span: { start: keyword.span.start, end: sepEnd.span.end }
 		}
@@ -146,10 +145,10 @@ export const ENUM_TYPE: SyntaxRule<EnumTypeNode> = SyntaxRule.identifier('Enum')
 )
 
 /** Name of a model type parsed from identifiers. */
-export const MODEL_TYPE: SyntaxRule<ModelTypeNode> = SyntaxRule.identifier().map(
-	(name): ModelTypeNode => {
+export const MODEL_REFERENCE: SyntaxRule<ModelReferenceNode> = SyntaxRule.identifier().map(
+	(name): ModelReferenceNode => {
 		return {
-			kind: 'ModelTypeNode',
+			kind: 'ModelReference',
 			name: name.data.identifier,
 			location: name.location,
 			span: name.span
@@ -158,7 +157,7 @@ export const MODEL_TYPE: SyntaxRule<ModelTypeNode> = SyntaxRule.identifier().map
 )
 
 /** Construct of form: `{ fields... }` */
-export const OBJECT_TYPE: SyntaxRule<ObjectTypeNode> = SyntaxRule.separator('{').followedBy(
+export const OBJECT_DEFINITION: SyntaxRule<ObjectDefinitionNode> = SyntaxRule.separator('{').followedBy(
 	SyntaxRule.optional(
 		SyntaxRule.repeat(
 			FIELD_DEFINITION_MUT
@@ -167,13 +166,13 @@ export const OBJECT_TYPE: SyntaxRule<ObjectTypeNode> = SyntaxRule.separator('{')
 ).andBy(
 	SyntaxRule.separator('}')
 ).map(
-	(matches): ObjectTypeNode => {
+	(matches): ObjectDefinitionNode => {
 		const [sepStart, fields, sepEnd] = (
 			matches as [LexerTokenMatch<SeparatorTokenData>, (FieldDefinitionNode[] | undefined), LexerTokenMatch<SeparatorTokenData>]
 		) // TODO: Won't need `as` cast in Typescript 4
 
 		return {
-			kind: 'ObjectTypeNode',
+			kind: 'ObjectDefinition',
 			fields: fields ?? [],
 			location: sepStart.location,
 			span: { start: sepStart.span.start, end: sepEnd.span.end }
@@ -183,16 +182,16 @@ export const OBJECT_TYPE: SyntaxRule<ObjectTypeNode> = SyntaxRule.separator('{')
 
 // Helper rule to ensure correct precedence
 //
-// MODEL_TYPE must go after both SCALAR and ENUM
-const BASIC_TYPE: SyntaxRule<ScalarTypeNode | EnumTypeNode | ModelTypeNode | ObjectTypeNode> = SCALAR_TYPE.or(ENUM_TYPE).or(MODEL_TYPE).or(OBJECT_TYPE);
+// MODEL_REFERENCE must go after both SCALAR and ENUM
+const BASIC_TYPE: SyntaxRule<PrimitiveTypeNode | EnumDefinitionNode | ModelReferenceNode | ObjectDefinitionNode> = PRIMITIVE_TYPE.or(ENUM_DEFINITION).or(MODEL_REFERENCE).or(OBJECT_DEFINITION);
 
 /** Array type: `[type]` */
-export const LIST_TYPE: SyntaxRule<ListTypeNode> = SyntaxRule.separator('[').followedBy(
+export const LIST_DEFINITION: SyntaxRule<ListDefinitionNode> = SyntaxRule.separator('[').followedBy(
 	TYPE_MUT
 ).andBy(
 	SyntaxRule.separator(']')
 ).map(
-	(matches): ListTypeNode => {
+	(matches): ListDefinitionNode => {
 		const [sepStart, type, sepEnd] = (
 			matches as [
 				LexerTokenMatch<SeparatorTokenData>,
@@ -202,8 +201,8 @@ export const LIST_TYPE: SyntaxRule<ListTypeNode> = SyntaxRule.separator('[').fol
 		); // TODO: Won't need `as` cast in Typescript 4
 
 		return {
-			kind: 'ListTypeNode',
-			type: type,
+			kind: 'ListDefinition',
+			elementType: type,
 			location: sepStart.location,
 			span: { start: sepStart.span.start, end: sepEnd.span.end }
 		}
@@ -211,14 +210,14 @@ export const LIST_TYPE: SyntaxRule<ListTypeNode> = SyntaxRule.separator('[').fol
 )
 
 /** Non-null assertion operator: `type!` */
-export const NON_NULL_TYPE: SyntaxRule<NonNullTypeNode> = BASIC_TYPE.or(LIST_TYPE).followedBy(
+export const NON_NULL_DEFINITION: SyntaxRule<NonNullDefinitionNode> = BASIC_TYPE.or(LIST_DEFINITION).followedBy(
 	SyntaxRule.operator('!')
 ).map(
-	(matches): NonNullTypeNode => {
-		const [type, op] = (matches as [ScalarTypeNode | ModelTypeNode | ObjectTypeNode | ListTypeNode, LexerTokenMatch<OperatorTokenData>]);
+	(matches): NonNullDefinitionNode => {
+		const [type, op] = (matches as [PrimitiveTypeNode | ModelReferenceNode | ObjectDefinitionNode | ListDefinitionNode, LexerTokenMatch<OperatorTokenData>]);
 
 		return {
-			kind: 'NonNullTypeNode',
+			kind: 'NonNullDefinition',
 			type: type,
 			location: type.location,
 			span: { start: type.span!.start, end: op.span.end }
@@ -227,8 +226,8 @@ export const NON_NULL_TYPE: SyntaxRule<NonNullTypeNode> = BASIC_TYPE.or(LIST_TYP
 )
 
 // NON_NULL_TYPE needs to go first because of postfix operator, model type needs to go after scalar and
-const NON_UNION_TYPE: SyntaxRule<Exclude<Type, UnionTypeNode>> = NON_NULL_TYPE.or(BASIC_TYPE).or(LIST_TYPE);
-export const UNION_TYPE: SyntaxRule<UnionTypeNode> = NON_UNION_TYPE.followedBy(
+const NON_UNION_TYPE: SyntaxRule<Exclude<Type, UnionDefinitionNode>> = NON_NULL_DEFINITION.or(BASIC_TYPE).or(LIST_DEFINITION);
+export const UNION_TYPE: SyntaxRule<UnionDefinitionNode> = NON_UNION_TYPE.followedBy(
 	SyntaxRule.operator('|')
 ).andBy(
 	NON_UNION_TYPE
@@ -239,15 +238,15 @@ export const UNION_TYPE: SyntaxRule<UnionTypeNode> = NON_UNION_TYPE.followedBy(
 		)
 	)
 ).map(
-	(matches): UnionTypeNode => {
+	(matches): UnionDefinitionNode => {
 		const [firstType, /* firstOp */, secondType, restPairs] = (
 			matches as [
-				Exclude<Type, UnionTypeNode>,
+				Exclude<Type, UnionDefinitionNode>,
 				LexerTokenMatch<OperatorTokenData>,
-				Exclude<Type, UnionTypeNode>,
+				Exclude<Type, UnionDefinitionNode>,
 				[
 					LexerTokenMatch<OperatorTokenData>,
-					Exclude<Type, UnionTypeNode>
+					Exclude<Type, UnionDefinitionNode>
 				][] | undefined
 			]
 		) // TODO: Won't need `as` cast in Typescript 4
@@ -256,7 +255,7 @@ export const UNION_TYPE: SyntaxRule<UnionTypeNode> = NON_UNION_TYPE.followedBy(
 		restPairs?.forEach(([_op, type]) => types.push(type))
 
 		return {
-			kind: 'UnionTypeNode',
+			kind: 'UnionDefinition',
 			types,
 			location: firstType.location,
 			span: { start: firstType.span!.start, end: types[types.length - 1].span!.end }
@@ -271,11 +270,11 @@ TYPE_MUT.rule = TYPE;
 /**
  * Parses either block type assignment `{ ...fields }` or `: type`
  */
-const TYPE_ASSIGNMENT: SyntaxRule<Type> = OBJECT_TYPE.or(
+const TYPE_ASSIGNMENT: SyntaxRule<Type> = OBJECT_DEFINITION.or(
 	SyntaxRule.operator(':').followedBy(TYPE)
 ).map(
 	(match): Type => {
-		const matchTyped = match as (ObjectTypeNode | [LexerTokenMatch<OperatorTokenData>, Type]) // TODO: Won't need `as` cast in Typescript 4
+		const matchTyped = match as (ObjectDefinitionNode | [LexerTokenMatch<OperatorTokenData>, Type]) // TODO: Won't need `as` cast in Typescript 4
 
 		if (Array.isArray(matchTyped)) {
 			return matchTyped[1]
@@ -287,20 +286,9 @@ const TYPE_ASSIGNMENT: SyntaxRule<Type> = OBJECT_TYPE.or(
 
 // FIELDS //
 
-/** Name of a field inside `FieldDefinitionNode`. */
-export const FIELD_NAME: SyntaxRule<FieldNameNode> = SyntaxRule.identifier().map(
-	(match): FieldNameNode => {
-		return {
-			kind: 'FieldNameNode',
-			fieldName: match.data.identifier,
-			location: match.location,
-			span: match.span
-		}
-	}
-)
 /** Construct of form: `ident: type`, `ident { fields... }` or `ident` */
 export const FIELD_DEFINITION: SyntaxRule<FieldDefinitionNode> = documentedNode(
-	FIELD_NAME.followedBy(
+	SyntaxRule.identifier().followedBy(
 		SyntaxRule.optional(
 			TYPE_ASSIGNMENT
 		)
@@ -308,17 +296,17 @@ export const FIELD_DEFINITION: SyntaxRule<FieldDefinitionNode> = documentedNode(
 		(matches): FieldDefinitionNode => {
 			const [fieldName, maybeType] = (
 				matches as [
-					FieldNameNode,
+					LexerTokenMatch<IdentifierTokenData>,
 					Type | undefined
 				]
 			); // TODO: Won't need `as` cast in Typescript 4
 
 			return {
-				kind: 'FieldDefinitionNode',
-				fieldName,
+				kind: 'FieldDefinition',
+				fieldName: fieldName.data.identifier,
 				type: maybeType,
 				location: fieldName.location,
-				span: { start: fieldName.span!.start, end: maybeType?.span!.end ?? fieldName.span!.end }
+				span: { start: fieldName.span.start, end: maybeType?.span!.end ?? fieldName.span.end }
 			}
 		}
 	)
@@ -326,24 +314,24 @@ export const FIELD_DEFINITION: SyntaxRule<FieldDefinitionNode> = documentedNode(
 FIELD_DEFINITION_MUT.rule = FIELD_DEFINITION;
 
 /** * Construct of form: `field ident: type` or `field ident { fields... }` */
-export const REUSABLE_FIELD_DEFINITION: SyntaxRule<ReusableFieldDefinitionNode> = documentedNode(
+export const NAMED_FIELD_DEFINITION: SyntaxRule<NamedFieldDefinitionNode> = documentedNode(
 	SyntaxRule.identifier('field').followedBy(
-		FIELD_NAME
+		SyntaxRule.identifier()
 	).andBy(
 		SyntaxRule.optional(TYPE_ASSIGNMENT)
 	).map(
-		(matches): ReusableFieldDefinitionNode => {
+		(matches): NamedFieldDefinitionNode => {
 			const [keyword, fieldName, type] = (
 				matches as [
 					LexerTokenMatch<IdentifierTokenData>,
-					FieldNameNode,
+					LexerTokenMatch<IdentifierTokenData>,
 					Type | undefined
 				]
 			) // TODO: Won't need `as` cast in Typescript 4
 
 			return {
-				kind: 'ReusableFieldDefinitionNode',
-				fieldName,
+				kind: 'NamedFieldDefinition',
+				fieldName: fieldName.data.identifier,
 				type,
 				location: keyword.location,
 				span: { start: keyword.span.start, end: (type ?? fieldName).span!.end }
@@ -357,7 +345,7 @@ export const REUSABLE_FIELD_DEFINITION: SyntaxRule<ReusableFieldDefinitionNode> 
 /** Construct of form: `model ident: type` or `model ident { fields... }` */
 export const NAMED_MODEL_DEFINITION: SyntaxRule<NamedModelDefinitionNode> = documentedNode(
 	SyntaxRule.identifier('model').followedBy(
-		MODEL_TYPE
+		SyntaxRule.identifier()
 	).andBy(
 		SyntaxRule.optional(TYPE_ASSIGNMENT)
 	).map(
@@ -365,14 +353,14 @@ export const NAMED_MODEL_DEFINITION: SyntaxRule<NamedModelDefinitionNode> = docu
 			const [keyword, modelName, type] = (
 				matches as [
 					LexerTokenMatch<IdentifierTokenData>,
-					ModelTypeNode,
+					LexerTokenMatch<IdentifierTokenData>,
 					Type | undefined
 				]
 			) // TODO: Won't need `as` cast in Typescript 4
 
 			return {
-				kind: 'NamedModelDefinitionNode',
-				modelName,
+				kind: 'NamedModelDefinition',
+				modelName: modelName.data.identifier,
 				type,
 				location: keyword.location,
 				span: { start: keyword.span.start, end: (type ?? modelName).span!.end }
@@ -397,7 +385,7 @@ usecase ident @deco {
 }
 ```
 */
-export const USECASE_DEFINITION: SyntaxRule<ProfileUseCaseDefinitionNode> = documentedNode(
+export const USECASE_DEFINITION: SyntaxRule<UseCaseDefinitionNode> = documentedNode(
 	SyntaxRule.identifier('usecase').followedBy(
 		SyntaxRule.identifier()
 	).andBy(
@@ -433,7 +421,7 @@ export const USECASE_DEFINITION: SyntaxRule<ProfileUseCaseDefinitionNode> = docu
 	).andBy(
 		SyntaxRule.separator('}')
 	).map(
-		(matches): ProfileUseCaseDefinitionNode => {
+		(matches): UseCaseDefinitionNode => {
 			const [
 				usecaseKey,
 				name,
@@ -463,7 +451,7 @@ export const USECASE_DEFINITION: SyntaxRule<ProfileUseCaseDefinitionNode> = docu
 			const errors: Type[] | undefined = maybeErrors?.[3]
 
 			return {
-				kind: 'UseCaseDefinitionNode',
+				kind: 'UseCaseDefinition',
 				useCaseName: name.data.identifier,
 				safety: maybeSafety?.data.decorator,
 				input,
@@ -480,12 +468,12 @@ export const USECASE_DEFINITION: SyntaxRule<ProfileUseCaseDefinitionNode> = docu
 // DOCUMENT //
 
 /** `profile: string` */
-export const PROFILE_ID: SyntaxRule<ProfileProfileIdNode> = SyntaxRule.identifier('profile').followedBy(
+export const PROFILE_ID: SyntaxRule<ProfileIdNode> = SyntaxRule.identifier('profile').followedBy(
 	SyntaxRuleSeparator.operator('=')
 ).andBy(
 	SyntaxRule.string()
 ).map(
-	(matches): ProfileProfileIdNode => {
+	(matches): ProfileIdNode => {
 		const [keyword, /* op */, profileId] = (
 			matches as [
 				LexerTokenMatch<IdentifierTokenData>,
@@ -495,7 +483,7 @@ export const PROFILE_ID: SyntaxRule<ProfileProfileIdNode> = SyntaxRule.identifie
 		) // TODO: Won't need `as` cast in Typescript 4
 
 		return {
-			kind: 'ProfileIdNode',
+			kind: 'ProfileId',
 			profileId: profileId.data.string,
 			location: keyword.location,
 			span: { start: keyword.span.start, end: profileId.span.end }
@@ -509,12 +497,12 @@ export const PROFILE: SyntaxRule<ProfileNode> = documentedNode(
 			const [maybeDoc, profileId] = (
 				matches as [
 					LexerTokenMatch<StringTokenData> | undefined,
-					ProfileProfileIdNode
+					ProfileIdNode
 				]
 			) // TODO: Won't need `as` cast in Typescript 4
 
 			return {
-				kind: 'ProfileNode',
+				kind: 'Profile',
 				profileId,
 				location: maybeDoc?.location ?? profileId.location,
 				span: { start: maybeDoc?.span.start ?? profileId.span!.start, end: profileId.span!.end }
@@ -523,7 +511,7 @@ export const PROFILE: SyntaxRule<ProfileNode> = documentedNode(
 	)
 )
 
-export const DOCUMENT_DEFINITION: SyntaxRule<DocumentDefinition> = USECASE_DEFINITION.or(REUSABLE_FIELD_DEFINITION).or(NAMED_MODEL_DEFINITION);
+export const DOCUMENT_DEFINITION: SyntaxRule<DocumentDefinition> = USECASE_DEFINITION.or(NAMED_FIELD_DEFINITION).or(NAMED_MODEL_DEFINITION);
 export const PROFILE_DOCUMENT: SyntaxRule<ProfileDocumentNode> = SyntaxRule.separator('SOF').followedBy(PROFILE).andBy(
 	SyntaxRule.optional(
 		SyntaxRule.repeat(
@@ -546,7 +534,7 @@ export const PROFILE_DOCUMENT: SyntaxRule<ProfileDocumentNode> = SyntaxRule.sepa
 		}
 
 		return {
-			kind: 'ProfileDocumentNode',
+			kind: 'ProfileDocument',
 			profile,
 			definitions: definitions ?? [],
 			location: profile.location,

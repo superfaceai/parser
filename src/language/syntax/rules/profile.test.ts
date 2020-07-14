@@ -49,7 +49,7 @@ describe('syntax rules', () => {
 				tokens[Symbol.iterator]()
 			)
 
-			const rule = rules.SCALAR_TYPE
+			const rule = rules.PRIMITIVE_TYPE
 
 			expect(
 				rule.tryMatch(buf)
@@ -57,7 +57,7 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'ScalarTypeNode',
+						kind: 'PrimitiveType',
 						name: 'boolean'
 					}, tokens[0])
 				}
@@ -69,7 +69,7 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'ScalarTypeNode',
+						kind: 'PrimitiveType',
 						name: 'number'
 					}, tokens[1])
 				}
@@ -81,7 +81,7 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'ScalarTypeNode',
+						kind: 'PrimitiveType',
 						name: 'string'
 					}, tokens[2])
 				}
@@ -102,7 +102,7 @@ describe('syntax rules', () => {
 				tokens[Symbol.iterator]()
 			)
 
-			const rule = rules.ENUM_TYPE
+			const rule = rules.ENUM_DEFINITION
 
 			expect(
 				rule.tryMatch(buf)
@@ -110,8 +110,8 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'EnumTypeNode',
-						enumValues: [
+						kind: 'EnumDefinition',
+						values: [
 							(tokens[2].data as LiteralTokenData).literal,
 							(tokens[3].data as LiteralTokenData).literal,
 							(tokens[4].data as StringTokenData).string,
@@ -130,7 +130,7 @@ describe('syntax rules', () => {
 				tokens[Symbol.iterator]()
 			)
 
-			const rule = rules.MODEL_TYPE
+			const rule = rules.MODEL_REFERENCE
 
 			expect(
 				rule.tryMatch(buf)
@@ -138,7 +138,7 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'ModelTypeNode',
+						kind: 'ModelReference',
 						name: 'MyType'
 					}, tokens[0])
 				}
@@ -161,7 +161,7 @@ describe('syntax rules', () => {
 				tokens[Symbol.iterator]()
 			)
 
-			const rule = rules.OBJECT_TYPE
+			const rule = rules.OBJECT_DEFINITION
 
 			expect(
 				rule.tryMatch(buf)
@@ -169,24 +169,18 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'ObjectTypeNode',
+						kind: 'ObjectDefinition',
 						fields: [
 							tesMatch({
-								kind: 'FieldDefinitionNode',
-								fieldName: tesMatch({
-									kind: 'FieldNameNode',
-									fieldName: (tokens[1].data as IdentifierTokenData).identifier
-								}, tokens[1]),
+								kind: 'FieldDefinition',
+								fieldName: (tokens[1].data as IdentifierTokenData).identifier,
 								type: undefined
 							}, tokens[1]),
 							tesMatch({
-								kind: 'FieldDefinitionNode',
-								fieldName: tesMatch({
-									kind: 'FieldNameNode',
-									fieldName: (tokens[2].data as IdentifierTokenData).identifier
-								}, tokens[2]),
+								kind: 'FieldDefinition',
+								fieldName: (tokens[2].data as IdentifierTokenData).identifier,
 								type: tesMatch({
-									kind: 'ModelTypeNode',
+									kind: 'ModelReference',
 									name: 'MyType'
 								}, tokens[4])
 							}, tokens[2], tokens[4])
@@ -223,7 +217,7 @@ describe('syntax rules', () => {
 				tokens[Symbol.iterator]()
 			)
 
-			const rule = rules.LIST_TYPE
+			const rule = rules.LIST_DEFINITION
 
 			expect(
 				rule.tryMatch(buf)
@@ -231,18 +225,15 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'ListTypeNode',
-						type: tesMatch({
-							kind: 'ObjectTypeNode',
+						kind: 'ListDefinition',
+						elementType: tesMatch({
+							kind: 'ObjectDefinition',
 							fields: [
 								tesMatch({
-									kind: 'FieldDefinitionNode',
-									fieldName: tesMatch({
-										kind: 'FieldNameNode',
-										fieldName: (tokens[2].data as IdentifierTokenData).identifier
-									}, tokens[2]),
+									kind: 'FieldDefinition',
+									fieldName: (tokens[2].data as IdentifierTokenData).identifier,
 									type: tesMatch({
-										kind: 'ScalarTypeNode',
+										kind: 'PrimitiveType',
 										name: 'string'
 									}, tokens[4])
 								}, tokens[2], tokens[4])
@@ -258,9 +249,9 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'ListTypeNode',
-						type: tesMatch({
-							kind: 'ScalarTypeNode',
+						kind: 'ListDefinition',
+						elementType: tesMatch({
+							kind: 'PrimitiveType',
 							name: 'boolean'
 						}, tokens[8])
 					}, tokens[7], tokens[9])
@@ -273,11 +264,11 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'ListTypeNode',
-						type:  tesMatch({
-							kind: 'NonNullTypeNode',
+						kind: 'ListDefinition',
+						elementType:  tesMatch({
+							kind: 'NonNullDefinition',
 							type: tesMatch({
-								kind: 'ModelTypeNode',
+								kind: 'ModelReference',
 								name: 'MyType'
 							}, tokens[11])
 						}, tokens[11], tokens[12])
@@ -305,7 +296,7 @@ describe('syntax rules', () => {
 				tokens[Symbol.iterator]()
 			)
 
-			const rule = rules.NON_NULL_TYPE
+			const rule = rules.NON_NULL_DEFINITION
 
 			expect(
 				rule.tryMatch(buf)
@@ -313,10 +304,10 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'NonNullTypeNode',
+						kind: 'NonNullDefinition',
 						type: tesMatch({
-							kind: 'EnumTypeNode',
-							enumValues: [
+							kind: 'EnumDefinition',
+							values: [
 								(tokens[2].data as LiteralTokenData).literal,
 								(tokens[3].data as LiteralTokenData).literal
 							]
@@ -331,9 +322,9 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'NonNullTypeNode',
+						kind: 'NonNullDefinition',
 						type: tesMatch({
-							kind: 'ScalarTypeNode',
+							kind: 'PrimitiveType',
 							name: 'boolean'
 						}, tokens[6])
 					}, tokens[6], tokens[7])
@@ -346,9 +337,9 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'NonNullTypeNode',
+						kind: 'NonNullDefinition',
 						type: tesMatch({
-							kind: 'ModelTypeNode',
+							kind: 'ModelReference',
 							name: 'MyType'
 						}, tokens[8])
 					}, tokens[8], tokens[9])
@@ -383,23 +374,23 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'UnionTypeNode',
+						kind: 'UnionDefinition',
 						types: [
 							tesMatch({
-								kind: 'EnumTypeNode',
-								enumValues: [
+								kind: 'EnumDefinition',
+								values: [
 									(tokens[2].data as LiteralTokenData).literal,
 									(tokens[3].data as LiteralTokenData).literal
 								]
 							}, tokens[0], tokens[4]),
 							tesMatch({
-								kind: 'ScalarTypeNode',
+								kind: 'PrimitiveType',
 								name: 'boolean'
 							}, tokens[6]),
 							tesMatch({
-								kind: 'NonNullTypeNode',
+								kind: 'NonNullDefinition',
 								type: tesMatch({
-									kind: 'ModelTypeNode',
+									kind: 'ModelReference',
 									name: (tokens[8].data as IdentifierTokenData).identifier
 								}, tokens[8])
 							}, tokens[8], tokens[9])
@@ -411,29 +402,6 @@ describe('syntax rules', () => {
 	});
 
 	describe('fields', () => {
-		it('should parse field name', () => {
-			const tokens: ReadonlyArray<LexerToken> = [
-				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
-			]
-			const buf = new BufferedIterator(
-				tokens[Symbol.iterator]()
-			)
-
-			const rule = rules.FIELD_NAME
-
-			expect(
-				rule.tryMatch(buf)
-			).toStrictEqual(
-				{
-					kind: 'match',
-					match: tesMatch({
-						kind: 'FieldNameNode',
-						fieldName: (tokens[0].data as IdentifierTokenData).identifier
-					}, tokens[0])
-				}
-			)
-		});
-
 		it('should parse field without type', () => {
 			const tokens: ReadonlyArray<LexerToken> = [
 				tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
@@ -450,11 +418,8 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'FieldDefinitionNode',
-						fieldName: tesMatch({
-							kind: 'FieldNameNode',
-							fieldName: (tokens[0].data as IdentifierTokenData).identifier
-						}, tokens[0]),
+						kind: 'FieldDefinition',
+						fieldName: (tokens[0].data as IdentifierTokenData).identifier,
 						type: undefined
 					}, tokens[0])
 				}
@@ -479,13 +444,10 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'FieldDefinitionNode',
-						fieldName: tesMatch({
-							kind: 'FieldNameNode',
-							fieldName: (tokens[0].data as IdentifierTokenData).identifier
-						}, tokens[0]),
+						kind: 'FieldDefinition',
+						fieldName: (tokens[0].data as IdentifierTokenData).identifier,
 						type: tesMatch({
-							kind: 'ScalarTypeNode',
+							kind: 'PrimitiveType',
 							name: 'boolean'
 						}, tokens[2])
 					}, tokens[0], tokens[2])
@@ -512,20 +474,14 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'FieldDefinitionNode',
-						fieldName: tesMatch({
-							kind: 'FieldNameNode',
-							fieldName: (tokens[0].data as IdentifierTokenData).identifier
-						}, tokens[0]),
+						kind: 'FieldDefinition',
+						fieldName: (tokens[0].data as IdentifierTokenData).identifier,
 						type: tesMatch({
-							kind: 'ObjectTypeNode',
+							kind: 'ObjectDefinition',
 							fields: [
 								tesMatch({
-									kind: 'FieldDefinitionNode',
-									fieldName: tesMatch({
-										kind: 'FieldNameNode',
-										fieldName: (tokens[2].data as IdentifierTokenData).identifier
-									}, tokens[2]),
+									kind: 'FieldDefinition',
+									fieldName: (tokens[2].data as IdentifierTokenData).identifier,
 									type: undefined
 								}, tokens[2])
 							]
@@ -552,11 +508,8 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'FieldDefinitionNode',
-						fieldName: tesMatch({
-							kind: 'FieldNameNode',
-							fieldName: (tokens[1].data as IdentifierTokenData).identifier
-						}, tokens[1]),
+						kind: 'FieldDefinition',
+						fieldName: (tokens[1].data as IdentifierTokenData).identifier,
 						type: undefined,
 						title: 'Title',
 						description: 'Description'
@@ -574,7 +527,7 @@ describe('syntax rules', () => {
 				tokens[Symbol.iterator]()
 			)
 
-			const rule = rules.REUSABLE_FIELD_DEFINITION
+			const rule = rules.NAMED_FIELD_DEFINITION
 
 			expect(
 				rule.tryMatch(buf)
@@ -582,11 +535,8 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'ReusableFieldDefinitionNode',
-						fieldName: tesMatch({
-							kind: 'FieldNameNode',
-							fieldName: (tokens[1].data as IdentifierTokenData).identifier
-						}, tokens[1]),
+						kind: 'NamedFieldDefinition',
+						fieldName: (tokens[1].data as IdentifierTokenData).identifier,
 						type: undefined
 					}, tokens[0], tokens[1])
 				}
@@ -606,7 +556,7 @@ describe('syntax rules', () => {
 				tokens[Symbol.iterator]()
 			)
 
-			const rule = rules.REUSABLE_FIELD_DEFINITION
+			const rule = rules.NAMED_FIELD_DEFINITION
 
 			expect(
 				rule.tryMatch(buf)
@@ -614,20 +564,14 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'ReusableFieldDefinitionNode',
-						fieldName: tesMatch({
-							kind: 'FieldNameNode',
-							fieldName: (tokens[1].data as IdentifierTokenData).identifier
-						}, tokens[1]),
+						kind: 'NamedFieldDefinition',
+						fieldName: (tokens[1].data as IdentifierTokenData).identifier,
 						type: tesMatch({
-							kind: 'ObjectTypeNode',
+							kind: 'ObjectDefinition',
 							fields: [
 								tesMatch({
-									kind: 'FieldDefinitionNode',
-									fieldName: tesMatch({
-										kind: 'FieldNameNode',
-										fieldName: (tokens[4].data as IdentifierTokenData).identifier
-									}, tokens[4]),
+									kind: 'FieldDefinition',
+									fieldName: (tokens[4].data as IdentifierTokenData).identifier,
 									type: undefined
 								}, tokens[4])
 							]
@@ -647,7 +591,7 @@ describe('syntax rules', () => {
 				tokens[Symbol.iterator]()
 			)
 
-			const rule = rules.REUSABLE_FIELD_DEFINITION
+			const rule = rules.NAMED_FIELD_DEFINITION
 
 			expect(
 				rule.tryMatch(buf)
@@ -655,11 +599,8 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'ReusableFieldDefinitionNode',
-						fieldName: tesMatch({
-							kind: 'FieldNameNode',
-							fieldName: (tokens[2].data as IdentifierTokenData).identifier
-						}, tokens[2]),
+						kind: 'NamedFieldDefinition',
+						fieldName: (tokens[2].data as IdentifierTokenData).identifier,
 						type: undefined,
 						title: undefined,
 						description: 'Description'
@@ -687,11 +628,8 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'NamedModelDefinitionNode',
-						modelName: tesMatch({
-							kind: 'ModelTypeNode',
-							name: (tokens[1].data as IdentifierTokenData).identifier
-						}, tokens[1]),
+						kind: 'NamedModelDefinition',
+						modelName: (tokens[1].data as IdentifierTokenData).identifier,
 						type: undefined
 					}, tokens[0], tokens[1])
 				}
@@ -720,14 +658,11 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'NamedModelDefinitionNode',
-						modelName: tesMatch({
-							kind: 'ModelTypeNode',
-							name: (tokens[1].data as IdentifierTokenData).identifier
-						}, tokens[1]),
+						kind: 'NamedModelDefinition',
+						modelName: (tokens[1].data as IdentifierTokenData).identifier,
 						type: tesMatch({
-							kind: 'EnumTypeNode',
-							enumValues: [
+							kind: 'EnumDefinition',
+							values: [
 								(tokens[5].data as IdentifierTokenData).identifier
 							]
 						}, tokens[3], tokens[6])
@@ -756,20 +691,14 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'NamedModelDefinitionNode',
-						modelName: tesMatch({
-							kind: 'ModelTypeNode',
-							name: (tokens[1].data as IdentifierTokenData).identifier
-						}, tokens[1]),
+						kind: 'NamedModelDefinition',
+						modelName: (tokens[1].data as IdentifierTokenData).identifier,
 						type: tesMatch({
-							kind: 'ObjectTypeNode',
+							kind: 'ObjectDefinition',
 							fields: [
 								tesMatch({
-									kind: 'FieldDefinitionNode',
-									fieldName: tesMatch({
-										kind: 'FieldNameNode',
-										fieldName: (tokens[3].data as IdentifierTokenData).identifier
-									}, tokens[3]),
+									kind: 'FieldDefinition',
+									fieldName: (tokens[3].data as IdentifierTokenData).identifier,
 									type: undefined
 								}, tokens[3])
 							]
@@ -797,11 +726,8 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'NamedModelDefinitionNode',
-						modelName: tesMatch({
-							kind: 'ModelTypeNode',
-							name: (tokens[2].data as IdentifierTokenData).identifier
-						}, tokens[2]),
+						kind: 'NamedModelDefinition',
+						modelName: (tokens[2].data as IdentifierTokenData).identifier,
 						type: undefined,
 						title: 'Title',
 						description: 'Description'
@@ -834,12 +760,12 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'UseCaseDefinitionNode',
+						kind: 'UseCaseDefinition',
 						useCaseName: (tokens[1].data as IdentifierTokenData).identifier,
 						safety: undefined,
 						input: undefined,
 						result: tesMatch({
-							kind: 'ModelTypeNode',
+							kind: 'ModelReference',
 							name: (tokens[5].data as IdentifierTokenData).identifier
 						}, tokens[5]),
 						asyncResult: undefined,
@@ -905,33 +831,30 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'UseCaseDefinitionNode',
+						kind: 'UseCaseDefinition',
 						useCaseName: (tokens[1].data as IdentifierTokenData).identifier,
 						safety: (tokens[2].data as DecoratorTokenData).decorator,
 						input: tesMatch({
-							kind: 'NonNullTypeNode',
+							kind: 'NonNullDefinition',
 							type: tesMatch({
-								kind: 'ScalarTypeNode',
+								kind: 'PrimitiveType',
 								name: 'boolean'
 							}, tokens[6])
 						}, tokens[6], tokens[7]),
 						result: tesMatch({
-							kind: 'ModelTypeNode',
+							kind: 'ModelReference',
 							name: (tokens[10].data as IdentifierTokenData).identifier
 						}, tokens[10]),
 						asyncResult: tesMatch({
-							kind: 'NonNullTypeNode',
+							kind: 'NonNullDefinition',
 							type: tesMatch({
-								kind: 'ObjectTypeNode',
+								kind: 'ObjectDefinition',
 								fields: [
 									tesMatch({
-										kind: 'FieldDefinitionNode',
-										fieldName: tesMatch({
-											kind: 'FieldNameNode',
-											fieldName: (tokens[15].data as IdentifierTokenData).identifier
-										}, tokens[15]),
+										kind: 'FieldDefinition',
+										fieldName: (tokens[15].data as IdentifierTokenData).identifier,
 										type: tesMatch({
-											kind: 'ScalarTypeNode',
+											kind: 'PrimitiveType',
 											name: 'number'
 										}, tokens[17])
 									}, tokens[15], tokens[17]),
@@ -940,15 +863,15 @@ describe('syntax rules', () => {
 						}, tokens[14], tokens[19]),
 						errors: [
 							tesMatch({
-								kind: 'NonNullTypeNode',
+								kind: 'NonNullDefinition',
 								type: tesMatch({
-									kind: 'ScalarTypeNode',
+									kind: 'PrimitiveType',
 									name: 'string'
 								}, tokens[23])
 							}, tokens[23], tokens[24]),
 							tesMatch({
-								kind: 'EnumTypeNode',
-								enumValues: [
+								kind: 'EnumDefinition',
+								values: [
 									(tokens[27].data as LiteralTokenData).literal,
 									(tokens[28].data as LiteralTokenData).literal,
 									(tokens[29].data as LiteralTokenData).literal,
@@ -983,12 +906,12 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'UseCaseDefinitionNode',
+						kind: 'UseCaseDefinition',
 						useCaseName: (tokens[1].data as IdentifierTokenData).identifier,
 						safety: undefined,
 						input: undefined,
 						result: tesMatch({
-							kind: 'ModelTypeNode',
+							kind: 'ModelReference',
 							name: (tokens[6].data as IdentifierTokenData).identifier
 						}, tokens[6]),
 						asyncResult: undefined,
@@ -1020,7 +943,7 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'ProfileIdNode',
+						kind: 'ProfileId',
 						profileId: (tokens[2].data as StringTokenData).string,
 					}, tokens[0], tokens[2])
 				}
@@ -1045,9 +968,9 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'ProfileNode',
+						kind: 'Profile',
 						profileId: tesMatch({
-							kind: 'ProfileIdNode',
+							kind: 'ProfileId',
 							profileId: (tokens[2].data as StringTokenData).string,
 						}, tokens[0], tokens[2])
 					}, tokens[0], tokens[2])
@@ -1074,9 +997,9 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'ProfileNode',
+						kind: 'Profile',
 						profileId: tesMatch({
-							kind: 'ProfileIdNode',
+							kind: 'ProfileId',
 							profileId: (tokens[3].data as StringTokenData).string,
 						}, tokens[1], tokens[3]),
 						title: 'Title',
@@ -1120,30 +1043,24 @@ describe('syntax rules', () => {
 				{
 					kind: 'match',
 					match: tesMatch({
-						kind: 'ProfileDocumentNode',
+						kind: 'ProfileDocument',
 						profile: tesMatch({
-							kind: 'ProfileNode',
+							kind: 'Profile',
 							profileId: tesMatch({
-								kind: 'ProfileIdNode',
+								kind: 'ProfileId',
 								profileId: (tokens[3].data as StringTokenData).string,
 							}, tokens[1], tokens[3])
 						}, tokens[1], tokens[3]),
 						definitions: [
 							tesMatch({
-								kind: 'NamedModelDefinitionNode',
-								modelName: tesMatch({
-									kind: 'ModelTypeNode',
-									name: (tokens[4].data as IdentifierTokenData).identifier
-								}, tokens[5]),
+								kind: 'NamedModelDefinition',
+								modelName: (tokens[4].data as IdentifierTokenData).identifier,
 								type: tesMatch({
-									kind: 'ObjectTypeNode',
+									kind: 'ObjectDefinition',
 									fields: [
 										tesMatch({
-											kind: 'FieldDefinitionNode',
-											fieldName: tesMatch({
-												kind: 'FieldNameNode',
-												fieldName: (tokens[7].data as IdentifierTokenData).identifier
-											}, tokens[7]),
+											kind: 'FieldDefinition',
+											fieldName: (tokens[7].data as IdentifierTokenData).identifier,
 											type: undefined
 										}, tokens[7])
 									]
@@ -1151,12 +1068,12 @@ describe('syntax rules', () => {
 							}, tokens[4], tokens[8]),
 
 							tesMatch({
-								kind: 'UseCaseDefinitionNode',
+								kind: 'UseCaseDefinition',
 								useCaseName: (tokens[10].data as IdentifierTokenData).identifier,
 								safety: undefined,
 								input: undefined,
 								result: tesMatch({
-									kind: 'ModelTypeNode',
+									kind: 'ModelReference',
 									name: (tokens[14].data as IdentifierTokenData).identifier
 								}, tokens[14]),
 								asyncResult: undefined,
