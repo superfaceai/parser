@@ -1,619 +1,641 @@
 import {
-	DecoratorTokenData,
-	DecoratorValue,
-	IdentifierTokenData,
-	IdentifierValue,
-	LexerToken,
-	LexerTokenData,
-	LexerTokenKind,
-	LiteralTokenData,
-	OperatorTokenData,
-	OperatorValue,
-	SeparatorTokenData,
-	SeparatorValue,
-	StringTokenData,
+  DecoratorTokenData,
+  DecoratorValue,
+  IdentifierTokenData,
+  IdentifierValue,
+  LexerToken,
+  LexerTokenData,
+  LexerTokenKind,
+  LiteralTokenData,
+  OperatorTokenData,
+  OperatorValue,
+  SeparatorTokenData,
+  SeparatorValue,
+  StringTokenData,
 } from '../../lexer/token';
 import { Location, Span } from '../../source';
 import { BufferedIterator } from '../util';
 
 export type RuleResultMatch<T> = {
-	kind: 'match',
-	match: T
-}
+  kind: 'match';
+  match: T;
+};
 export type RuleResultNoMatch = {
-	kind: 'nomatch',
-	
-	/** Pairs of rules and tokens that were attempted by failed */
-	/* eslint-disable-next-line @typescript-eslint/no-explicit-any */ // cannot be unknown :(
-	attempts: { rule: SyntaxRule<any>, token?: LexerToken }[]
-	// TODO: Partial match?
-}
+  kind: 'nomatch'; // cannot be unknown :(
+
+  /** Pairs of rules and tokens that were attempted by failed */
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ attempts: {
+    rule: SyntaxRule<any>;
+    token?: LexerToken;
+  }[];
+  // TODO: Partial match?
+};
 export type RuleResult<T> = RuleResultMatch<T> | RuleResultNoMatch;
 
-const INDENT_CHAR = '\t'
+const INDENT_CHAR = '\t';
 
 export interface LexerTokenMatch<D extends LexerTokenData = LexerTokenData> {
-	readonly data: D;
-	readonly location: Location;
-	readonly span: Span;
+  readonly data: D;
+  readonly location: Location;
+  readonly span: Span;
 }
 
 export abstract class SyntaxRule<T> {
-	/**
-	* Attempts to match rule to tokens.
-	*
-	* If the rule matches, matched tokens are transformed into a syntax tree node
-	* in the `RuleResultMatch` object and consumed from the iterator.
-	*
-	* If the rule doesn't match `RuleResultNoMatch` is returned and no tokens are
-	* consumed (iterator state is restored).
-	*/
-	abstract tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<T>;
+  /**
+   * Attempts to match rule to tokens.
+   *
+   * If the rule matches, matched tokens are transformed into a syntax tree node
+   * in the `RuleResultMatch` object and consumed from the iterator.
+   *
+   * If the rule doesn't match `RuleResultNoMatch` is returned and no tokens are
+   * consumed (iterator state is restored).
+   */
+  abstract tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<T>;
 
-	protected simpleTryMatchBoilerplate(
-		tokens: BufferedIterator<LexerToken>,
-		predicate: (token: LexerToken) => T | null
-	): RuleResult<T> {
-		const save = tokens.save();
-		
-		const next = tokens.next();
-		if (next.done === false) {
-			const token = next.value;
+  protected simpleTryMatchBoilerplate(
+    tokens: BufferedIterator<LexerToken>,
+    predicate: (token: LexerToken) => T | undefined
+  ): RuleResult<T> {
+    const save = tokens.save();
 
-			const match = predicate(token)
-			if (match !== null) {
-				return {
-					kind: 'match',
-					match: match
-				};
-			}
-		}
+    const next = tokens.next();
+    if (next.done === false) {
+      const token = next.value;
 
-		tokens.restore(save);
+      const match = predicate(token);
+      if (match !== undefined) {
+        return {
+          kind: 'match',
+          match: match,
+        };
+      }
+    }
 
-		return {
-			kind: 'nomatch',
-			attempts: [{
-				rule: this,
-				token: next.value
-			}]
-		}
-	}
+    tokens.restore(save);
 
-	/** Converts this rule to string with indentation indicated by the `depth`. */
-	abstract toStringDepth(depth: number): string;
+    return {
+      kind: 'nomatch',
+      attempts: [
+        {
+          rule: this,
+          token: next.value,
+        },
+      ],
+    };
+  }
 
-	toString(): string {
-		return this[Symbol.toStringTag]();
-	}
+  /** Converts this rule to string with indentation indicated by the `depth`. */
+  abstract toStringDepth(depth: number): string;
 
-	[Symbol.toStringTag](): string {
-		return this.toStringDepth(0);
-	}
+  toString(): string {
+    return this[Symbol.toStringTag]();
+  }
 
-	// Factory methods for basic rules
+  [Symbol.toStringTag](): string {
+    return this.toStringDepth(0);
+  }
 
-	// SyntaxRule class doesn't have to provide these functions, but they are usefull.
-	// There is no way to cause a ReferenceError because the classes (below) are declared
-	// before these functions can be called, so this lint is wrong.
-	/* eslint-disable @typescript-eslint/no-use-before-define */
-	static separator(separator?: SeparatorValue): SyntaxRuleSeparator {
-		return new SyntaxRuleSeparator(separator);
-	}
+  // Factory methods for basic rules
 
-	static operator(operator?: OperatorValue): SyntaxRuleOperator {
-		return new SyntaxRuleOperator(operator);
-	}
+  // SyntaxRule class doesn't have to provide these functions, but they are usefull.
+  // There is no way to cause a ReferenceError because the classes (below) are declared
+  // before these functions can be called, so this lint is wrong.
+  /* eslint-disable @typescript-eslint/no-use-before-define */
+  static separator(separator?: SeparatorValue): SyntaxRuleSeparator {
+    return new SyntaxRuleSeparator(separator);
+  }
 
-	static identifier(identifier?: IdentifierValue): SyntaxRuleIdentifier {
-		return new SyntaxRuleIdentifier(identifier);
-	}
-	
-	static literal(): SyntaxRuleLiteral {
-		return new SyntaxRuleLiteral()
-	}
+  static operator(operator?: OperatorValue): SyntaxRuleOperator {
+    return new SyntaxRuleOperator(operator);
+  }
 
-	static string(): SyntaxRuleString {
-		return new SyntaxRuleString();
-	}
+  static identifier(identifier?: IdentifierValue): SyntaxRuleIdentifier {
+    return new SyntaxRuleIdentifier(identifier);
+  }
 
-	static decorator(decorator?: DecoratorValue): SyntaxRuleDecorator {
-		return new SyntaxRuleDecorator(decorator);
-	}
+  static literal(): SyntaxRuleLiteral {
+    return new SyntaxRuleLiteral();
+  }
 
-	// Combinators
+  static string(): SyntaxRuleString {
+    return new SyntaxRuleString();
+  }
 
-	or<R>(rule: SyntaxRule<R>): SyntaxRuleOr<T, R> {
-		return new SyntaxRuleOr(this, rule);
-	}
+  static decorator(decorator?: DecoratorValue): SyntaxRuleDecorator {
+    return new SyntaxRuleDecorator(decorator);
+  }
 
-	/**
-	 * To cascade multiple `followed` rules, use `.andBy` method on the
-	 * `SyntaxRuleFollowedBy` object that is returned to flatten nested tuples.
-	 */
-	followedBy<R>(rule: SyntaxRule<R>): SyntaxRuleFollowedBy<[T], R> {
-		return new SyntaxRuleFollowedBy(this.map(m => [m]), rule);
-	}
+  // Combinators
 
-	map<M>(mapper: (_: T) => M): SyntaxRuleMap<T, M> {
-		return new SyntaxRuleMap(this, mapper);
-	}
+  or<R>(rule: SyntaxRule<R>): SyntaxRuleOr<T, R> {
+    return new SyntaxRuleOr(this, rule);
+  }
 
-	static repeat<R>(rule: SyntaxRule<R>): SyntaxRuleRepeat<R> {
-		return new SyntaxRuleRepeat(rule);
-	}
+  /**
+   * To cascade multiple `followed` rules, use `.andBy` method on the
+   * `SyntaxRuleFollowedBy` object that is returned to flatten nested tuples.
+   */
+  followedBy<R>(rule: SyntaxRule<R>): SyntaxRuleFollowedBy<[T], R> {
+    return new SyntaxRuleFollowedBy(
+      this.map(m => [m]),
+      rule
+    );
+  }
 
-	static optional<R>(rule: SyntaxRule<R>): SyntaxRuleOptional<R> {
-		return new SyntaxRuleOptional(rule);
-	}
-	/* eslint-enable @typescript-eslint/no-use-before-define */
+  map<M>(mapper: (_: T) => M): SyntaxRuleMap<T, M> {
+    return new SyntaxRuleMap(this, mapper);
+  }
+
+  static repeat<R>(rule: SyntaxRule<R>): SyntaxRuleRepeat<R> {
+    return new SyntaxRuleRepeat(rule);
+  }
+
+  static optional<R>(rule: SyntaxRule<R>): SyntaxRuleOptional<R> {
+    return new SyntaxRuleOptional(rule);
+  }
+  /* eslint-enable @typescript-eslint/no-use-before-define */
 }
 
 // Basic nodes //
 
-export class SyntaxRuleSeparator extends SyntaxRule<LexerTokenMatch<SeparatorTokenData>> {
-	readonly separator?: SeparatorValue;
+export class SyntaxRuleSeparator extends SyntaxRule<
+  LexerTokenMatch<SeparatorTokenData>
+> {
+  readonly separator?: SeparatorValue;
 
-	constructor(separator?: SeparatorValue) {
-		super();
-		this.separator = separator;
-	}
-	
-	tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<LexerTokenMatch<SeparatorTokenData>> {
-		return this.simpleTryMatchBoilerplate(
-			tokens,
-			token => {
-				if (token.data.kind === LexerTokenKind.SEPARATOR) {
-					if (this.separator === undefined || token.data.separator === this.separator) {
-	
-						return {
-							data: token.data,
-							span: token.span,
-							location: token.location
-						};
-					}
-				}
+  constructor(separator?: SeparatorValue) {
+    super();
+    this.separator = separator;
+  }
 
-				return null;
-			}
-		)
-	}
+  tryMatch(
+    tokens: BufferedIterator<LexerToken>
+  ): RuleResult<LexerTokenMatch<SeparatorTokenData>> {
+    return this.simpleTryMatchBoilerplate(tokens, token => {
+      if (token.data.kind === LexerTokenKind.SEPARATOR) {
+        if (
+          this.separator === undefined ||
+          token.data.separator === this.separator
+        ) {
+          return {
+            data: token.data,
+            span: token.span,
+            location: token.location,
+          };
+        }
+      }
 
-	toStringDepth(depth: number): string {
-		return INDENT_CHAR.repeat(depth) + 'SEP ' + (this.separator ?? '<ANY>') + '\n'
-	}
+      return undefined;
+    });
+  }
+
+  toStringDepth(depth: number): string {
+    return (
+      INDENT_CHAR.repeat(depth) + 'SEP ' + (this.separator ?? '<ANY>') + '\n'
+    );
+  }
 }
 
-export class SyntaxRuleOperator extends SyntaxRule<LexerTokenMatch<OperatorTokenData>> {
-	readonly operator?: OperatorValue;
+export class SyntaxRuleOperator extends SyntaxRule<
+  LexerTokenMatch<OperatorTokenData>
+> {
+  readonly operator?: OperatorValue;
 
-	constructor(operator?: OperatorValue) {
-		super();
-		this.operator = operator;
-	}
-	
-	tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<LexerTokenMatch<OperatorTokenData>> {
-		return this.simpleTryMatchBoilerplate(
-			tokens,
-			token => {
-				if (token.data.kind === LexerTokenKind.OPERATOR) {
-					if (this.operator === undefined || token.data.operator === this.operator) {
-	
-						return {
-							data: token.data,
-							span: token.span,
-							location: token.location
-						};
-					}
-				}
+  constructor(operator?: OperatorValue) {
+    super();
+    this.operator = operator;
+  }
 
-				return null;
-			}
-		)
-	}
+  tryMatch(
+    tokens: BufferedIterator<LexerToken>
+  ): RuleResult<LexerTokenMatch<OperatorTokenData>> {
+    return this.simpleTryMatchBoilerplate(tokens, token => {
+      if (token.data.kind === LexerTokenKind.OPERATOR) {
+        if (
+          this.operator === undefined ||
+          token.data.operator === this.operator
+        ) {
+          return {
+            data: token.data,
+            span: token.span,
+            location: token.location,
+          };
+        }
+      }
 
-	toStringDepth(depth: number): string {
-		return INDENT_CHAR.repeat(depth) + 'OP ' + (this.operator ?? '<ANY>') + '\n'
-	}
+      return undefined;
+    });
+  }
+
+  toStringDepth(depth: number): string {
+    return (
+      INDENT_CHAR.repeat(depth) + 'OP ' + (this.operator ?? '<ANY>') + '\n'
+    );
+  }
 }
 
-export class SyntaxRuleIdentifier extends SyntaxRule<LexerTokenMatch<IdentifierTokenData>> {
-	readonly identifier?: IdentifierValue;
+export class SyntaxRuleIdentifier extends SyntaxRule<
+  LexerTokenMatch<IdentifierTokenData>
+> {
+  readonly identifier?: IdentifierValue;
 
-	constructor(identifier?: IdentifierValue) {
-		super();
+  constructor(identifier?: IdentifierValue) {
+    super();
 
-		this.identifier = identifier;
-	}
+    this.identifier = identifier;
+  }
 
-	tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<LexerTokenMatch<IdentifierTokenData>> {
-		return this.simpleTryMatchBoilerplate(
-			tokens,
-			token => {
-				if (token.data.kind === LexerTokenKind.IDENTIFIER) {
-					if (this.identifier === undefined || token.data.identifier === this.identifier) {
-						return {
-							data: token.data,
-							span: token.span,
-							location: token.location
-						};
-					}
-				}
+  tryMatch(
+    tokens: BufferedIterator<LexerToken>
+  ): RuleResult<LexerTokenMatch<IdentifierTokenData>> {
+    return this.simpleTryMatchBoilerplate(tokens, token => {
+      if (token.data.kind === LexerTokenKind.IDENTIFIER) {
+        if (
+          this.identifier === undefined ||
+          token.data.identifier === this.identifier
+        ) {
+          return {
+            data: token.data,
+            span: token.span,
+            location: token.location,
+          };
+        }
+      }
 
-				return null;
-			}
-		)
-	}
+      return undefined;
+    });
+  }
 
-	toStringDepth(depth: number): string {
-		return INDENT_CHAR.repeat(depth) + 'ID' + (this.identifier ?? '<ANY>') + '\n'
-	}
+  toStringDepth(depth: number): string {
+    return (
+      INDENT_CHAR.repeat(depth) + 'ID' + (this.identifier ?? '<ANY>') + '\n'
+    );
+  }
 }
 
-export class SyntaxRuleLiteral extends SyntaxRule<LexerTokenMatch<LiteralTokenData>> {
-	tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<LexerTokenMatch<LiteralTokenData>> {
-		return this.simpleTryMatchBoilerplate(
-			tokens,
-			token => {
-				if (token.data.kind === LexerTokenKind.LITERAL) {
-					return {
-						data: token.data,
-						span: token.span,
-						location: token.location
-					};
-				}
+export class SyntaxRuleLiteral extends SyntaxRule<
+  LexerTokenMatch<LiteralTokenData>
+> {
+  tryMatch(
+    tokens: BufferedIterator<LexerToken>
+  ): RuleResult<LexerTokenMatch<LiteralTokenData>> {
+    return this.simpleTryMatchBoilerplate(tokens, token => {
+      if (token.data.kind === LexerTokenKind.LITERAL) {
+        return {
+          data: token.data,
+          span: token.span,
+          location: token.location,
+        };
+      }
 
-				return null;
-			}
-		)
-	}
+      return undefined;
+    });
+  }
 
-	toStringDepth(depth: number): string {
-		return INDENT_CHAR.repeat(depth) + 'LIT\n'
-	}
+  toStringDepth(depth: number): string {
+    return INDENT_CHAR.repeat(depth) + 'LIT\n';
+  }
 }
 
-export class SyntaxRuleString extends SyntaxRule<LexerTokenMatch<StringTokenData>> {
-	tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<LexerTokenMatch<StringTokenData>> {
-		return this.simpleTryMatchBoilerplate(
-			tokens,
-			token => {
-				if (token.data.kind === LexerTokenKind.STRING) {
-					return {
-						data: token.data,
-						span: token.span,
-						location: token.location
-					};
-				}
+export class SyntaxRuleString extends SyntaxRule<
+  LexerTokenMatch<StringTokenData>
+> {
+  tryMatch(
+    tokens: BufferedIterator<LexerToken>
+  ): RuleResult<LexerTokenMatch<StringTokenData>> {
+    return this.simpleTryMatchBoilerplate(tokens, token => {
+      if (token.data.kind === LexerTokenKind.STRING) {
+        return {
+          data: token.data,
+          span: token.span,
+          location: token.location,
+        };
+      }
 
-				return null;
-			}
-		)
-	}
+      return undefined;
+    });
+  }
 
-	toStringDepth(depth: number): string {
-		return INDENT_CHAR.repeat(depth) + 'STR\n'
-	}
+  toStringDepth(depth: number): string {
+    return INDENT_CHAR.repeat(depth) + 'STR\n';
+  }
 }
 
-export class SyntaxRuleDecorator extends SyntaxRule<LexerTokenMatch<DecoratorTokenData>> {
-	readonly decorator?: DecoratorValue;
+export class SyntaxRuleDecorator extends SyntaxRule<
+  LexerTokenMatch<DecoratorTokenData>
+> {
+  readonly decorator?: DecoratorValue;
 
-	constructor(decorator?: DecoratorValue) {
-		super();
-		this.decorator = decorator;
-	}
-	
-	tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<LexerTokenMatch<DecoratorTokenData>> {
-		return this.simpleTryMatchBoilerplate(
-			tokens,
-			token => {
-				if (token.data.kind === LexerTokenKind.DECORATOR) {
-					if (this.decorator === undefined || token.data.decorator === this.decorator) {
-	
-						return {
-							data: token.data,
-							span: token.span,
-							location: token.location
-						}
-					}
-				}
+  constructor(decorator?: DecoratorValue) {
+    super();
+    this.decorator = decorator;
+  }
 
-				return null;
-			}
-		)
-	}
+  tryMatch(
+    tokens: BufferedIterator<LexerToken>
+  ): RuleResult<LexerTokenMatch<DecoratorTokenData>> {
+    return this.simpleTryMatchBoilerplate(tokens, token => {
+      if (token.data.kind === LexerTokenKind.DECORATOR) {
+        if (
+          this.decorator === undefined ||
+          token.data.decorator === this.decorator
+        ) {
+          return {
+            data: token.data,
+            span: token.span,
+            location: token.location,
+          };
+        }
+      }
 
-	toStringDepth(depth: number): string {
-		return INDENT_CHAR.repeat(depth) + 'DEC ' + (this.decorator ?? '<ANY>')
-	}
+      return undefined;
+    });
+  }
+
+  toStringDepth(depth: number): string {
+    return INDENT_CHAR.repeat(depth) + 'DEC ' + (this.decorator ?? '<ANY>');
+  }
 }
 
 // Combinators //
 
 export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
-	readonly first: SyntaxRule<F>
-	readonly second: SyntaxRule<S>
+  readonly first: SyntaxRule<F>;
+  readonly second: SyntaxRule<S>;
 
-	constructor(
-		first: SyntaxRule<F>,
-		second: SyntaxRule<S>
-	) {
-		super();
-		this.first = first;
-		this.second = second;
-	}
+  constructor(first: SyntaxRule<F>, second: SyntaxRule<S>) {
+    super();
+    this.first = first;
+    this.second = second;
+  }
 
-	tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<F | S> {
-		// Basic rules automatically restore `tokens` state on `nomatch`
-		const firstMatch = this.first.tryMatch(tokens);
-		if (firstMatch.kind === 'match') {
-			return firstMatch;
-		}
-		
-		const secondMatch = this.second.tryMatch(tokens);
-		if (secondMatch.kind === 'match') {
-			return secondMatch;
-		}
+  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<F | S> {
+    // Basic rules automatically restore `tokens` state on `nomatch`
+    const firstMatch = this.first.tryMatch(tokens);
+    if (firstMatch.kind === 'match') {
+      return firstMatch;
+    }
 
-		return {
-			kind: 'nomatch',
-			attempts: [
-				...firstMatch.attempts,
-				...secondMatch.attempts
-			]
-		}
-	}
+    const secondMatch = this.second.tryMatch(tokens);
+    if (secondMatch.kind === 'match') {
+      return secondMatch;
+    }
 
-	toStringDepth(depth: number): string {
-		let res = INDENT_CHAR.repeat(depth) + 'OR\n';
-		res += this.first.toStringDepth(depth + 1);
-		res += this.second.toStringDepth(depth + 1);
+    return {
+      kind: 'nomatch',
+      attempts: [...firstMatch.attempts, ...secondMatch.attempts],
+    };
+  }
 
-		return res;
-	}
+  toStringDepth(depth: number): string {
+    let res = INDENT_CHAR.repeat(depth) + 'OR\n';
+    res += this.first.toStringDepth(depth + 1);
+    res += this.second.toStringDepth(depth + 1);
+
+    return res;
+  }
 }
 
 // TODO: In TypeScript 4.0 use variadic tuple types: [...F, S]
-export class SyntaxRuleFollowedBy<F extends unknown[], S> extends SyntaxRule<(F[number] | S)[]> {
-	readonly first: SyntaxRule<F>
-	readonly second: SyntaxRule<S>
+export class SyntaxRuleFollowedBy<F extends unknown[], S> extends SyntaxRule<
+  (F[number] | S)[]
+> {
+  readonly first: SyntaxRule<F>;
+  readonly second: SyntaxRule<S>;
 
-	constructor(
-		first: SyntaxRule<F>,
-		second: SyntaxRule<S>
-	) {
-		super();
+  constructor(first: SyntaxRule<F>, second: SyntaxRule<S>) {
+    super();
 
-		this.first = first;
-		this.second = second;
-	}
+    this.first = first;
+    this.second = second;
+  }
 
-	// TODO: In TypeScript 4.0 use variadic tuple types: [...F, S]
-	andBy<R>(rule: SyntaxRule<R>): SyntaxRuleFollowedBy<(F[number] | S)[], R> {
-		return new SyntaxRuleFollowedBy(this, rule);
-	}
+  // TODO: In TypeScript 4.0 use variadic tuple types: [...F, S]
+  andBy<R>(rule: SyntaxRule<R>): SyntaxRuleFollowedBy<(F[number] | S)[], R> {
+    return new SyntaxRuleFollowedBy(this, rule);
+  }
 
-	// TODO: In TypeScript 4.0 use variadic tuple types: [...F, S]
-	tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<(F[number] | S)[]> {
-		const save = tokens.save();
+  // TODO: In TypeScript 4.0 use variadic tuple types: [...F, S]
+  tryMatch(
+    tokens: BufferedIterator<LexerToken>
+  ): RuleResult<(F[number] | S)[]> {
+    const save = tokens.save();
 
-		const firstMatch = this.first.tryMatch(tokens);
-		if (firstMatch.kind === 'nomatch') {
-			return firstMatch;
-		}
+    const firstMatch = this.first.tryMatch(tokens);
+    if (firstMatch.kind === 'nomatch') {
+      return firstMatch;
+    }
 
-		const secondMatch = this.second.tryMatch(tokens);
-		if (secondMatch.kind === 'nomatch') {
-			tokens.restore(save);
-			
-			return secondMatch;
-		}
+    const secondMatch = this.second.tryMatch(tokens);
+    if (secondMatch.kind === 'nomatch') {
+      tokens.restore(save);
 
-		return {
-			kind: 'match',
-			match: [
-				...firstMatch.match,
-				secondMatch.match
-			]
-		}
-	}
+      return secondMatch;
+    }
 
-	toStringDepth(depth: number): string {
-		let res = INDENT_CHAR.repeat(depth) + 'FOLLOWED BY\n';
-		res += this.first.toStringDepth(depth + 1);
-		res += this.second.toStringDepth(depth + 1);
+    return {
+      kind: 'match',
+      match: [...firstMatch.match, secondMatch.match],
+    };
+  }
 
-		return res;
-	}
+  toStringDepth(depth: number): string {
+    let res = INDENT_CHAR.repeat(depth) + 'FOLLOWED BY\n';
+    res += this.first.toStringDepth(depth + 1);
+    res += this.second.toStringDepth(depth + 1);
+
+    return res;
+  }
 }
 
 export class SyntaxRuleMap<R, M> extends SyntaxRule<M> {
-	readonly rule: SyntaxRule<R>
-	readonly mapper: (_: R) => M;
+  readonly rule: SyntaxRule<R>;
+  readonly mapper: (_: R) => M;
 
-	constructor(
-		rule: SyntaxRule<R>,
-		mapper: (_: R) => M
-	) {
-		super();
+  constructor(rule: SyntaxRule<R>, mapper: (_: R) => M) {
+    super();
 
-		this.rule = rule
-		this.mapper = mapper
-	}
+    this.rule = rule;
+    this.mapper = mapper;
+  }
 
-	tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<M> {
-		const match = this.rule.tryMatch(tokens);
-		if (match.kind === 'match') {
-			return {
-				kind: 'match',
-				match: this.mapper(match.match)
-			}
-		}
+  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<M> {
+    const match = this.rule.tryMatch(tokens);
+    if (match.kind === 'match') {
+      return {
+        kind: 'match',
+        match: this.mapper(match.match),
+      };
+    }
 
-		return match
-	}
+    return match;
+  }
 
-	toStringDepth(depth: number): string {
-		let res = INDENT_CHAR.repeat(depth) + 'MAP\n';
-		res += this.rule.toStringDepth(depth + 1);
-		// res += INDENT_CHAR.repeat(depth + 1) + this.mapper.toString();
+  toStringDepth(depth: number): string {
+    let res = INDENT_CHAR.repeat(depth) + 'MAP\n';
+    res += this.rule.toStringDepth(depth + 1);
+    // res += INDENT_CHAR.repeat(depth + 1) + this.mapper.toString();
 
-		return res;
-	}
+    return res;
+  }
 }
 
 export class SyntaxRuleRepeat<R> extends SyntaxRule<R[]> {
-	readonly rule: SyntaxRule<R>
+  readonly rule: SyntaxRule<R>;
 
-	constructor(rule: SyntaxRule<R>) {
-		super();
-		this.rule = rule;
-	}
+  constructor(rule: SyntaxRule<R>) {
+    super();
+    this.rule = rule;
+  }
 
-	tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R[]> {
-		// Count the matches separately, because there are rules that produce empty `nodes`
-		let matchCount = 0;
-		const matches: R[] = []
-		
-		for (;;) {
-			const match = this.rule.tryMatch(tokens);
-			if (match.kind === 'match') {
-				matches.push(match.match)
-				matchCount += 1;
-			} else {
-				break;
-			}
-		}
+  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R[]> {
+    // Count the matches separately, because there are rules that produce empty `nodes`
+    let matchCount = 0;
+    const matches: R[] = [];
 
-		if (matchCount > 0) {
-			return {
-				kind: 'match',
-				match: matches
-			}
-		}
+    for (;;) {
+      const match = this.rule.tryMatch(tokens);
+      if (match.kind === 'match') {
+        matches.push(match.match);
+        matchCount += 1;
+      } else {
+        break;
+      }
+    }
 
-		return {
-			kind: 'nomatch',
-			attempts: [
-				{
-					rule: this.rule,
-					token: tokens.peek().value
-				}
-			]
-		}
-	}
+    if (matchCount > 0) {
+      return {
+        kind: 'match',
+        match: matches,
+      };
+    }
 
-	toStringDepth(depth: number): string {
-		let res = INDENT_CHAR.repeat(depth) + 'rule MANY\n';
-		res += this.rule.toStringDepth(depth + 1);
+    return {
+      kind: 'nomatch',
+      attempts: [
+        {
+          rule: this.rule,
+          token: tokens.peek().value,
+        },
+      ],
+    };
+  }
 
-		return res;
-	}
+  toStringDepth(depth: number): string {
+    let res = INDENT_CHAR.repeat(depth) + 'rule MANY\n';
+    res += this.rule.toStringDepth(depth + 1);
+
+    return res;
+  }
 }
 
 export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
-	readonly rule: SyntaxRule<R>
+  readonly rule: SyntaxRule<R>;
 
-	constructor(
-		rule: SyntaxRule<R>,
-	) {
-		super();
+  constructor(rule: SyntaxRule<R>) {
+    super();
 
-		this.rule = rule
-	}
+    this.rule = rule;
+  }
 
-	tryMatch(tokens: BufferedIterator<LexerToken>): RuleResultMatch<R | undefined> {
-		const match = this.rule.tryMatch(tokens);
-		if (match.kind === 'match') {
-			return match;
-		}
+  tryMatch(
+    tokens: BufferedIterator<LexerToken>
+  ): RuleResultMatch<R | undefined> {
+    const match = this.rule.tryMatch(tokens);
+    if (match.kind === 'match') {
+      return match;
+    }
 
-		return {
-			kind: 'match',
-			match: undefined
-		}
-	}
+    return {
+      kind: 'match',
+      match: undefined,
+    };
+  }
 
-	toStringDepth(depth: number): string {
-		let res = INDENT_CHAR.repeat(depth) + 'OPTIONAL\n';
-		res += this.rule.toStringDepth(depth + 1);
+  toStringDepth(depth: number): string {
+    let res = INDENT_CHAR.repeat(depth) + 'OPTIONAL\n';
+    res += this.rule.toStringDepth(depth + 1);
 
-		return res;
-	}
+    return res;
+  }
 }
 
 // OTHER //
 
 /**
-* Mutable rule.
-*
-* Since the syntax tree node types are recursive, it follows that the rule definitions must be too.
-* However, there is no way to achieve constant recursiveness - e.g. mutability must be used.
-*
-* This rule provides the option to mutate the inner rule after the object has been created
-* to allow for this mutability. However, it should not be used outside the usecase.
-*/
+ * Mutable rule.
+ *
+ * Since the syntax tree node types are recursive, it follows that the rule definitions must be too.
+ * However, there is no way to achieve constant recursiveness - e.g. mutability must be used.
+ *
+ * This rule provides the option to mutate the inner rule after the object has been created
+ * to allow for this mutability. However, it should not be used outside the usecase.
+ */
 export class SyntaxRuleMutable<R> extends SyntaxRule<R> {
-	// NOT readonly
-	rule: SyntaxRule<R> | null
+  // NOT readonly
+  rule: SyntaxRule<R> | undefined;
 
-	constructor() {
-		super();
-		this.rule = null
-	}
+  constructor() {
+    super();
+    this.rule = undefined;
+  }
 
-	tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R> {
-		if (this.rule === null) {
-			throw 'This method should never be called. This is an error in syntax rules definition.'
-		}
+  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R> {
+    if (this.rule === undefined) {
+      throw 'This method should never be called. This is an error in syntax rules definition.';
+    }
 
-		return this.rule.tryMatch(tokens);
-	}
+    return this.rule.tryMatch(tokens);
+  }
 
-	toStringDepth(depth: number): string {
-		if (this.rule === null) {
-			throw 'This method should never be called. This is an error in syntax rules definition.'
-		}
+  toStringDepth(depth: number): string {
+    if (this.rule === undefined) {
+      throw 'This method should never be called. This is an error in syntax rules definition.';
+    }
 
-		if (depth > 10) {
-			return INDENT_CHAR.repeat(depth) + 'possible recursion\n';
-		} else {
-			return this.rule.toStringDepth(depth);
-		}
-	}
+    if (depth > 10) {
+      return INDENT_CHAR.repeat(depth) + 'possible recursion\n';
+    } else {
+      return this.rule.toStringDepth(depth);
+    }
+  }
 }
 
 /**
-* Logs the execution of given rule.
-*
-* This rule is intended only for debugging.
-*/
+ * Logs the execution of given rule.
+ *
+ * This rule is intended only for debugging.
+ */
 export class SyntaxRuleInspector<R> extends SyntaxRule<R> {
-	readonly rule: SyntaxRule<R>
+  readonly rule: SyntaxRule<R>;
 
-	constructor(rule: SyntaxRule<R>) {
-		super()
+  constructor(rule: SyntaxRule<R>) {
+    super();
 
-		this.rule = rule;
-	}
+    this.rule = rule;
+  }
 
-	tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R> {
-		const save = tokens.save();
-		const nextThreeTokens = [
-			tokens.next().value,
-			tokens.next().value,
-			tokens.next().value
-		];
-		console.debug('Executing\n', this.rule.toString(), 'on (first three tokens):', nextThreeTokens);
-		tokens.restore(save);
-		
-		const match = this.rule.tryMatch(tokens);
+  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R> {
+    const save = tokens.save();
+    const nextThreeTokens = [
+      tokens.next().value,
+      tokens.next().value,
+      tokens.next().value,
+    ];
+    console.debug(
+      'Executing\n',
+      this.rule.toString(),
+      'on (first three tokens):',
+      nextThreeTokens
+    );
+    tokens.restore(save);
 
-		return match;
-	}
+    const match = this.rule.tryMatch(tokens);
 
-	toStringDepth(depth: number): string {
-		return this.rule.toStringDepth(depth);
-	}
+    return match;
+  }
+
+  toStringDepth(depth: number): string {
+    return this.rule.toStringDepth(depth);
+  }
 }
