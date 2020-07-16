@@ -529,7 +529,7 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
 export class SyntaxRuleMutable<R> extends SyntaxRule<R> {
   constructor(
     // NOT readonly
-    public rule: SyntaxRule<R> | undefined
+    public rule?: SyntaxRule<R>
   ) {
     super();
   }
