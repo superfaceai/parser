@@ -97,10 +97,6 @@ export abstract class SyntaxRule<T> {
 
   // Factory methods for basic rules
 
-  // SyntaxRule class doesn't have to provide these functions, but they are usefull.
-  // There is no way to cause a ReferenceError because the classes (below) are declared
-  // before these functions can be called, so this lint is wrong.
-  /* eslint-disable @typescript-eslint/no-use-before-define */
   static separator(separator?: SeparatorValue): SyntaxRuleSeparator {
     return new SyntaxRuleSeparator(separator);
   }
@@ -153,7 +149,6 @@ export abstract class SyntaxRule<T> {
   static optional<R>(rule: SyntaxRule<R>): SyntaxRuleOptional<R> {
     return new SyntaxRuleOptional(rule);
   }
-  /* eslint-enable @typescript-eslint/no-use-before-define */
 }
 
 // Basic nodes //
@@ -161,11 +156,8 @@ export abstract class SyntaxRule<T> {
 export class SyntaxRuleSeparator extends SyntaxRule<
   LexerTokenMatch<SeparatorTokenData>
 > {
-  readonly separator?: SeparatorValue;
-
-  constructor(separator?: SeparatorValue) {
+  constructor(readonly separator?: SeparatorValue) {
     super();
-    this.separator = separator;
   }
 
   tryMatch(
@@ -199,11 +191,8 @@ export class SyntaxRuleSeparator extends SyntaxRule<
 export class SyntaxRuleOperator extends SyntaxRule<
   LexerTokenMatch<OperatorTokenData>
 > {
-  readonly operator?: OperatorValue;
-
-  constructor(operator?: OperatorValue) {
+  constructor(readonly operator?: OperatorValue) {
     super();
-    this.operator = operator;
   }
 
   tryMatch(
@@ -237,12 +226,8 @@ export class SyntaxRuleOperator extends SyntaxRule<
 export class SyntaxRuleIdentifier extends SyntaxRule<
   LexerTokenMatch<IdentifierTokenData>
 > {
-  readonly identifier?: IdentifierValue;
-
-  constructor(identifier?: IdentifierValue) {
+  constructor(readonly identifier?: IdentifierValue) {
     super();
-
-    this.identifier = identifier;
   }
 
   tryMatch(
@@ -324,11 +309,8 @@ export class SyntaxRuleString extends SyntaxRule<
 export class SyntaxRuleDecorator extends SyntaxRule<
   LexerTokenMatch<DecoratorTokenData>
 > {
-  readonly decorator?: DecoratorValue;
-
-  constructor(decorator?: DecoratorValue) {
+  constructor(readonly decorator?: DecoratorValue) {
     super();
-    this.decorator = decorator;
   }
 
   tryMatch(
@@ -360,13 +342,8 @@ export class SyntaxRuleDecorator extends SyntaxRule<
 // Combinators //
 
 export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
-  readonly first: SyntaxRule<F>;
-  readonly second: SyntaxRule<S>;
-
-  constructor(first: SyntaxRule<F>, second: SyntaxRule<S>) {
+  constructor(readonly first: SyntaxRule<F>, readonly second: SyntaxRule<S>) {
     super();
-    this.first = first;
-    this.second = second;
   }
 
   tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<F | S> {
@@ -400,14 +377,8 @@ export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
 export class SyntaxRuleFollowedBy<F extends unknown[], S> extends SyntaxRule<
   (F[number] | S)[]
 > {
-  readonly first: SyntaxRule<F>;
-  readonly second: SyntaxRule<S>;
-
-  constructor(first: SyntaxRule<F>, second: SyntaxRule<S>) {
+  constructor(readonly first: SyntaxRule<F>, readonly second: SyntaxRule<S>) {
     super();
-
-    this.first = first;
-    this.second = second;
   }
 
   // TODO: In TypeScript 4.0 use variadic tuple types: [...F, S]
@@ -449,14 +420,8 @@ export class SyntaxRuleFollowedBy<F extends unknown[], S> extends SyntaxRule<
 }
 
 export class SyntaxRuleMap<R, M> extends SyntaxRule<M> {
-  readonly rule: SyntaxRule<R>;
-  readonly mapper: (_: R) => M;
-
-  constructor(rule: SyntaxRule<R>, mapper: (_: R) => M) {
+  constructor(readonly rule: SyntaxRule<R>, readonly mapper: (_: R) => M) {
     super();
-
-    this.rule = rule;
-    this.mapper = mapper;
   }
 
   tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<M> {
@@ -481,11 +446,8 @@ export class SyntaxRuleMap<R, M> extends SyntaxRule<M> {
 }
 
 export class SyntaxRuleRepeat<R> extends SyntaxRule<R[]> {
-  readonly rule: SyntaxRule<R>;
-
-  constructor(rule: SyntaxRule<R>) {
+  constructor(readonly rule: SyntaxRule<R>) {
     super();
-    this.rule = rule;
   }
 
   tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R[]> {
@@ -530,12 +492,8 @@ export class SyntaxRuleRepeat<R> extends SyntaxRule<R[]> {
 }
 
 export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
-  readonly rule: SyntaxRule<R>;
-
-  constructor(rule: SyntaxRule<R>) {
+  constructor(readonly rule: SyntaxRule<R>) {
     super();
-
-    this.rule = rule;
   }
 
   tryMatch(
@@ -572,12 +530,11 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
  * to allow for this mutability. However, it should not be used outside the usecase.
  */
 export class SyntaxRuleMutable<R> extends SyntaxRule<R> {
-  // NOT readonly
-  rule: SyntaxRule<R> | undefined;
-
-  constructor() {
+  constructor(
+    // NOT readonly
+    public rule: SyntaxRule<R> | undefined
+  ) {
     super();
-    this.rule = undefined;
   }
 
   tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R> {
@@ -607,12 +564,8 @@ export class SyntaxRuleMutable<R> extends SyntaxRule<R> {
  * This rule is intended only for debugging.
  */
 export class SyntaxRuleInspector<R> extends SyntaxRule<R> {
-  readonly rule: SyntaxRule<R>;
-
-  constructor(rule: SyntaxRule<R>) {
+  constructor(readonly rule: SyntaxRule<R>) {
     super();
-
-    this.rule = rule;
   }
 
   tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R> {
