@@ -1,5 +1,10 @@
 import { Location, Source, Span } from './source';
+import { RuleResultNoMatch } from './syntax/rules/rule';
 
+/**
+ * Computes span and the initial line offset of a (up to) 3-line block that encompasses
+ * the token at `innerSpan`.
+ */
 function computeVisualizeBlockSpan(
   body: string,
   innerSpan: Span,
@@ -31,13 +36,29 @@ function computeVisualizeBlockSpan(
   return { start, end, lineOffset };
 }
 
+/**
+ * Formats line prefix used in block visualization.
+ *
+ * Example: ` 13 | ` with `padSize = 3` and `lineNumber = 13`.
+ */
 function formatLinePrefix(padSize?: number, lineNumber?: number): string {
   const value = lineNumber?.toString() ?? '';
 
   return `${value.padEnd(padSize ?? 4, ' ')} | `;
 }
 
-function generateErrorVisualization(
+/**
+ * Render error block visualization.
+ * 
+ * Example:
+```
+ 1 | # line before
+ 2 | 0bA # line with the error
+   | ^^^ # error visualization
+ 3 | # line after 
+```
+ */
+function renderErrorVisualization(
   lines: string[],
   errorSpan: Span,
   prefixWidth: number,
@@ -87,6 +108,52 @@ function generateErrorVisualization(
   return output;
 }
 
+/**
+ * Generates and renders error block visualization given the span, location and source.
+ */
+function generateErrorVisualization(
+  source: Source,
+  span: Span,
+  location: Location
+): {
+  visualization: string;
+  maxLineNumberLog: number;
+  sourceLocation: Location;
+} {
+  const visBlock = computeVisualizeBlockSpan(
+    source.body,
+    span,
+    location.column
+  );
+
+  // Slice of the source that encompasses the token and is
+  // delimited by newlines or file boundaries
+  const sourceTextSlice = source.body.slice(visBlock.start, visBlock.end);
+  const sourceTextLines = sourceTextSlice.split('\n');
+
+  // Location within the body plus the offset of the Source metadata.
+  const sourceLocation = {
+    line: location.line + source.fileLocationOffset.line,
+    column: location.column + source.fileLocationOffset.column,
+  };
+  const maxLineNumberLog =
+    Math.log10(sourceLocation.line + sourceTextLines.length) + 1;
+
+  const visualization = renderErrorVisualization(
+    sourceTextLines,
+    span,
+    maxLineNumberLog,
+    sourceLocation.line + visBlock.lineOffset,
+    visBlock.start
+  );
+
+  return {
+    visualization,
+    maxLineNumberLog,
+    sourceLocation,
+  };
+}
+
 export class SyntaxError {
   /** Additional message attached to the error. */
   readonly detail: string;
@@ -103,43 +170,26 @@ export class SyntaxError {
     this.detail = detail ?? 'Invalid or unexpected token';
   }
 
+  static fromSyntaxRuleNoMatch(
+    _source: Source,
+    _result: RuleResultNoMatch
+  ): SyntaxError {
+    throw 'TODO';
+  }
+
   format(): string {
-    const visBlock = computeVisualizeBlockSpan(
-      this.source.body,
-      this.span,
-      this.location.column
-    );
-
-    // Slice of the source that encompasses the token and is
-    // delimited by newlines or file boundaries
-    const sourceTextSlice = this.source.body.slice(
-      visBlock.start,
-      visBlock.end
-    );
-    const sourceTextLines = sourceTextSlice.split('\n');
-
-    // Location within the body plus the offset of the Source metadata.
-    const sourceLocation = {
-      line: this.location.line + this.source.fileLocationOffset.line,
-      column: this.location.column + this.source.fileLocationOffset.column,
-    };
-    const maxLineNumberLog =
-      Math.log10(sourceLocation.line + sourceTextLines.length) + 1;
-
     // Generate the lines
+    const {
+      visualization,
+      maxLineNumberLog,
+      sourceLocation,
+    } = generateErrorVisualization(this.source, this.span, this.location);
+
     const errorLine = `SyntaxError: ${this.detail}`;
     const locationLinePrefix = ' '.repeat(maxLineNumberLog) + '--> ';
     const locationLine = `${locationLinePrefix}${this.source.fileName}:${sourceLocation.line}:${sourceLocation.column}`;
 
-    const outputLines = generateErrorVisualization(
-      sourceTextLines,
-      this.span,
-      maxLineNumberLog,
-      sourceLocation.line + visBlock.lineOffset,
-      visBlock.start
-    );
-
-    return `${errorLine}\n${locationLine}\n${outputLines}\n`;
+    return `${errorLine}\n${locationLine}\n${visualization}\n`;
   }
 
   get message(): string {
