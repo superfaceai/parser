@@ -23,6 +23,7 @@ module.exports = {
   rules: {
     'newline-before-return': 'error',
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
+    "@typescript-eslint/no-use-before-define": ["error", {"classes": false }],
     'simple-import-sort/sort': 'error',
     'sort-imports': 'off',
     'import/first': 'error',
