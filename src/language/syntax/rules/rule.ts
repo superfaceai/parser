@@ -451,21 +451,18 @@ export class SyntaxRuleRepeat<R> extends SyntaxRule<R[]> {
   }
 
   tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R[]> {
-    // Count the matches separately, because there are rules that produce empty `nodes`
-    let matchCount = 0;
     const matches: R[] = [];
 
     for (;;) {
       const match = this.rule.tryMatch(tokens);
       if (match.kind === 'match') {
         matches.push(match.match);
-        matchCount += 1;
       } else {
         break;
       }
     }
 
-    if (matchCount > 0) {
+    if (matches.length > 0) {
       return {
         kind: 'match',
         match: matches,
