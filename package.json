@@ -26,7 +26,8 @@
     "test": "jest",
     "lint": "eslint src/",
     "format": "prettier -c src/",
-    "format:fix": "prettier --write src/"
+    "format:fix": "prettier --write src/",
+    "prepush": "yarn test && yarn lint && yarn format"
   },
   "devDependencies": {
     "@types/jest": "^25.2.1",
