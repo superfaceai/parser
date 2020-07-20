@@ -30,7 +30,7 @@ export class Lexer {
       { start: 0, end: 0 },
       { line: 1, column: 1 }
     );
-    this.nextToken = null;
+    this.nextToken = this.currentToken;
 
     this.currentLine = 1;
     this.currentLineStart = 0;
@@ -38,13 +38,6 @@ export class Lexer {
 
   /** Advances the lexer returning the current token. */
   advance(): LexerToken {
-    // Specialcase the first token
-    if (this.currentToken.isSOF() && this.nextToken === null) {
-      this.lookahead();
-
-      return this.currentToken;
-    }
-
     this.currentToken = this.lookahead();
     this.nextToken = null;
 

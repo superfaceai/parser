@@ -1,5 +1,6 @@
 import { Location, Source, Span } from './source';
 import { RuleResultNoMatch } from './syntax/rules/rule';
+import { formatTokenData } from './lexer/token';
 
 /**
  * Computes span and the initial line offset of a (up to) 3-line block that encompasses
@@ -171,10 +172,28 @@ export class SyntaxError {
   }
 
   static fromSyntaxRuleNoMatch(
-    _source: Source,
-    _result: RuleResultNoMatch
+    source: Source,
+    result: RuleResultNoMatch
   ): SyntaxError {
-    throw 'TODO';
+    const location = result.attempt.token?.location ?? { line: 0, column: 0 }
+    const span = result.attempt.token?.span ?? { start: 0, end: 0 }
+
+    let expected = result.attempt.rule.toString()
+    if (result.optionalFailure !== undefined) {
+      expected = result.optionalFailure.rule.toString() + ' or ' + expected
+    }
+
+    let actual = '<NONE>'
+    if (result.attempt.token !== undefined) {
+      actual = '`' + formatTokenData(result.attempt.token.data).data + '`'
+    }
+
+    return new SyntaxError(
+      source,
+      location,
+      span,
+      `Expected ${expected} but found ${actual}`
+    )
   }
 
   format(): string {

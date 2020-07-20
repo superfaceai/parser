@@ -33,9 +33,8 @@ declare global {
 expect.extend({
   toHaveTokenData(actual: LexerToken, data: LexerTokenData) {
     function errorMessage(): string {
-      return `Expected (${formatTokenData(
-        data
-      )}) but found ${actual.formatDebug()}`;
+      const fmt = formatTokenData(data)
+      return `Expected (${fmt.kind} ${fmt.data}) but found ${actual.toStringDebug()}`;
     }
 
     let pass = true;
@@ -487,6 +486,8 @@ describe('lexer', () => {
   describe('invalid', () => {
     it('number literal', () => {
       const lexer = new Lexer(new Source('0xx'));
+      lexer.advance(); // skip SOF
+
       expect(() => lexer.advance()).toThrow(
         'Expected a number following integer base prefix'
       );
@@ -494,21 +495,29 @@ describe('lexer', () => {
 
     it('string literal', () => {
       const lexer = new Lexer(new Source('"asdf'));
+      lexer.advance(); // skip SOF
+
       expect(() => lexer.advance()).toThrow('Unexpected EOF');
     });
 
     it('block string literal', () => {
       const lexer = new Lexer(new Source("'''asdf''"));
+      lexer.advance(); // skip SOF
+
       expect(() => lexer.advance()).toThrow('Unexpected EOF');
     });
 
     it('string escape sequence', () => {
       const lexer = new Lexer(new Source('"asdf \\x"'));
+      lexer.advance(); // skip SOF
+
       expect(() => lexer.advance()).toThrow('Invalid escape sequence');
     });
 
     it('decorator', () => {
       const lexer = new Lexer(new Source('@afe'));
+      lexer.advance(); // skip SOF
+      
       expect(() => lexer.advance()).toThrow(
         'Expected one of [safe, unsafe, idempotent]'
       );

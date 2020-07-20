@@ -4,16 +4,22 @@ import { Lexer } from '../lexer/lexer';
 import { Source } from '../source';
 import { PROFILE_DOCUMENT } from './rules/profile';
 import { BufferedIterator } from './util';
+import { SyntaxError } from '../error';
+import { SyntaxRule } from './rules/rule';
 
-export function parseProfile(source: Source): ProfileDocumentNode {
+export function parseRule<N>(rule: SyntaxRule<N>, source: Source): N {
   const lexer = new Lexer(source);
   const buf = new BufferedIterator(lexer[Symbol.iterator]());
 
-  const result = PROFILE_DOCUMENT.tryMatch(buf);
+  const result = rule.tryMatch(buf);
 
   if (result.kind === 'nomatch') {
-    throw 'TODO';
+    throw SyntaxError.fromSyntaxRuleNoMatch(source, result);
   }
 
   return result.match;
+}
+
+export function parseProfile(source: Source): ProfileDocumentNode {
+  return parseRule(PROFILE_DOCUMENT, source);
 }

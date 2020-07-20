@@ -12,27 +12,40 @@ import {
   SeparatorTokenData,
   SeparatorValue,
   StringTokenData,
+  formatTokenKind,
 } from '../../lexer/token';
 import { Location, Span } from '../../source';
 import { BufferedIterator } from '../util';
 
+/** Pair of rule and token that were attempted by failed */
+export type RuleAttempt = {
+  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
+  rule: SyntaxRule<any>; // cannot be unknown :(
+  token?: LexerToken;
+}
+type OptionalFailure = {
+  /**
+   * A failure of a rule that introduces optionality.
+   * 
+   * When a rule that introduces optionality (such as Optional and Repeat) matches, it might
+   * have interally failed to match a different option. If another rule following the optional
+   * one doesn't match, the error might not report the complete information. Once another rule
+   * following the optional one matches, this information is no longer needed.
+   * 
+   * This field contains information about last failed optional rule which hasn't been "cleaned" yet by another success.
+   */
+  optionalFailure?: RuleAttempt
+}
+
 export type RuleResultMatch<T> = {
   kind: 'match';
   match: T;
-};
+} & OptionalFailure;
 export type RuleResultNoMatch = {
   kind: 'nomatch';
-
-  /** Pairs of rules and tokens that were attempted by failed */
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ attempts: {
-    rule: SyntaxRule<any>; // cannot be unknown :(
-    token?: LexerToken;
-  }[];
-  // TODO: Partial match?
-};
+  attempt: RuleAttempt;
+} & OptionalFailure;
 export type RuleResult<T> = RuleResultMatch<T> | RuleResultNoMatch;
-
-const INDENT_CHAR = '\t';
 
 export interface LexerTokenMatch<D extends LexerTokenData = LexerTokenData> {
   readonly data: D;
@@ -64,6 +77,8 @@ export abstract class SyntaxRule<T> {
 
       const match = predicate(token);
       if (match !== undefined) {
+        tokens.endSave();
+
         return {
           kind: 'match',
           match: match,
@@ -72,28 +87,22 @@ export abstract class SyntaxRule<T> {
     }
 
     tokens.restore(save);
+    tokens.endSave();
 
     return {
       kind: 'nomatch',
-      attempts: [
-        {
-          rule: this,
-          token: next.value,
-        },
-      ],
+      attempt: {
+        rule: this,
+        token: next.value,
+      }
     };
   }
-
-  /** Converts this rule to string with indentation indicated by the `depth`. */
-  abstract toStringDepth(depth: number): string;
 
   toString(): string {
     return this[Symbol.toStringTag]();
   }
 
-  [Symbol.toStringTag](): string {
-    return this.toStringDepth(0);
-  }
+  abstract [Symbol.toStringTag](): string;
 
   // Factory methods for basic rules
 
@@ -181,10 +190,12 @@ export class SyntaxRuleSeparator extends SyntaxRule<
     });
   }
 
-  toStringDepth(depth: number): string {
-    return (
-      INDENT_CHAR.repeat(depth) + 'SEP ' + (this.separator ?? '<ANY>') + '\n'
-    );
+  [Symbol.toStringTag](): string {
+    if (this.separator !== undefined) {
+      return '`' + this.separator + '`'
+    }
+
+    return formatTokenKind(LexerTokenKind.SEPARATOR)
   }
 }
 
@@ -216,10 +227,12 @@ export class SyntaxRuleOperator extends SyntaxRule<
     });
   }
 
-  toStringDepth(depth: number): string {
-    return (
-      INDENT_CHAR.repeat(depth) + 'OP ' + (this.operator ?? '<ANY>') + '\n'
-    );
+  [Symbol.toStringTag](): string {
+    if (this.operator !== undefined) {
+      return '`' + this.operator + '`'
+    }
+
+    return formatTokenKind(LexerTokenKind.OPERATOR)
   }
 }
 
@@ -251,10 +264,12 @@ export class SyntaxRuleIdentifier extends SyntaxRule<
     });
   }
 
-  toStringDepth(depth: number): string {
-    return (
-      INDENT_CHAR.repeat(depth) + 'ID' + (this.identifier ?? '<ANY>') + '\n'
-    );
+  [Symbol.toStringTag](): string {
+    if (this.identifier !== undefined) {
+      return '`' + this.identifier + '`'
+    }
+
+    return formatTokenKind(LexerTokenKind.IDENTIFIER)
   }
 }
 
@@ -277,8 +292,8 @@ export class SyntaxRuleLiteral extends SyntaxRule<
     });
   }
 
-  toStringDepth(depth: number): string {
-    return INDENT_CHAR.repeat(depth) + 'LIT\n';
+  [Symbol.toStringTag](): string {
+    return formatTokenKind(LexerTokenKind.LITERAL);
   }
 }
 
@@ -301,8 +316,8 @@ export class SyntaxRuleString extends SyntaxRule<
     });
   }
 
-  toStringDepth(depth: number): string {
-    return INDENT_CHAR.repeat(depth) + 'STR\n';
+  [Symbol.toStringTag](): string {
+    return formatTokenKind(LexerTokenKind.STRING);
   }
 }
 
@@ -334,8 +349,12 @@ export class SyntaxRuleDecorator extends SyntaxRule<
     });
   }
 
-  toStringDepth(depth: number): string {
-    return INDENT_CHAR.repeat(depth) + 'DEC ' + (this.decorator ?? '<ANY>');
+  [Symbol.toStringTag](): string {
+    if (this.decorator !== undefined) {
+      return '`' + this.decorator + '`'
+    }
+
+    return formatTokenKind(LexerTokenKind.DECORATOR)
   }
 }
 
@@ -360,16 +379,15 @@ export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
 
     return {
       kind: 'nomatch',
-      attempts: [...firstMatch.attempts, ...secondMatch.attempts],
+      attempt: {
+        rule: this,
+        token: tokens.peek().value
+      },
     };
   }
 
-  toStringDepth(depth: number): string {
-    let res = INDENT_CHAR.repeat(depth) + 'OR\n';
-    res += this.first.toStringDepth(depth + 1);
-    res += this.second.toStringDepth(depth + 1);
-
-    return res;
+  [Symbol.toStringTag](): string {
+    return this.first.toString() + ' or ' + this.second.toString();
   }
 }
 
@@ -394,28 +412,34 @@ export class SyntaxRuleFollowedBy<F extends unknown[], S> extends SyntaxRule<
 
     const firstMatch = this.first.tryMatch(tokens);
     if (firstMatch.kind === 'nomatch') {
+      tokens.restore(save);
+      tokens.endSave();
+
       return firstMatch;
     }
 
     const secondMatch = this.second.tryMatch(tokens);
     if (secondMatch.kind === 'nomatch') {
       tokens.restore(save);
+      tokens.endSave();
 
-      return secondMatch;
+      return {
+        kind: 'nomatch',
+        attempt: secondMatch.attempt,
+        optionalFailure: firstMatch.optionalFailure
+      };
     }
 
+    tokens.endSave();
     return {
       kind: 'match',
       match: [...firstMatch.match, secondMatch.match],
+      optionalFailure: secondMatch.optionalFailure
     };
   }
 
-  toStringDepth(depth: number): string {
-    let res = INDENT_CHAR.repeat(depth) + 'FOLLOWED BY\n';
-    res += this.first.toStringDepth(depth + 1);
-    res += this.second.toStringDepth(depth + 1);
-
-    return res;
+  [Symbol.toStringTag](): string {
+    return this.first.toString() + ' followed by ' + this.second.toString();
   }
 }
 
@@ -430,18 +454,15 @@ export class SyntaxRuleMap<R, M> extends SyntaxRule<M> {
       return {
         kind: 'match',
         match: this.mapper(match.match),
+        optionalFailure: match.optionalFailure
       };
     }
 
     return match;
   }
 
-  toStringDepth(depth: number): string {
-    let res = INDENT_CHAR.repeat(depth) + 'MAP\n';
-    res += this.rule.toStringDepth(depth + 1);
-    // res += INDENT_CHAR.repeat(depth + 1) + this.mapper.toString();
-
-    return res;
+  [Symbol.toStringTag](): string {
+    return this.rule.toString();
   }
 }
 
@@ -453,10 +474,11 @@ export class SyntaxRuleRepeat<R> extends SyntaxRule<R[]> {
   tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R[]> {
     const matches: R[] = [];
 
+    let lastMatch: RuleResult<R>
     for (;;) {
-      const match = this.rule.tryMatch(tokens);
-      if (match.kind === 'match') {
-        matches.push(match.match);
+      lastMatch = this.rule.tryMatch(tokens);
+      if (lastMatch.kind === 'match') {
+        matches.push(lastMatch.match);
       } else {
         break;
       }
@@ -466,25 +488,25 @@ export class SyntaxRuleRepeat<R> extends SyntaxRule<R[]> {
       return {
         kind: 'match',
         match: matches,
+        optionalFailure: {
+          rule: this.rule,
+          token: tokens.peek().value,
+        }
       };
     }
 
     return {
       kind: 'nomatch',
-      attempts: [
-        {
-          rule: this.rule,
-          token: tokens.peek().value,
-        },
-      ],
+      attempt: {
+        rule: this,
+        token: tokens.peek().value,
+      },
+      optionalFailure: lastMatch.optionalFailure
     };
   }
 
-  toStringDepth(depth: number): string {
-    let res = INDENT_CHAR.repeat(depth) + 'rule MANY\n';
-    res += this.rule.toStringDepth(depth + 1);
-
-    return res;
+  [Symbol.toStringTag](): string {
+    return 'one or more ' + this.rule.toString();
   }
 }
 
@@ -504,14 +526,12 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
     return {
       kind: 'match',
       match: undefined,
+      optionalFailure: match.attempt
     };
   }
 
-  toStringDepth(depth: number): string {
-    let res = INDENT_CHAR.repeat(depth) + 'OPTIONAL\n';
-    res += this.rule.toStringDepth(depth + 1);
-
-    return res;
+  [Symbol.toStringTag](): string {
+    return 'optional ' + this.rule.toString();
   }
 }
 
@@ -542,16 +562,12 @@ export class SyntaxRuleMutable<R> extends SyntaxRule<R> {
     return this.rule.tryMatch(tokens);
   }
 
-  toStringDepth(depth: number): string {
+  [Symbol.toStringTag](): string {
     if (this.rule === undefined) {
       throw 'This method should never be called. This is an error in syntax rules definition.';
     }
 
-    if (depth > 10) {
-      return INDENT_CHAR.repeat(depth) + 'possible recursion\n';
-    } else {
-      return this.rule.toStringDepth(depth);
-    }
+    return this.rule.toString();
   }
 }
 
@@ -578,14 +594,16 @@ export class SyntaxRuleInspector<R> extends SyntaxRule<R> {
       'on (first three tokens):',
       nextThreeTokens
     );
+
     tokens.restore(save);
+    tokens.endSave();
 
     const match = this.rule.tryMatch(tokens);
 
     return match;
   }
 
-  toStringDepth(depth: number): string {
-    return this.rule.toStringDepth(depth);
+  [Symbol.toStringTag](): string {
+    return this.rule.toString();
   }
 }
