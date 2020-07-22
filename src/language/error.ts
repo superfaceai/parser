@@ -1,6 +1,6 @@
 import { Location, Source, Span } from './source';
 import { RuleResultNoMatch } from './syntax/rules/rule';
-import { formatTokenData } from './lexer/token';
+import { formatTokenData, LexerTokenKind } from './lexer/token';
 
 /**
  * Computes span and the initial line offset of a (up to) 3-line block that encompasses
@@ -185,7 +185,19 @@ export class SyntaxError {
 
     let actual = '<NONE>'
     if (result.attempt.token !== undefined) {
-      actual = '`' + formatTokenData(result.attempt.token.data).data + '`'
+      const fmt = formatTokenData(result.attempt.token.data)
+      switch (result.attempt.token.data.kind) {
+        case LexerTokenKind.SEPARATOR:
+        case LexerTokenKind.OPERATOR:
+        case LexerTokenKind.LITERAL:
+        case LexerTokenKind.STRING:
+          actual = '`' + fmt.data  + '`'
+          break;
+        
+        default:
+          actual = fmt.kind;
+          break;
+      }
     }
 
     return new SyntaxError(

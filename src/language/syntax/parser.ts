@@ -7,9 +7,18 @@ import { BufferedIterator } from './util';
 import { SyntaxError } from '../error';
 import { SyntaxRule } from './rules/rule';
 
-export function parseRule<N>(rule: SyntaxRule<N>, source: Source): N {
+/**
+ * Attempts to match `rule` onto `source`.
+ * 
+ * If `skipSOF === true`, the first token of the newly created lexer token stream (the SOF token)
+ * is skipped.
+ */
+export function parseRule<N>(rule: SyntaxRule<N>, source: Source, skipSOF?: boolean): N {
   const lexer = new Lexer(source);
   const buf = new BufferedIterator(lexer[Symbol.iterator]());
+  if (skipSOF === true) {
+    buf.next();
+  }
 
   const result = rule.tryMatch(buf);
 

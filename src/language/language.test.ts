@@ -53,6 +53,8 @@ it('should parse simple profile into AST', () => {
 	  delivered
 	  seen
 	}
+
+	# comment
 	
 	field channel: Enum {
 	  sms

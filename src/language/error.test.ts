@@ -1,10 +1,8 @@
 import { Lexer } from './lexer/lexer';
 import { Source } from './source';
-import { parseProfile } from './syntax/parser';
+import { parseProfile, parseRule } from './syntax/parser';
 import * as profile from './syntax/rules/profile';
 import { SyntaxError } from './error';
-import { SyntaxRule } from './syntax/rules/rule';
-import { BufferedIterator } from './syntax/util';
 
 // Declare custom matcher for sake of Typescript
 declare global {
@@ -94,20 +92,6 @@ expect.extend({
   }
 });
 
-function parseRuleSkipSOF<N>(rule: SyntaxRule<N>, source: Source): N {
-  const lexer = new Lexer(source);
-  const buf = new BufferedIterator(lexer[Symbol.iterator]());
-  buf.next(); // skip SOF
-
-  const result = rule.tryMatch(buf);
-
-  if (result.kind === 'nomatch') {
-    throw SyntaxError.fromSyntaxRuleNoMatch(source, result);
-  }
-
-  return result.match;
-}
-
 describe('langauge syntax errors', () => {
   describe('lexer', () => {
     it('before', () => {
@@ -195,7 +179,7 @@ describe('langauge syntax errors', () => {
       const source = new Source('!');
 
       expect(
-        () => parseRuleSkipSOF(profile.PRIMITIVE_TYPE_NAME, source)
+        () => parseRule(profile.PRIMITIVE_TYPE_NAME, source, true)
       ).toThrowSyntaxError(
         'Expected `Boolean` or `Number` or `String` but found `!`',
         '[input]:1:1',
@@ -211,9 +195,9 @@ describe('langauge syntax errors', () => {
 }`);
 
       expect(
-        () => parseRuleSkipSOF(profile.ENUM_DEFINITION, tokens)
+        () => parseRule(profile.ENUM_DEFINITION, tokens, true)
       ).toThrowSyntaxError(
-        'Expected string or literal or identifier or `}` but found `!`',
+        'Expected enum value or `}` but found `!`',
         '[input]:3:1',
         '2 | \'asdf\'',
         '3 | !',

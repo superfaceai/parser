@@ -1,5 +1,5 @@
 import { Source } from '../source';
-import { Lexer } from './lexer';
+import { Lexer, DEFAULT_TOKEN_KIND_FILER } from './lexer';
 import {
   CommentTokenData,
   DecoratorTokenData,
@@ -359,7 +359,11 @@ describe('lexer', () => {
         #
         asdf #  hi
         asdf
-      `)
+      `),
+        {
+          ...DEFAULT_TOKEN_KIND_FILER,
+          [LexerTokenKind.COMMENT]: false
+        }
       );
       const expectedTokens: LexerTokenData[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },

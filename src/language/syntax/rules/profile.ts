@@ -49,7 +49,7 @@ function documentedNode<
   N extends SrcNode<DocumentedNode & ProfileASTNodeBase>,
   R extends SyntaxRule<N>
 >(rule: R): SyntaxRule<N> {
-  return SyntaxRule.optional(SyntaxRule.string())
+  return SyntaxRule.optional(SyntaxRule.string('documentation string'))
     .followedBy(rule)
     .map(
       (matches): N => {
@@ -66,7 +66,8 @@ function documentedNode<
         }
 
         return result;
-      }
+      },
+      rule.name
     );
 }
 
@@ -111,7 +112,8 @@ export const PRIMITIVE_TYPE_NAME: SyntaxRuleSrc<PrimitiveTypeNameNode> = SyntaxR
         span: keywordMatch.span,
         location: keywordMatch.location,
       };
-    }
+    },
+    'primitive type'
   );
 
 export const ENUM_VALUE: SyntaxRuleSrc<EnumValueNode> = SyntaxRule.string()
@@ -143,7 +145,8 @@ export const ENUM_VALUE: SyntaxRuleSrc<EnumValueNode> = SyntaxRule.string()
         location: match.location,
         span: match.span,
       };
-    }
+    },
+    'enum value'
   );
 /** Construct of form: `enum { values... }` */
 export const ENUM_DEFINITION: SyntaxRuleSrc<EnumDefinitionNode> = SyntaxRule.identifier(
@@ -167,7 +170,8 @@ export const ENUM_DEFINITION: SyntaxRuleSrc<EnumDefinitionNode> = SyntaxRule.ide
         location: keyword.location,
         span: { start: keyword.span.start, end: sepEnd.span.end },
       };
-    }
+    },
+    'enum definition'
   );
 
 /** Name of a model type parsed from identifiers. */
@@ -202,7 +206,8 @@ export const OBJECT_DEFINITION: SyntaxRuleSrc<ObjectDefinitionNode> = SyntaxRule
         location: sepStart.location,
         span: { start: sepStart.span.start, end: sepEnd.span.end },
       };
-    }
+    },
+    'object definition'
   );
 
 // Helper rule to ensure correct precedence
@@ -237,7 +242,8 @@ export const LIST_DEFINITION: SyntaxRuleSrc<ListDefinitionNode> = SyntaxRule.sep
         location: sepStart.location,
         span: { start: sepStart.span.start, end: sepEnd.span.end },
       };
-    }
+    },
+    'list definition'
   );
 
 /** Non-null assertion operator: `type!` */
@@ -263,14 +269,15 @@ export const NON_NULL_DEFINITION: SyntaxRuleSrc<NonNullDefinitionNode> = BASIC_T
         location: type.location,
         span: { start: type.span.start, end: op.span.end },
       };
-    }
+    },
+    'non-null definition'
   );
 
 // NON_NULL_TYPE needs to go first because of postfix operator, model type needs to go after scalar and
 const NON_UNION_TYPE: SyntaxRule<SrcNode<
   Exclude<Type, UnionDefinitionNode>
 >> = NON_NULL_DEFINITION.or(BASIC_TYPE).or(LIST_DEFINITION);
-export const UNION_TYPE: SyntaxRuleSrc<UnionDefinitionNode> = NON_UNION_TYPE.followedBy(
+export const UNION_DEFINITION: SyntaxRuleSrc<UnionDefinitionNode> = NON_UNION_TYPE.followedBy(
   SyntaxRule.operator('|')
 )
   .andBy(NON_UNION_TYPE)
@@ -306,11 +313,12 @@ export const UNION_TYPE: SyntaxRuleSrc<UnionDefinitionNode> = NON_UNION_TYPE.fol
           end: types[types.length - 1].span.end,
         },
       };
-    }
+    },
+    'union definition'
   );
 
-// UNION_TYPE rule needs to go first because of postfix operator.
-export const TYPE: SyntaxRuleSrc<Type> = UNION_TYPE.or(NON_UNION_TYPE);
+// UNION_DEFINITION rule needs to go first because of postfix operator.
+export const TYPE: SyntaxRuleSrc<Type> = UNION_DEFINITION.or(NON_UNION_TYPE, 'type');
 TYPE_MUT.rule = TYPE;
 
 /**
@@ -329,7 +337,8 @@ const TYPE_ASSIGNMENT: SyntaxRuleSrc<Type> = OBJECT_DEFINITION.or(
     } else {
       return matchTyped;
     }
-  }
+  },
+  'type assignment'
 );
 
 // FIELDS //
@@ -383,7 +392,8 @@ export const NAMED_FIELD_DEFINITION: SyntaxRuleSrc<NamedFieldDefinitionNode> = d
             end: (type ?? fieldName).span.end,
           },
         };
-      }
+      },
+      'named field definition'
     )
 );
 
@@ -412,7 +422,8 @@ export const NAMED_MODEL_DEFINITION: SyntaxRuleSrc<NamedModelDefinitionNode> = d
             end: (type ?? modelName).span.end,
           },
         };
-      }
+      },
+      'named model definition'
     )
 );
 
@@ -434,27 +445,27 @@ usecase ident @deco {
 */
 export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = documentedNode(
   SyntaxRule.identifier('usecase')
-    .followedBy(SyntaxRule.identifier())
+    .followedBy(SyntaxRule.identifier(undefined, 'usecase name'))
     .andBy(SyntaxRule.optional(SyntaxRule.decorator()))
     .andBy(SyntaxRule.separator('{'))
     .andBy(
       SyntaxRule.optional(
         SyntaxRule.identifier('input')
           .followedBy(SyntaxRule.optional(SyntaxRule.operator(':')))
-          .andBy(OBJECT_DEFINITION)
+          .andBy(OBJECT_DEFINITION, 'input object')
       )
     )
-    .andBy(SyntaxRule.identifier('result').followedBy(TYPE_ASSIGNMENT))
+    .andBy(SyntaxRule.identifier('result').followedBy(TYPE_ASSIGNMENT, 'result'))
     .andBy(
       SyntaxRule.optional(
         SyntaxRule.identifier('async')
           .followedBy(SyntaxRule.identifier('result'))
-          .andBy(TYPE_ASSIGNMENT)
+          .andBy(TYPE_ASSIGNMENT, 'async result')
       )
     )
     .andBy(
       SyntaxRule.optional(
-        SyntaxRule.identifier('error').followedBy(TYPE_ASSIGNMENT)
+        SyntaxRule.identifier('error').followedBy(TYPE_ASSIGNMENT, 'error result')
       )
     )
     .andBy(SyntaxRule.separator('}'))
@@ -512,7 +523,8 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
           location: usecaseKey.location,
           span: { start: usecaseKey.span.start, end: sepEnd.span.end },
         };
-      }
+      },
+      'usecase definition'
     )
 );
 
@@ -572,12 +584,14 @@ export const PROFILE_DOCUMENT: SyntaxRuleSrc<ProfileDocumentNode> = SyntaxRule.s
 )
   .followedBy(PROFILE)
   .andBy(SyntaxRule.optional(SyntaxRule.repeat(DOCUMENT_DEFINITION)))
+  .andBy(SyntaxRule.separator('EOF'))
   .map(
     (matches): SrcNode<ProfileDocumentNode> => {
-      const [, /* SOF */ profile, definitions] = matches as [
+      const [, /* SOF */ profile, definitions, /* EOF */] = matches as [
         LexerTokenMatch<SeparatorTokenData>,
         SrcNode<ProfileNode>,
-        SrcNode<DocumentDefinition>[] | undefined
+        SrcNode<DocumentDefinition>[] | undefined,
+        LexerTokenMatch<SeparatorTokenData>,
       ]; // TODO: Won't need `as` cast in Typescript 4
 
       let spanEnd = profile.span.end;

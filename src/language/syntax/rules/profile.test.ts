@@ -446,7 +446,7 @@ describe('syntax rules', () => {
       ];
       const buf = new BufferedIterator(tokens[Symbol.iterator]());
 
-      const rule = rules.UNION_TYPE;
+      const rule = rules.UNION_DEFINITION;
 
       expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
@@ -1221,6 +1221,8 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: 'EOF' }),
       ];
       const buf = new BufferedIterator(tokens[Symbol.iterator]());
 
