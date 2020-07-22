@@ -1,6 +1,6 @@
+import { formatTokenData, LexerTokenKind } from './lexer/token';
 import { Location, Source, Span } from './source';
 import { RuleResultNoMatch } from './syntax/rules/rule';
-import { formatTokenData, LexerTokenKind } from './lexer/token';
 
 /**
  * Computes span and the initial line offset of a (up to) 3-line block that encompasses
@@ -175,25 +175,25 @@ export class SyntaxError {
     source: Source,
     result: RuleResultNoMatch
   ): SyntaxError {
-    const location = result.attempt.token?.location ?? { line: 0, column: 0 }
-    const span = result.attempt.token?.span ?? { start: 0, end: 0 }
+    const location = result.attempt.token?.location ?? { line: 0, column: 0 };
+    const span = result.attempt.token?.span ?? { start: 0, end: 0 };
 
-    let expected = result.attempt.rule.toString()
+    let expected = result.attempt.rule.toString();
     if (result.optionalFailure !== undefined) {
-      expected = result.optionalFailure.rule.toString() + ' or ' + expected
+      expected = result.optionalFailure.rule.toString() + ' or ' + expected;
     }
 
-    let actual = '<NONE>'
+    let actual = '<NONE>';
     if (result.attempt.token !== undefined) {
-      const fmt = formatTokenData(result.attempt.token.data)
+      const fmt = formatTokenData(result.attempt.token.data);
       switch (result.attempt.token.data.kind) {
         case LexerTokenKind.SEPARATOR:
         case LexerTokenKind.OPERATOR:
         case LexerTokenKind.LITERAL:
         case LexerTokenKind.STRING:
-          actual = '`' + fmt.data  + '`'
+          actual = '`' + fmt.data + '`';
           break;
-        
+
         default:
           actual = fmt.kind;
           break;
@@ -205,7 +205,7 @@ export class SyntaxError {
       location,
       span,
       `Expected ${expected} but found ${actual}`
-    )
+    );
   }
 
   format(): string {

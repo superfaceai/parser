@@ -70,7 +70,7 @@ export class BufferedIterator<T> implements IterableIterator<T> {
 
   /**
    * Stops recording and forgets all buffered tokens before the current `position`.
-   * 
+   *
    * Call this sparingly, as any restore prior to current `position` will fail after this.
    */
   forget(): void {
@@ -83,7 +83,7 @@ export class BufferedIterator<T> implements IterableIterator<T> {
 
   /**
    * Decreases the recording counter.
-   * 
+   *
    * If the couter reaches zero, `forget` it called.
    */
   endSave(): void {
@@ -154,7 +154,11 @@ export class BufferedIterator<T> implements IterableIterator<T> {
   }
 
   [Symbol.toStringTag](): string {
-    return `BufferedIterator(pos: ${this.absolutePosition}, buffered: ${this.buffer.length}, offset: ${this.absolutePosition - this.position}, rec: ${this.recording})`;
+    return `BufferedIterator(pos: ${this.absolutePosition}, buffered: ${
+      this.buffer.length
+    }, offset: ${this.absolutePosition - this.position}, rec: ${
+      this.recording
+    })`;
   }
 
   toString(): string {

@@ -66,7 +66,7 @@ describe('syntax rules', () => {
           },
           tokens[0]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
 
       expect(rule.tryMatch(buf)).toStrictEqual({
@@ -78,7 +78,7 @@ describe('syntax rules', () => {
           },
           tokens[1]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
 
       expect(rule.tryMatch(buf)).toStrictEqual({
@@ -90,7 +90,7 @@ describe('syntax rules', () => {
           },
           tokens[2]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
 
@@ -147,7 +147,7 @@ describe('syntax rules', () => {
           tokens[0],
           tokens[6]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
 
@@ -168,7 +168,7 @@ describe('syntax rules', () => {
           },
           tokens[0]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
 
@@ -222,7 +222,7 @@ describe('syntax rules', () => {
           tokens[0],
           tokens[5]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
   });
@@ -287,7 +287,7 @@ describe('syntax rules', () => {
           tokens[0],
           tokens[6]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
 
       expect(rule.tryMatch(buf)).toStrictEqual({
@@ -306,7 +306,7 @@ describe('syntax rules', () => {
           tokens[7],
           tokens[9]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
 
       expect(rule.tryMatch(buf)).toStrictEqual({
@@ -332,7 +332,7 @@ describe('syntax rules', () => {
           tokens[10],
           tokens[13]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
 
@@ -387,7 +387,7 @@ describe('syntax rules', () => {
           tokens[0],
           tokens[5]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
 
       expect(rule.tryMatch(buf)).toStrictEqual({
@@ -406,7 +406,7 @@ describe('syntax rules', () => {
           tokens[6],
           tokens[7]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
 
       expect(rule.tryMatch(buf)).toStrictEqual({
@@ -425,7 +425,7 @@ describe('syntax rules', () => {
           tokens[8],
           tokens[9]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
 
@@ -502,7 +502,7 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[9]
-        )
+        ),
       });
     });
   });
@@ -556,7 +556,7 @@ describe('syntax rules', () => {
           tokens[0],
           tokens[2]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
 
@@ -599,7 +599,7 @@ describe('syntax rules', () => {
           tokens[0],
           tokens[3]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
 
@@ -692,7 +692,7 @@ describe('syntax rules', () => {
           tokens[0],
           tokens[5]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
 
@@ -787,7 +787,7 @@ describe('syntax rules', () => {
           tokens[0],
           tokens[6]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
 
@@ -831,7 +831,7 @@ describe('syntax rules', () => {
           tokens[0],
           tokens[4]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
 
@@ -898,7 +898,7 @@ describe('syntax rules', () => {
           tokens[0],
           tokens[6]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
 
@@ -1063,7 +1063,7 @@ describe('syntax rules', () => {
           tokens[0],
           tokens[31]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
 
@@ -1105,7 +1105,7 @@ describe('syntax rules', () => {
           tokens[0],
           tokens[7]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
   });
@@ -1131,7 +1131,7 @@ describe('syntax rules', () => {
           tokens[0],
           tokens[2]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
 
@@ -1162,7 +1162,7 @@ describe('syntax rules', () => {
           tokens[0],
           tokens[2]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
 
@@ -1196,7 +1196,7 @@ describe('syntax rules', () => {
           tokens[0],
           tokens[3]
         ),
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
 

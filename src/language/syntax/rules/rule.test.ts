@@ -66,11 +66,10 @@ describe('syntax rule factory', () => {
 
       expect(rule.tryMatch(buf)).toStrictEqual({
         kind: 'nomatch',
-        attempt:
-          {
-            rule,
-            token: tokens[0],
-          },
+        attempt: {
+          rule,
+          token: tokens[0],
+        },
       });
     });
   });
@@ -114,11 +113,10 @@ describe('syntax rule factory', () => {
 
       expect(rule.tryMatch(buf)).toStrictEqual({
         kind: 'nomatch',
-        attempt:
-          {
-            rule,
-            token: tokens[0],
-          },
+        attempt: {
+          rule,
+          token: tokens[0],
+        },
       });
     });
   });
@@ -162,11 +160,10 @@ describe('syntax rule factory', () => {
 
       expect(rule.tryMatch(buf)).toStrictEqual({
         kind: 'nomatch',
-        attempt:
-          {
-            rule,
-            token: tokens[0],
-          },
+        attempt: {
+          rule,
+          token: tokens[0],
+        },
       });
     });
 
@@ -180,11 +177,10 @@ describe('syntax rule factory', () => {
 
       expect(rule.tryMatch(buf)).toStrictEqual({
         kind: 'nomatch',
-        attempt:
-          {
-            rule,
-            token: tokens[0],
-          },
+        attempt: {
+          rule,
+          token: tokens[0],
+        },
       });
     });
   });
@@ -308,8 +304,8 @@ describe('syntax rule factory', () => {
         kind: 'nomatch',
         attempt: {
           rule,
-          token: tokens[0]
-        }
+          token: tokens[0],
+        },
       });
     });
   });
@@ -330,7 +326,7 @@ describe('syntax rule factory', () => {
       expect(rule.tryMatch(buf)).toStrictEqual({
         kind: 'match',
         match: [tokMatch(tokens[0]), tokMatch(tokens[1]), tokMatch(tokens[2])],
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
 
@@ -364,7 +360,7 @@ describe('syntax rule factory', () => {
       ];
       const buf = new BufferedIterator(tokens[Symbol.iterator]());
 
-      const secondRule = SyntaxRule.operator('+')
+      const secondRule = SyntaxRule.operator('+');
       const rule = SyntaxRule.identifier('result')
         .followedBy(secondRule)
         .andBy(SyntaxRule.literal());
@@ -375,7 +371,7 @@ describe('syntax rule factory', () => {
           rule: secondRule,
           token: tokens[1],
         },
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
 
@@ -387,7 +383,7 @@ describe('syntax rule factory', () => {
       ];
       const buf = new BufferedIterator(tokens[Symbol.iterator]());
 
-      const thirdRule = SyntaxRule.identifier()
+      const thirdRule = SyntaxRule.identifier();
       const rule = SyntaxRule.identifier('result')
         .followedBy(SyntaxRule.operator(':'))
         .andBy(thirdRule);
@@ -398,7 +394,7 @@ describe('syntax rule factory', () => {
           rule: thirdRule,
           token: tokens[2],
         },
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
   });
@@ -411,18 +407,18 @@ describe('syntax rule factory', () => {
       ];
       const buf = new BufferedIterator(tokens[Symbol.iterator]());
 
-      const innerRule = SyntaxRule.identifier('field').followedBy(SyntaxRule.identifier());
-      const rule = SyntaxRule.repeat(
-        innerRule
+      const innerRule = SyntaxRule.identifier('field').followedBy(
+        SyntaxRule.identifier()
       );
+      const rule = SyntaxRule.repeat(innerRule);
 
       expect(rule.tryMatch(buf)).toStrictEqual({
         kind: 'match',
         match: [[tokMatch(tokens[0]), tokMatch(tokens[1])]],
         optionalFailure: {
           rule: innerRule,
-          token: undefined
-        }
+          token: undefined,
+        },
       });
     });
 
@@ -437,10 +433,10 @@ describe('syntax rule factory', () => {
       ];
       const buf = new BufferedIterator(tokens[Symbol.iterator]());
 
-      const innerRule = SyntaxRule.identifier('field').followedBy(SyntaxRule.identifier());
-      const rule = SyntaxRule.repeat(
-        innerRule
+      const innerRule = SyntaxRule.identifier('field').followedBy(
+        SyntaxRule.identifier()
       );
+      const rule = SyntaxRule.repeat(innerRule);
 
       expect(rule.tryMatch(buf)).toStrictEqual({
         kind: 'match',
@@ -451,8 +447,8 @@ describe('syntax rule factory', () => {
         ],
         optionalFailure: {
           rule: innerRule,
-          token: undefined
-        }
+          token: undefined,
+        },
       });
     });
 
@@ -468,7 +464,7 @@ describe('syntax rule factory', () => {
           rule,
           token: undefined,
         },
-        optionalFailure: undefined
+        optionalFailure: undefined,
       });
     });
   });
@@ -484,25 +480,23 @@ describe('syntax rule factory', () => {
 
       const innerRule = SyntaxRule.identifier('field');
       const repeatRule = SyntaxRule.repeat(innerRule);
-      const rule = SyntaxRule.optional(
-        repeatRule
-      );
+      const rule = SyntaxRule.optional(repeatRule);
 
       expect(rule.tryMatch(buf)).toStrictEqual({
         kind: 'match',
         match: [tokMatch(tokens[0]), tokMatch(tokens[1]), tokMatch(tokens[2])],
         optionalFailure: {
           rule: innerRule,
-          token: undefined
-        }
+          token: undefined,
+        },
       });
       expect(rule.tryMatch(buf)).toStrictEqual({
         kind: 'match',
         match: undefined,
         optionalFailure: {
           rule: repeatRule,
-          token: undefined
-        }
+          token: undefined,
+        },
       });
     });
   });

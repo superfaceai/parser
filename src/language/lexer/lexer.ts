@@ -4,7 +4,7 @@ import * as rules from './rules';
 import { LexerToken, LexerTokenKind } from './token';
 import * as util from './util';
 
-export type LexerTokenKindFilter = { [K in LexerTokenKind]: boolean }
+export type LexerTokenKindFilter = { [K in LexerTokenKind]: boolean };
 export const DEFAULT_TOKEN_KIND_FILER: LexerTokenKindFilter = {
   [LexerTokenKind.COMMENT]: true,
   [LexerTokenKind.DECORATOR]: false,
@@ -13,7 +13,7 @@ export const DEFAULT_TOKEN_KIND_FILER: LexerTokenKindFilter = {
   [LexerTokenKind.OPERATOR]: false,
   [LexerTokenKind.SEPARATOR]: false,
   [LexerTokenKind.STRING]: false,
-}
+};
 
 /**
  * Lexer tokenizes input string into tokens.
@@ -22,7 +22,7 @@ export const DEFAULT_TOKEN_KIND_FILER: LexerTokenKindFilter = {
  * The stream can be consumed by calling `advance`. After each advance, `lookahead` will provide access to the next
  * token without consuming it.
  * After EOF is emitted, all further calls to `advance` and `lookahead` will return the same EOF.
- * 
+ *
  * An optional `tokenKindFilter` parameter can be provided to filter
  * the tokens returned by `advance` and `lookahead`. By default, this filter skips comment nodes.
  */
@@ -35,7 +35,7 @@ export class Lexer {
   // Character offset in the source.body at which current line begins.
   private currentLineStart: number;
 
-  private readonly tokenKindFilter: LexerTokenKindFilter
+  private readonly tokenKindFilter: LexerTokenKindFilter;
 
   constructor(readonly source: Source, tokenKindFilter?: LexerTokenKindFilter) {
     this.currentToken = new LexerToken(
@@ -51,7 +51,7 @@ export class Lexer {
     this.currentLine = 1;
     this.currentLineStart = 0;
 
-    this.tokenKindFilter = tokenKindFilter ?? DEFAULT_TOKEN_KIND_FILER
+    this.tokenKindFilter = tokenKindFilter ?? DEFAULT_TOKEN_KIND_FILER;
   }
 
   /** Advances the lexer returning the current token. */
@@ -113,11 +113,8 @@ export class Lexer {
   private readNextToken(afterToken: LexerToken): LexerToken {
     // Compute the start of the next token by ignoring whitespace after last token.
     const start =
-    afterToken.span.end +
-      this.countStartingWithNewlines(
-        util.isWhitespace,
-        afterToken.span.end
-      );
+      afterToken.span.end +
+      this.countStartingWithNewlines(util.isWhitespace, afterToken.span.end);
     const location = {
       line: this.currentLine,
       column: start - this.currentLineStart + 1,

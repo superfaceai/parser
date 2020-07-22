@@ -69,7 +69,7 @@ it('should parse simple profile into AST', () => {
   const profile = parseProfile(source);
 
   if (process.env.LOG_LEVEL === 'debug') {
-  	console.debug(profile);
+    console.debug(profile);
   }
 
   expect(true).toBeTruthy();

@@ -1,5 +1,5 @@
 import { Source } from '../source';
-import { Lexer, DEFAULT_TOKEN_KIND_FILER } from './lexer';
+import { DEFAULT_TOKEN_KIND_FILER, Lexer } from './lexer';
 import {
   CommentTokenData,
   DecoratorTokenData,
@@ -33,8 +33,11 @@ declare global {
 expect.extend({
   toHaveTokenData(actual: LexerToken, data: LexerTokenData) {
     function errorMessage(): string {
-      const fmt = formatTokenData(data)
-      return `Expected (${fmt.kind} ${fmt.data}) but found ${actual.toStringDebug()}`;
+      const fmt = formatTokenData(data);
+
+      return `Expected (${fmt.kind} ${
+        fmt.data
+      }) but found ${actual.toStringDebug()}`;
     }
 
     let pass = true;
@@ -362,7 +365,7 @@ describe('lexer', () => {
       `),
         {
           ...DEFAULT_TOKEN_KIND_FILER,
-          [LexerTokenKind.COMMENT]: false
+          [LexerTokenKind.COMMENT]: false,
         }
       );
       const expectedTokens: LexerTokenData[] = [
@@ -521,7 +524,7 @@ describe('lexer', () => {
     it('decorator', () => {
       const lexer = new Lexer(new Source('@afe'));
       lexer.advance(); // skip SOF
-      
+
       expect(() => lexer.advance()).toThrow(
         'Expected one of [safe, unsafe, idempotent]'
       );

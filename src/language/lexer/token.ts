@@ -108,37 +108,39 @@ export type LexerTokenData =
 export function formatTokenKind(kind: LexerTokenKind): string {
   switch (kind) {
     case LexerTokenKind.SEPARATOR:
-      return 'separator'
+      return 'separator';
     case LexerTokenKind.OPERATOR:
-      return 'operator'
+      return 'operator';
     case LexerTokenKind.LITERAL:
-      return 'literal'
+      return 'literal';
     case LexerTokenKind.STRING:
-      return 'string'
+      return 'string';
     case LexerTokenKind.DECORATOR:
-      return 'decorator'
+      return 'decorator';
     case LexerTokenKind.IDENTIFIER:
-      return 'identifier'
+      return 'identifier';
     case LexerTokenKind.COMMENT:
-      return 'comment'
+      return 'comment';
   }
 }
-export function formatTokenData(data: LexerTokenData): { kind: string, data: string } {
+export function formatTokenData(
+  data: LexerTokenData
+): { kind: string; data: string } {
   switch (data.kind) {
     case LexerTokenKind.SEPARATOR:
-      return { kind: 'separator', data: data.separator.toString() }
+      return { kind: 'separator', data: data.separator.toString() };
     case LexerTokenKind.OPERATOR:
-      return { kind: 'operator', data: data.operator.toString() }
+      return { kind: 'operator', data: data.operator.toString() };
     case LexerTokenKind.LITERAL:
-      return { kind: 'literal', data: data.literal.toString() }
+      return { kind: 'literal', data: data.literal.toString() };
     case LexerTokenKind.STRING:
-      return { kind: 'string', data: data.string.toString() }
+      return { kind: 'string', data: data.string.toString() };
     case LexerTokenKind.DECORATOR:
-      return { kind: 'decorator', data: data.decorator.toString() }
+      return { kind: 'decorator', data: data.decorator.toString() };
     case LexerTokenKind.IDENTIFIER:
-      return { kind: 'identifier', data: data.identifier.toString() }
+      return { kind: 'identifier', data: data.identifier.toString() };
     case LexerTokenKind.COMMENT:
-      return { kind: 'comment', data: data.comment.toString() }
+      return { kind: 'comment', data: data.comment.toString() };
   }
 }
 
@@ -169,9 +171,7 @@ export class LexerToken {
   }
 
   toStringDebug(): string {
-    return `(${this})@${this.location.line}:${
-      this.location.column
-    }[${this.span.start}; ${this.span.end}]`;
+    return `(${this})@${this.location.line}:${this.location.column}[${this.span.start}; ${this.span.end}]`;
   }
 
   toString(): string {
@@ -180,6 +180,7 @@ export class LexerToken {
 
   [Symbol.toStringTag](): string {
     const fmt = formatTokenData(this.data);
+
     return `${fmt.kind} \`${fmt.data}\``;
   }
 }
