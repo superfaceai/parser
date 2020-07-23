@@ -206,7 +206,7 @@ describe('langauge syntax errors', () => {
       expect(() =>
         parseRule(profile.PRIMITIVE_TYPE_NAME, source, true)
       ).toThrowSyntaxError(
-        'Expected `Boolean` or `Number` or `String` but found `!`',
+        'Expected `boolean` or `number` or `string` but found `!`',
         '[input]:1:1',
         '1 | !',
         '  | ^'
@@ -214,17 +214,17 @@ describe('langauge syntax errors', () => {
     });
 
     it('should report enum value rule error', () => {
-      const tokens = new Source(`Enum {
-'asdf'
+      const tokens = new Source(`enum {
+asdf = 'asdf'
 !
 }`);
 
       expect(() =>
         parseRule(profile.ENUM_DEFINITION, tokens, true)
       ).toThrowSyntaxError(
-        'Expected string or literal or identifier or `}` but found `!`',
+        'Expected string or identifier or `}` but found `!`',
         '[input]:3:1',
-        "2 | 'asdf'",
+        "2 | asdf = 'asdf'",
         '3 | !',
         '  | ^',
         '4 | }'
