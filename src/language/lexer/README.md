@@ -15,9 +15,11 @@ Separators are delimiters that come in pairs. Defined separators are:
 
 Operators operate on arguments (usually identifiers or literals). Defined operators are:
 
-- `:` - assignment
-- `!` - non-null assertion
+- `:` - type assignment
+- `=` - value assignment
+- `!` - non-null type operator
 - `|` - type union operator
+- `@` - decorator operator
 - `+` and `-`
 
 ## Literals
@@ -36,19 +38,9 @@ String literals a bit special. During lexing, string literals and doc comments a
 
 String literals support single (`'`) and double quotes (`"`). Inside these quotes, only a limited set of characters is supported, others can be escaped (`\n, \r, \t, \\, \', \"`). Additionally, literals can be triple-quoted (`'''` or `"""`). These literals allow all characters (except for other triple quotes) inside, but do not allow escaping.
 
-## Decorators
-
-Decorators, or alternatively attributes, are keyword-like values prefixed with `@`. Defined decorators are:
-
-- `@safe`
-- `@unsafe`
-- `@idempotent`
-
-It is possible to merge these with keywords, but it might make semantical analysis a little bit easier later on.
-
 ## Identifiers
 
-Identifiers are user-defined names. Allowed identifiers have format: `[_a-zA-Z]+`. Keywords are also parsed as identifiers, since all keywords are soft/scoped.
+Identifiers are user-defined names. Allowed identifiers have format: `[_a-zA-Z][_a-zA-Z0-9]*`. Keywords are also parsed as identifiers, since all keywords are soft/scoped.
 
 ## Comments
 

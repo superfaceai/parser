@@ -1,6 +1,5 @@
 export {
   tryParseComment,
-  tryParseDecorator,
   tryParseIdentifier,
   tryParseLiteral,
   tryParseOperator,

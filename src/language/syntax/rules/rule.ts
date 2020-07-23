@@ -1,6 +1,4 @@
 import {
-  DecoratorTokenData,
-  DecoratorValue,
   formatTokenKind,
   IdentifierTokenData,
   IdentifierValue,
@@ -156,10 +154,6 @@ export abstract class SyntaxRule<T> {
 
   static string(): SyntaxRuleString {
     return new SyntaxRuleString();
-  }
-
-  static decorator(decorator?: DecoratorValue): SyntaxRuleDecorator {
-    return new SyntaxRuleDecorator(decorator);
   }
 
   // Combinators
@@ -351,43 +345,6 @@ export class SyntaxRuleString extends SyntaxRule<
 
   [Symbol.toStringTag](): string {
     return formatTokenKind(LexerTokenKind.STRING);
-  }
-}
-
-export class SyntaxRuleDecorator extends SyntaxRule<
-  LexerTokenMatch<DecoratorTokenData>
-> {
-  constructor(readonly decorator?: DecoratorValue) {
-    super();
-  }
-
-  tryMatch(
-    tokens: BufferedIterator<LexerToken>
-  ): RuleResult<LexerTokenMatch<DecoratorTokenData>> {
-    return this.simpleTryMatchBoilerplate(tokens, token => {
-      if (token.data.kind === LexerTokenKind.DECORATOR) {
-        if (
-          this.decorator === undefined ||
-          token.data.decorator === this.decorator
-        ) {
-          return {
-            data: token.data,
-            span: token.span,
-            location: token.location,
-          };
-        }
-      }
-
-      return undefined;
-    });
-  }
-
-  [Symbol.toStringTag](): string {
-    if (this.decorator !== undefined) {
-      return '`' + this.decorator + '`';
-    }
-
-    return formatTokenKind(LexerTokenKind.DECORATOR);
   }
 }
 
