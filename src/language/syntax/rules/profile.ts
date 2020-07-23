@@ -21,12 +21,12 @@ import {
 } from '@superindustries/language';
 
 import {
-  DecoratorTokenData,
   IdentifierTokenData,
   LexerTokenKind,
   OperatorTokenData,
   SeparatorTokenData,
   StringTokenData,
+  LiteralTokenData,
 } from '../../lexer/token';
 import { extractDocumentation } from '../util';
 import {
@@ -82,28 +82,27 @@ const FIELD_DEFINITION_MUT = new SyntaxRuleMutable<
 
 /** From keywords: `Boolean`, `Number` and `String` */
 export const PRIMITIVE_TYPE_NAME: SyntaxRuleSrc<PrimitiveTypeNameNode> = SyntaxRule.identifier(
-  'Boolean'
+  'boolean'
 )
-  .or(SyntaxRule.identifier('Number'))
-  .or(SyntaxRule.identifier('String'))
-  .map(
-    (keywordMatch): SrcNode<PrimitiveTypeNameNode> => {
-      let name: PrimitiveTypeNameNode['name'];
+  .or(SyntaxRule.identifier('number'))
+  .or(SyntaxRule.identifier('string'))
+  .map((keywordMatch): SrcNode<PrimitiveTypeNameNode> => {
+    let name: PrimitiveTypeNameNode['name'];
 
-      switch (keywordMatch.data.identifier) {
-        case 'Number':
-          name = 'number';
-          break;
-        case 'String':
-          name = 'string';
-          break;
-        case 'Boolean':
-          name = 'boolean';
-          break;
+    switch (keywordMatch.data.identifier) {
+      case 'number':
+        name = 'number';
+        break;
+      case 'string':
+        name = 'string';
+        break;
+      case 'boolean':
+        name = 'boolean';
+        break;
 
-        default:
-          throw 'Unexpected soft keyword. This is an error in the syntax rule definition';
-      }
+      default:
+        throw 'Unexpected soft keyword. This is an error in the syntax rule definition';
+    }
 
       return {
         kind: 'PrimitiveTypeName',
@@ -114,40 +113,54 @@ export const PRIMITIVE_TYPE_NAME: SyntaxRuleSrc<PrimitiveTypeNameNode> = SyntaxR
     }
   );
 
-export const ENUM_VALUE: SyntaxRuleSrc<EnumValueNode> = SyntaxRule.string()
-  .or(SyntaxRule.literal())
-  .or(SyntaxRule.identifier())
+export const ENUM_VALUE: SyntaxRuleSrc<EnumValueNode> = documentedNode(SyntaxRule.identifier()
+  .followedBy(
+    SyntaxRule.optional(
+      SyntaxRule.operator('=').followedBy(SyntaxRule.literal().or(SyntaxRule.string()))
+    )
+  )
   .map(
-    (match): SrcNode<EnumValueNode> => {
+    (matches): SrcNode<EnumValueNode> => {
+      const [
+        name,
+        maybeAssignment
+      ] = (matches as [
+        LexerTokenMatch<IdentifierTokenData>,
+        [LexerTokenMatch<OperatorTokenData>, LexerTokenMatch<LiteralTokenData> | LexerTokenMatch<StringTokenData>] | undefined
+      ]);
+
       let enumValue: string | number | boolean;
-      switch (match.data.kind) {
-        case LexerTokenKind.IDENTIFIER:
-          enumValue = match.data.identifier;
-          break;
+      if (maybeAssignment === undefined) {
+        enumValue = name.data.identifier;
+      } else {
+        const match = maybeAssignment[1];
 
-        case LexerTokenKind.LITERAL:
-          enumValue = match.data.literal;
-          break;
+        switch (match.data.kind) {
+          case LexerTokenKind.LITERAL:
+            enumValue = match.data.literal;
+            break;
+          
+          case LexerTokenKind.STRING:
+            enumValue = match.data.string;
+            break;
 
-        case LexerTokenKind.STRING:
-          enumValue = match.data.string;
-          break;
-
-        default:
-          throw 'Unexpected token kind. This is an error in the syntax rule definition';
+          default:
+            throw 'Unexpected token kind. This is an error in the syntax rule definition';
+        }
       }
 
       return {
         kind: 'EnumValue',
         value: enumValue,
-        location: match.location,
-        span: match.span,
+        location: name.location,
+        span: { start: name.span.start, end: maybeAssignment?.[1].span.end ?? name.span.end }
       };
     }
-  );
+  )
+);
 /** Construct of form: `enum { values... }` */
 export const ENUM_DEFINITION: SyntaxRuleSrc<EnumDefinitionNode> = SyntaxRule.identifier(
-  'Enum'
+  'enum'
 )
   .followedBy(SyntaxRule.separator('{'))
   .andBy(SyntaxRule.repeat(ENUM_VALUE))
@@ -313,31 +326,12 @@ export const UNION_DEFINITION: SyntaxRuleSrc<UnionDefinitionNode> = NON_UNION_TY
 export const TYPE: SyntaxRuleSrc<Type> = UNION_DEFINITION.or(NON_UNION_TYPE);
 TYPE_MUT.rule = TYPE;
 
-/**
- * Parses either block type assignment `{ ...fields }` or `: type`
- */
-const TYPE_ASSIGNMENT: SyntaxRuleSrc<Type> = OBJECT_DEFINITION.or(
-  SyntaxRule.operator(':').followedBy(TYPE)
-).map(
-  (match): SrcNode<Type> => {
-    const matchTyped = match as
-      | SrcNode<ObjectDefinitionNode>
-      | [LexerTokenMatch<OperatorTokenData>, SrcNode<Type>]; // TODO: Won't need `as` cast in Typescript 4
-
-    if (Array.isArray(matchTyped)) {
-      return matchTyped[1];
-    } else {
-      return matchTyped;
-    }
-  }
-);
-
 // FIELDS //
 
 /** Construct of form: `ident: type`, `ident { fields... }` or `ident` */
 export const FIELD_DEFINITION: SyntaxRuleSrc<FieldDefinitionNode> = documentedNode(
   SyntaxRule.identifier()
-    .followedBy(SyntaxRule.optional(TYPE_ASSIGNMENT))
+    .followedBy(SyntaxRule.optional(TYPE))
     .map(
       (matches): SrcNode<FieldDefinitionNode> => {
         const [fieldName, maybeType] = matches as [
@@ -364,14 +358,13 @@ FIELD_DEFINITION_MUT.rule = FIELD_DEFINITION;
 export const NAMED_FIELD_DEFINITION: SyntaxRuleSrc<NamedFieldDefinitionNode> = documentedNode(
   SyntaxRule.identifier('field')
     .followedBy(SyntaxRule.identifier())
-    .andBy(SyntaxRule.optional(TYPE_ASSIGNMENT))
-    .map(
-      (matches): SrcNode<NamedFieldDefinitionNode> => {
-        const [keyword, fieldName, type] = matches as [
-          LexerTokenMatch<IdentifierTokenData>,
-          LexerTokenMatch<IdentifierTokenData>,
-          SrcNode<Type> | undefined
-        ]; // TODO: Won't need `as` cast in Typescript 4
+    .andBy(SyntaxRule.optional(TYPE))
+    .map((matches): SrcNode<NamedFieldDefinitionNode> => {
+      const [keyword, fieldName, type] = matches as [
+        LexerTokenMatch<IdentifierTokenData>,
+        LexerTokenMatch<IdentifierTokenData>,
+        SrcNode<Type> | undefined
+      ]; // TODO: Won't need `as` cast in Typescript 4
 
         return {
           kind: 'NamedFieldDefinition',
@@ -393,14 +386,13 @@ export const NAMED_FIELD_DEFINITION: SyntaxRuleSrc<NamedFieldDefinitionNode> = d
 export const NAMED_MODEL_DEFINITION: SyntaxRuleSrc<NamedModelDefinitionNode> = documentedNode(
   SyntaxRule.identifier('model')
     .followedBy(SyntaxRule.identifier())
-    .andBy(SyntaxRule.optional(TYPE_ASSIGNMENT))
-    .map(
-      (matches): SrcNode<NamedModelDefinitionNode> => {
-        const [keyword, modelName, type] = matches as [
-          LexerTokenMatch<IdentifierTokenData>,
-          LexerTokenMatch<IdentifierTokenData>,
-          SrcNode<Type> | undefined
-        ]; // TODO: Won't need `as` cast in Typescript 4
+    .andBy(SyntaxRule.optional(TYPE))
+    .map((matches): SrcNode<NamedModelDefinitionNode> => {
+      const [keyword, modelName, type] = matches as [
+        LexerTokenMatch<IdentifierTokenData>,
+        LexerTokenMatch<IdentifierTokenData>,
+        SrcNode<Type> | undefined
+      ]; // TODO: Won't need `as` cast in Typescript 4
 
         return {
           kind: 'NamedModelDefinition',
@@ -417,6 +409,8 @@ export const NAMED_MODEL_DEFINITION: SyntaxRuleSrc<NamedModelDefinitionNode> = d
 );
 
 // USECASE //
+
+const USECASE_SAFETY: SyntaxRule<LexerTokenMatch<IdentifierTokenData>> = SyntaxRule.identifier('safe').or(SyntaxRule.identifier('unsafe')).or(SyntaxRule.identifier('idempotent'));
 
 /**
 * Construct of form:
@@ -435,7 +429,7 @@ usecase ident @deco {
 export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = documentedNode(
   SyntaxRule.identifier('usecase')
     .followedBy(SyntaxRule.identifier(undefined))
-    .andBy(SyntaxRule.optional(SyntaxRule.decorator()))
+    .andBy(SyntaxRule.optional(USECASE_SAFETY))
     .andBy(SyntaxRule.separator('{'))
     .andBy(
       SyntaxRule.optional(
@@ -444,76 +438,99 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
           .andBy(OBJECT_DEFINITION)
       )
     )
-    .andBy(SyntaxRule.identifier('result').followedBy(TYPE_ASSIGNMENT))
+    .andBy(
+      SyntaxRule.identifier('result').followedBy(TYPE)
+    )
     .andBy(
       SyntaxRule.optional(
         SyntaxRule.identifier('async')
           .followedBy(SyntaxRule.identifier('result'))
-          .andBy(TYPE_ASSIGNMENT)
+          .andBy(TYPE)
       )
     )
     .andBy(
       SyntaxRule.optional(
-        SyntaxRule.identifier('error').followedBy(TYPE_ASSIGNMENT)
+        SyntaxRule.identifier('error').followedBy(
+          TYPE
+        )
       )
     )
     .andBy(SyntaxRule.separator('}'))
-    .map(
-      (matches): SrcNode<UseCaseDefinitionNode> => {
-        const [
-          usecaseKey,
-          name,
-          maybeSafety,
-          ,
-          /* sepStart */ maybeInput,
-          [, /* _resultKey */ resultType],
-          maybeAsyncResult,
-          maybeError,
-          sepEnd,
-        ] = matches as [
-          LexerTokenMatch<IdentifierTokenData>,
-          LexerTokenMatch<IdentifierTokenData>,
-          LexerTokenMatch<DecoratorTokenData> | undefined,
-          LexerTokenMatch<SeparatorTokenData>,
-          (
-            | [
-                LexerTokenMatch<IdentifierTokenData>,
-                LexerTokenMatch<OperatorTokenData> | undefined,
-                SrcNode<ObjectDefinitionNode>
-              ]
-            | undefined
-          ), // input
-          [LexerTokenMatch<IdentifierTokenData>, SrcNode<Type>], // result
-          (
-            | [
-                LexerTokenMatch<IdentifierTokenData>,
-                LexerTokenMatch<IdentifierTokenData>,
-                SrcNode<Type>
-              ]
-            | undefined
-          ), // async result
-          [LexerTokenMatch<IdentifierTokenData>, SrcNode<Type>] | undefined, // error
-          LexerTokenMatch<SeparatorTokenData>
-        ]; // TODO: Won't need `as` cast in Typescript 4
+    .map((matches): SrcNode<UseCaseDefinitionNode> => {
+      const [
+        usecaseKey,
+        name,
+        maybeSafety,
+        ,
+        /* sepStart */ maybeInput,
+        [, /* _resultKey */ resultType],
+        maybeAsyncResult,
+        maybeError,
+        sepEnd,
+      ] = matches as [
+        LexerTokenMatch<IdentifierTokenData>,
+        LexerTokenMatch<IdentifierTokenData>,
+        LexerTokenMatch<IdentifierTokenData> | undefined,
+        LexerTokenMatch<SeparatorTokenData>,
+        (
+          | [
+              LexerTokenMatch<IdentifierTokenData>,
+              LexerTokenMatch<OperatorTokenData> | undefined,
+              SrcNode<ObjectDefinitionNode>
+            ]
+          | undefined
+        ), // input
+        [LexerTokenMatch<IdentifierTokenData>, SrcNode<Type>], // result
+        (
+          | [
+              LexerTokenMatch<IdentifierTokenData>,
+              LexerTokenMatch<IdentifierTokenData>,
+              SrcNode<Type>
+            ]
+          | undefined
+        ), // async result
+        [LexerTokenMatch<IdentifierTokenData>, SrcNode<Type>] | undefined, // error
+        LexerTokenMatch<SeparatorTokenData>
+      ]; // TODO: Won't need `as` cast in Typescript 4
 
         const input: SrcNode<ObjectDefinitionNode> | undefined =
           maybeInput?.[2];
         const asyncResult: SrcNode<Type> | undefined = maybeAsyncResult?.[2];
         const error: SrcNode<Type> | undefined = maybeError?.[1];
 
-        return {
-          kind: 'UseCaseDefinition',
-          useCaseName: name.data.identifier,
-          safety: maybeSafety?.data.decorator,
-          input,
-          result: resultType,
-          asyncResult,
-          error,
-          location: usecaseKey.location,
-          span: { start: usecaseKey.span.start, end: sepEnd.span.end },
-        };
+      let safety: UseCaseDefinitionNode['safety'] = undefined
+      switch (maybeSafety?.data.identifier) {
+        case undefined:
+          break;
+
+        case 'safe':
+          safety = 'safe';
+          break;
+
+        case 'unsafe':
+          safety = 'unsafe';
+          break;
+        
+        case 'idempotent':
+          safety = 'idempotent';
+          break;
+
+        default:
+          throw 'Unexpected soft keyword. This is an error in the syntax rule definition';
       }
-    )
+
+      return {
+        kind: 'UseCaseDefinition',
+        useCaseName: name.data.identifier,
+        safety,
+        input,
+        result: resultType,
+        asyncResult,
+        error,
+        location: usecaseKey.location,
+        span: { start: usecaseKey.span.start, end: sepEnd.span.end },
+      };
+    })
 );
 
 // DOCUMENT //
