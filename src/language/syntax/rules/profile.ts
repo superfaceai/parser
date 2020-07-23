@@ -23,10 +23,10 @@ import {
 import {
   IdentifierTokenData,
   LexerTokenKind,
+  LiteralTokenData,
   OperatorTokenData,
   SeparatorTokenData,
   StringTokenData,
-  LiteralTokenData,
 } from '../../lexer/token';
 import { extractDocumentation } from '../util';
 import {
@@ -113,21 +113,29 @@ export const PRIMITIVE_TYPE_NAME: SyntaxRuleSrc<PrimitiveTypeNameNode> = SyntaxR
     }
   );
 
-export const ENUM_VALUE: SyntaxRuleSrc<EnumValueNode> = documentedNode(SyntaxRule.identifier()
-  .followedBy(
-    SyntaxRule.optional(
-      SyntaxRule.operator('=').followedBy(SyntaxRule.literal().or(SyntaxRule.string()))
+export const ENUM_VALUE: SyntaxRuleSrc<EnumValueNode> = documentedNode(
+  SyntaxRule.identifier()
+    .followedBy(
+      SyntaxRule.optional(
+        SyntaxRule.operator('=').followedBy(
+          SyntaxRule.literal().or(SyntaxRule.string())
+        )
+      )
     )
-  )
-  .map(
-    (matches): SrcNode<EnumValueNode> => {
-      const [
-        name,
-        maybeAssignment
-      ] = (matches as [
+    .map((matches): SrcNode<EnumValueNode> => {
+      const [name, maybeAssignment] = matches as [
         LexerTokenMatch<IdentifierTokenData>,
-        [LexerTokenMatch<OperatorTokenData>, LexerTokenMatch<LiteralTokenData> | LexerTokenMatch<StringTokenData>] | undefined
-      ]);
+        (
+          | [
+              LexerTokenMatch<OperatorTokenData>,
+              (
+                | LexerTokenMatch<LiteralTokenData>
+                | LexerTokenMatch<StringTokenData>
+              )
+            ]
+          | undefined
+        )
+      ];
 
       let enumValue: string | number | boolean;
       if (maybeAssignment === undefined) {
@@ -139,7 +147,7 @@ export const ENUM_VALUE: SyntaxRuleSrc<EnumValueNode> = documentedNode(SyntaxRul
           case LexerTokenKind.LITERAL:
             enumValue = match.data.literal;
             break;
-          
+
           case LexerTokenKind.STRING:
             enumValue = match.data.string;
             break;
@@ -153,7 +161,10 @@ export const ENUM_VALUE: SyntaxRuleSrc<EnumValueNode> = documentedNode(SyntaxRul
         kind: 'EnumValue',
         value: enumValue,
         location: name.location,
-        span: { start: name.span.start, end: maybeAssignment?.[1].span.end ?? name.span.end }
+        span: {
+          start: name.span.start,
+          end: maybeAssignment?.[1].span.end ?? name.span.end,
+        },
       };
     }
   )
@@ -410,7 +421,11 @@ export const NAMED_MODEL_DEFINITION: SyntaxRuleSrc<NamedModelDefinitionNode> = d
 
 // USECASE //
 
-const USECASE_SAFETY: SyntaxRule<LexerTokenMatch<IdentifierTokenData>> = SyntaxRule.identifier('safe').or(SyntaxRule.identifier('unsafe')).or(SyntaxRule.identifier('idempotent'));
+const USECASE_SAFETY: SyntaxRule<LexerTokenMatch<
+  IdentifierTokenData
+>> = SyntaxRule.identifier('safe')
+  .or(SyntaxRule.identifier('unsafe'))
+  .or(SyntaxRule.identifier('idempotent'));
 
 /**
 * Construct of form:
@@ -498,7 +513,7 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
         const asyncResult: SrcNode<Type> | undefined = maybeAsyncResult?.[2];
         const error: SrcNode<Type> | undefined = maybeError?.[1];
 
-      let safety: UseCaseDefinitionNode['safety'] = undefined
+      let safety: UseCaseDefinitionNode['safety'] = undefined;
       switch (maybeSafety?.data.identifier) {
         case undefined:
           break;
@@ -510,7 +525,7 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
         case 'unsafe':
           safety = 'unsafe';
           break;
-        
+
         case 'idempotent':
           safety = 'idempotent';
           break;
@@ -559,26 +574,19 @@ export const PROFILE_ID: SyntaxRuleSrc<ProfileIdNode> = SyntaxRule.identifier(
   );
 
 export const PROFILE: SyntaxRuleSrc<ProfileNode> = documentedNode(
-  SyntaxRule.optional(SyntaxRule.string())
-    .followedBy(PROFILE_ID)
-    .map(
-      (matches): SrcNode<ProfileNode> => {
-        const [maybeDoc, profileId] = matches as [
-          LexerTokenMatch<StringTokenData> | undefined,
-          SrcNode<ProfileIdNode>
-        ]; // TODO: Won't need `as` cast in Typescript 4
-
-        return {
-          kind: 'Profile',
-          profileId,
-          location: maybeDoc?.location ?? profileId.location,
-          span: {
-            start: maybeDoc?.span.start ?? profileId.span.start,
-            end: profileId.span.end,
-          },
-        };
-      }
-    )
+  PROFILE_ID.map(
+    (profileId): SrcNode<ProfileNode> => {
+      return {
+        kind: 'Profile',
+        profileId,
+        location: profileId.location,
+        span: {
+          start: profileId.span.start,
+          end: profileId.span.end,
+        },
+      };
+    }
+  )
 );
 
 export const DOCUMENT_DEFINITION: SyntaxRuleSrc<DocumentDefinition> = USECASE_DEFINITION.or(

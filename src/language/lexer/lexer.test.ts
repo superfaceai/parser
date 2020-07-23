@@ -2,8 +2,6 @@ import { Source } from '../source';
 import { DEFAULT_TOKEN_KIND_FILER, Lexer } from './lexer';
 import {
   CommentTokenData,
-  DecoratorTokenData,
-  DecoratorValue,
   formatTokenData,
   IdentifierTokenData,
   IdentifierValue,
@@ -72,15 +70,6 @@ expect.extend({
 
         case LexerTokenKind.STRING:
           if ((actual.data as StringTokenData).string !== data.string) {
-            pass = false;
-            message = errorMessage();
-          }
-          break;
-
-        case LexerTokenKind.DECORATOR:
-          if (
-            (actual.data as DecoratorTokenData).decorator !== data.decorator
-          ) {
             pass = false;
             message = errorMessage();
           }
@@ -255,31 +244,6 @@ describe('lexer', () => {
           expect(actual).toHaveTokenData({
             kind: LexerTokenKind.STRING,
             string: expected,
-          });
-        }
-      }
-    });
-
-    it('decorators', () => {
-      const lexer = new Lexer(new Source('@safe @unsafe @idempotent @safe'));
-      const expectedTokens: (LexerTokenData | DecoratorValue)[] = [
-        { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
-        'safe',
-        'unsafe',
-        'idempotent',
-        'safe',
-        { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
-      ];
-
-      for (const expected of expectedTokens) {
-        const actual = lexer.advance();
-
-        if (typeof expected === 'object') {
-          expect(actual).toHaveTokenData(expected);
-        } else {
-          expect(actual).toHaveTokenData({
-            kind: LexerTokenKind.DECORATOR,
-            decorator: expected,
           });
         }
       }
@@ -519,15 +483,6 @@ describe('lexer', () => {
       lexer.advance(); // skip SOF
 
       expect(() => lexer.advance()).toThrow('Invalid escape sequence');
-    });
-
-    it('decorator', () => {
-      const lexer = new Lexer(new Source('@afe'));
-      lexer.advance(); // skip SOF
-
-      expect(() => lexer.advance()).toThrow(
-        'Expected one of [safe, unsafe, idempotent]'
-      );
     });
 
     it('identifiers starting with a number', () => {

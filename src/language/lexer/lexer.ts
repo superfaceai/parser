@@ -7,7 +7,6 @@ import * as util from './util';
 export type LexerTokenKindFilter = { [K in LexerTokenKind]: boolean };
 export const DEFAULT_TOKEN_KIND_FILER: LexerTokenKindFilter = {
   [LexerTokenKind.COMMENT]: true,
-  [LexerTokenKind.DECORATOR]: false,
   [LexerTokenKind.IDENTIFIER]: false,
   [LexerTokenKind.LITERAL]: false,
   [LexerTokenKind.OPERATOR]: false,
@@ -127,7 +126,6 @@ export class Lexer {
       rules.tryParseOperator(slice) ??
       rules.tryParseLiteral(slice) ??
       rules.tryParseStringLiteral(slice) ??
-      rules.tryParseDecorator(slice) ??
       rules.tryParseIdentifier(slice) ??
       rules.tryParseComment(slice);
 

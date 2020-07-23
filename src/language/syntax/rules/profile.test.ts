@@ -21,36 +21,37 @@ declare global {
   }
 }
 expect.extend({
-  toBeAMatch(
-    result: RuleResult<any>,
-    match?: any
-  ) {
+  toBeAMatch(result: RuleResult<unknown>, match?: unknown) {
     let pass = true;
-    let message = 'Rule matched but it wasn\'t expected to';
+    let message = "Rule matched but it wasn't expected to";
 
     if (result.kind !== 'match') {
       pass = false;
-      message = 'Rule didn\'t match';
+      message = "Rule didn't match";
     } else if (match !== undefined) {
       if (!this.equals(result.match, match)) {
         pass = false;
         message = this.utils.printDiffOrStringify(
           match,
           result.match,
-          "Expected",
-          "Received",
+          'Expected',
+          'Received',
           this.expand
-        )
+        );
       }
     }
 
     return {
       pass,
       message: (): string => {
-        return this.utils.matcherHint('toBeAMatch', undefined, undefined, {
-          isNot: this.isNot,
-          promise: this.promise
-        }) + '\n\n' + message
+        return (
+          this.utils.matcherHint('toBeAMatch', undefined, undefined, {
+            isNot: this.isNot,
+            promise: this.promise,
+          }) +
+          '\n\n' +
+          message
+        );
       },
     };
   },
@@ -102,36 +103,42 @@ describe('syntax rules', () => {
 
       const rule = rules.PRIMITIVE_TYPE_NAME;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
-        {
-          kind: 'PrimitiveTypeName',
-          name: 'boolean',
-        },
-        tokens[0]
-      ))
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'PrimitiveTypeName',
+            name: 'boolean',
+          },
+          tokens[0]
+        )
+      );
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
-        {
-          kind: 'PrimitiveTypeName',
-          name: 'number',
-        },
-        tokens[1]
-      ))
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'PrimitiveTypeName',
+            name: 'number',
+          },
+          tokens[1]
+        )
+      );
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
-        {
-          kind: 'PrimitiveTypeName',
-          name: 'string',
-        },
-        tokens[2]
-      ))
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'PrimitiveTypeName',
+            name: 'string',
+          },
+          tokens[2]
+        )
+      );
     });
 
     it('should parse enum type', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'enum' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
-        
+
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'one' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({ kind: LexerTokenKind.LITERAL, literal: 1 }),
@@ -152,43 +159,48 @@ describe('syntax rules', () => {
 
       const rule = rules.ENUM_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
-        {
-          kind: 'EnumDefinition',
-          values: [
-            tesMatch(
-              {
-                kind: 'EnumValue',
-                value: (tokens[4].data as LiteralTokenData).literal,
-              },
-              tokens[2], tokens[4]
-            ),
-            tesMatch(
-              {
-                kind: 'EnumValue',
-                value: (tokens[7].data as LiteralTokenData).literal,
-              },
-              tokens[5], tokens[7]
-            ),
-            tesMatch(
-              {
-                kind: 'EnumValue',
-                value: (tokens[10].data as StringTokenData).string,
-              },
-              tokens[8], tokens[10]
-            ),
-            tesMatch(
-              {
-                kind: 'EnumValue',
-                value: (tokens[11].data as IdentifierTokenData).identifier,
-              },
-              tokens[11]
-            ),
-          ],
-        },
-        tokens[0],
-        tokens[12]
-      ))
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'EnumDefinition',
+            values: [
+              tesMatch(
+                {
+                  kind: 'EnumValue',
+                  value: (tokens[4].data as LiteralTokenData).literal,
+                },
+                tokens[2],
+                tokens[4]
+              ),
+              tesMatch(
+                {
+                  kind: 'EnumValue',
+                  value: (tokens[7].data as LiteralTokenData).literal,
+                },
+                tokens[5],
+                tokens[7]
+              ),
+              tesMatch(
+                {
+                  kind: 'EnumValue',
+                  value: (tokens[10].data as StringTokenData).string,
+                },
+                tokens[8],
+                tokens[10]
+              ),
+              tesMatch(
+                {
+                  kind: 'EnumValue',
+                  value: (tokens[11].data as IdentifierTokenData).identifier,
+                },
+                tokens[11]
+              ),
+            ],
+          },
+          tokens[0],
+          tokens[12]
+        )
+      );
     });
 
     it('should parse model type', () => {
@@ -199,13 +211,15 @@ describe('syntax rules', () => {
 
       const rule = rules.MODEL_TYPE_NAME;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'ModelTypeName',
             name: 'MyType',
           },
           tokens[0]
-        ));
+        )
+      );
     });
 
     it('should parse object type', () => {
@@ -223,7 +237,8 @@ describe('syntax rules', () => {
 
       const rule = rules.OBJECT_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'ObjectDefinition',
             fields: [
@@ -254,7 +269,8 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[4]
-        ))
+        )
+      );
     });
   });
 
@@ -283,7 +299,8 @@ describe('syntax rules', () => {
 
       const rule = rules.LIST_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'ListDefinition',
             elementType: tesMatch(
@@ -314,9 +331,11 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[5]
-        ))
+        )
+      );
 
-        expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'ListDefinition',
             elementType: tesMatch(
@@ -329,9 +348,11 @@ describe('syntax rules', () => {
           },
           tokens[6],
           tokens[8]
-        ))
+        )
+      );
 
-        expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'ListDefinition',
             elementType: tesMatch(
@@ -351,7 +372,8 @@ describe('syntax rules', () => {
           },
           tokens[9],
           tokens[12]
-        ))
+        )
+      );
     });
 
     it('should parse non-null types', () => {
@@ -373,7 +395,8 @@ describe('syntax rules', () => {
 
       const rule = rules.NON_NULL_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'NonNullDefinition',
             type: tesMatch(
@@ -402,9 +425,11 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[5]
-        ))
+        )
+      );
 
-        expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'NonNullDefinition',
             type: tesMatch(
@@ -417,9 +442,11 @@ describe('syntax rules', () => {
           },
           tokens[6],
           tokens[7]
-        ))
+        )
+      );
 
-        expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'NonNullDefinition',
             type: tesMatch(
@@ -432,7 +459,8 @@ describe('syntax rules', () => {
           },
           tokens[8],
           tokens[9]
-        ))
+        )
+      );
     });
 
     it('should parse union types', () => {
@@ -454,7 +482,8 @@ describe('syntax rules', () => {
 
       const rule = rules.UNION_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'UnionDefinition',
             types: [
@@ -465,14 +494,16 @@ describe('syntax rules', () => {
                     tesMatch(
                       {
                         kind: 'EnumValue',
-                        value: (tokens[2].data as IdentifierTokenData).identifier,
+                        value: (tokens[2].data as IdentifierTokenData)
+                          .identifier,
                       },
                       tokens[2]
                     ),
                     tesMatch(
                       {
                         kind: 'EnumValue',
-                        value: (tokens[3].data as IdentifierTokenData).identifier,
+                        value: (tokens[3].data as IdentifierTokenData)
+                          .identifier,
                       },
                       tokens[3]
                     ),
@@ -506,7 +537,8 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[9]
-        ))
+        )
+      );
     });
   });
 
@@ -519,14 +551,16 @@ describe('syntax rules', () => {
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'FieldDefinition',
             fieldName: (tokens[0].data as IdentifierTokenData).identifier,
             type: undefined,
           },
           tokens[0]
-        ))
+        )
+      );
     });
 
     it('should parse field with type', () => {
@@ -538,7 +572,8 @@ describe('syntax rules', () => {
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'FieldDefinition',
             fieldName: (tokens[0].data as IdentifierTokenData).identifier,
@@ -552,7 +587,8 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[1]
-        ))
+        )
+      );
     });
 
     it('should parse field with object type sugar', () => {
@@ -566,7 +602,8 @@ describe('syntax rules', () => {
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'FieldDefinition',
             fieldName: (tokens[0].data as IdentifierTokenData).identifier,
@@ -591,7 +628,8 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[3]
-        ))
+        )
+      );
     });
 
     it('should parse field with documentation', () => {
@@ -603,7 +641,8 @@ describe('syntax rules', () => {
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'FieldDefinition',
             fieldName: (tokens[1].data as IdentifierTokenData).identifier,
@@ -613,7 +652,8 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[1]
-        ))
+        )
+      );
     });
 
     it('should parse reusable field', () => {
@@ -625,7 +665,8 @@ describe('syntax rules', () => {
 
       const rule = rules.NAMED_FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'NamedFieldDefinition',
             fieldName: (tokens[1].data as IdentifierTokenData).identifier,
@@ -633,7 +674,8 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[1]
-        ))
+        )
+      );
     });
 
     it('should parse reusable field with type', () => {
@@ -648,7 +690,8 @@ describe('syntax rules', () => {
 
       const rule = rules.NAMED_FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'NamedFieldDefinition',
             fieldName: (tokens[1].data as IdentifierTokenData).identifier,
@@ -673,7 +716,8 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[4]
-        ))
+        )
+      );
     });
 
     it('should parse reusable field documentation', () => {
@@ -686,7 +730,8 @@ describe('syntax rules', () => {
 
       const rule = rules.NAMED_FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'NamedFieldDefinition',
             fieldName: (tokens[2].data as IdentifierTokenData).identifier,
@@ -696,7 +741,8 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[2]
-        ))
+        )
+      );
     });
   });
 
@@ -710,7 +756,8 @@ describe('syntax rules', () => {
 
       const rule = rules.NAMED_MODEL_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'NamedModelDefinition',
             modelName: (tokens[1].data as IdentifierTokenData).identifier,
@@ -718,7 +765,8 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[1]
-        ))
+        )
+      );
     });
 
     it('should parse named model with type', () => {
@@ -734,7 +782,8 @@ describe('syntax rules', () => {
 
       const rule = rules.NAMED_MODEL_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'NamedModelDefinition',
             modelName: (tokens[1].data as IdentifierTokenData).identifier,
@@ -757,7 +806,8 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[5]
-        ))
+        )
+      );
     });
 
     it('should parse named model with object type sugar', () => {
@@ -772,7 +822,8 @@ describe('syntax rules', () => {
 
       const rule = rules.NAMED_MODEL_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'NamedModelDefinition',
             modelName: (tokens[1].data as IdentifierTokenData).identifier,
@@ -797,7 +848,8 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[4]
-        ))
+        )
+      );
     });
 
     it('should parse named model with documentation', () => {
@@ -810,7 +862,8 @@ describe('syntax rules', () => {
 
       const rule = rules.NAMED_MODEL_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'NamedModelDefinition',
             modelName: (tokens[2].data as IdentifierTokenData).identifier,
@@ -820,7 +873,8 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[2]
-        ))
+        )
+      );
     });
   });
 
@@ -838,7 +892,8 @@ describe('syntax rules', () => {
 
       const rule = rules.USECASE_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'UseCaseDefinition',
             useCaseName: (tokens[1].data as IdentifierTokenData).identifier,
@@ -856,7 +911,8 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[5]
-        ))
+        )
+      );
     });
 
     it('should parse full usecase', () => {
@@ -898,7 +954,8 @@ describe('syntax rules', () => {
 
       const rule = rules.USECASE_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'UseCaseDefinition',
             useCaseName: (tokens[1].data as IdentifierTokenData).identifier,
@@ -979,7 +1036,7 @@ describe('syntax rules', () => {
                               .identifier,
                           },
                           tokens[22]
-                        )
+                        ),
                       ],
                     },
                     tokens[20],
@@ -993,7 +1050,8 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[24]
-        ))
+        )
+      );
     });
 
     it('should parse usecase with documentation', () => {
@@ -1010,7 +1068,8 @@ describe('syntax rules', () => {
 
       const rule = rules.USECASE_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'UseCaseDefinition',
             useCaseName: (tokens[1].data as IdentifierTokenData).identifier,
@@ -1030,7 +1089,8 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[6]
-        ))
+        )
+      );
     });
   });
 
@@ -1045,14 +1105,16 @@ describe('syntax rules', () => {
 
       const rule = rules.PROFILE_ID;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'ProfileId',
             profileId: (tokens[2].data as StringTokenData).string,
           },
           tokens[0],
           tokens[2]
-        ))
+        )
+      );
     });
 
     it('should parse profile', () => {
@@ -1065,7 +1127,8 @@ describe('syntax rules', () => {
 
       const rule = rules.PROFILE;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'Profile',
             profileId: tesMatch(
@@ -1079,7 +1142,8 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[2]
-        ))
+        )
+      );
     });
 
     it('should parse profile with documentation', () => {
@@ -1093,7 +1157,8 @@ describe('syntax rules', () => {
 
       const rule = rules.PROFILE;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'Profile',
             profileId: tesMatch(
@@ -1109,7 +1174,8 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[3]
-        ))
+        )
+      );
     });
 
     it('should parse profile document', () => {
@@ -1139,7 +1205,8 @@ describe('syntax rules', () => {
 
       const rule = rules.PROFILE_DOCUMENT;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(tesMatch(
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
           {
             kind: 'ProfileDocument',
             profile: tesMatch(
@@ -1209,7 +1276,8 @@ describe('syntax rules', () => {
           },
           tokens[1],
           tokens[14]
-        ))
+        )
+      );
     });
   });
 });

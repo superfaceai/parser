@@ -130,17 +130,17 @@ class TestSyntaxRule<R extends RuleResult<T>, T = unknown> extends SyntaxRule<
 describe('langauge syntax errors', () => {
   describe('lexer', () => {
     it('before', () => {
-      const lexer = new Lexer(new Source('before\n\t@safes'));
+      const lexer = new Lexer(new Source('before\n\t0xx'));
 
       lexer.advance();
       lexer.advance();
 
       expect(() => lexer.advance()).toThrowSyntaxError(
-        'Expected one of [safe, unsafe, idempotent]',
+        'Expected a number following integer base prefix',
         '[input]:2:2',
         '1 | before',
-        '2 | \t@safes',
-        '  | \t^^    '
+        '2 | \t0xx',
+        '  | \t^^^'
       );
     });
 
@@ -159,31 +159,31 @@ describe('langauge syntax errors', () => {
     });
 
     it('before and after', () => {
-      const lexer = new Lexer(new Source('before\n\t@safes\nafter'));
+      const lexer = new Lexer(new Source('before\n\t0xx\nafter'));
 
       lexer.advance();
       lexer.advance();
 
       expect(() => lexer.advance()).toThrowSyntaxError(
-        'Expected one of [safe, unsafe, idempotent]',
+        'Expected a number following integer base prefix',
         '[input]:2:2',
         '1 | before',
-        '2 | \t@safes',
-        '  | \t^^    ',
+        '2 | \t0xx',
+        '  | \t^^^',
         '3 | after'
       );
     });
 
     it('neither before nor after', () => {
-      const lexer = new Lexer(new Source('\t@safes'));
+      const lexer = new Lexer(new Source('\t0xx'));
 
       lexer.advance();
 
       expect(() => lexer.advance()).toThrowSyntaxError(
-        'Expected one of [safe, unsafe, idempotent]',
+        'Expected a number following integer base prefix',
         '[input]:1:2',
-        '1 | \t@safes',
-        '  | \t^^    '
+        '1 | \t0xx',
+        '  | \t^^^'
       );
     });
   });

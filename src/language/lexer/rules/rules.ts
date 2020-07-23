@@ -1,8 +1,6 @@
 import { Span } from '../../source';
 import {
   CommentTokenData,
-  DECORATORS,
-  DecoratorTokenData,
   IdentifierTokenData,
   LexerScanRule,
   LexerTokenData,
@@ -197,39 +195,6 @@ function tryParseLiteralNumber(slice: string): ParseResult<LiteralTokenData> {
  */
 export function tryParseLiteral(slice: string): ParseResult<LiteralTokenData> {
   return tryParseLiteralBoolean(slice) ?? tryParseLiteralNumber(slice);
-}
-
-/**
- * Tries to parse a decorator token at current position.
- *
- * Returns `undefined` if the current position cannot contain a decorator.
- *
- * Returns an error if parsing fails.
- */
-export function tryParseDecorator(
-  slice: string
-): ParseResult<DecoratorTokenData> {
-  if (!util.isDecoratorChar(slice.charCodeAt(0))) {
-    return undefined;
-  }
-
-  const parsed = tryParseScannerRules(slice.slice(1), DECORATORS);
-  if (parsed === undefined) {
-    return new ParseError(
-      LexerTokenKind.DECORATOR,
-      { start: 0, end: 2 },
-      `Expected one of [${Object.keys(DECORATORS).join(', ')}]`
-    );
-  }
-
-  return [
-    {
-      kind: LexerTokenKind.DECORATOR,
-      decorator: parsed.value,
-    },
-    // + 1 for decorator char
-    1 + parsed.length,
-  ];
 }
 
 /**
