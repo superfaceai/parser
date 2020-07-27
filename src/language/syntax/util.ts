@@ -182,22 +182,21 @@ export function extractDocumentation(
     return {};
   }
 
-  const lines = string.split('\n').filter(
-    line => line.trim() !== ''
-  )
+  const lines = string.split('\n').filter(line => line.trim() !== '');
   if (lines.length === 0) {
     return {};
   }
 
   if (lines.length === 1) {
     return {
-      description: string
-    }
+      description: string,
+    };
   }
 
-  const firstNewline = string?.indexOf('\n')
+  const firstNewline = string?.indexOf('\n');
+
   return {
     title: string?.slice(0, firstNewline),
-    description: string.slice(firstNewline + 1).trim()
-  }
+    description: string.slice(firstNewline + 1).trim(),
+  };
 }

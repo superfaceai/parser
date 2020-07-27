@@ -148,78 +148,79 @@ describe('v6', () => {
             fields: [
               {
                 kind: 'FieldDefinition',
-                fieldName: 'to'
+                fieldName: 'to',
               },
               {
                 kind: 'FieldDefinition',
-                fieldName: 'from'
+                fieldName: 'from',
               },
               {
                 kind: 'FieldDefinition',
-                fieldName: 'channel'
+                fieldName: 'channel',
               },
               {
                 kind: 'FieldDefinition',
-                fieldName: 'text'
-              }
-            ]
+                fieldName: 'text',
+              },
+            ],
           },
           result: {
             kind: 'ObjectDefinition',
             fields: [
               {
                 kind: 'FieldDefinition',
-                fieldName: 'messageId'
+                fieldName: 'messageId',
               },
-            ]
+            ],
           },
           asyncResult: {
             kind: 'ObjectDefinition',
             fields: [
               {
                 kind: 'FieldDefinition',
-                fieldName: 'messageId'
+                fieldName: 'messageId',
               },
               {
                 kind: 'FieldDefinition',
-                fieldName: 'deliveryStatus'
+                fieldName: 'deliveryStatus',
               },
-            ]
+            ],
           },
           error: {
             kind: 'ObjectDefinition',
             fields: [
               {
                 kind: 'FieldDefinition',
-                fieldName: 'problem'
+                fieldName: 'problem',
               },
               {
                 kind: 'FieldDefinition',
-                fieldName: 'detail'
+                fieldName: 'detail',
               },
               {
                 kind: 'FieldDefinition',
-                fieldName: 'instance'
+                fieldName: 'instance',
               },
-            ]
-          }
+            ],
+          },
         },
         {
           kind: 'UseCaseDefinition',
           useCaseName: 'RetrieveMessageStatus',
           safety: 'safe',
           asyncResult: undefined,
-          error: undefined
+          error: undefined,
         },
         {
           kind: 'NamedFieldDefinition',
           fieldName: 'messageId',
           type: {
             kind: 'PrimitiveTypeName',
-            name: 'string'
+            name: 'string',
           },
           title: 'Identifier of Message',
-          description: 'The identifier is channel-specific and not unique. It should be treated as an opaque value and only used in subsequent calls'
+          description:
+            'The identifier is channel-specific and not unique. It should be treated as an opaque value and only used in subsequent calls',
         },
         {
           kind: 'NamedFieldDefinition',
@@ -229,20 +230,21 @@ describe('v6', () => {
             values: [
               {
                 kind: 'EnumValue',
-                value: 'accepted'
+                value: 'accepted',
               },
               {
                 kind: 'EnumValue',
-                value: 'delivered'
+                value: 'delivered',
               },
               {
                 kind: 'EnumValue',
-                value: 'seen'
+                value: 'seen',
               },
-            ]
+            ],
           },
           title: 'Delivery Status of Message',
-          description: 'Status of a sent message. Harmonized across different channels.'
+          description:
+            'Status of a sent message. Harmonized across different channels.',
         },
         {
           kind: 'NamedFieldDefinition',
@@ -252,22 +254,22 @@ describe('v6', () => {
             values: [
               {
                 kind: 'EnumValue',
-                value: 'sms'
+                value: 'sms',
               },
               {
                 kind: 'EnumValue',
-                value: 'whatsapp'
+                value: 'whatsapp',
               },
               {
                 kind: 'EnumValue',
-                value: 'apple_business_chat'
+                value: 'apple_business_chat',
               },
               {
                 kind: 'EnumValue',
-                value: 'facebook_messenger'
-              }
-            ]
-          }
+                value: 'facebook_messenger',
+              },
+            ],
+          },
         },
       ],
     });
@@ -286,14 +288,10 @@ describe('v6', () => {
       f8, f9, f10                 # -> OK
       # f11 string f12              # -> error (in formatter?)
       f13 string, f14             # -> OK
-    }`
+    }`;
 
     const source = new Source(input);
-    const model = parseRule(
-      rule.NAMED_MODEL_DEFINITION,
-      source,
-      true
-    );
+    const model = parseRule(rule.NAMED_MODEL_DEFINITION, source, true);
 
     expect(model).toMatchObject({
       kind: 'NamedModelDefinition',
@@ -310,14 +308,14 @@ describe('v6', () => {
               values: [
                 {
                   kind: 'EnumValue',
-                  value: 'a'
+                  value: 'a',
                 },
                 {
                   kind: 'EnumValue',
-                  value: 'b'
-                }
-              ]
-            }
+                  value: 'b',
+                },
+              ],
+            },
           },
           // f2 string
           {
@@ -326,7 +324,7 @@ describe('v6', () => {
             type: {
               kind: 'PrimitiveTypeName',
               name: 'string',
-            }
+            },
           },
           // f3 { f3a\nf3b\n }
           {
@@ -337,14 +335,14 @@ describe('v6', () => {
               fields: [
                 {
                   kind: 'FieldDefinition',
-                  fieldName: 'f3a'
+                  fieldName: 'f3a',
                 },
                 {
                   kind: 'FieldDefinition',
-                  fieldName: 'f3b'
-                }
-              ]
-            }
+                  fieldName: 'f3b',
+                },
+              ],
+            },
           },
           // f4 { f4a, f4b boolean }
           {
@@ -355,7 +353,7 @@ describe('v6', () => {
               fields: [
                 {
                   kind: 'FieldDefinition',
-                  fieldName: 'f4a'
+                  fieldName: 'f4a',
                 },
                 {
                   kind: 'FieldDefinition',
@@ -363,41 +361,41 @@ describe('v6', () => {
                   type: {
                     kind: 'PrimitiveTypeName',
                     name: 'boolean',
-                  }
-                }
-              ]
-            }
+                  },
+                },
+              ],
+            },
           },
-  
+
           // f8, f9, f10
           {
             kind: 'FieldDefinition',
-            fieldName: 'f8'
+            fieldName: 'f8',
           },
           {
             kind: 'FieldDefinition',
-            fieldName: 'f9'
+            fieldName: 'f9',
           },
           {
             kind: 'FieldDefinition',
-            fieldName: 'f10'
+            fieldName: 'f10',
           },
-  
+
           // f13 string, f14
           {
             kind: 'FieldDefinition',
             fieldName: 'f13',
             type: {
               kind: 'PrimitiveTypeName',
-              name: 'string'
-            }
+              name: 'string',
+            },
           },
           {
             kind: 'FieldDefinition',
-            fieldName: 'f14'
-          }
-        ]
-      }
-    })
-  })
+            fieldName: 'f14',
+          },
+        ],
+      },
+    });
+  });
 });
