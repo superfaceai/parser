@@ -60,18 +60,21 @@ expect.extend({
 // Ensures that token spans are correctly ordered in delcaration order
 // while also making sure that their spans and locations are random enough so that
 // equality checks find when a wrong span or location is calculated.
-let TES_TOK_STATE = 0;
+let TES_TOK_STATE: { start: number, line: number } = { start: 0, line: 1 };
 beforeEach(() => {
-  TES_TOK_STATE = 0;
+  TES_TOK_STATE = { start: 0, line: 1 };
 });
-function tesTok(data: LexerTokenData): LexerToken {
-  const start = Math.floor(Math.random() * 1000) + TES_TOK_STATE * 10000;
+function tesTok(data: LexerTokenData, bumpLine?: boolean): LexerToken {
+  const start = Math.floor(Math.random() * 1000) + TES_TOK_STATE.start * 10000;
   const end = start + Math.floor(Math.random() * 100);
 
-  const line = Math.floor(Math.random() * 500);
-  const column = Math.floor(Math.random() * 80);
+  if (bumpLine === true) {
+    TES_TOK_STATE.line += 1;
+  }
+  const line = TES_TOK_STATE.line;
+  const column = start;
 
-  TES_TOK_STATE += 1;
+  TES_TOK_STATE.start += 1;
 
   return new LexerToken(data, { start, end }, { line, column });
 }
@@ -228,7 +231,7 @@ describe('syntax rules', () => {
 
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field1' }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field2' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field2' }, true),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
 
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
