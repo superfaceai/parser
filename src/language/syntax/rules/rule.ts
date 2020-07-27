@@ -17,34 +17,69 @@ import {
 import { Location, Span } from '../../source';
 import { BufferedIterator } from '../util';
 
-/** Pair of rule and token that were attempted by failed */
-export type RuleAttempt = {
-  /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
-  rule: SyntaxRule<any>; // cannot be unknown :(
-  token?: LexerToken;
-};
-type OptionalFailure = {
-  /**
-   * A failure of a rule that introduces optionality.
-   *
-   * When a rule that introduces optionality (such as Optional and Repeat) matches, it might
-   * have interally failed to match a different option. If another rule following the optional
-   * one doesn't match, the error might not report the complete information. Once another rule
-   * following the optional one matches, this information is no longer needed.
-   *
-   * This field contains information about last failed optional rule which hasn't been "cleaned" yet by another success.
-   */
-  optionalFailure?: RuleAttempt;
-};
+export class MatchAttempts {
+  constructor(
+    /** Token at which the rules failed */
+    readonly token: LexerToken | undefined,
+    /** Rules which failed at the token */
+    readonly rules: readonly SyntaxRule<unknown>[]
+  ) {}
+
+  static merge(
+    first: MatchAttempts | undefined,
+    second: MatchAttempts | undefined
+  ): MatchAttempts | undefined {
+    if (first === undefined) {
+      return second;
+    }
+
+    return first.merge(second);
+  }
+
+  static mergePreserveOrder(
+    first: MatchAttempts | undefined,
+    second: MatchAttempts
+  ): MatchAttempts {
+    return first?.merge(second) ?? second;
+  }
+
+  /** Merges two rule attempts according to the furthest token heuristic. */
+  merge(other: MatchAttempts | undefined): MatchAttempts {
+    if (other === undefined) {
+      return this;
+    }
+
+    // Both equal or both undefined
+    if (this.token?.span.start === other.token?.span.start) {
+      // merge
+      return new MatchAttempts(this.token, [...this.rules, ...other.rules]);
+    }
+
+    // undefined is treated as grater than defined
+    if (this.token === undefined) {
+      return this;
+    } else if (
+      other.token === undefined ||
+      other.token.span.start > this.token.span.start
+    ) {
+      return other;
+    } else {
+      return this;
+    }
+  }
+}
 
 export type RuleResultMatch<T> = {
   kind: 'match';
   match: T;
-} & OptionalFailure;
+
+  /** Optional and repeat rule propagate failures through this filed to report better errors. */
+  optionalAttempts?: MatchAttempts;
+};
 export type RuleResultNoMatch = {
   kind: 'nomatch';
-  attempt: RuleAttempt;
-} & OptionalFailure;
+  attempts: MatchAttempts;
+};
 export type RuleResult<T> = RuleResultMatch<T> | RuleResultNoMatch;
 
 export interface LexerTokenMatch<D extends LexerTokenData = LexerTokenData> {
@@ -54,8 +89,6 @@ export interface LexerTokenMatch<D extends LexerTokenData = LexerTokenData> {
 }
 
 export abstract class SyntaxRule<T> {
-  constructor(readonly name?: string) {}
-
   /**
    * Attempts to match rule to tokens.
    *
@@ -93,10 +126,7 @@ export abstract class SyntaxRule<T> {
 
     return {
       kind: 'nomatch',
-      attempt: {
-        rule: this,
-        token: next.value,
-      },
+      attempts: new MatchAttempts(next.value, [this]),
     };
   }
 
@@ -108,73 +138,58 @@ export abstract class SyntaxRule<T> {
 
   // Factory methods for basic rules
 
-  static separator(
-    separator?: SeparatorValue,
-    name?: string
-  ): SyntaxRuleSeparator {
-    return new SyntaxRuleSeparator(separator, name);
+  static separator(separator?: SeparatorValue): SyntaxRuleSeparator {
+    return new SyntaxRuleSeparator(separator);
   }
 
-  static operator(operator?: OperatorValue, name?: string): SyntaxRuleOperator {
-    return new SyntaxRuleOperator(operator, name);
+  static operator(operator?: OperatorValue): SyntaxRuleOperator {
+    return new SyntaxRuleOperator(operator);
   }
 
-  static identifier(
-    identifier?: IdentifierValue,
-    name?: string
-  ): SyntaxRuleIdentifier {
-    return new SyntaxRuleIdentifier(identifier, name);
+  static identifier(identifier?: IdentifierValue): SyntaxRuleIdentifier {
+    return new SyntaxRuleIdentifier(identifier);
   }
 
-  static literal(name?: string): SyntaxRuleLiteral {
-    return new SyntaxRuleLiteral(name);
+  static literal(): SyntaxRuleLiteral {
+    return new SyntaxRuleLiteral();
   }
 
-  static string(name?: string): SyntaxRuleString {
-    return new SyntaxRuleString(name);
+  static string(): SyntaxRuleString {
+    return new SyntaxRuleString();
   }
 
-  static decorator(
-    decorator?: DecoratorValue,
-    name?: string
-  ): SyntaxRuleDecorator {
-    return new SyntaxRuleDecorator(decorator, name);
+  static decorator(decorator?: DecoratorValue): SyntaxRuleDecorator {
+    return new SyntaxRuleDecorator(decorator);
   }
 
   // Combinators
 
-  or<R>(rule: SyntaxRule<R>, name?: string): SyntaxRuleOr<T, R> {
-    return new SyntaxRuleOr(this, rule, name);
+  or<R>(rule: SyntaxRule<R>): SyntaxRuleOr<T, R> {
+    return new SyntaxRuleOr(this, rule);
   }
 
   /**
-   * To cascade multiple `followed` rules, use `.andBy` method on the
+   * To cascade multiple `followedBy` rules, use `.andBy` method on the
    * `SyntaxRuleFollowedBy` object that is returned to flatten nested tuples.
    */
-  followedBy<R>(
-    rule: SyntaxRule<R>,
-    name?: string
-  ): SyntaxRuleFollowedBy<[T], R> {
+  followedBy<R>(rule: SyntaxRule<R>): SyntaxRuleFollowedBy<[T], R> {
     return new SyntaxRuleFollowedBy(
       this.map(m => [m]),
-      rule,
-      name
+      rule
     );
   }
 
-  map<M>(mapper: (_: T) => M, name?: string): SyntaxRuleMap<T, M> {
-    return new SyntaxRuleMap(this, mapper, name);
+  // Cannot return `SyntaxRuleMap` because that would confuse TS into thinking `SyntaxRule` is contravariant over `T`
+  map<M>(mapper: (_: T) => M): SyntaxRule<M> {
+    return new SyntaxRuleMap(this, mapper);
   }
 
-  static repeat<R>(rule: SyntaxRule<R>, name?: string): SyntaxRuleRepeat<R> {
-    return new SyntaxRuleRepeat(rule, name);
+  static repeat<R>(rule: SyntaxRule<R>): SyntaxRuleRepeat<R> {
+    return new SyntaxRuleRepeat(rule);
   }
 
-  static optional<R>(
-    rule: SyntaxRule<R>,
-    name?: string
-  ): SyntaxRuleOptional<R> {
-    return new SyntaxRuleOptional(rule, name);
+  static optional<R>(rule: SyntaxRule<R>): SyntaxRuleOptional<R> {
+    return new SyntaxRuleOptional(rule);
   }
 }
 
@@ -183,8 +198,8 @@ export abstract class SyntaxRule<T> {
 export class SyntaxRuleSeparator extends SyntaxRule<
   LexerTokenMatch<SeparatorTokenData>
 > {
-  constructor(readonly separator?: SeparatorValue, name?: string) {
-    super(name);
+  constructor(readonly separator?: SeparatorValue) {
+    super();
   }
 
   tryMatch(
@@ -209,10 +224,6 @@ export class SyntaxRuleSeparator extends SyntaxRule<
   }
 
   [Symbol.toStringTag](): string {
-    if (this.name !== undefined) {
-      return this.name;
-    }
-
     if (this.separator !== undefined) {
       return '`' + this.separator + '`';
     }
@@ -224,8 +235,8 @@ export class SyntaxRuleSeparator extends SyntaxRule<
 export class SyntaxRuleOperator extends SyntaxRule<
   LexerTokenMatch<OperatorTokenData>
 > {
-  constructor(readonly operator?: OperatorValue, name?: string) {
-    super(name);
+  constructor(readonly operator?: OperatorValue) {
+    super();
   }
 
   tryMatch(
@@ -250,10 +261,6 @@ export class SyntaxRuleOperator extends SyntaxRule<
   }
 
   [Symbol.toStringTag](): string {
-    if (this.name !== undefined) {
-      return this.name;
-    }
-
     if (this.operator !== undefined) {
       return '`' + this.operator + '`';
     }
@@ -265,8 +272,8 @@ export class SyntaxRuleOperator extends SyntaxRule<
 export class SyntaxRuleIdentifier extends SyntaxRule<
   LexerTokenMatch<IdentifierTokenData>
 > {
-  constructor(readonly identifier?: IdentifierValue, name?: string) {
-    super(name);
+  constructor(readonly identifier?: IdentifierValue) {
+    super();
   }
 
   tryMatch(
@@ -291,10 +298,6 @@ export class SyntaxRuleIdentifier extends SyntaxRule<
   }
 
   [Symbol.toStringTag](): string {
-    if (this.name !== undefined) {
-      return this.name;
-    }
-
     if (this.identifier !== undefined) {
       return '`' + this.identifier + '`';
     }
@@ -323,7 +326,7 @@ export class SyntaxRuleLiteral extends SyntaxRule<
   }
 
   [Symbol.toStringTag](): string {
-    return this.name ?? formatTokenKind(LexerTokenKind.LITERAL);
+    return formatTokenKind(LexerTokenKind.LITERAL);
   }
 }
 
@@ -347,15 +350,15 @@ export class SyntaxRuleString extends SyntaxRule<
   }
 
   [Symbol.toStringTag](): string {
-    return this.name ?? formatTokenKind(LexerTokenKind.STRING);
+    return formatTokenKind(LexerTokenKind.STRING);
   }
 }
 
 export class SyntaxRuleDecorator extends SyntaxRule<
   LexerTokenMatch<DecoratorTokenData>
 > {
-  constructor(readonly decorator?: DecoratorValue, name?: string) {
-    super(name);
+  constructor(readonly decorator?: DecoratorValue) {
+    super();
   }
 
   tryMatch(
@@ -380,10 +383,6 @@ export class SyntaxRuleDecorator extends SyntaxRule<
   }
 
   [Symbol.toStringTag](): string {
-    if (this.name !== undefined) {
-      return this.name;
-    }
-
     if (this.decorator !== undefined) {
       return '`' + this.decorator + '`';
     }
@@ -395,12 +394,8 @@ export class SyntaxRuleDecorator extends SyntaxRule<
 // Combinators //
 
 export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
-  constructor(
-    readonly first: SyntaxRule<F>,
-    readonly second: SyntaxRule<S>,
-    name?: string
-  ) {
-    super(name);
+  constructor(readonly first: SyntaxRule<F>, readonly second: SyntaxRule<S>) {
+    super();
   }
 
   tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<F | S> {
@@ -412,47 +407,45 @@ export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
 
     const secondMatch = this.second.tryMatch(tokens);
     if (secondMatch.kind === 'match') {
-      return secondMatch;
+      return {
+        ...secondMatch,
+        optionalAttempts: firstMatch.attempts.merge(
+          secondMatch.optionalAttempts
+        ),
+      };
     }
 
     return {
       kind: 'nomatch',
-      attempt: {
-        rule: this,
-        token: tokens.peek().value,
-      },
+      attempts: firstMatch.attempts.merge(secondMatch.attempts),
     };
   }
 
   [Symbol.toStringTag](): string {
-    return this.name ?? this.first.toString() + ' or ' + this.second.toString();
+    return this.first.toString() + ' or ' + this.second.toString();
   }
 }
 
 // TODO: In TypeScript 4.0 use variadic tuple types: [...F, S]
-export class SyntaxRuleFollowedBy<F extends unknown[], S> extends SyntaxRule<
-  (F[number] | S)[]
-> {
-  constructor(
-    readonly first: SyntaxRule<F>,
-    readonly second: SyntaxRule<S>,
-    name?: string
-  ) {
-    super(name);
+export class SyntaxRuleFollowedBy<
+  F extends readonly unknown[],
+  S
+> extends SyntaxRule<readonly (F[number] | S)[]> {
+  constructor(readonly first: SyntaxRule<F>, readonly second: SyntaxRule<S>) {
+    super();
   }
 
   // TODO: In TypeScript 4.0 use variadic tuple types: [...F, S]
   andBy<R>(
-    rule: SyntaxRule<R>,
-    name?: string
-  ): SyntaxRuleFollowedBy<(F[number] | S)[], R> {
-    return new SyntaxRuleFollowedBy(this, rule, name);
+    rule: SyntaxRule<R>
+  ): SyntaxRuleFollowedBy<readonly (F[number] | S)[], R> {
+    return new SyntaxRuleFollowedBy(this, rule);
   }
 
   // TODO: In TypeScript 4.0 use variadic tuple types: [...F, S]
   tryMatch(
     tokens: BufferedIterator<LexerToken>
-  ): RuleResult<(F[number] | S)[]> {
+  ): RuleResult<readonly (F[number] | S)[]> {
     const save = tokens.save();
 
     const firstMatch = this.first.tryMatch(tokens);
@@ -469,9 +462,11 @@ export class SyntaxRuleFollowedBy<F extends unknown[], S> extends SyntaxRule<
       tokens.endSave();
 
       return {
-        kind: 'nomatch',
-        attempt: secondMatch.attempt,
-        optionalFailure: firstMatch.optionalFailure,
+        ...secondMatch,
+        attempts: MatchAttempts.mergePreserveOrder(
+          firstMatch.optionalAttempts,
+          secondMatch.attempts
+        ),
       };
     }
 
@@ -480,31 +475,29 @@ export class SyntaxRuleFollowedBy<F extends unknown[], S> extends SyntaxRule<
     return {
       kind: 'match',
       match: [...firstMatch.match, secondMatch.match],
-      optionalFailure: secondMatch.optionalFailure,
+      optionalAttempts: MatchAttempts.merge(
+        firstMatch.optionalAttempts,
+        secondMatch.optionalAttempts
+      ),
     };
   }
 
   [Symbol.toStringTag](): string {
-    return this.name ?? this.first.toString() + ' -> ' + this.second.toString();
+    return this.first.toString() + ' -> ' + this.second.toString();
   }
 }
 
 export class SyntaxRuleMap<R, M> extends SyntaxRule<M> {
-  constructor(
-    readonly rule: SyntaxRule<R>,
-    readonly mapper: (_: R) => M,
-    name?: string
-  ) {
-    super(name);
+  constructor(readonly rule: SyntaxRule<R>, readonly mapper: (_: R) => M) {
+    super();
   }
 
   tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<M> {
     const match = this.rule.tryMatch(tokens);
     if (match.kind === 'match') {
       return {
-        kind: 'match',
+        ...match,
         match: this.mapper(match.match),
-        optionalFailure: match.optionalFailure,
       };
     }
 
@@ -512,22 +505,26 @@ export class SyntaxRuleMap<R, M> extends SyntaxRule<M> {
   }
 
   [Symbol.toStringTag](): string {
-    return this.name ?? this.rule.toString();
+    return this.rule.toString();
   }
 }
 
-export class SyntaxRuleRepeat<R> extends SyntaxRule<R[]> {
-  constructor(readonly rule: SyntaxRule<R>, name?: string) {
-    super(name);
+export class SyntaxRuleRepeat<R> extends SyntaxRule<readonly R[]> {
+  constructor(readonly rule: SyntaxRule<R>) {
+    super();
   }
 
-  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R[]> {
+  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<readonly R[]> {
     const matches: R[] = [];
 
-    let lastMatch: RuleResult<R>;
+    let lastMatch: RuleResultMatch<R> | undefined;
+    let lastResult: RuleResult<R>;
     for (;;) {
-      lastMatch = this.rule.tryMatch(tokens);
-      if (lastMatch.kind === 'match') {
+      lastResult = this.rule.tryMatch(tokens);
+
+      if (lastResult.kind === 'match') {
+        lastMatch = lastResult;
+
         matches.push(lastMatch.match);
       } else {
         break;
@@ -538,31 +535,24 @@ export class SyntaxRuleRepeat<R> extends SyntaxRule<R[]> {
       return {
         kind: 'match',
         match: matches,
-        optionalFailure: {
-          rule: this.rule,
-          token: tokens.peek().value,
-        },
+        optionalAttempts: MatchAttempts.mergePreserveOrder(
+          lastMatch?.optionalAttempts,
+          lastResult.attempts
+        ),
       };
     }
 
-    return {
-      kind: 'nomatch',
-      attempt: {
-        rule: this,
-        token: tokens.peek().value,
-      },
-      optionalFailure: lastMatch.optionalFailure,
-    };
+    return lastResult;
   }
 
   [Symbol.toStringTag](): string {
-    return this.name ?? 'one or more ' + this.rule.toString();
+    return 'one or more ' + this.rule.toString();
   }
 }
 
 export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
-  constructor(readonly rule: SyntaxRule<R>, name?: string) {
-    super(name);
+  constructor(readonly rule: SyntaxRule<R>) {
+    super();
   }
 
   tryMatch(
@@ -576,12 +566,12 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
     return {
       kind: 'match',
       match: undefined,
-      optionalFailure: match.attempt,
+      optionalAttempts: match.attempts,
     };
   }
 
   [Symbol.toStringTag](): string {
-    return this.name ?? 'optional ' + this.rule.toString();
+    return 'optional ' + this.rule.toString();
   }
 }
 
@@ -598,11 +588,10 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
  */
 export class SyntaxRuleMutable<R> extends SyntaxRule<R> {
   constructor(
-    name?: string,
     // NOT readonly
     public rule?: SyntaxRule<R>
   ) {
-    super(name);
+    super();
   }
 
   tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R> {
@@ -618,6 +607,6 @@ export class SyntaxRuleMutable<R> extends SyntaxRule<R> {
       throw 'This method should never be called. This is an error in syntax rules definition.';
     }
 
-    return this.name ?? this.rule.name ?? '[Mutable Rule]';
+    return '[Mutable Rule]';
   }
 }

@@ -1,8 +1,17 @@
 import { SyntaxError } from './error';
 import { Lexer } from './lexer/lexer';
+import { LexerToken } from './lexer/token';
 import { Source } from './source';
 import { parseProfile, parseRule } from './syntax/parser';
 import * as profile from './syntax/rules/profile';
+import {
+  MatchAttempts,
+  RuleResult,
+  RuleResultMatch,
+  RuleResultNoMatch,
+  SyntaxRule,
+} from './syntax/rules/rule';
+import { BufferedIterator } from './syntax/util';
 
 // Declare custom matcher for sake of Typescript
 declare global {
@@ -97,6 +106,26 @@ expect.extend({
     };
   },
 });
+
+class TestSyntaxRule<R extends RuleResult<T>, T = unknown> extends SyntaxRule<
+  T
+> {
+  constructor(public result?: R, public name?: string) {
+    super();
+  }
+
+  tryMatch(_tokens: BufferedIterator<LexerToken>): R {
+    if (this.result === undefined) {
+      throw 'test syntax rule error';
+    }
+
+    return this.result;
+  }
+
+  [Symbol.toStringTag](): string {
+    return this.name ?? '[test rule]';
+  }
+}
 
 describe('langauge syntax errors', () => {
   describe('lexer', () => {
@@ -193,13 +222,198 @@ describe('langauge syntax errors', () => {
       expect(() =>
         parseRule(profile.ENUM_DEFINITION, tokens, true)
       ).toThrowSyntaxError(
-        'Expected enum value or `}` but found `!`',
+        'Expected string or literal or identifier or `}` but found `!`',
         '[input]:3:1',
         "2 | 'asdf'",
         '3 | !',
         '  | ^',
         '4 | }'
       );
+    });
+  });
+
+  describe('combinators and propagation', () => {
+    const tokens = new BufferedIterator([][Symbol.iterator]());
+
+    const match: TestSyntaxRule<RuleResultMatch<unknown>>[] = [];
+    {
+      const match1 = new TestSyntaxRule();
+      match1.result = {
+        kind: 'match',
+        match: 1,
+        optionalAttempts: new MatchAttempts(undefined, [match1]),
+      } as const;
+
+      const match2 = new TestSyntaxRule();
+      match2.result = {
+        kind: 'match',
+        match: 2,
+        optionalAttempts: new MatchAttempts(undefined, [match2]),
+      } as const;
+
+      match.push(match1 as TestSyntaxRule<RuleResultMatch<unknown>>);
+      match.push(match2 as TestSyntaxRule<RuleResultMatch<unknown>>);
+    }
+
+    const nomatch: TestSyntaxRule<RuleResultNoMatch>[] = [];
+    {
+      const nomatch1 = new TestSyntaxRule();
+      nomatch1.result = {
+        kind: 'nomatch',
+        attempts: new MatchAttempts(undefined, [nomatch1]),
+      } as const;
+
+      const nomatch2 = new TestSyntaxRule();
+      nomatch2.result = {
+        kind: 'nomatch',
+        attempts: new MatchAttempts(undefined, [nomatch2]),
+      } as const;
+
+      nomatch.push(nomatch1 as TestSyntaxRule<RuleResultNoMatch>);
+      nomatch.push(nomatch2 as TestSyntaxRule<RuleResultNoMatch>);
+    }
+
+    describe('or', () => {
+      it('should propagate on first success', () => {
+        const rule = match[0].or(nomatch[0]);
+        expect(rule.tryMatch(tokens)).toStrictEqual(match[0].result);
+      });
+
+      it('should merge on second success', () => {
+        const rule = nomatch[0].or(match[0]);
+        expect(rule.tryMatch(tokens)).toStrictEqual({
+          ...match[0].result,
+          optionalAttempts: new MatchAttempts(undefined, [
+            ...nomatch[0].result?.attempts.rules,
+            ...match[0].result?.optionalAttempts?.rules,
+          ]),
+        });
+      });
+
+      it('should merge on failure', () => {
+        const rule = nomatch[0].or(nomatch[1]);
+        expect(rule.tryMatch(tokens)).toStrictEqual({
+          kind: 'nomatch',
+          attempts: new MatchAttempts(undefined, [
+            ...nomatch[0].result?.attempts.rules,
+            ...nomatch[1].result?.attempts.rules,
+          ]),
+        });
+      });
+    });
+
+    describe('followed by', () => {
+      it('should propagate on first failure', () => {
+        const rule = nomatch[0].followedBy(nomatch[1]);
+        expect(rule.tryMatch(tokens)).toStrictEqual(nomatch[0].result);
+      });
+
+      it('should merge on second failure', () => {
+        const rule = match[0].followedBy(nomatch[0]);
+        expect(rule.tryMatch(tokens)).toStrictEqual({
+          kind: 'nomatch',
+          attempts: new MatchAttempts(undefined, [
+            ...match[0].result?.optionalAttempts?.rules,
+            ...nomatch[0].result?.attempts.rules,
+          ]),
+        });
+      });
+
+      it('should merge on success', () => {
+        const rule = match[0].followedBy(match[1]);
+        expect(rule.tryMatch(tokens)).toStrictEqual({
+          kind: 'match',
+          match: [match[0].result?.match, match[1].result?.match],
+          optionalAttempts: new MatchAttempts(undefined, [
+            ...match[0].result?.optionalAttempts?.rules,
+            ...match[1].result?.optionalAttempts?.rules,
+          ]),
+        });
+      });
+    });
+
+    describe('repeat', () => {
+      it('should propagate on failure', () => {
+        const rule = SyntaxRule.repeat(nomatch[0]);
+        expect(rule.tryMatch(tokens)).toStrictEqual(nomatch[0].result);
+      });
+
+      it('should merge on success', () => {
+        class TestSyntaxRuleRepeat<T = unknown> extends SyntaxRule<T> {
+          private state: number;
+
+          constructor(
+            public first?: RuleResult<T>,
+            public second?: RuleResult<T>
+          ) {
+            super();
+
+            this.state = 0;
+          }
+
+          tryMatch(_tokens: BufferedIterator<LexerToken>): RuleResult<T> {
+            if (this.state === 0) {
+              this.state = 1;
+
+              if (this.first === undefined) {
+                throw 'test syntax rule repeat error';
+              }
+
+              return this.first;
+            }
+
+            if (this.second === undefined) {
+              throw 'test syntax rule repeat error';
+            }
+
+            return this.second;
+          }
+
+          [Symbol.toStringTag](): string {
+            return '[repeat test rule]';
+          }
+        }
+
+        const matchThenNomatch = new TestSyntaxRuleRepeat();
+        const firstResult = {
+          kind: 'match',
+          match: 1,
+          optionalAttempts: new MatchAttempts(undefined, [matchThenNomatch]),
+        } as const;
+        const secondResult = {
+          kind: 'nomatch',
+          attempts: new MatchAttempts(undefined, [matchThenNomatch]),
+        } as const;
+
+        matchThenNomatch.first = firstResult;
+        matchThenNomatch.second = secondResult;
+
+        const rule = SyntaxRule.repeat(matchThenNomatch);
+        expect(rule.tryMatch(tokens)).toStrictEqual({
+          kind: 'match',
+          match: [firstResult.match],
+          optionalAttempts: new MatchAttempts(undefined, [
+            ...firstResult.optionalAttempts.rules,
+            ...secondResult.attempts.rules,
+          ]),
+        });
+      });
+    });
+
+    describe('optional', () => {
+      it('should propagate on failure', () => {
+        const rule = SyntaxRule.optional(nomatch[0]);
+        expect(rule.tryMatch(tokens)).toStrictEqual({
+          kind: 'match',
+          match: undefined,
+          optionalAttempts: nomatch[0].result?.attempts,
+        });
+      });
+
+      it('should propagate on success', () => {
+        const rule = SyntaxRule.optional(match[0]);
+        expect(rule.tryMatch(tokens)).toStrictEqual(match[0].result);
+      });
     });
   });
 });

@@ -175,23 +175,24 @@ export class SyntaxError {
     source: Source,
     result: RuleResultNoMatch
   ): SyntaxError {
-    const location = result.attempt.token?.location ?? { line: 0, column: 0 };
-    const span = result.attempt.token?.span ?? { start: 0, end: 0 };
+    const location = result.attempts.token?.location ?? { line: 0, column: 0 };
+    const span = result.attempts.token?.span ?? { start: 0, end: 0 };
 
-    let expected = result.attempt.rule.toString();
-    if (result.optionalFailure !== undefined) {
-      expected = result.optionalFailure.rule.toString() + ' or ' + expected;
-    }
+    const expected = result.attempts.rules.map(r => r.toString()).join(' or ');
 
     let actual = '<NONE>';
-    if (result.attempt.token !== undefined) {
-      const fmt = formatTokenData(result.attempt.token.data);
-      switch (result.attempt.token.data.kind) {
+    if (result.attempts.token !== undefined) {
+      const fmt = formatTokenData(result.attempts.token.data);
+      switch (result.attempts.token.data.kind) {
         case LexerTokenKind.SEPARATOR:
         case LexerTokenKind.OPERATOR:
         case LexerTokenKind.LITERAL:
-        case LexerTokenKind.STRING:
+        case LexerTokenKind.IDENTIFIER:
           actual = '`' + fmt.data + '`';
+          break;
+
+        case LexerTokenKind.STRING:
+          actual = '"' + fmt.data + '"';
           break;
 
         default:
