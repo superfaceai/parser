@@ -8,7 +8,6 @@ import {
   ModelTypeNameNode,
   NamedFieldDefinitionNode,
   NamedModelDefinitionNode,
-  NonNullDefinitionNode,
   ObjectDefinitionNode,
   PrimitiveTypeNameNode,
   ProfileASTNodeBase,
@@ -266,62 +265,60 @@ export const LIST_DEFINITION: SyntaxRuleSrc<ListDefinitionNode> = SyntaxRule.sep
     }
   );
 
-/** Non-null assertion operator: `type!` */
-export const NON_NULL_DEFINITION: SyntaxRuleSrc<NonNullDefinitionNode> = BASIC_TYPE.or(
+const NON_UNION_TYPE: SyntaxRule<SrcNode<
+  Exclude<Type, UnionDefinitionNode>
+>> = BASIC_TYPE.or(
   LIST_DEFINITION
 )
-  .followedBy(SyntaxRule.operator('!'))
+  .followedBy(
+    SyntaxRule.optional(SyntaxRule.operator('!'))
+  )
   .map(
-    (matches): SrcNode<NonNullDefinitionNode> => {
-      const [type, op] = matches as [
+    (matches): SrcNode<SrcNode<Exclude<Type, UnionDefinitionNode>>> => {
+      const [type, maybeOp] = matches as [
         (
           | SrcNode<PrimitiveTypeNameNode>
           | SrcNode<ModelTypeNameNode>
           | SrcNode<ObjectDefinitionNode>
           | SrcNode<ListDefinitionNode>
         ),
-        LexerTokenMatch<OperatorTokenData>
+        LexerTokenMatch<OperatorTokenData> | undefined
       ];
 
-      return {
-        kind: 'NonNullDefinition',
-        type: type,
-        location: type.location,
-        span: { start: type.span.start, end: op.span.end },
-      };
+      if (maybeOp !== undefined) {
+        return {
+          kind: 'NonNullDefinition',
+          type: type,
+          location: type.location,
+          span: { start: type.span.start, end: maybeOp.span.end },
+        };
+      }
+
+      return type;
     }
   );
 
-// NON_NULL_TYPE needs to go first because of postfix operator, model type needs to go after scalar and
-const NON_UNION_TYPE: SyntaxRule<SrcNode<
-  Exclude<Type, UnionDefinitionNode>
->> = NON_NULL_DEFINITION.or(BASIC_TYPE).or(LIST_DEFINITION);
-export const UNION_DEFINITION: SyntaxRuleSrc<UnionDefinitionNode> = NON_UNION_TYPE.followedBy(
-  SyntaxRule.operator('|')
-)
-  .andBy(NON_UNION_TYPE)
-  .andBy(
-    SyntaxRule.optional(
-      SyntaxRule.repeat(SyntaxRule.operator('|').followedBy(NON_UNION_TYPE))
-    )
+export const TYPE: SyntaxRuleSrc<Type> = NON_UNION_TYPE.followedBy(
+  SyntaxRule.optional(
+    SyntaxRule.repeat(SyntaxRule.operator('|').followedBy(NON_UNION_TYPE))
   )
-  .map(
-    (matches): SrcNode<UnionDefinitionNode> => {
-      const [firstType /* firstOp */, , secondType, restPairs] = matches as [
-        SrcNode<Exclude<Type, UnionDefinitionNode>>,
-        LexerTokenMatch<OperatorTokenData>,
-        SrcNode<Exclude<Type, UnionDefinitionNode>>,
-        (
-          | [
-              LexerTokenMatch<OperatorTokenData>,
-              SrcNode<Exclude<Type, UnionDefinitionNode>>
-            ][]
-          | undefined
-        )
-      ]; // TODO: Won't need `as` cast in Typescript 4
+).map(
+  (matches): SrcNode<Type> => {
+    const [firstType, maybeRestPairs] = matches as [
+      SrcNode<Exclude<Type, UnionDefinitionNode>>,
+      (
+        | [
+            LexerTokenMatch<OperatorTokenData>,
+            SrcNode<Exclude<Type, UnionDefinitionNode>>
+          ][]
+        | undefined
+      )
+    ] // TODO: Won't need `as` cast in Typescript 4
 
-      const types = [firstType, secondType];
-      restPairs?.forEach(([_op, type]) => types.push(type));
+    // Handle unions
+    if (maybeRestPairs !== undefined) {
+      const types = [firstType];
+      maybeRestPairs.forEach(([_op, type]) => types.push(type));
 
       return {
         kind: 'UnionDefinition',
@@ -333,10 +330,10 @@ export const UNION_DEFINITION: SyntaxRuleSrc<UnionDefinitionNode> = NON_UNION_TY
         },
       };
     }
-  );
 
-// UNION_DEFINITION rule needs to go first because of postfix operator.
-export const TYPE: SyntaxRuleSrc<Type> = UNION_DEFINITION.or(NON_UNION_TYPE);
+    return firstType;
+  }
+)
 TYPE_MUT.rule = TYPE;
 
 // FIELDS //
