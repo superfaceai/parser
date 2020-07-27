@@ -1,4 +1,4 @@
-import { BufferedIterator } from './util';
+import { BufferedIterator, extractDocumentation } from './util';
 
 describe('buffered iterator', () => {
   it('handles multiple saves', () => {
@@ -122,4 +122,31 @@ describe('buffered iterator', () => {
     expect(buf.next()).toStrictEqual({ done: false, value: 4 });
     expect(buf.next()).toStrictEqual({ done: false, value: 5 });
   });
+});
+
+describe('extract documentation', () => {
+  it('should extract nothing from undefined', () => {
+    expect(extractDocumentation(undefined)).toStrictEqual({})
+  });
+
+  it('should extract nothing from empty or whitespace-only', () => {
+    expect(extractDocumentation('')).toStrictEqual({})
+    expect(extractDocumentation('   \t    \t\n\n\t   ')).toStrictEqual({})
+  });
+
+  it('should extract description from single line', () => {
+    const description = 'This is the description, it does not contain newlines'
+    expect(extractDocumentation(description)).toStrictEqual({
+      description
+    })
+  })
+
+  it('should extract title and description from multiline', () => {
+    const title = 'This is the title, it does not contain newlines'
+    const description = 'This is \n the description, it does \n contain \n some newlines'
+    expect(extractDocumentation(title + '\n' + '  \t\n' + description)).toStrictEqual({
+      title,
+      description
+    })
+  })
 });

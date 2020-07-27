@@ -171,32 +171,33 @@ export class BufferedIterator<T> implements IterableIterator<T> {
  *
  * Empty string returns an empty object.
  *
- * String with no empty lines returns the trimmed text as description.
+ * String with only one line return that line as the description.
  *
- * String with at least one empty line treats the text before the line
- * as the title and the text after the empty line as the description.
+ * String with at least two lines returns the first line as the title and the rest as the description.
  */
 export function extractDocumentation(
   string?: string
 ): { title?: string; description?: string } {
-  const trimmed = string?.trim();
-
-  if (trimmed === undefined || trimmed === '') {
+  if (string === undefined) {
     return {};
   }
 
-  const emptyLinePosition = trimmed.indexOf('\n\n');
-  if (emptyLinePosition > -1) {
-    const title = trimmed.slice(0, emptyLinePosition);
-    const description = trimmed.slice(emptyLinePosition + 2);
-
-    return {
-      title,
-      description,
-    };
+  const lines = string.split('\n').filter(
+    line => line.trim() !== ''
+  )
+  if (lines.length === 0) {
+    return {};
   }
 
+  if (lines.length === 1) {
+    return {
+      description: string
+    }
+  }
+
+  const firstNewline = string?.indexOf('\n')
   return {
-    description: trimmed,
-  };
+    title: string?.slice(0, firstNewline),
+    description: string.slice(firstNewline + 1).trim()
+  }
 }

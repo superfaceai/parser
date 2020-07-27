@@ -173,6 +173,11 @@ export abstract class SyntaxRule<T> {
     );
   }
 
+  // Cannot return `SyntaxRuleCondition` because that would confuse TS into thinking `SyntaxRule` is contravariant over `T`
+  condition(fn: (_: RuleResultMatch<T>) => boolean): SyntaxRule<T> {
+    return new SyntaxRuleCondition(this, fn);
+  }
+
   // Cannot return `SyntaxRuleMap` because that would confuse TS into thinking `SyntaxRule` is contravariant over `T`
   map<M>(mapper: (_: T) => M): SyntaxRule<M> {
     return new SyntaxRuleMap(this, mapper);
@@ -184,6 +189,10 @@ export abstract class SyntaxRule<T> {
 
   static optional<R>(rule: SyntaxRule<R>): SyntaxRuleOptional<R> {
     return new SyntaxRuleOptional(rule);
+  }
+
+  static lookahead<R>(rule: SyntaxRule<R>): SyntaxRuleLookahead<R> {
+    return new SyntaxRuleLookahead(rule);
   }
 }
 
@@ -383,6 +392,10 @@ export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
   }
 }
 
+/** Matches `first` followed by `second.
+ * 
+ * Use `.andBy` to chain additional `followedBy` rules to flatten the `match` tuple.
+*/
 // TODO: In TypeScript 4.0 use variadic tuple types: [...F, S]
 export class SyntaxRuleFollowedBy<
   F extends readonly unknown[],
@@ -444,28 +457,7 @@ export class SyntaxRuleFollowedBy<
   }
 }
 
-export class SyntaxRuleMap<R, M> extends SyntaxRule<M> {
-  constructor(readonly rule: SyntaxRule<R>, readonly mapper: (_: R) => M) {
-    super();
-  }
-
-  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<M> {
-    const match = this.rule.tryMatch(tokens);
-    if (match.kind === 'match') {
-      return {
-        ...match,
-        match: this.mapper(match.match),
-      };
-    }
-
-    return match;
-  }
-
-  [Symbol.toStringTag](): string {
-    return this.rule.toString();
-  }
-}
-
+/** Matches one or more occurences of `rule`. */
 export class SyntaxRuleRepeat<R> extends SyntaxRule<readonly R[]> {
   constructor(readonly rule: SyntaxRule<R>) {
     super();
@@ -507,6 +499,7 @@ export class SyntaxRuleRepeat<R> extends SyntaxRule<readonly R[]> {
   }
 }
 
+/** Matches zero or one occurences of `rule`. */
 export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
   constructor(readonly rule: SyntaxRule<R>) {
     super();
@@ -529,6 +522,95 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
 
   [Symbol.toStringTag](): string {
     return 'optional ' + this.rule.toString();
+  }
+}
+
+/** Matches rule and then restores `tokens` state. */
+export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
+  constructor(readonly rule: SyntaxRule<R>) {
+    super();
+  }
+
+  tryMatch(
+    tokens: BufferedIterator<LexerToken>
+  ): RuleResult<undefined> {
+    const save = tokens.save();
+    const result = this.rule.tryMatch(tokens);
+    tokens.restore(save);
+
+    if (result.kind === 'match') {
+      return {
+        ...result,
+        match: undefined
+      }
+    }
+
+    return result;
+  }
+
+  [Symbol.toStringTag](): string {
+    return this.rule.toString();
+  }
+}
+
+// CUSTOM LOGIC //
+
+/** Allows inserting custom code into the matching process by giving access to the result of the wrapper rule to a custom closure. */
+export class SyntaxRuleCondition<R> extends SyntaxRule<R> {
+  constructor(
+    readonly rule: SyntaxRule<R>,
+    readonly fn: ((result: RuleResultMatch<R>) => boolean),
+    // TODO: Name?
+  ) {
+    super();
+  }
+
+  tryMatch(
+    tokens: BufferedIterator<LexerToken>
+  ): RuleResult<R> {
+    const save = tokens.save();
+
+    const result = this.rule.tryMatch(tokens);
+    if (result.kind === 'match') {
+      // If the new result is a failure, roll back the tokens state.
+      if (!this.fn(result)) {
+        tokens.restore(save);
+        
+        return {
+          kind: 'nomatch',
+          attempts: MatchAttempts.mergePreserveOrder(result.optionalAttempts, new MatchAttempts(tokens.peek().value, [this]))
+        }
+      }
+    }
+
+    return result;
+  }
+
+  [Symbol.toStringTag](): string {
+    return this.rule.toString();
+  }
+}
+
+/** Maps `match` value on success. */
+export class SyntaxRuleMap<R, M> extends SyntaxRule<M> {
+  constructor(readonly rule: SyntaxRule<R>, readonly mapper: (_: R) => M) {
+    super();
+  }
+
+  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<M> {
+    const match = this.rule.tryMatch(tokens);
+    if (match.kind === 'match') {
+      return {
+        ...match,
+        match: this.mapper(match.match),
+      };
+    }
+
+    return match;
+  }
+
+  [Symbol.toStringTag](): string {
+    return this.rule.toString();
   }
 }
 

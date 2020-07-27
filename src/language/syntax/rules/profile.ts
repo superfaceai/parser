@@ -80,7 +80,7 @@ const FIELD_DEFINITION_MUT = new SyntaxRuleMutable<
 
 // TYPES //
 
-/** From keywords: `Boolean`, `Number` and `String` */
+/** From keywords: `boolean`, `number` and `string` */
 export const PRIMITIVE_TYPE_NAME: SyntaxRuleSrc<PrimitiveTypeNameNode> = SyntaxRule.identifier(
   'boolean'
 )
@@ -339,33 +339,51 @@ TYPE_MUT.rule = TYPE;
 
 // FIELDS //
 
-/** Construct of form: `ident: type`, `ident { fields... }` or `ident` */
+/** Construct of form: `ident type`, `ident { fields... }` or `ident` */
 export const FIELD_DEFINITION: SyntaxRuleSrc<FieldDefinitionNode> = documentedNode(
-  SyntaxRule.identifier()
-    .followedBy(SyntaxRule.optional(TYPE))
-    .map(
-      (matches): SrcNode<FieldDefinitionNode> => {
-        const [fieldName, maybeType] = matches as [
-          LexerTokenMatch<IdentifierTokenData>,
-          SrcNode<Type> | undefined
-        ]; // TODO: Won't need `as` cast in Typescript 4
+  SyntaxRule.identifier().followedBy(TYPE).condition(
+    (matchResult) => {
+      const [name, type] = matchResult.match as [LexerTokenMatch<IdentifierTokenData>, SrcNode<Type>];
 
-        return {
-          kind: 'FieldDefinition',
-          fieldName: fieldName.data.identifier,
-          type: maybeType,
-          location: fieldName.location,
-          span: {
-            start: fieldName.span.start,
-            end: maybeType?.span.end ?? fieldName.span.end,
-          },
-        };
+      return type.location.line === name.location.line;
+    }
+  ).or(
+    SyntaxRule.identifier()
+  ).followedBy(
+    SyntaxRule.optional(SyntaxRule.operator(','))
+  )
+  .map(
+    (matches): SrcNode<FieldDefinitionNode> => {
+      const [field, maybeComma] = matches as [
+        [LexerTokenMatch<IdentifierTokenData>, SrcNode<Type>] | LexerTokenMatch<IdentifierTokenData>,
+        LexerTokenMatch<OperatorTokenData> | undefined
+      ]; // TODO: Won't need `as` cast in Typescript 4
+
+      let name: LexerTokenMatch<IdentifierTokenData>
+      let maybeType: SrcNode<Type> | undefined = undefined
+      if (Array.isArray(field)) {
+        name = field[0]
+        maybeType = field[1]
+      } else {
+        name = field
       }
-    )
+
+      return {
+        kind: 'FieldDefinition',
+        fieldName: name.data.identifier,
+        type: maybeType,
+        location: name.location,
+        span: {
+          start: name.span.start,
+          end: maybeComma?.span.end ?? maybeType?.span.end ?? name.span.end,
+        },
+      };
+    }
+  )
 );
 FIELD_DEFINITION_MUT.rule = FIELD_DEFINITION;
 
-/** * Construct of form: `field ident: type` or `field ident { fields... }` */
+/** * Construct of form: `field ident type` or `field ident { fields... }` */
 export const NAMED_FIELD_DEFINITION: SyntaxRuleSrc<NamedFieldDefinitionNode> = documentedNode(
   SyntaxRule.identifier('field')
     .followedBy(SyntaxRule.identifier())
@@ -393,7 +411,7 @@ export const NAMED_FIELD_DEFINITION: SyntaxRuleSrc<NamedFieldDefinitionNode> = d
 
 // MODEL //
 
-/** Construct of form: `model ident: type` or `model ident { fields... }` */
+/** Construct of form: `model ident type` or `model ident { fields... }` */
 export const NAMED_MODEL_DEFINITION: SyntaxRuleSrc<NamedModelDefinitionNode> = documentedNode(
   SyntaxRule.identifier('model')
     .followedBy(SyntaxRule.identifier())
@@ -430,14 +448,10 @@ const USECASE_SAFETY: SyntaxRule<LexerTokenMatch<
 /**
 * Construct of form:
 ```
-usecase ident @deco {
-  input: type
-  result: type
-  errors: [
-    type
-    type
-    ...
-  ]
+usecase ident safety {
+  input { fields... }
+  result type
+  error type
 }
 ```
 */
@@ -448,9 +462,7 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
     .andBy(SyntaxRule.separator('{'))
     .andBy(
       SyntaxRule.optional(
-        SyntaxRule.identifier('input')
-          .followedBy(SyntaxRule.optional(SyntaxRule.operator(':')))
-          .andBy(OBJECT_DEFINITION)
+        SyntaxRule.identifier('input').followedBy(OBJECT_DEFINITION)
       )
     )
     .andBy(
@@ -490,7 +502,6 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
         (
           | [
               LexerTokenMatch<IdentifierTokenData>,
-              LexerTokenMatch<OperatorTokenData> | undefined,
               SrcNode<ObjectDefinitionNode>
             ]
           | undefined
@@ -509,7 +520,7 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
       ]; // TODO: Won't need `as` cast in Typescript 4
 
         const input: SrcNode<ObjectDefinitionNode> | undefined =
-          maybeInput?.[2];
+          maybeInput?.[1];
         const asyncResult: SrcNode<Type> | undefined = maybeAsyncResult?.[2];
         const error: SrcNode<Type> | undefined = maybeError?.[1];
 
@@ -550,7 +561,7 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
 
 // DOCUMENT //
 
-/** `profile: string` */
+/** `profile = string` */
 export const PROFILE_ID: SyntaxRuleSrc<ProfileIdNode> = SyntaxRule.identifier(
   'profile'
 )
