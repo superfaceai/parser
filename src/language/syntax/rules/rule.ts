@@ -557,9 +557,8 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
 export class SyntaxRuleCondition<R> extends SyntaxRule<R> {
   constructor(
     readonly rule: SyntaxRule<R>,
-    readonly fn: (result: RuleResultMatch<R>) => boolean
-  ) // TODO: Name?
-  {
+    readonly fn: (result: RuleResultMatch<R>) => boolean // TODO: Name?
+  ) {
     super();
   }
 
