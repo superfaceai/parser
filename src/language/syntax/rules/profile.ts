@@ -267,12 +267,8 @@ export const LIST_DEFINITION: SyntaxRuleSrc<ListDefinitionNode> = SyntaxRule.sep
 
 const NON_UNION_TYPE: SyntaxRule<SrcNode<
   Exclude<Type, UnionDefinitionNode>
->> = BASIC_TYPE.or(
-  LIST_DEFINITION
-)
-  .followedBy(
-    SyntaxRule.optional(SyntaxRule.operator('!'))
-  )
+>> = BASIC_TYPE.or(LIST_DEFINITION)
+  .followedBy(SyntaxRule.optional(SyntaxRule.operator('!')))
   .map(
     (matches): SrcNode<SrcNode<Exclude<Type, UnionDefinitionNode>>> => {
       const [type, maybeOp] = matches as [
@@ -313,7 +309,7 @@ export const TYPE: SyntaxRuleSrc<Type> = NON_UNION_TYPE.followedBy(
           ][]
         | undefined
       )
-    ] // TODO: Won't need `as` cast in Typescript 4
+    ]; // TODO: Won't need `as` cast in Typescript 4
 
     // Handle unions
     if (maybeRestPairs !== undefined) {
@@ -333,7 +329,7 @@ export const TYPE: SyntaxRuleSrc<Type> = NON_UNION_TYPE.followedBy(
 
     return firstType;
   }
-)
+);
 TYPE_MUT.rule = TYPE;
 
 // FIELDS //
