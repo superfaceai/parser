@@ -44,7 +44,7 @@ export const OPERATORS: { [P in OperatorValue]: LexerScanRule<P> } = {
   '|': ['|', util.isAny],
   '=': ['=', util.isAny],
   '@': ['@', util.isAny],
-  ',': [',', util.isAny]
+  ',': [',', util.isAny],
 };
 
 // Literals

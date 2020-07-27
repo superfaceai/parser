@@ -244,9 +244,7 @@ describe('syntax rule factory', () => {
 
       const firstRule = SyntaxRule.identifier();
       const secondRule = SyntaxRule.literal();
-      const rule = firstRule
-        .or(secondRule)
-        .or(SyntaxRule.operator('@'));
+      const rule = firstRule.or(secondRule).or(SyntaxRule.operator('@'));
 
       expect(rule.tryMatch(buf)).toStrictEqual({
         kind: 'match',

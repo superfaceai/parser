@@ -393,9 +393,9 @@ export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
 }
 
 /** Matches `first` followed by `second.
- * 
+ *
  * Use `.andBy` to chain additional `followedBy` rules to flatten the `match` tuple.
-*/
+ */
 // TODO: In TypeScript 4.0 use variadic tuple types: [...F, S]
 export class SyntaxRuleFollowedBy<
   F extends readonly unknown[],
@@ -531,9 +531,7 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
     super();
   }
 
-  tryMatch(
-    tokens: BufferedIterator<LexerToken>
-  ): RuleResult<undefined> {
+  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<undefined> {
     const save = tokens.save();
     const result = this.rule.tryMatch(tokens);
     tokens.restore(save);
@@ -541,8 +539,8 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
     if (result.kind === 'match') {
       return {
         ...result,
-        match: undefined
-      }
+        match: undefined,
+      };
     }
 
     return result;
@@ -559,15 +557,13 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
 export class SyntaxRuleCondition<R> extends SyntaxRule<R> {
   constructor(
     readonly rule: SyntaxRule<R>,
-    readonly fn: ((result: RuleResultMatch<R>) => boolean),
-    // TODO: Name?
-  ) {
+    readonly fn: (result: RuleResultMatch<R>) => boolean
+  ) // TODO: Name?
+  {
     super();
   }
 
-  tryMatch(
-    tokens: BufferedIterator<LexerToken>
-  ): RuleResult<R> {
+  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R> {
     const save = tokens.save();
 
     const result = this.rule.tryMatch(tokens);
@@ -575,11 +571,14 @@ export class SyntaxRuleCondition<R> extends SyntaxRule<R> {
       // If the new result is a failure, roll back the tokens state.
       if (!this.fn(result)) {
         tokens.restore(save);
-        
+
         return {
           kind: 'nomatch',
-          attempts: MatchAttempts.mergePreserveOrder(result.optionalAttempts, new MatchAttempts(tokens.peek().value, [this]))
-        }
+          attempts: MatchAttempts.mergePreserveOrder(
+            result.optionalAttempts,
+            new MatchAttempts(tokens.peek().value, [this])
+          ),
+        };
       }
     }
 
