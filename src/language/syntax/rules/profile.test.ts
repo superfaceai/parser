@@ -396,7 +396,7 @@ describe('syntax rules', () => {
       ];
       const buf = new BufferedIterator(tokens[Symbol.iterator]());
 
-      const rule = rules.NON_NULL_DEFINITION;
+      const rule = rules.TYPE;
 
       expect(rule.tryMatch(buf)).toBeAMatch(
         tesMatch(
@@ -483,7 +483,7 @@ describe('syntax rules', () => {
       ];
       const buf = new BufferedIterator(tokens[Symbol.iterator]());
 
-      const rule = rules.UNION_DEFINITION;
+      const rule = rules.TYPE;
 
       expect(rule.tryMatch(buf)).toBeAMatch(
         tesMatch(
