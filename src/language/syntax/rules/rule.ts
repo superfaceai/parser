@@ -21,11 +21,11 @@ export type RuleResultMatch<T> = {
   match: T;
 };
 export type RuleResultNoMatch = {
-  kind: 'nomatch'; // cannot be unknown :(
+  kind: 'nomatch';
 
   /** Pairs of rules and tokens that were attempted by failed */
   /* eslint-disable-next-line @typescript-eslint/no-explicit-any */ attempts: {
-    rule: SyntaxRule<any>;
+    rule: SyntaxRule<any>; // cannot be unknown :(
     token?: LexerToken;
   }[];
   // TODO: Partial match?
@@ -529,7 +529,7 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
 export class SyntaxRuleMutable<R> extends SyntaxRule<R> {
   constructor(
     // NOT readonly
-    public rule: SyntaxRule<R> | undefined
+    public rule?: SyntaxRule<R>
   ) {
     super();
   }

@@ -1106,6 +1106,11 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
+"@superindustries/language@^0.0.10":
+  version "0.0.10"
+  resolved "https://npm.pkg.github.com/download/@superindustries/language/0.0.10/b6c603cb1837a40eb7bb969b0241842586b82005a276a619134ac696f20f8adc#e62fc060b790ca0252ce59f2b221cde4999f4771"
+  integrity sha512-5Tk4h8DVkqo7qHx3/JFzhml2lkft9dLgcxKa/Y3SjGOYypgNk1d8LJvLNAQrp+0dmWBQzJkb7u0ZgnA6k2Y0qQ==
+
 "@superindustries/superface@^0.0.1-test":
   version "0.0.1-test"
   resolved "https://npm.pkg.github.com/download/@superindustries/superface/0.0.1-test/c5aa2b63b151e4f382a5c2b0641597d91a769f02ad6c6fac1d28915e5f660fde#dcfa877bd9615b5071fbcd466a60536291ad7bc9"
@@ -6377,9 +6382,9 @@ typescript@^3.8.3:
   integrity sha512-q2ktq4n/uLuNNShyayit+DTobV2ApPEo/6so68JaD5ojvc/6GClBipedB9zNWYxRSAlZXAe405Rlijzl6qDiSw==
 
 typescript@^3.9.5:
-  version "3.9.5"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.9.5.tgz#586f0dba300cde8be52dd1ac4f7e1009c1b13f36"
-  integrity sha512-hSAifV3k+i6lEoCJ2k6R2Z/rp/H3+8sdmcn5NrS3/3kE7+RyZXm9aqvxWqjEXHAd8b0pShatpcdMTvEdvAJltQ==
+  version "3.9.6"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.9.6.tgz#8f3e0198a34c3ae17091b35571d3afd31999365a"
+  integrity sha512-Pspx3oKAPJtjNwE92YS05HQoY7z2SFyOpHo9MqJor3BXAGNaPUs83CuVp9VISFkSjyRfiTpmKuAYGJB7S7hOxw==
 
 unicode-canonical-property-names-ecmascript@^1.0.4:
   version "1.0.4"
