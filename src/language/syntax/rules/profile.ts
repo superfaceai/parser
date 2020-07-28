@@ -270,7 +270,7 @@ export const NON_NULL_DEFINITION: SyntaxRuleSrc<NonNullDefinitionNode> = BASIC_T
 const NON_UNION_TYPE: SyntaxRule<SrcNode<
   Exclude<Type, UnionDefinitionNode>
 >> = NON_NULL_DEFINITION.or(BASIC_TYPE).or(LIST_DEFINITION);
-export const UNION_TYPE: SyntaxRuleSrc<UnionDefinitionNode> = NON_UNION_TYPE.followedBy(
+export const UNION_DEFINITION: SyntaxRuleSrc<UnionDefinitionNode> = NON_UNION_TYPE.followedBy(
   SyntaxRule.operator('|')
 )
   .andBy(NON_UNION_TYPE)
@@ -309,8 +309,8 @@ export const UNION_TYPE: SyntaxRuleSrc<UnionDefinitionNode> = NON_UNION_TYPE.fol
     }
   );
 
-// UNION_TYPE rule needs to go first because of postfix operator.
-export const TYPE: SyntaxRuleSrc<Type> = UNION_TYPE.or(NON_UNION_TYPE);
+// UNION_DEFINITION rule needs to go first because of postfix operator.
+export const TYPE: SyntaxRuleSrc<Type> = UNION_DEFINITION.or(NON_UNION_TYPE);
 TYPE_MUT.rule = TYPE;
 
 /**
@@ -434,7 +434,7 @@ usecase ident @deco {
 */
 export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = documentedNode(
   SyntaxRule.identifier('usecase')
-    .followedBy(SyntaxRule.identifier())
+    .followedBy(SyntaxRule.identifier(undefined))
     .andBy(SyntaxRule.optional(SyntaxRule.decorator()))
     .andBy(SyntaxRule.separator('{'))
     .andBy(
@@ -572,12 +572,14 @@ export const PROFILE_DOCUMENT: SyntaxRuleSrc<ProfileDocumentNode> = SyntaxRule.s
 )
   .followedBy(PROFILE)
   .andBy(SyntaxRule.optional(SyntaxRule.repeat(DOCUMENT_DEFINITION)))
+  .andBy(SyntaxRule.separator('EOF'))
   .map(
     (matches): SrcNode<ProfileDocumentNode> => {
-      const [, /* SOF */ profile, definitions] = matches as [
+      const [, /* SOF */ profile, definitions /* EOF */] = matches as [
         LexerTokenMatch<SeparatorTokenData>,
         SrcNode<ProfileNode>,
-        SrcNode<DocumentDefinition>[] | undefined
+        SrcNode<DocumentDefinition>[] | undefined,
+        LexerTokenMatch<SeparatorTokenData>
       ]; // TODO: Won't need `as` cast in Typescript 4
 
       let spanEnd = profile.span.end;

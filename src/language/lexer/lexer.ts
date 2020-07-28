@@ -4,24 +4,40 @@ import * as rules from './rules';
 import { LexerToken, LexerTokenKind } from './token';
 import * as util from './util';
 
+export type LexerTokenKindFilter = { [K in LexerTokenKind]: boolean };
+export const DEFAULT_TOKEN_KIND_FILER: LexerTokenKindFilter = {
+  [LexerTokenKind.COMMENT]: true,
+  [LexerTokenKind.DECORATOR]: false,
+  [LexerTokenKind.IDENTIFIER]: false,
+  [LexerTokenKind.LITERAL]: false,
+  [LexerTokenKind.OPERATOR]: false,
+  [LexerTokenKind.SEPARATOR]: false,
+  [LexerTokenKind.STRING]: false,
+};
+
 /**
  * Lexer tokenizes input string into tokens.
  *
  * The lexer generates a stream of tokens, always starting with SEPARATOR SOF and always ending with SEPARATOR EOF.
  * The stream can be consumed by calling `advance`. After each advance, `lookahead` will provide access to the next
- * token without consuming it and will update the current tokens `next` field as well.
+ * token without consuming it.
  * After EOF is emitted, all further calls to `advance` and `lookahead` will return the same EOF.
+ *
+ * An optional `tokenKindFilter` parameter can be provided to filter
+ * the tokens returned by `advance` and `lookahead`. By default, this filter skips comment nodes.
  */
 export class Lexer {
   private currentToken: LexerToken;
-  private nextToken: LexerToken | null;
+  private nextToken: LexerToken | undefined;
 
   /** Indexed from 1 */
   private currentLine: number;
   // Character offset in the source.body at which current line begins.
   private currentLineStart: number;
 
-  constructor(readonly source: Source) {
+  private readonly tokenKindFilter: LexerTokenKindFilter;
+
+  constructor(readonly source: Source, tokenKindFilter?: LexerTokenKindFilter) {
     this.currentToken = new LexerToken(
       {
         kind: LexerTokenKind.SEPARATOR,
@@ -30,23 +46,18 @@ export class Lexer {
       { start: 0, end: 0 },
       { line: 1, column: 1 }
     );
-    this.nextToken = null;
+    this.nextToken = this.currentToken;
 
     this.currentLine = 1;
     this.currentLineStart = 0;
+
+    this.tokenKindFilter = tokenKindFilter ?? DEFAULT_TOKEN_KIND_FILER;
   }
 
   /** Advances the lexer returning the current token. */
   advance(): LexerToken {
-    // Specialcase the first token
-    if (this.currentToken.isSOF() && this.nextToken === null) {
-      this.lookahead();
-
-      return this.currentToken;
-    }
-
     this.currentToken = this.lookahead();
-    this.nextToken = null;
+    this.nextToken = undefined;
 
     return this.currentToken;
   }
@@ -59,8 +70,12 @@ export class Lexer {
     }
 
     // read next token if not read already
-    if (this.nextToken === null) {
-      this.nextToken = this.readNextToken();
+    if (this.nextToken === undefined) {
+      this.nextToken = this.readNextToken(this.currentToken);
+    }
+    // skip tokens if they are caught by the filter
+    while (this.tokenKindFilter[this.nextToken.data.kind]) {
+      this.nextToken = this.readNextToken(this.nextToken);
     }
 
     return this.nextToken;
@@ -71,13 +86,13 @@ export class Lexer {
    *
    * The generator yields the result of `advance()` until `EOF` token is found, at which point it returns the `EOF` token.
    */
-  [Symbol.iterator](): Generator<LexerToken, LexerToken> {
+  [Symbol.iterator](): Generator<LexerToken, undefined> {
     // This rule is intended to catch assigning this to a variable when an arrow function would suffice
     // Generators cannot be defined using an arrow function and thus don't preserve `this`
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const lexer = this;
 
-    function* generatorClosure(): Generator<LexerToken, LexerToken> {
+    function* generatorClosure(): Generator<LexerToken, undefined> {
       let currentToken = lexer.advance();
 
       while (!currentToken.isEOF()) {
@@ -85,21 +100,21 @@ export class Lexer {
         currentToken = lexer.advance();
       }
 
-      return currentToken;
+      // Yield EOF one last time
+      yield currentToken;
+
+      return undefined;
     }
 
     return generatorClosure();
   }
 
-  /** Reads the next token following the `currentToken`. */
-  private readNextToken(): LexerToken {
+  /** Reads the next token following the `afterToken`. */
+  private readNextToken(afterToken: LexerToken): LexerToken {
     // Compute the start of the next token by ignoring whitespace after last token.
     const start =
-      this.currentToken.span.end +
-      this.countStartingWithNewlines(
-        util.isWhitespace,
-        this.currentToken.span.end
-      );
+      afterToken.span.end +
+      this.countStartingWithNewlines(util.isWhitespace, afterToken.span.end);
     const location = {
       line: this.currentLine,
       column: start - this.currentLineStart + 1,

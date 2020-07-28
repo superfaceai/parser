@@ -25,7 +25,7 @@ export class BufferedIterator<T> implements IterableIterator<T> {
   private position: number;
 
   /** Whether the values are being recorded. */
-  private recording: boolean;
+  private recording: number;
   /** Buffer of the saved values. */
   private buffer: Array<T>;
 
@@ -36,13 +36,15 @@ export class BufferedIterator<T> implements IterableIterator<T> {
     this.absolutePosition = 0;
     this.position = 0;
 
-    this.recording = false;
+    this.recording = 0;
     this.buffer = [];
   }
 
-  /** Returns a position that can be restored using `restore`. */
+  /**
+   * Returns a position that can be restored using `restore` and increases the recording counter.
+   */
   save(): number {
-    this.recording = true;
+    this.recording += 1;
 
     return this.position;
   }
@@ -66,12 +68,29 @@ export class BufferedIterator<T> implements IterableIterator<T> {
     this.position = position;
   }
 
+  /**
+   * Stops recording and forgets all buffered tokens before the current `position`.
+   *
+   * Call this sparingly, as any restore prior to current `position` will fail after this.
+   */
   forget(): void {
     const placesToForget =
       this.buffer.length - (this.absolutePosition - this.position);
     this.buffer = this.buffer.slice(placesToForget);
 
-    this.recording = false;
+    this.recording = 0;
+  }
+
+  /**
+   * Decreases the recording counter.
+   *
+   * If the couter reaches zero, `forget` it called.
+   */
+  endSave(): void {
+    this.recording -= 1;
+    if (this.recording <= 0) {
+      this.forget();
+    }
   }
 
   next(): IteratorResult<T, undefined> {
@@ -100,7 +119,7 @@ export class BufferedIterator<T> implements IterableIterator<T> {
 
       this.position += 1;
       this.absolutePosition += 1;
-      if (this.recording) {
+      if (this.recording > 0) {
         this.buffer.push(nextValue.value);
       }
 
@@ -125,12 +144,25 @@ export class BufferedIterator<T> implements IterableIterator<T> {
     const save = this.save();
     const next = this.next();
     this.restore(save);
+    this.endSave();
 
     return next;
   }
 
   [Symbol.iterator](): IterableIterator<T> {
     return this;
+  }
+
+  [Symbol.toStringTag](): string {
+    return `BufferedIterator(pos: ${this.absolutePosition}, buffered: ${
+      this.buffer.length
+    }, offset: ${this.absolutePosition - this.position}, rec: ${
+      this.recording
+    })`;
+  }
+
+  toString(): string {
+    return this[Symbol.toStringTag]();
   }
 }
 

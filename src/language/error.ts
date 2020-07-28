@@ -1,3 +1,4 @@
+import { formatTokenData, LexerTokenKind } from './lexer/token';
 import { Location, Source, Span } from './source';
 import { RuleResultNoMatch } from './syntax/rules/rule';
 
@@ -171,10 +172,41 @@ export class SyntaxError {
   }
 
   static fromSyntaxRuleNoMatch(
-    _source: Source,
-    _result: RuleResultNoMatch
+    source: Source,
+    result: RuleResultNoMatch
   ): SyntaxError {
-    throw 'TODO';
+    const location = result.attempts.token?.location ?? { line: 0, column: 0 };
+    const span = result.attempts.token?.span ?? { start: 0, end: 0 };
+
+    const expected = result.attempts.rules.map(r => r.toString()).join(' or ');
+
+    let actual = '<NONE>';
+    if (result.attempts.token !== undefined) {
+      const fmt = formatTokenData(result.attempts.token.data);
+      switch (result.attempts.token.data.kind) {
+        case LexerTokenKind.SEPARATOR:
+        case LexerTokenKind.OPERATOR:
+        case LexerTokenKind.LITERAL:
+        case LexerTokenKind.IDENTIFIER:
+          actual = '`' + fmt.data + '`';
+          break;
+
+        case LexerTokenKind.STRING:
+          actual = '"' + fmt.data + '"';
+          break;
+
+        default:
+          actual = fmt.kind;
+          break;
+      }
+    }
+
+    return new SyntaxError(
+      source,
+      location,
+      span,
+      `Expected ${expected} but found ${actual}`
+    );
   }
 
   format(): string {

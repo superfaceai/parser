@@ -105,22 +105,42 @@ export type LexerTokenData =
   | IdentifierTokenData
   | CommentTokenData;
 
-export function formatTokenData(data: LexerTokenData): string {
+export function formatTokenKind(kind: LexerTokenKind): string {
+  switch (kind) {
+    case LexerTokenKind.SEPARATOR:
+      return 'separator';
+    case LexerTokenKind.OPERATOR:
+      return 'operator';
+    case LexerTokenKind.LITERAL:
+      return 'literal';
+    case LexerTokenKind.STRING:
+      return 'string';
+    case LexerTokenKind.DECORATOR:
+      return 'decorator';
+    case LexerTokenKind.IDENTIFIER:
+      return 'identifier';
+    case LexerTokenKind.COMMENT:
+      return 'comment';
+  }
+}
+export function formatTokenData(
+  data: LexerTokenData
+): { kind: string; data: string } {
   switch (data.kind) {
     case LexerTokenKind.SEPARATOR:
-      return `SEP ${data.separator}`;
+      return { kind: 'separator', data: data.separator.toString() };
     case LexerTokenKind.OPERATOR:
-      return `OP ${data.operator}`;
+      return { kind: 'operator', data: data.operator.toString() };
     case LexerTokenKind.LITERAL:
-      return `LIT ${data.literal}`;
+      return { kind: 'literal', data: data.literal.toString() };
     case LexerTokenKind.STRING:
-      return `STR ${data.string}`;
+      return { kind: 'string', data: data.string.toString() };
     case LexerTokenKind.DECORATOR:
-      return `DEC ${data.decorator}`;
+      return { kind: 'decorator', data: data.decorator.toString() };
     case LexerTokenKind.IDENTIFIER:
-      return `ID ${data.identifier}`;
+      return { kind: 'identifier', data: data.identifier.toString() };
     case LexerTokenKind.COMMENT:
-      return `COM ${data.comment}`;
+      return { kind: 'comment', data: data.comment.toString() };
   }
 }
 
@@ -150,9 +170,17 @@ export class LexerToken {
     );
   }
 
-  formatDebug(): string {
-    return `(${formatTokenData(this.data)})@${this.location.line}:${
-      this.location.column
-    }[${this.span.start}; ${this.span.end}]`;
+  toStringDebug(): string {
+    return `(${this})@${this.location.line}:${this.location.column}[${this.span.start}; ${this.span.end}]`;
+  }
+
+  toString(): string {
+    return this[Symbol.toStringTag]();
+  }
+
+  [Symbol.toStringTag](): string {
+    const fmt = formatTokenData(this.data);
+
+    return `${fmt.kind} \`${fmt.data}\``;
   }
 }

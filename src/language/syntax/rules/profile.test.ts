@@ -57,7 +57,7 @@ describe('syntax rules', () => {
 
       const rule = rules.PRIMITIVE_TYPE_NAME;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -68,7 +68,7 @@ describe('syntax rules', () => {
         ),
       });
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -79,7 +79,7 @@ describe('syntax rules', () => {
         ),
       });
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -105,7 +105,7 @@ describe('syntax rules', () => {
 
       const rule = rules.ENUM_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -155,7 +155,7 @@ describe('syntax rules', () => {
 
       const rule = rules.MODEL_TYPE_NAME;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -183,7 +183,7 @@ describe('syntax rules', () => {
 
       const rule = rules.OBJECT_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -247,7 +247,7 @@ describe('syntax rules', () => {
 
       const rule = rules.LIST_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -283,7 +283,7 @@ describe('syntax rules', () => {
         ),
       });
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -301,7 +301,7 @@ describe('syntax rules', () => {
         ),
       });
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -346,7 +346,7 @@ describe('syntax rules', () => {
 
       const rule = rules.NON_NULL_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -380,7 +380,7 @@ describe('syntax rules', () => {
         ),
       });
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -398,7 +398,7 @@ describe('syntax rules', () => {
         ),
       });
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -434,9 +434,9 @@ describe('syntax rules', () => {
       ];
       const buf = new BufferedIterator(tokens[Symbol.iterator]());
 
-      const rule = rules.UNION_TYPE;
+      const rule = rules.UNION_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -504,7 +504,7 @@ describe('syntax rules', () => {
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -527,7 +527,7 @@ describe('syntax rules', () => {
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -558,7 +558,7 @@ describe('syntax rules', () => {
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -598,7 +598,7 @@ describe('syntax rules', () => {
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -623,7 +623,7 @@ describe('syntax rules', () => {
 
       const rule = rules.NAMED_FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -650,7 +650,7 @@ describe('syntax rules', () => {
 
       const rule = rules.NAMED_FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -691,7 +691,7 @@ describe('syntax rules', () => {
 
       const rule = rules.NAMED_FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -718,7 +718,7 @@ describe('syntax rules', () => {
 
       const rule = rules.NAMED_MODEL_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -746,7 +746,7 @@ describe('syntax rules', () => {
 
       const rule = rules.NAMED_MODEL_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -787,7 +787,7 @@ describe('syntax rules', () => {
 
       const rule = rules.NAMED_MODEL_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -828,7 +828,7 @@ describe('syntax rules', () => {
 
       const rule = rules.NAMED_MODEL_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -860,7 +860,7 @@ describe('syntax rules', () => {
 
       const rule = rules.USECASE_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -931,7 +931,7 @@ describe('syntax rules', () => {
 
       const rule = rules.USECASE_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -1063,7 +1063,7 @@ describe('syntax rules', () => {
 
       const rule = rules.USECASE_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -1101,7 +1101,7 @@ describe('syntax rules', () => {
 
       const rule = rules.PROFILE_ID;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -1124,7 +1124,7 @@ describe('syntax rules', () => {
 
       const rule = rules.PROFILE;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -1155,7 +1155,7 @@ describe('syntax rules', () => {
 
       const rule = rules.PROFILE;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {
@@ -1198,12 +1198,14 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: 'EOF' }),
       ];
       const buf = new BufferedIterator(tokens[Symbol.iterator]());
 
       const rule = rules.PROFILE_DOCUMENT;
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(buf)).toMatchObject({
         kind: 'match',
         match: tesMatch(
           {

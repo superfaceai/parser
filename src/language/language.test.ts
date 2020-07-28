@@ -53,6 +53,8 @@ it('should parse simple profile into AST', () => {
 	  delivered
 	  seen
 	}
+
+	# comment
 	
 	field channel: Enum {
 	  sms
@@ -66,7 +68,9 @@ it('should parse simple profile into AST', () => {
   const source = new Source(input);
   const profile = parseProfile(source);
 
-  console.debug(profile);
+  if (process.env.LOG_LEVEL === 'debug') {
+    console.debug(profile);
+  }
 
   expect(true).toBeTruthy();
 });
