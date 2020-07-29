@@ -39,7 +39,7 @@ import {
 // HELPER RULES //
 
 // Node that has `span` and `location` non-optional.
-type SrcNode<N extends ProfileASTNodeBase> = N & {
+export type SrcNode<N extends ProfileASTNodeBase> = N & {
   span: NonNullable<N['span']>;
   location: NonNullable<N['location']>;
 };

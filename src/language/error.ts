@@ -43,7 +43,10 @@ function computeVisualizeBlockSpan(
  * Example: ` 13 | ` with `padSize = 3` and `lineNumber = 13`.
  */
 function formatLinePrefix(padSize?: number, lineNumber?: number): string {
-  const value = lineNumber?.toString() ?? '';
+  let value = '';
+  if (lineNumber !== undefined) {
+    value = lineNumber.toString();
+  }
 
   return `${value.padEnd(padSize ?? 4, ' ')} | `;
 }
