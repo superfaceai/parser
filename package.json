@@ -2,11 +2,8 @@
   "name": "@superindustries/superface-parser",
   "version": "0.0.0",
   "description": "Level 5 autonomous, self-driving API client, https://superface.ai",
-  "main": "dist/superface-parser.js",
+  "main": "dist/index.js",
   "source": "src/index.ts",
-  "module": "dist/superface-parser.modern.js",
-  "unpkg": "dist/superface-parser.umd.js",
-  "browser": "dist/superface-parser.umd.js",
   "types": "dist/index.d.ts",
   "repository": "https://github.com/superindustries/superface-parser.git",
   "author": "Superface Team",
@@ -19,7 +16,8 @@
     "registry": "https://npm.pkg.github.com/"
   },
   "scripts": {
-    "build": "microbundle --tsconfig tsconfig.release.json",
+    "bundle_build": "microbundle --tsconfig tsconfig.release.json",
+    "build": "tsc -p tsconfig.release.json --outDir dist",
     "watch": "yarn build --watch",
     "clean": "rimraf dist/",
     "prebuild": "yarn clean",
