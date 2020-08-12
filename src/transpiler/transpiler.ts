@@ -1,35 +1,11 @@
 import * as ts from 'typescript';
 
+import emptyScriptTransformerFactory from './transformer/emptyScript';
+
 const SCRIPT_OUTPUT_TARGET = ts.ScriptTarget.ES3;
 
 const AFTER_TRANSFORMERS: ts.TransformerFactory<ts.SourceFile>[] = [
-  function dummyTransformerFactory(context: ts.TransformationContext) {
-    return (root: ts.SourceFile): ts.SourceFile => {
-      let stringTree = '';
-
-      function dummyVisitor(depth: number, node: ts.Node): ts.Node {
-        // Recursively log kind of each node
-        let depthIndent = '';
-        for (let index = 0; index < depth; index++) {
-          depthIndent += '\t';
-        }
-        stringTree += `${depthIndent}${ts.SyntaxKind[node.kind]}\n`;
-
-        ts.visitEachChild(node, dummyVisitor.bind(null, depth + 1), context);
-
-        // Return the unmodified node.
-        return node;
-      }
-
-      // The transformer will visit the root node and the visitor will drive the recursion.
-      const result = ts.visitNode(root, dummyVisitor.bind(null, 0));
-      if (process.env.LOG_LEVEL === 'debug') {
-        console.debug(stringTree);
-      }
-
-      return result;
-    };
-  },
+  emptyScriptTransformerFactory
 ];
 
 export function transpileScript(
