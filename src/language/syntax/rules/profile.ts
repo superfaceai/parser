@@ -466,7 +466,9 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
         SyntaxRule.identifier('input').followedBy(OBJECT_DEFINITION)
       )
     )
-    .andBy(SyntaxRule.identifier('result').followedBy(TYPE))
+    .andBy(
+      SyntaxRule.optional(SyntaxRule.identifier('result').followedBy(TYPE))
+    )
     .andBy(
       SyntaxRule.optional(
         SyntaxRule.identifier('async')
@@ -484,7 +486,7 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
           maybeSafety,
           ,
           /* sepStart */ maybeInput,
-          [, /* _resultKey */ resultType],
+          maybeResult,
           maybeAsyncResult,
           maybeError,
           sepEnd,
@@ -500,7 +502,7 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
               ]
             | undefined
           ), // input
-          [LexerTokenMatch<IdentifierTokenData>, SrcNode<Type>], // result
+          [LexerTokenMatch<IdentifierTokenData>, SrcNode<Type>] | undefined, // result
           (
             | [
                 LexerTokenMatch<IdentifierTokenData>,
@@ -544,7 +546,7 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
           useCaseName: name.data.identifier,
           safety,
           input,
-          result: resultType,
+          result: maybeResult?.[1],
           asyncResult,
           error,
           location: usecaseKey.location,

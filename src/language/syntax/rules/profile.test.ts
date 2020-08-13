@@ -885,6 +885,34 @@ describe('syntax rules', () => {
     it('should parse minimum usecase', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'usecase' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'Ping' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+      ];
+      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+
+      const rule = rules.USECASE_DEFINITION;
+
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'UseCaseDefinition',
+            useCaseName: (tokens[1].data as IdentifierTokenData).identifier,
+            safety: undefined,
+            input: undefined,
+            result: undefined,
+            asyncResult: undefined,
+            error: undefined,
+          },
+          tokens[0],
+          tokens[3]
+        )
+      );
+    });
+
+    it('should parse result only usecase', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'usecase' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'usecase' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'result' }),
