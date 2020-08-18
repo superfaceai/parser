@@ -134,10 +134,10 @@ describe('extract documentation', () => {
     expect(extractDocumentation('   \t    \t\n\n\t   ')).toStrictEqual({});
   });
 
-  it('should extract description from single line', () => {
-    const description = 'This is the description, it does not contain newlines';
-    expect(extractDocumentation(description)).toStrictEqual({
-      description,
+  it('should extract title from single line', () => {
+    const title = 'This is the title, it does not contain newlines';
+    expect(extractDocumentation(title)).toStrictEqual({
+      title,
     });
   });
 

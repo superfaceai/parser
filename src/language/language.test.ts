@@ -140,7 +140,7 @@ describe('v6', () => {
       definitions: [
         {
           kind: 'UseCaseDefinition',
-          description: 'Send single conversation message',
+          title: 'Send single conversation message',
           useCaseName: 'SendMessage',
           safety: 'unsafe',
           input: {

@@ -725,7 +725,7 @@ describe('syntax rules', () => {
 
     it('should parse reusable field documentation', () => {
       const tokens: ReadonlyArray<LexerToken> = [
-        tesTok({ kind: LexerTokenKind.STRING, string: 'Description' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'title' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
       ];
@@ -739,8 +739,8 @@ describe('syntax rules', () => {
             kind: 'NamedFieldDefinition',
             fieldName: (tokens[2].data as IdentifierTokenData).identifier,
             type: undefined,
-            title: undefined,
-            description: 'Description',
+            title: 'title',
+            description: undefined,
           },
           tokens[0],
           tokens[2]
