@@ -43,7 +43,10 @@ function computeVisualizeBlockSpan(
  * Example: ` 13 | ` with `padSize = 3` and `lineNumber = 13`.
  */
 function formatLinePrefix(padSize?: number, lineNumber?: number): string {
-  const value = lineNumber?.toString() ?? '';
+  let value = '';
+  if (lineNumber !== undefined) {
+    value = lineNumber.toString();
+  }
 
   return `${value.padEnd(padSize ?? 4, ' ')} | `;
 }
@@ -178,7 +181,19 @@ export class SyntaxError {
     const location = result.attempts.token?.location ?? { line: 0, column: 0 };
     const span = result.attempts.token?.span ?? { start: 0, end: 0 };
 
-    const expected = result.attempts.rules.map(r => r.toString()).join(' or ');
+    const expectedFilterSet = new Set();
+    const expected = result.attempts.rules
+      .map(r => r.toString())
+      .filter(r => {
+        if (expectedFilterSet.has(r)) {
+          return false;
+        }
+
+        expectedFilterSet.add(r);
+
+        return true;
+      })
+      .join(' or ');
 
     let actual = '<NONE>';
     if (result.attempts.token !== undefined) {

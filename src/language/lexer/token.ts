@@ -4,11 +4,10 @@ import * as util from './util';
 /** Enum describing the different kinds of tokens that the lexer emits. */
 export const enum LexerTokenKind {
   SEPARATOR, // SOF/EOF, (), [], {}
-  OPERATOR, // :, !, +, -, |, =
+  OPERATOR, // :, !, +, -, |, =, @, ,, \n
   LITERAL, // number or boolean
   STRING, // string literals - separate because it makes later stages easier
-  DECORATOR, // @safe, @unsafe, @idempotent
-  IDENTIFIER, // a-z A-Z _
+  IDENTIFIER, // a-z A-Z _ 0-9
   COMMENT, // line comments (# foo)
 }
 
@@ -36,7 +35,7 @@ export const SEPARATORS: {
 };
 
 // Operators
-export type OperatorValue = ':' | '+' | '-' | '!' | '|' | '=';
+export type OperatorValue = ':' | '+' | '-' | '!' | '|' | '=' | '@' | ',';
 export const OPERATORS: { [P in OperatorValue]: LexerScanRule<P> } = {
   ':': [':', util.isAny],
   '+': ['+', util.isAny],
@@ -44,6 +43,8 @@ export const OPERATORS: { [P in OperatorValue]: LexerScanRule<P> } = {
   '!': ['!', util.isAny],
   '|': ['|', util.isAny],
   '=': ['=', util.isAny],
+  '@': ['@', util.isAny],
+  ',': [',', util.isAny],
 };
 
 // Literals
@@ -53,14 +54,6 @@ export const LITERALS_BOOL: Record<string, LexerScanRule<boolean>> = {
 };
 export type LiteralValue = number | boolean;
 export type StringValue = string;
-
-// Decorators
-export type DecoratorValue = 'safe' | 'unsafe' | 'idempotent';
-export const DECORATORS: { [P in DecoratorValue]: LexerScanRule<P> } = {
-  safe: ['safe', util.isNotValidIdentifierChar],
-  unsafe: ['unsafe', util.isNotValidIdentifierChar],
-  idempotent: ['idempotent', util.isNotValidIdentifierChar],
-};
 
 export type IdentifierValue = string;
 export type CommentValue = string;
@@ -83,10 +76,6 @@ export interface StringTokenData {
   kind: LexerTokenKind.STRING;
   string: StringValue;
 }
-export interface DecoratorTokenData {
-  kind: LexerTokenKind.DECORATOR;
-  decorator: DecoratorValue;
-}
 export interface IdentifierTokenData {
   kind: LexerTokenKind.IDENTIFIER;
   identifier: IdentifierValue;
@@ -101,7 +90,6 @@ export type LexerTokenData =
   | OperatorTokenData
   | LiteralTokenData
   | StringTokenData
-  | DecoratorTokenData
   | IdentifierTokenData
   | CommentTokenData;
 
@@ -115,8 +103,6 @@ export function formatTokenKind(kind: LexerTokenKind): string {
       return 'literal';
     case LexerTokenKind.STRING:
       return 'string';
-    case LexerTokenKind.DECORATOR:
-      return 'decorator';
     case LexerTokenKind.IDENTIFIER:
       return 'identifier';
     case LexerTokenKind.COMMENT:
@@ -135,8 +121,6 @@ export function formatTokenData(
       return { kind: 'literal', data: data.literal.toString() };
     case LexerTokenKind.STRING:
       return { kind: 'string', data: data.string.toString() };
-    case LexerTokenKind.DECORATOR:
-      return { kind: 'decorator', data: data.decorator.toString() };
     case LexerTokenKind.IDENTIFIER:
       return { kind: 'identifier', data: data.identifier.toString() };
     case LexerTokenKind.COMMENT:

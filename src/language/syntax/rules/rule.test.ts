@@ -160,7 +160,7 @@ describe('syntax rule factory', () => {
 
     it("shouldn't match identififer rule", () => {
       const tokens: ReadonlyArray<LexerToken> = [
-        tesTok({ kind: LexerTokenKind.DECORATOR, decorator: 'safe' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '@' }),
       ];
       const buf = new BufferedIterator(tokens[Symbol.iterator]());
 
@@ -205,36 +205,6 @@ describe('syntax rule factory', () => {
     });
   });
 
-  describe('decorator', () => {
-    it('should match decorator rule', () => {
-      const tokens: ReadonlyArray<LexerToken> = [
-        tesTok({ kind: LexerTokenKind.DECORATOR, decorator: 'safe' }),
-      ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
-
-      const rule = SyntaxRule.decorator();
-
-      expect(rule.tryMatch(buf)).toStrictEqual({
-        kind: 'match',
-        match: tokMatch(tokens[0]),
-      });
-    });
-
-    it('should match decorator rule with filter', () => {
-      const tokens: ReadonlyArray<LexerToken> = [
-        tesTok({ kind: LexerTokenKind.DECORATOR, decorator: 'safe' }),
-      ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
-
-      const rule = SyntaxRule.decorator('safe');
-
-      expect(rule.tryMatch(buf)).toStrictEqual({
-        kind: 'match',
-        match: tokMatch(tokens[0]),
-      });
-    });
-  });
-
   describe('or', () => {
     it('should match first rule', () => {
       const tokens: ReadonlyArray<LexerToken> = [
@@ -268,13 +238,13 @@ describe('syntax rule factory', () => {
 
     it('should match third rule', () => {
       const tokens: ReadonlyArray<LexerToken> = [
-        tesTok({ kind: LexerTokenKind.DECORATOR, decorator: 'safe' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '@' }),
       ];
       const buf = new BufferedIterator(tokens[Symbol.iterator]());
 
       const firstRule = SyntaxRule.identifier();
-      const secondRule = SyntaxRule.identifier();
-      const rule = firstRule.or(secondRule).or(SyntaxRule.decorator('safe'));
+      const secondRule = SyntaxRule.literal();
+      const rule = firstRule.or(secondRule).or(SyntaxRule.operator('@'));
 
       expect(rule.tryMatch(buf)).toStrictEqual({
         kind: 'match',
@@ -285,7 +255,7 @@ describe('syntax rule factory', () => {
 
     it("shouldn't match any rule", () => {
       const tokens: ReadonlyArray<LexerToken> = [
-        tesTok({ kind: LexerTokenKind.DECORATOR, decorator: 'safe' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'string' }),
       ];
       const buf = new BufferedIterator(tokens[Symbol.iterator]());
 

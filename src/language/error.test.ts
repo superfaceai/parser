@@ -130,17 +130,17 @@ class TestSyntaxRule<R extends RuleResult<T>, T = unknown> extends SyntaxRule<
 describe('langauge syntax errors', () => {
   describe('lexer', () => {
     it('before', () => {
-      const lexer = new Lexer(new Source('before\n\t@safes'));
+      const lexer = new Lexer(new Source('before\n\t0xx'));
 
       lexer.advance();
       lexer.advance();
 
       expect(() => lexer.advance()).toThrowSyntaxError(
-        'Expected one of [safe, unsafe, idempotent]',
+        'Expected a number following integer base prefix',
         '[input]:2:2',
         '1 | before',
-        '2 | \t@safes',
-        '  | \t^^    '
+        '2 | \t0xx',
+        '  | \t^^^'
       );
     });
 
@@ -159,31 +159,31 @@ describe('langauge syntax errors', () => {
     });
 
     it('before and after', () => {
-      const lexer = new Lexer(new Source('before\n\t@safes\nafter'));
+      const lexer = new Lexer(new Source('before\n\t0xx\nafter'));
 
       lexer.advance();
       lexer.advance();
 
       expect(() => lexer.advance()).toThrowSyntaxError(
-        'Expected one of [safe, unsafe, idempotent]',
+        'Expected a number following integer base prefix',
         '[input]:2:2',
         '1 | before',
-        '2 | \t@safes',
-        '  | \t^^    ',
+        '2 | \t0xx',
+        '  | \t^^^',
         '3 | after'
       );
     });
 
     it('neither before nor after', () => {
-      const lexer = new Lexer(new Source('\t@safes'));
+      const lexer = new Lexer(new Source('\t0xx'));
 
       lexer.advance();
 
       expect(() => lexer.advance()).toThrowSyntaxError(
-        'Expected one of [safe, unsafe, idempotent]',
+        'Expected a number following integer base prefix',
         '[input]:1:2',
-        '1 | \t@safes',
-        '  | \t^^    '
+        '1 | \t0xx',
+        '  | \t^^^'
       );
     });
   });
@@ -206,7 +206,7 @@ describe('langauge syntax errors', () => {
       expect(() =>
         parseRule(profile.PRIMITIVE_TYPE_NAME, source, true)
       ).toThrowSyntaxError(
-        'Expected `Boolean` or `Number` or `String` but found `!`',
+        'Expected `boolean` or `number` or `string` but found `!`',
         '[input]:1:1',
         '1 | !',
         '  | ^'
@@ -214,17 +214,17 @@ describe('langauge syntax errors', () => {
     });
 
     it('should report enum value rule error', () => {
-      const tokens = new Source(`Enum {
-'asdf'
+      const tokens = new Source(`enum {
+asdf = 'asdf'
 !
 }`);
 
       expect(() =>
         parseRule(profile.ENUM_DEFINITION, tokens, true)
       ).toThrowSyntaxError(
-        'Expected string or literal or identifier or `}` but found `!`',
+        'Expected string or identifier or `}` but found `!`',
         '[input]:3:1',
-        "2 | 'asdf'",
+        "2 | asdf = 'asdf'",
         '3 | !',
         '  | ^',
         '4 | }'
