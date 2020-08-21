@@ -1,6 +1,6 @@
-import { LexerTokenKind, StringTokenData } from '../token';
-import * as util from '../util';
-import { ParseError, ParseResult } from './rules';
+import { LexerTokenKind, StringTokenData } from '../../token';
+import * as util from '../../util';
+import { ParseResult, ParseError } from '../../sublexer';
 
 function resolveStringLiteralEscape(
   slice: string

@@ -1,12 +1,8 @@
 import * as ts from 'typescript';
 
-import emptyScriptTransformerFactory from './transformer/emptyScript';
-
 const SCRIPT_OUTPUT_TARGET = ts.ScriptTarget.ES3;
 
-const AFTER_TRANSFORMERS: ts.TransformerFactory<ts.SourceFile>[] = [
-  emptyScriptTransformerFactory
-];
+const AFTER_TRANSFORMERS: ts.TransformerFactory<ts.SourceFile>[] = [];
 
 export function transpileScript(
   input: string

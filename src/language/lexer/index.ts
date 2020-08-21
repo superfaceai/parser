@@ -1,2 +1,2 @@
-export { Lexer } from './lexer';
+export { Lexer, LexerContext, LexerTokenKindFilter } from './lexer';
 export { LexerToken, LexerTokenData, LexerTokenKind } from './token';

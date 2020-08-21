@@ -1,9 +1,7 @@
-import { Span } from '../../source';
 import {
   CommentTokenData,
   IdentifierTokenData,
   LexerScanRule,
-  LexerTokenData,
   LexerTokenKind,
   LITERALS_BOOL,
   LiteralTokenData,
@@ -11,24 +9,9 @@ import {
   OperatorTokenData,
   SEPARATORS,
   SeparatorTokenData,
-} from '../token';
-import * as util from '../util';
-
-/** Error returned internally by the lexer `tryParse*` methods. */
-export class ParseError {
-  constructor(
-    /** Kind of the errored token. */
-    readonly kind: LexerTokenKind,
-    /** Span of the errored token. */
-    readonly span: Span,
-    /** Optional detail message. */
-    readonly detail?: string
-  ) {}
-}
-
-export type ParseResult<T extends LexerTokenData> =
-  | ([T, number] | undefined)
-  | ParseError;
+} from '../../token';
+import * as util from '../../util';
+import { ParseResult, ParseError } from '../../sublexer';
 
 function tryParseScannerRules<T>(
   slice: string,

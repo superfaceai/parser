@@ -39,15 +39,3 @@ test('transpiler ES2020', () => {
     /[;,]?([a-zA-Z_+]|[a-zA-Z_+]{4}|[a-zA-Z_+]{5})([;,]([a-zA-Z_+]|[a-zA-Z_+]{4}|[a-zA-Z_+]{5}))*/
   )
 });
-
-describe('transpiler transformer', () => {
-  it('should transform empty script into undefined literal', () => {
-    const { output } = st.transpileScript(
-      ''
-    )
-
-    expect(output).toBe(
-      'undefined;'
-    )
-  });
-})
