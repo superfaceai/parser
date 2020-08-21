@@ -1,12 +1,16 @@
 import { SyntaxError } from '../error';
 import { Source } from '../source';
-
-import { LexerToken, LexerTokenKind, DefaultSublexerTokenData, LexerTokenData, JessieSublexerTokenData } from './token';
-import * as util from './util';
-
-import { ParseResult, ParseError } from './sublexer';
+import { ParseError, ParseResult } from './sublexer';
 import { tryParseDefault } from './sublexer/default';
 import { tryParseJessieScriptExpression } from './sublexer/jessie';
+import {
+  DefaultSublexerTokenData,
+  JessieSublexerTokenData,
+  LexerToken,
+  LexerTokenData,
+  LexerTokenKind,
+} from './token';
+import * as util from './util';
 
 export type LexerTokenKindFilter = { [K in LexerTokenKind]: boolean };
 export const DEFAULT_TOKEN_KIND_FILER: LexerTokenKindFilter = {
@@ -16,7 +20,7 @@ export const DEFAULT_TOKEN_KIND_FILER: LexerTokenKindFilter = {
   [LexerTokenKind.OPERATOR]: false,
   [LexerTokenKind.SEPARATOR]: false,
   [LexerTokenKind.STRING]: false,
-  [LexerTokenKind.JESSIE_SCRIPT]: false
+  [LexerTokenKind.JESSIE_SCRIPT]: false,
 };
 
 export const enum LexerContext {
@@ -27,13 +31,18 @@ export const enum LexerContext {
   /**
    * Lexer context for parsing Jessie script expressions.
    */
-  JESSIE_SCRIPT_EXPRESSION
+  JESSIE_SCRIPT_EXPRESSION,
 }
-export type Sublexer<C extends LexerContext> = (slice: string) => ParseResult<SublexerReturnType<C>>
-export type SublexerReturnType<C extends LexerContext> =
-  C extends LexerContext.DEFAULT ? DefaultSublexerTokenData
-  : C extends LexerContext.JESSIE_SCRIPT_EXPRESSION ? JessieSublexerTokenData
-  : never
+export type Sublexer<C extends LexerContext> = (
+  slice: string
+) => ParseResult<SublexerReturnType<C>>;
+export type SublexerReturnType<
+  C extends LexerContext
+> = C extends LexerContext.DEFAULT
+  ? DefaultSublexerTokenData
+  : C extends LexerContext.JESSIE_SCRIPT_EXPRESSION
+  ? JessieSublexerTokenData
+  : never;
 
 /**
  * Lexer tokenizes input string into tokens.
@@ -45,14 +54,14 @@ export type SublexerReturnType<C extends LexerContext> =
  *
  * An optional `tokenKindFilter` parameter can be provided to filter
  * the tokens returned by `advance` and `lookahead`. By default, this filter skips comment nodes.
- * 
+ *
  * The advance function also accepts an optional `context` parameter which can be used to control the lexer context
  * for the next token.
  */
 export class Lexer {
   private readonly sublexers: {
-    [C in LexerContext]: Sublexer<C>
-  }
+    [C in LexerContext]: Sublexer<C>;
+  };
 
   /** Last emitted token. */
   private currentToken: LexerToken;
@@ -69,9 +78,9 @@ export class Lexer {
   constructor(readonly source: Source, tokenKindFilter?: LexerTokenKindFilter) {
     this.sublexers = {
       [LexerContext.DEFAULT]: tryParseDefault,
-      [LexerContext.JESSIE_SCRIPT_EXPRESSION]: tryParseJessieScriptExpression
-    }
-    
+      [LexerContext.JESSIE_SCRIPT_EXPRESSION]: tryParseJessieScriptExpression,
+    };
+
     this.currentToken = new LexerToken(
       {
         kind: LexerTokenKind.SEPARATOR,
@@ -120,13 +129,21 @@ export class Lexer {
    *
    * The generator yields the result of `advance()` until `EOF` token is found, at which point it returns the `EOF` token.
    */
-  [Symbol.iterator](): Generator<LexerToken, undefined, LexerContext | undefined> {
+  [Symbol.iterator](): Generator<
+    LexerToken,
+    undefined,
+    LexerContext | undefined
+  > {
     // This rule is intended to catch assigning `this` to a variable when an arrow function would suffice
     // Generators cannot be defined using an arrow function and thus don't preserve `this`
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const lexer = this;
 
-    function* generatorClosure(): Generator<LexerToken, undefined, LexerContext | undefined> {
+    function* generatorClosure(): Generator<
+      LexerToken,
+      undefined,
+      LexerContext | undefined
+    > {
       let currentToken = lexer.advance(); // No way to specify context for the first invocation.
 
       while (!currentToken.isEOF()) {
@@ -144,7 +161,10 @@ export class Lexer {
   }
 
   /** Reads the next token following the `afterToken`. */
-  private readNextToken(afterToken: LexerToken, context?: LexerContext): LexerToken {
+  private readNextToken(
+    afterToken: LexerToken,
+    context?: LexerContext
+  ): LexerToken {
     // Compute the start of the next token by ignoring whitespace after last token.
     const start =
       afterToken.span.end +
@@ -164,7 +184,9 @@ export class Lexer {
         break;
 
       case LexerContext.JESSIE_SCRIPT_EXPRESSION:
-        tokenParseResult = this.sublexers[LexerContext.JESSIE_SCRIPT_EXPRESSION](slice);
+        tokenParseResult = this.sublexers[
+          LexerContext.JESSIE_SCRIPT_EXPRESSION
+        ](slice);
         break;
     }
 

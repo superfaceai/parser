@@ -1,5 +1,5 @@
-import { LexerTokenKind, LexerTokenData } from "../token";
-import { Span } from "../../source";
+import { Span } from '../../source';
+import { LexerTokenData, LexerTokenKind } from '../token';
 
 /** Error returned internally by the lexer `tryParse*` methods. */
 export class ParseError {
@@ -12,8 +12,7 @@ export class ParseError {
     readonly detail?: string
   ) {}
 }
-  
+
 export type ParseResult<T extends LexerTokenData> =
   | ([T, number] | undefined)
   | ParseError;
-  

@@ -22,20 +22,16 @@ test('transpiler ES2020', () => {
 		const optionalChaining = console?.log?.(nullishCoalescing)`
   );
 
-  expect(output).toMatch(
-    'var nullishCoalescing ='
-  )
-  expect(output).toMatch(
-    'var optionalChaining ='
-  )
+  expect(output).toMatch('var nullishCoalescing =');
+  expect(output).toMatch('var optionalChaining =');
   expect(output).toMatch(
     'undefined !== null && undefined !== void 0 ? undefined'
-  )
+  );
   expect(output).toMatch(
     'console === null || console === void 0 ? void 0 : console.log'
-  )
+  );
 
   expect(sourceMap).toMatch(
     /[;,]?([a-zA-Z_+]|[a-zA-Z_+]{4}|[a-zA-Z_+]{5})([;,]([a-zA-Z_+]|[a-zA-Z_+]{4}|[a-zA-Z_+]{5}))*/
-  )
+  );
 });

@@ -9,7 +9,7 @@ export const enum LexerTokenKind {
   STRING, // string literals - separate because it makes later stages easier
   IDENTIFIER, // a-z A-Z _ 0-9
   COMMENT, // line comments (# foo)
-  JESSIE_SCRIPT, // Jessie script 
+  JESSIE_SCRIPT, // Jessie script
 }
 
 export type LexerScanRule<T> = [T, (_: number) => boolean];
@@ -93,7 +93,7 @@ export interface JessieScriptTokenData {
   script: JessieScriptValue;
 }
 
-export type DefaultSublexerTokenData = 
+export type DefaultSublexerTokenData =
   | SeparatorTokenData
   | OperatorTokenData
   | LiteralTokenData
@@ -102,9 +102,7 @@ export type DefaultSublexerTokenData =
   | CommentTokenData;
 export type JessieSublexerTokenData = JessieScriptTokenData;
 
-export type LexerTokenData =
-  | DefaultSublexerTokenData
-  | JessieSublexerTokenData;
+export type LexerTokenData = DefaultSublexerTokenData | JessieSublexerTokenData;
 
 export function formatTokenKind(kind: LexerTokenKind): string {
   switch (kind) {
@@ -127,7 +125,7 @@ export function formatTokenKind(kind: LexerTokenKind): string {
 export function formatTokenData(
   data: LexerTokenData
 ): { kind: string; data: string } {
-  let kind = formatTokenKind(data.kind);
+  const kind = formatTokenKind(data.kind);
   switch (data.kind) {
     case LexerTokenKind.SEPARATOR:
       return { kind, data: data.separator.toString() };

@@ -32,7 +32,7 @@ expect.extend({
   toHaveTokenData(actual: LexerToken, data: LexerTokenData) {
     const errorMessage: () => string = () => {
       const fmtExpected = formatTokenData(data);
-      const fmtActual = formatTokenData(actual.data)
+      const fmtActual = formatTokenData(actual.data);
 
       return this.utils.printDiffOrStringify(
         `${fmtExpected.kind} ${fmtExpected.data}`,
@@ -41,7 +41,7 @@ expect.extend({
         'Received',
         this.expand
       );
-    }
+    };
 
     let pass = true;
     let message = `Expected something else than ${formatTokenData(data)}`;
@@ -477,7 +477,11 @@ describe('lexer', () => {
 
         { kind: LexerTokenKind.IDENTIFIER, identifier: 'foo' }, // 4
         { kind: LexerTokenKind.OPERATOR, operator: '=' },
-        { kind: LexerTokenKind.JESSIE_SCRIPT, script: '(function() { const foo = 1; return { foo: foo + 2, bar: Math.min(3, 4) }; })()' },
+        {
+          kind: LexerTokenKind.JESSIE_SCRIPT,
+          script:
+            '(function() { const foo = 1; return { foo: foo + 2, bar: Math.min(3, 4) }; })()',
+        },
         { kind: LexerTokenKind.OPERATOR, operator: ';' },
 
         { kind: LexerTokenKind.IDENTIFIER, identifier: 'bar' }, // 8
@@ -497,7 +501,7 @@ describe('lexer', () => {
         6: LexerContext.JESSIE_SCRIPT_EXPRESSION,
         10: LexerContext.JESSIE_SCRIPT_EXPRESSION,
         14: LexerContext.JESSIE_SCRIPT_EXPRESSION,
-      }
+      };
 
       for (let i = 0; i < expectedTokens.length; i++) {
         const context = contexts[i];
@@ -554,15 +558,13 @@ describe('lexer', () => {
     });
 
     it('Jessie non-expression with expression context', () => {
-      const lexer = new Lexer(
-        new Source('var f = 1;')
-      );
+      const lexer = new Lexer(new Source('var f = 1;'));
 
       lexer.advance(); // SOF
-      
-      expect(() => lexer.advance(LexerContext.JESSIE_SCRIPT_EXPRESSION)).toThrowError(
-        'Expression expected.'
-      )
+
+      expect(() =>
+        lexer.advance(LexerContext.JESSIE_SCRIPT_EXPRESSION)
+      ).toThrowError('Expression expected.');
     });
   });
 });

@@ -1,3 +1,4 @@
+import { ParseError, ParseResult } from '../../sublexer';
 import {
   CommentTokenData,
   IdentifierTokenData,
@@ -11,7 +12,6 @@ import {
   SeparatorTokenData,
 } from '../../token';
 import * as util from '../../util';
-import { ParseResult, ParseError } from '../../sublexer';
 
 function tryParseScannerRules<T>(
   slice: string,

@@ -1,5 +1,5 @@
+import { ParseResult } from '../../sublexer';
 import { DefaultSublexerTokenData } from '../../token';
-
 import {
   tryParseComment,
   tryParseIdentifier,
@@ -8,7 +8,6 @@ import {
   tryParseSeparator,
 } from './rules';
 import { tryParseStringLiteral } from './string';
-import { ParseResult } from '../../sublexer';
 
 export {
   tryParseComment,
@@ -16,9 +15,18 @@ export {
   tryParseLiteral,
   tryParseOperator,
   tryParseSeparator,
-  tryParseStringLiteral
-}
+  tryParseStringLiteral,
+};
 
-export function tryParseDefault(slice: string): ParseResult<DefaultSublexerTokenData> {
-  return tryParseSeparator(slice) ?? tryParseOperator(slice) ?? tryParseLiteral(slice) ?? tryParseStringLiteral(slice) ?? tryParseIdentifier(slice) ?? tryParseComment(slice);
+export function tryParseDefault(
+  slice: string
+): ParseResult<DefaultSublexerTokenData> {
+  return (
+    tryParseSeparator(slice) ??
+    tryParseOperator(slice) ??
+    tryParseLiteral(slice) ??
+    tryParseStringLiteral(slice) ??
+    tryParseIdentifier(slice) ??
+    tryParseComment(slice)
+  );
 }
