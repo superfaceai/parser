@@ -1,6 +1,8 @@
 import * as ts from 'typescript';
 
-import { ParseError, ParseResult } from '../../sublexer';
+import { SyntaxErrorCategory } from '../../../error';
+import { validateAndTranspile } from '../../../jessie';
+import { ParseResult } from '../../sublexer';
 import { JessieSublexerTokenData, LexerTokenKind } from '../../token';
 
 // Static SCANNER to avoid reinitializing it, same thing is done inside TS library
@@ -9,25 +11,6 @@ const SCANNER = ts.createScanner(
   true,
   ts.LanguageVariant.Standard
 );
-
-function diagnoseJs(script: string): ts.Diagnostic[] {
-  // Diagnose the code using The Hacks™ because TS API is weird
-  const diagnostics: ts.Diagnostic[] = [];
-  ts.transpile(
-    script,
-    {
-      allowJs: true,
-      declaration: false,
-      sourceMap: false,
-      target: ts.ScriptTarget.Latest,
-      noEmit: true,
-    },
-    undefined,
-    diagnostics
-  );
-
-  return diagnostics;
-}
 
 export function tryParseJessieScriptExpression(
   slice: string
@@ -55,11 +38,13 @@ export function tryParseJessieScriptExpression(
 
     // Unexpected EOF
     if (token === ts.SyntaxKind.EndOfFileToken) {
-      return new ParseError(
-        LexerTokenKind.JESSIE_SCRIPT,
-        { start: 0, end: lastTokenEnd },
-        'Unexpected EOF'
-      );
+      return {
+        isError: true,
+        kind: LexerTokenKind.JESSIE_SCRIPT,
+        relativeSpan: { start: 0, end: lastTokenEnd },
+        detail: 'Unexpected EOF',
+        category: SyntaxErrorCategory.JESSIE_SYNTAX,
+      };
     }
 
     lastTokenEnd = SCANNER.getTextPos();
@@ -83,31 +68,42 @@ export function tryParseJessieScriptExpression(
   const scriptText = slice.slice(0, lastTokenEnd);
 
   // Diagnose the script text, but put it in a position where an expression would be required
-  const fakeScriptStart = 'const x = ';
-  const fakeScriptEnd = ';';
-  const diagnostics = diagnoseJs(fakeScriptStart + scriptText + fakeScriptEnd);
-  if (diagnostics.length > 0) {
-    const firstDiag = diagnostics[0];
-
-    const errorStart =
-      (firstDiag.start ?? fakeScriptStart.length) - fakeScriptStart.length;
-    let detail = firstDiag.messageText;
-    if (typeof detail === 'object') {
-      detail = detail.messageText;
-    }
-
-    return new ParseError(
-      LexerTokenKind.JESSIE_SCRIPT,
-      { start: errorStart, end: errorStart + (firstDiag.length ?? 1) },
-      detail
-    );
-  }
-
-  return [
-    {
-      kind: LexerTokenKind.JESSIE_SCRIPT,
-      script: scriptText,
+  const SCRIPT_WRAP = {
+    start: 'let x = ',
+    end: ';',
+    transpiled: {
+      start: 'var x = ',
+      end: ';',
     },
-    scriptText.length,
-  ];
+  };
+
+  const transRes = validateAndTranspile(
+    SCRIPT_WRAP.start + scriptText + SCRIPT_WRAP.end
+  );
+  if (!('category' in transRes)) {
+    return {
+      isError: false,
+      data: {
+        kind: LexerTokenKind.JESSIE_SCRIPT,
+        script: transRes.output.slice(
+          SCRIPT_WRAP.transpiled.start.length,
+          transRes.output.length - SCRIPT_WRAP.transpiled.end.length
+        ),
+        sourceMap: transRes.sourceMap,
+      },
+      relativeSpan: { start: 0, end: scriptText.length },
+    };
+  } else {
+    return {
+      isError: true,
+      kind: LexerTokenKind.JESSIE_SCRIPT,
+      detail: transRes.detail,
+      hint: transRes.hint,
+      category: transRes.category,
+      relativeSpan: {
+        start: transRes.relativeSpan.start - SCRIPT_WRAP.start.length,
+        end: transRes.relativeSpan.end - SCRIPT_WRAP.start.length,
+      },
+    };
+  }
 }

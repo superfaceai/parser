@@ -1,6 +1,6 @@
-import { SyntaxError } from '../error';
+import { SyntaxError, SyntaxErrorCategory } from '../error';
 import { Source } from '../source';
-import { ParseError, ParseResult } from './sublexer';
+import { ParseResult } from './sublexer';
 import { tryParseDefault } from './sublexer/default';
 import { tryParseJessieScriptExpression } from './sublexer/jessie';
 import {
@@ -196,36 +196,37 @@ export class Lexer {
         this.source,
         location,
         { start, end: start },
+        SyntaxErrorCategory.LEXER,
         'Could not match any token'
       );
     }
 
+    const parsedTokenSpan = {
+      start: start + tokenParseResult.relativeSpan.start,
+      end: start + tokenParseResult.relativeSpan.end,
+    };
+
     // Parsing error
-    if (tokenParseResult instanceof ParseError) {
+    if (tokenParseResult.isError) {
       throw new SyntaxError(
         this.source,
         location,
-        {
-          start: start + tokenParseResult.span.start,
-          end: start + tokenParseResult.span.end,
-        },
-        tokenParseResult.detail
+        parsedTokenSpan,
+        tokenParseResult.category,
+        tokenParseResult.detail,
+        tokenParseResult.hint
       );
     }
 
     // Go over the characters the token covers and count newlines, updating the state.
     this.countStartingWithNewlines(
       _ => true,
-      start,
-      start + tokenParseResult[1]
+      parsedTokenSpan.start,
+      parsedTokenSpan.end
     );
 
     // All is well
-    return new LexerToken(
-      tokenParseResult[0],
-      { start, end: start + tokenParseResult[1] },
-      location
-    );
+    return new LexerToken(tokenParseResult.data, parsedTokenSpan, location);
   }
 
   /**

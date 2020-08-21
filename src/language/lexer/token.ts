@@ -91,6 +91,7 @@ export interface CommentTokenData {
 export interface JessieScriptTokenData {
   kind: LexerTokenKind.JESSIE_SCRIPT;
   script: JessieScriptValue;
+  sourceMap: string;
 }
 
 export type DefaultSublexerTokenData =

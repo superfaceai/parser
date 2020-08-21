@@ -5,6 +5,7 @@ import {
   formatTokenData,
   IdentifierTokenData,
   IdentifierValue,
+  JessieScriptTokenData,
   LexerToken,
   LexerTokenData,
   LexerTokenKind,
@@ -91,6 +92,13 @@ expect.extend({
 
         case LexerTokenKind.COMMENT:
           if ((actual.data as CommentTokenData).comment !== data.comment) {
+            pass = false;
+            message = errorMessage();
+          }
+          break;
+
+        case LexerTokenKind.JESSIE_SCRIPT:
+          if ((actual.data as JessieScriptTokenData).script !== data.script) {
             pass = false;
             message = errorMessage();
           }
@@ -462,7 +470,7 @@ describe('lexer', () => {
       const lexer = new Lexer(
         new Source(
           `map test {
-            foo = (function() { const foo = 1; return { foo: foo + 2, bar: Math.min(3, 4) }; })();
+            foo = (() => { const foo = 1; return { foo: foo + 2, bar: Math.min(3, 4) }; })();
             bar = { x: 1, y: 2 };
             baz = true;
           }`
@@ -480,18 +488,27 @@ describe('lexer', () => {
         {
           kind: LexerTokenKind.JESSIE_SCRIPT,
           script:
-            '(function() { const foo = 1; return { foo: foo + 2, bar: Math.min(3, 4) }; })()',
+            '(function () { var foo = 1; return { foo: foo + 2, bar: Math.min(3, 4) }; })()',
+          sourceMap: 'not checked',
         },
         { kind: LexerTokenKind.OPERATOR, operator: ';' },
 
         { kind: LexerTokenKind.IDENTIFIER, identifier: 'bar' }, // 8
         { kind: LexerTokenKind.OPERATOR, operator: '=' },
-        { kind: LexerTokenKind.JESSIE_SCRIPT, script: '{ x: 1, y: 2 }' },
+        {
+          kind: LexerTokenKind.JESSIE_SCRIPT,
+          script: '{ x: 1, y: 2 }',
+          sourceMap: 'not checked',
+        },
         { kind: LexerTokenKind.OPERATOR, operator: ';' },
 
         { kind: LexerTokenKind.IDENTIFIER, identifier: 'baz' }, // 12
         { kind: LexerTokenKind.OPERATOR, operator: '=' },
-        { kind: LexerTokenKind.JESSIE_SCRIPT, script: 'true' },
+        {
+          kind: LexerTokenKind.JESSIE_SCRIPT,
+          script: 'true',
+          sourceMap: 'not checked',
+        },
         { kind: LexerTokenKind.OPERATOR, operator: ';' },
 
         { kind: LexerTokenKind.SEPARATOR, separator: '}' },
@@ -514,7 +531,7 @@ describe('lexer', () => {
   });
 
   describe('invalid', () => {
-    it('number literal', () => {
+    test('number literal', () => {
       const lexer = new Lexer(new Source('0xx'));
       lexer.advance(); // skip SOF
 
@@ -523,28 +540,28 @@ describe('lexer', () => {
       );
     });
 
-    it('string literal', () => {
+    test('string literal', () => {
       const lexer = new Lexer(new Source('"asdf'));
       lexer.advance(); // skip SOF
 
       expect(() => lexer.advance()).toThrow('Unexpected EOF');
     });
 
-    it('block string literal', () => {
+    test('block string literal', () => {
       const lexer = new Lexer(new Source("'''asdf''"));
       lexer.advance(); // skip SOF
 
       expect(() => lexer.advance()).toThrow('Unexpected EOF');
     });
 
-    it('string escape sequence', () => {
+    test('string escape sequence', () => {
       const lexer = new Lexer(new Source('"asdf \\x"'));
       lexer.advance(); // skip SOF
 
       expect(() => lexer.advance()).toThrow('Invalid escape sequence');
     });
 
-    it('identifiers starting with a number', () => {
+    test('identifiers starting with a number', () => {
       const lexer = new Lexer(new Source('1ident'));
       lexer.advance(); // SOF
       expect(lexer.advance()).toHaveTokenData({
@@ -557,14 +574,24 @@ describe('lexer', () => {
       });
     });
 
-    it('Jessie non-expression with expression context', () => {
-      const lexer = new Lexer(new Source('var f = 1;'));
+    test('Jessie non-expression with expression context', () => {
+      const lexer = new Lexer(new Source('var f = 1 ;'));
 
       lexer.advance(); // SOF
 
       expect(() =>
         lexer.advance(LexerContext.JESSIE_SCRIPT_EXPRESSION)
       ).toThrowError('Expression expected.');
+    });
+
+    test('non-Jessie construct in jessie context', () => {
+      const lexer = new Lexer(new Source('(function() {})() }'));
+
+      lexer.advance(); // SOF
+
+      expect(() =>
+        lexer.advance(LexerContext.JESSIE_SCRIPT_EXPRESSION)
+      ).toThrowError('FunctionExpression construct is not supported');
     });
   });
 });
