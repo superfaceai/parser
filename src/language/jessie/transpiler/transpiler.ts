@@ -55,7 +55,7 @@ export function transpileScript(
   }
   const sourceMapJson: { mappings: string } = JSON.parse(sourceMapText);
 
-  let syntaxProtoError: JessieSyntaxProtoError | undefined = undefined;
+  let syntaxProtoError: JessieSyntaxProtoError | undefined;
   if (diagnostics && diagnostics.length > 0) {
     const diag = diagnostics[0];
     let detail = diag.messageText;

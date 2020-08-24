@@ -1,4 +1,3 @@
-/* eslint-disable no-fallthrough */
 import * as ts from 'typescript';
 
 import { ProtoError, SyntaxErrorCategory } from '../../error';

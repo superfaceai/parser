@@ -1,7 +1,7 @@
 import { SyntaxErrorCategory } from '../../../error';
-import { ParseResult } from '../../sublexer';
 import { LexerTokenKind, StringTokenData } from '../../token';
 import * as util from '../../util';
+import { ParseResult } from '../result';
 
 function resolveStringLiteralEscape(
   slice: string

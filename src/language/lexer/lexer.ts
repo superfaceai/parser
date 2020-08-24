@@ -1,8 +1,8 @@
 import { SyntaxError, SyntaxErrorCategory } from '../error';
 import { Source } from '../source';
-import { ParseResult } from './sublexer';
 import { tryParseDefault } from './sublexer/default';
 import { tryParseJessieScriptExpression } from './sublexer/jessie';
+import { ParseResult } from './sublexer/result';
 import {
   DefaultSublexerTokenData,
   JessieSublexerTokenData,

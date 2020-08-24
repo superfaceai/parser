@@ -1,5 +1,4 @@
 import { SyntaxErrorCategory } from '../../../error';
-import { ParseResult } from '../../sublexer';
 import {
   CommentTokenData,
   IdentifierTokenData,
@@ -13,6 +12,7 @@ import {
   SeparatorTokenData,
 } from '../../token';
 import * as util from '../../util';
+import { ParseResult } from '../result';
 
 function tryParseScannerRules<T>(
   slice: string,

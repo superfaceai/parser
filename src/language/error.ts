@@ -259,10 +259,7 @@ export class SyntaxError {
     const locationLinePrefix = ' '.repeat(maxLineNumberLog) + '--> ';
     const locationLine = `${locationLinePrefix}${this.source.fileName}:${sourceLocation.line}:${sourceLocation.column}`;
 
-    let maybeHint = '';
-    if (this.hint) {
-      maybeHint = `Hint: ${this.hint}\n`;
-    }
+    const maybeHint = this.hint ? `Hint: ${this.hint}\n` : '';
 
     return `${errorLine}\n${locationLine}\n${visualization}\n${maybeHint}`;
   }
