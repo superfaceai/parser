@@ -396,26 +396,23 @@ export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
  *
  * Use `.andBy` to chain additional `followedBy` rules to flatten the `match` tuple.
  */
-// TODO: In TypeScript 4.0 use variadic tuple types: [...F, S]
 export class SyntaxRuleFollowedBy<
   F extends readonly unknown[],
   S
-> extends SyntaxRule<readonly (F[number] | S)[]> {
+> extends SyntaxRule<[...F, S]> {
   constructor(readonly first: SyntaxRule<F>, readonly second: SyntaxRule<S>) {
     super();
   }
 
-  // TODO: In TypeScript 4.0 use variadic tuple types: [...F, S]
   andBy<R>(
     rule: SyntaxRule<R>
-  ): SyntaxRuleFollowedBy<readonly (F[number] | S)[], R> {
+  ): SyntaxRuleFollowedBy<[...F, S], R> {
     return new SyntaxRuleFollowedBy(this, rule);
   }
 
-  // TODO: In TypeScript 4.0 use variadic tuple types: [...F, S]
   tryMatch(
     tokens: BufferedIterator<LexerToken>
-  ): RuleResult<readonly (F[number] | S)[]> {
+  ): RuleResult<[...F, S]> {
     const save = tokens.save();
 
     const firstMatch = this.first.tryMatch(tokens);
@@ -458,12 +455,12 @@ export class SyntaxRuleFollowedBy<
 }
 
 /** Matches one or more occurences of `rule`. */
-export class SyntaxRuleRepeat<R> extends SyntaxRule<readonly R[]> {
+export class SyntaxRuleRepeat<R> extends SyntaxRule<R[]> {
   constructor(readonly rule: SyntaxRule<R>) {
     super();
   }
 
-  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<readonly R[]> {
+  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R[]> {
     const matches: R[] = [];
 
     let lastMatch: RuleResultMatch<R> | undefined;
@@ -557,7 +554,7 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
 export class SyntaxRuleCondition<R> extends SyntaxRule<R> {
   constructor(
     readonly rule: SyntaxRule<R>,
-    readonly fn: (result: RuleResultMatch<R>) => boolean // TODO: Name?
+    readonly fn: (result: RuleResultMatch<R>) => boolean
   ) {
     super();
   }
