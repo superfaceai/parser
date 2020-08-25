@@ -1,10 +1,14 @@
 {
   "compilerOptions": {
     "declaration": true,
+    "declarationDir": "dist/",
     "downlevelIteration": true,
+    "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "lib": [],
-    "module": "CommonJS",
+    "module": "ESNext",
+    "rootDir": "./src",
+    "outDir": "./lib",
     "moduleResolution": "node",
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
