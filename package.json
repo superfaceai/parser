@@ -2,11 +2,12 @@
   "name": "@superindustries/superface-parser",
   "version": "0.0.0",
   "description": "Level 5 autonomous, self-driving API client, https://superface.ai",
+  "repository": "https://github.com/superindustries/superface-parser.git",
+  "source": "lib/index.js",
   "main": "dist/index.js",
   "module": "dist/index.es.js",
   "browser": "dist/index.browser.js",
   "types": "dist/index.d.ts",
-  "repository": "https://github.com/superindustries/superface-parser.git",
   "author": "Superface Team",
   "license": "MIT",
   "private": false,
@@ -17,11 +18,11 @@
     "registry": "https://npm.pkg.github.com/"
   },
   "scripts": {
-    "build": "yarn check_types && parcel build src/index*.ts --target node --detailed-report",
-    "watch": "yarn check_types && parcel src/index*.ts --target node --detailed-report",
-    "check_types": "tsc --noEmit",
-    "clean": "rimraf dist/",
+    "watch": "yarn build_tsc && parcel serve lib/index.js --detailed-report",
+    "build": "yarn build_tsc && parcel build lib/index.js --detailed-report",
+    "build_tsc": "tsc -p tsconfig.release.json",
     "prebuild": "yarn clean",
+    "clean": "rimraf dist/ && rimraf lib/",
     "test": "jest",
     "lint": "eslint src/",
     "format": "prettier -c src/",
@@ -39,7 +40,7 @@
     "eslint-plugin-jest": "^23.13.2",
     "eslint-plugin-simple-import-sort": "^5.0.3",
     "jest": "^26.0.1",
-    "parcel-bundler": "^1.12.4",
+    "parcel": "^2.0.0-beta.1",
     "prettier": "^2.0.5",
     "rimraf": "^3.0.2",
     "ts-jest": "^26.1.0"
@@ -48,5 +49,39 @@
     "@superindustries/language": "^0.0.11",
     "@superindustries/superface": "^0.0.1-test",
     "typescript": "^3.9.5"
-  }
+  },
+  "targets": {
+    "types": false,
+    "main": {
+      "context": "node",
+      "outputFormat": "commonjs",
+      "engines": {
+        "node": ">=12.x"
+      },
+      "includeNodeModules": false,
+      "isLibrary": true,
+      "scopeHoist": false
+    },
+    "module": {
+      "context": "node",
+      "outputFormat": "commonjs",
+      "engines": {
+        "node": ">=4.x"
+      },
+      "includeNodeModules": false,
+      "isLibrary": true,
+      "scopeHoist": false
+    },
+    "browser": {
+      "context": "browser",
+      "outputFormat": "commonjs",
+      "includeNodeModules": false,
+      "isLibrary": true,
+      "scopeHoist": false
+    }
+  },
+  "browserslist": [
+    "> 0.2%",
+    "not dead"
+  ]
 }
