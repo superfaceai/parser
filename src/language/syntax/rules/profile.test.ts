@@ -7,7 +7,7 @@ import {
   StringTokenData,
 } from '../../lexer/token';
 import { Location, Span } from '../../source';
-import { BufferedIterator } from '../util';
+import { ArrayLexerStream } from '../util';
 import * as rules from './profile';
 import { RuleResult } from './rule';
 
@@ -102,11 +102,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'number' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'string' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.PRIMITIVE_TYPE_NAME;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'PrimitiveTypeName',
@@ -116,7 +116,7 @@ describe('syntax rules', () => {
         )
       );
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'PrimitiveTypeName',
@@ -126,7 +126,7 @@ describe('syntax rules', () => {
         )
       );
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'PrimitiveTypeName',
@@ -158,11 +158,11 @@ describe('syntax rules', () => {
 
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.ENUM_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'EnumDefinition',
@@ -210,11 +210,11 @@ describe('syntax rules', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.MODEL_TYPE_NAME;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'ModelTypeName',
@@ -236,11 +236,11 @@ describe('syntax rules', () => {
 
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.OBJECT_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'ObjectDefinition',
@@ -298,11 +298,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: ']' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.LIST_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'ListDefinition',
@@ -337,7 +337,7 @@ describe('syntax rules', () => {
         )
       );
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'ListDefinition',
@@ -354,7 +354,7 @@ describe('syntax rules', () => {
         )
       );
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'ListDefinition',
@@ -394,11 +394,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.TYPE;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NonNullDefinition',
@@ -431,7 +431,7 @@ describe('syntax rules', () => {
         )
       );
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NonNullDefinition',
@@ -448,7 +448,7 @@ describe('syntax rules', () => {
         )
       );
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NonNullDefinition',
@@ -481,11 +481,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.TYPE;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'UnionDefinition',
@@ -550,11 +550,11 @@ describe('syntax rules', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'FieldDefinition',
@@ -571,11 +571,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'boolean' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'FieldDefinition',
@@ -601,11 +601,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'FieldDefinition',
@@ -640,11 +640,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.STRING, string: 'Title\n\nDescription' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'FieldDefinition',
@@ -664,11 +664,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.NAMED_FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NamedFieldDefinition',
@@ -689,11 +689,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.NAMED_FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NamedFieldDefinition',
@@ -729,11 +729,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.NAMED_FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NamedFieldDefinition',
@@ -755,11 +755,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.NAMED_MODEL_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NamedModelDefinition',
@@ -781,11 +781,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.NAMED_MODEL_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NamedModelDefinition',
@@ -821,11 +821,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.NAMED_MODEL_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NamedModelDefinition',
@@ -861,11 +861,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.NAMED_MODEL_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NamedModelDefinition',
@@ -889,11 +889,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.USECASE_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'UseCaseDefinition',
@@ -919,11 +919,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.USECASE_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'UseCaseDefinition',
@@ -981,11 +981,11 @@ describe('syntax rules', () => {
 
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }), // 24
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.USECASE_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'UseCaseDefinition',
@@ -1095,11 +1095,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.USECASE_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'UseCaseDefinition',
@@ -1132,11 +1132,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.PROFILE_ID;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'ProfileId',
@@ -1154,11 +1154,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.PROFILE;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'Profile',
@@ -1184,11 +1184,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.PROFILE;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'Profile',
@@ -1232,11 +1232,11 @@ describe('syntax rules', () => {
 
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: 'EOF' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.PROFILE_DOCUMENT;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'ProfileDocument',
