@@ -45,7 +45,7 @@ expect.extend({
     };
 
     let pass = true;
-    let message = `Expected something else than ${formatTokenData(data)}`;
+    let message: string;
 
     if (actual.data.kind !== data.kind) {
       pass = false;

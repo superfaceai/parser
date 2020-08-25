@@ -404,15 +404,11 @@ export class SyntaxRuleFollowedBy<
     super();
   }
 
-  andBy<R>(
-    rule: SyntaxRule<R>
-  ): SyntaxRuleFollowedBy<[...F, S], R> {
+  andBy<R>(rule: SyntaxRule<R>): SyntaxRuleFollowedBy<[...F, S], R> {
     return new SyntaxRuleFollowedBy(this, rule);
   }
 
-  tryMatch(
-    tokens: BufferedIterator<LexerToken>
-  ): RuleResult<[...F, S]> {
+  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<[...F, S]> {
     const save = tokens.save();
 
     const firstMatch = this.first.tryMatch(tokens);

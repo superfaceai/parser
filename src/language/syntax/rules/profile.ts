@@ -19,10 +19,7 @@ import {
   UseCaseDefinitionNode,
 } from '@superindustries/language';
 
-import {
-  IdentifierTokenData,
-  LexerTokenKind
-} from '../../lexer/token';
+import { IdentifierTokenData, LexerTokenKind } from '../../lexer/token';
 import { extractDocumentation } from '../util';
 import {
   LexerTokenMatch,
@@ -48,7 +45,7 @@ function documentedNode<
     .followedBy(rule)
     .map(
       (matches): N => {
-        const [maybeDoc, result] = matches
+        const [maybeDoc, result] = matches;
         if (maybeDoc !== undefined) {
           const doc = extractDocumentation(maybeDoc.data.string);
           result.title = doc.title;
@@ -117,7 +114,7 @@ export const ENUM_VALUE: SyntaxRuleSrc<EnumValueNode> = documentedNode(
     )
     .map(
       (matches): SrcNode<EnumValueNode> => {
-        const [name, maybeAssignment] = matches
+        const [name, maybeAssignment] = matches;
 
         let enumValue: string | number | boolean;
         if (maybeAssignment === undefined) {
@@ -160,7 +157,7 @@ export const ENUM_DEFINITION: SyntaxRuleSrc<EnumDefinitionNode> = SyntaxRule.ide
   .andBy(SyntaxRule.separator('}'))
   .map(
     (matches): SrcNode<EnumDefinitionNode> => {
-      const [keyword /* sepStart */, , values, sepEnd] = matches
+      const [keyword /* sepStart */, , values, sepEnd] = matches;
 
       return {
         kind: 'EnumDefinition',
@@ -191,7 +188,7 @@ export const OBJECT_DEFINITION: SyntaxRuleSrc<ObjectDefinitionNode> = SyntaxRule
   .andBy(SyntaxRule.separator('}'))
   .map(
     (matches): SrcNode<ObjectDefinitionNode> => {
-      const [sepStart, fields, sepEnd] = matches
+      const [sepStart, fields, sepEnd] = matches;
 
       return {
         kind: 'ObjectDefinition',
@@ -222,7 +219,7 @@ export const LIST_DEFINITION: SyntaxRuleSrc<ListDefinitionNode> = SyntaxRule.sep
   .andBy(SyntaxRule.separator(']'))
   .map(
     (matches): SrcNode<ListDefinitionNode> => {
-      const [sepStart, type, sepEnd] = matches
+      const [sepStart, type, sepEnd] = matches;
 
       return {
         kind: 'ListDefinition',
@@ -239,7 +236,7 @@ const NON_UNION_TYPE: SyntaxRule<SrcNode<
   .followedBy(SyntaxRule.optional(SyntaxRule.operator('!')))
   .map(
     (matches): SrcNode<SrcNode<Exclude<Type, UnionDefinitionNode>>> => {
-      const [type, maybeOp] = matches
+      const [type, maybeOp] = matches;
 
       if (maybeOp !== undefined) {
         return {
@@ -260,7 +257,7 @@ export const TYPE: SyntaxRuleSrc<Type> = NON_UNION_TYPE.followedBy(
   )
 ).map(
   (matches): SrcNode<Type> => {
-    const [firstType, maybeRestPairs] = matches
+    const [firstType, maybeRestPairs] = matches;
 
     // Handle unions
     if (maybeRestPairs !== undefined) {
@@ -290,7 +287,7 @@ export const FIELD_DEFINITION: SyntaxRuleSrc<FieldDefinitionNode> = documentedNo
   SyntaxRule.identifier()
     .followedBy(TYPE)
     .condition(matchResult => {
-      const [name, type] = matchResult.match
+      const [name, type] = matchResult.match;
 
       return type.location.line === name.location.line;
     })
@@ -298,7 +295,7 @@ export const FIELD_DEFINITION: SyntaxRuleSrc<FieldDefinitionNode> = documentedNo
     .followedBy(SyntaxRule.optional(SyntaxRule.operator(',')))
     .map(
       (matches): SrcNode<FieldDefinitionNode> => {
-        const [field, maybeComma] = matches
+        const [field, maybeComma] = matches;
 
         let name: LexerTokenMatch<IdentifierTokenData>;
         let maybeType: SrcNode<Type> | undefined = undefined;
@@ -331,7 +328,7 @@ export const NAMED_FIELD_DEFINITION: SyntaxRuleSrc<NamedFieldDefinitionNode> = d
     .andBy(SyntaxRule.optional(TYPE))
     .map(
       (matches): SrcNode<NamedFieldDefinitionNode> => {
-        const [keyword, fieldName, type] = matches
+        const [keyword, fieldName, type] = matches;
 
         return {
           kind: 'NamedFieldDefinition',
@@ -356,7 +353,7 @@ export const NAMED_MODEL_DEFINITION: SyntaxRuleSrc<NamedModelDefinitionNode> = d
     .andBy(SyntaxRule.optional(TYPE))
     .map(
       (matches): SrcNode<NamedModelDefinitionNode> => {
-        const [keyword, modelName, type] = matches
+        const [keyword, modelName, type] = matches;
 
         return {
           kind: 'NamedModelDefinition',
@@ -424,7 +421,7 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
           maybeAsyncResult,
           maybeError,
           sepEnd,
-        ] = matches
+        ] = matches;
 
         const input: SrcNode<ObjectDefinitionNode> | undefined =
           maybeInput?.[1];
@@ -477,7 +474,7 @@ export const PROFILE_ID: SyntaxRuleSrc<ProfileIdNode> = SyntaxRule.identifier(
   .andBy(SyntaxRule.string())
   .map(
     (matches): SrcNode<ProfileIdNode> => {
-      const [keyword /* op */, , profileId] = matches
+      const [keyword /* op */, , profileId] = matches;
 
       return {
         kind: 'ProfileId',
@@ -515,7 +512,7 @@ export const PROFILE_DOCUMENT: SyntaxRuleSrc<ProfileDocumentNode> = SyntaxRule.s
   .andBy(SyntaxRule.separator('EOF'))
   .map(
     (matches): SrcNode<ProfileDocumentNode> => {
-      const [, /* SOF */ profile, definitions /* EOF */] = matches
+      const [, /* SOF */ profile, definitions /* EOF */] = matches;
 
       let spanEnd = profile.span.end;
       if (definitions !== undefined) {

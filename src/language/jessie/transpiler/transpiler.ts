@@ -53,7 +53,27 @@ export function transpileScript(
   if (!sourceMapText) {
     throw 'Source map text is not present';
   }
-  const sourceMapJson: { mappings: string } = JSON.parse(sourceMapText);
+
+  const sourceMapJson: unknown = JSON.parse(sourceMapText);
+  // Don't look mom, I'm hideous
+  function assertSourceMapFormat(
+    input: unknown
+  ): asserts input is { mappings: string } {
+    function nestedEvil(input: unknown): input is { mappings: unknown } {
+      if (
+        !(typeof input === 'object' && input !== null && 'mappings' in input)
+      ) {
+        return false;
+      }
+
+      return true;
+    }
+
+    if (!nestedEvil(input) || typeof input.mappings !== 'string') {
+      throw 'Source map JSON is not an object in the correct format';
+    }
+  }
+  assertSourceMapFormat(sourceMapJson);
 
   let syntaxProtoError: JessieSyntaxProtoError | undefined;
   if (diagnostics && diagnostics.length > 0) {
