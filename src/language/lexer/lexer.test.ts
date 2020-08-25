@@ -594,4 +594,39 @@ describe('lexer', () => {
       ).toThrowError('FunctionExpression construct is not supported');
     });
   });
+
+  describe('stream', () => {
+    it('handles multiple saves', () => {
+      const lexer = new Lexer(new Source('1 2 3 4 5'))
+      lexer.next() // SOF
+
+      expect(lexer.next().value).toMatchObject({ data: { literal: 1 } });
+
+      const saveA = lexer.save();
+      expect(lexer.next().value).toMatchObject({ data: { literal: 2 } });
+      expect(lexer.next().value).toMatchObject({ data: { literal: 3 } });
+
+      const saveB = lexer.save();
+      expect(lexer.next().value).toMatchObject({ data: { literal: 4 } });
+
+      lexer.rollback(saveA);
+      expect(lexer.next().value).toMatchObject({ data: { literal: 2 } });
+      expect(lexer.next().value).toMatchObject({ data: { literal: 3 } });
+      expect(lexer.next().value).toMatchObject({ data: { literal: 4 } });
+      expect(lexer.next().value).toMatchObject({ data: { literal: 5 } });
+
+      lexer.rollback(saveB);
+      expect(lexer.next().value).toMatchObject({ data: { literal: 4 } });
+      expect(lexer.next().value).toMatchObject({ data: { literal: 5 } });
+    });
+
+    it('yields EOF once', () => {
+      const lexer = new Lexer(new Source('1'))
+      lexer.next() // SOF
+
+      expect(lexer.next().value).toMatchObject({ data: { literal: 1 } });
+      expect(lexer.next().value).toMatchObject({ data: { separator: 'EOF' } });
+      expect(lexer.next()).toStrictEqual({ done: true, value: undefined });
+    });
+  });
 });

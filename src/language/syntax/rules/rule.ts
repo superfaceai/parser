@@ -12,8 +12,8 @@ import {
   SeparatorValue,
   StringTokenData,
 } from '../../lexer/token';
+import { LexerContext, LexerTokenStream } from '../../lexer'
 import { Location, Span } from '../../source';
-import { BufferedIterator } from '../util';
 
 export class MatchAttempts {
   constructor(
@@ -96,22 +96,21 @@ export abstract class SyntaxRule<T> {
    * If the rule doesn't match `RuleResultNoMatch` is returned and no tokens are
    * consumed (iterator state is restored).
    */
-  abstract tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<T>;
+  abstract tryMatch(tokens: LexerTokenStream): RuleResult<T>;
 
   protected simpleTryMatchBoilerplate(
-    tokens: BufferedIterator<LexerToken>,
-    predicate: (token: LexerToken) => T | undefined
+    tokens: LexerTokenStream,
+    predicate: (token: LexerToken) => T | undefined,
+    context?: LexerContext
   ): RuleResult<T> {
     const save = tokens.save();
 
-    const next = tokens.next();
+    const next = tokens.next(context);
     if (next.done === false) {
       const token = next.value;
 
       const match = predicate(token);
       if (match !== undefined) {
-        tokens.endSave();
-
         return {
           kind: 'match',
           match: match,
@@ -119,8 +118,7 @@ export abstract class SyntaxRule<T> {
       }
     }
 
-    tokens.restore(save);
-    tokens.endSave();
+    tokens.rollback(save);
 
     return {
       kind: 'nomatch',
@@ -206,7 +204,7 @@ export class SyntaxRuleSeparator extends SyntaxRule<
   }
 
   tryMatch(
-    tokens: BufferedIterator<LexerToken>
+    tokens: LexerTokenStream
   ): RuleResult<LexerTokenMatch<SeparatorTokenData>> {
     return this.simpleTryMatchBoilerplate(tokens, token => {
       if (token.data.kind === LexerTokenKind.SEPARATOR) {
@@ -243,7 +241,7 @@ export class SyntaxRuleOperator extends SyntaxRule<
   }
 
   tryMatch(
-    tokens: BufferedIterator<LexerToken>
+    tokens: LexerTokenStream
   ): RuleResult<LexerTokenMatch<OperatorTokenData>> {
     return this.simpleTryMatchBoilerplate(tokens, token => {
       if (token.data.kind === LexerTokenKind.OPERATOR) {
@@ -280,7 +278,7 @@ export class SyntaxRuleIdentifier extends SyntaxRule<
   }
 
   tryMatch(
-    tokens: BufferedIterator<LexerToken>
+    tokens: LexerTokenStream
   ): RuleResult<LexerTokenMatch<IdentifierTokenData>> {
     return this.simpleTryMatchBoilerplate(tokens, token => {
       if (token.data.kind === LexerTokenKind.IDENTIFIER) {
@@ -313,7 +311,7 @@ export class SyntaxRuleLiteral extends SyntaxRule<
   LexerTokenMatch<LiteralTokenData>
 > {
   tryMatch(
-    tokens: BufferedIterator<LexerToken>
+    tokens: LexerTokenStream
   ): RuleResult<LexerTokenMatch<LiteralTokenData>> {
     return this.simpleTryMatchBoilerplate(tokens, token => {
       if (token.data.kind === LexerTokenKind.LITERAL) {
@@ -337,7 +335,7 @@ export class SyntaxRuleString extends SyntaxRule<
   LexerTokenMatch<StringTokenData>
 > {
   tryMatch(
-    tokens: BufferedIterator<LexerToken>
+    tokens: LexerTokenStream
   ): RuleResult<LexerTokenMatch<StringTokenData>> {
     return this.simpleTryMatchBoilerplate(tokens, token => {
       if (token.data.kind === LexerTokenKind.STRING) {
@@ -364,7 +362,7 @@ export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
     super();
   }
 
-  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<F | S> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<F | S> {
     // Basic rules automatically restore `tokens` state on `nomatch`
     const firstMatch = this.first.tryMatch(tokens);
     if (firstMatch.kind === 'match') {
@@ -408,21 +406,19 @@ export class SyntaxRuleFollowedBy<
     return new SyntaxRuleFollowedBy(this, rule);
   }
 
-  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<[...F, S]> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<[...F, S]> {
     const save = tokens.save();
 
     const firstMatch = this.first.tryMatch(tokens);
     if (firstMatch.kind === 'nomatch') {
-      tokens.restore(save);
-      tokens.endSave();
+      tokens.rollback(save);
 
       return firstMatch;
     }
 
     const secondMatch = this.second.tryMatch(tokens);
     if (secondMatch.kind === 'nomatch') {
-      tokens.restore(save);
-      tokens.endSave();
+      tokens.rollback(save);
 
       return {
         ...secondMatch,
@@ -432,8 +428,6 @@ export class SyntaxRuleFollowedBy<
         ),
       };
     }
-
-    tokens.endSave();
 
     return {
       kind: 'match',
@@ -456,7 +450,7 @@ export class SyntaxRuleRepeat<R> extends SyntaxRule<R[]> {
     super();
   }
 
-  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R[]> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<R[]> {
     const matches: R[] = [];
 
     let lastMatch: RuleResultMatch<R> | undefined;
@@ -499,7 +493,7 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
   }
 
   tryMatch(
-    tokens: BufferedIterator<LexerToken>
+    tokens: LexerTokenStream
   ): RuleResultMatch<R | undefined> {
     const match = this.rule.tryMatch(tokens);
     if (match.kind === 'match') {
@@ -524,10 +518,10 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
     super();
   }
 
-  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<undefined> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<undefined> {
     const save = tokens.save();
     const result = this.rule.tryMatch(tokens);
-    tokens.restore(save);
+    tokens.rollback(save);
 
     if (result.kind === 'match') {
       return {
@@ -555,14 +549,14 @@ export class SyntaxRuleCondition<R> extends SyntaxRule<R> {
     super();
   }
 
-  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<R> {
     const save = tokens.save();
 
     const result = this.rule.tryMatch(tokens);
     if (result.kind === 'match') {
       // If the new result is a failure, roll back the tokens state.
       if (!this.fn(result.match)) {
-        tokens.restore(save);
+        tokens.rollback(save);
 
         return {
           kind: 'nomatch',
@@ -588,7 +582,7 @@ export class SyntaxRuleMap<R, M> extends SyntaxRule<M> {
     super();
   }
 
-  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<M> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<M> {
     const match = this.rule.tryMatch(tokens);
     if (match.kind === 'match') {
       return {
@@ -624,7 +618,7 @@ export class SyntaxRuleMutable<R> extends SyntaxRule<R> {
     super();
   }
 
-  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<R> {
     if (this.rule === undefined) {
       throw 'This method should never be called. This is an error in syntax rules definition.';
     }

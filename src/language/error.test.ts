@@ -1,6 +1,5 @@
 import { SyntaxError } from './error';
-import { Lexer } from './lexer/lexer';
-import { LexerToken } from './lexer/token';
+import { Lexer, LexerTokenStream } from './lexer/lexer';
 import { Source } from './source';
 import { parseProfile, parseRule } from './syntax/parser';
 import * as profile from './syntax/rules/profile';
@@ -11,7 +10,6 @@ import {
   RuleResultNoMatch,
   SyntaxRule,
 } from './syntax/rules/rule';
-import { BufferedIterator } from './syntax/util';
 
 // Declare custom matcher for sake of Typescript
 declare global {
@@ -114,7 +112,7 @@ class TestSyntaxRule<R extends RuleResult<T>, T = unknown> extends SyntaxRule<
     super();
   }
 
-  tryMatch(_tokens: BufferedIterator<LexerToken>): R {
+  tryMatch(_tokens: LexerTokenStream): R {
     if (this.result === undefined) {
       throw 'test syntax rule error';
     }
@@ -233,7 +231,7 @@ asdf = 'asdf'
   });
 
   describe('combinators and propagation', () => {
-    const tokens = new BufferedIterator([][Symbol.iterator]());
+    const tokens = new Lexer(new Source(''));
 
     const match: TestSyntaxRule<RuleResultMatch<unknown>>[] = [];
     {
@@ -351,7 +349,7 @@ asdf = 'asdf'
             this.state = 0;
           }
 
-          tryMatch(_tokens: BufferedIterator<LexerToken>): RuleResult<T> {
+          tryMatch(_tokens: LexerTokenStream): RuleResult<T> {
             if (this.state === 0) {
               this.state = 1;
 

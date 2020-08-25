@@ -1,6 +1,5 @@
 import {
   DocumentDefinition,
-  DocumentedNode,
   EnumDefinitionNode,
   EnumValueNode,
   FieldDefinitionNode,
@@ -10,7 +9,6 @@ import {
   NamedModelDefinitionNode,
   ObjectDefinitionNode,
   PrimitiveTypeNameNode,
-  ProfileASTNodeBase,
   ProfileDocumentNode,
   ProfileIdNode,
   ProfileNode,
@@ -21,7 +19,6 @@ import {
 } from '@superindustries/language';
 
 import { IdentifierTokenData, LexerTokenKind } from '../../lexer/token';
-import { extractDocumentation } from '../util';
 import {
   LexerTokenMatch,
   SyntaxRule,
@@ -29,36 +26,7 @@ import {
   SyntaxRuleSeparator,
 } from './rule';
 
-// HELPER RULES //
-
-// Node that has `span` and `location` non-optional.
-export type SrcNode<N extends ProfileASTNodeBase> = N & {
-  span: NonNullable<N['span']>;
-  location: NonNullable<N['location']>;
-};
-type SyntaxRuleSrc<N extends ProfileASTNodeBase> = SyntaxRule<SrcNode<N>>;
-
-function documentedNode<
-  N extends SrcNode<DocumentedNode & ProfileASTNodeBase>,
-  R extends SyntaxRule<N>
->(rule: R): SyntaxRule<N> {
-  return SyntaxRule.optional(SyntaxRule.string())
-    .followedBy(rule)
-    .map(
-      (matches): N => {
-        const [maybeDoc, result] = matches;
-        if (maybeDoc !== undefined) {
-          const doc = extractDocumentation(maybeDoc.data.string);
-          result.title = doc.title;
-          result.description = doc.description;
-          result.location = maybeDoc.location;
-          result.span.start = maybeDoc.span.start;
-        }
-
-        return result;
-      }
-    );
-}
+import { documentedNode, SyntaxRuleSrc, SrcNode } from './common';
 
 // MUTABLE RULES //
 
