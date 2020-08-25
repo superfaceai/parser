@@ -158,6 +158,24 @@ function generateErrorVisualization(
   };
 }
 
+export const enum SyntaxErrorCategory {
+  /** Lexer token error */
+  LEXER,
+  /** Parser rule error */
+  PARSER,
+  /** Jessie syntax error */
+  JESSIE_SYNTAX,
+  /** Jessie forbidden construct error */
+  JESSIE_FORBIDDEN_CONSTRUCT,
+}
+
+export type ProtoError = {
+  readonly relativeSpan: Span;
+  readonly detail?: string;
+  readonly category: SyntaxErrorCategory;
+  readonly hint?: string;
+};
+
 export class SyntaxError {
   /** Additional message attached to the error. */
   readonly detail: string;
@@ -169,7 +187,11 @@ export class SyntaxError {
     readonly location: Location,
     /** Span of the error. */
     readonly span: Span,
-    detail?: string
+    /** Category of this error. */
+    readonly category: SyntaxErrorCategory,
+    detail?: string,
+    /** Optional hint that is emitted to help with the resolution. */
+    readonly hint?: string
   ) {
     this.detail = detail ?? 'Invalid or unexpected token';
   }
@@ -220,6 +242,7 @@ export class SyntaxError {
       source,
       location,
       span,
+      SyntaxErrorCategory.PARSER,
       `Expected ${expected} but found ${actual}`
     );
   }
@@ -236,7 +259,9 @@ export class SyntaxError {
     const locationLinePrefix = ' '.repeat(maxLineNumberLog) + '--> ';
     const locationLine = `${locationLinePrefix}${this.source.fileName}:${sourceLocation.line}:${sourceLocation.column}`;
 
-    return `${errorLine}\n${locationLine}\n${visualization}\n`;
+    const maybeHint = this.hint ? `Hint: ${this.hint}\n` : '';
+
+    return `${errorLine}\n${locationLine}\n${visualization}\n${maybeHint}`;
   }
 
   get message(): string {

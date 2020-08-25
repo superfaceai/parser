@@ -1,6 +1,7 @@
-import { LexerTokenKind, StringTokenData } from '../token';
-import * as util from '../util';
-import { ParseError, ParseResult } from './rules';
+import { SyntaxErrorCategory } from '../../../error';
+import { LexerTokenKind, StringTokenData } from '../../token';
+import * as util from '../../util';
+import { ParseResult } from '../result';
 
 function resolveStringLiteralEscape(
   slice: string
@@ -131,23 +132,25 @@ export function tryParseStringLiteral(
 
   // Special case where the string is empty ('' or "")
   if (startingQuoteChars === 2) {
-    return [
-      {
+    return {
+      isError: false,
+      data: {
         kind: LexerTokenKind.STRING,
         string: '',
       },
-      2,
-    ];
+      relativeSpan: { start: 0, end: 2 },
+    };
   }
   // Special case where a triple-quoted string is empty ('''''' or """""")
   if (startingQuoteChars >= 6) {
-    return [
-      {
+    return {
+      isError: false,
+      data: {
         kind: LexerTokenKind.STRING,
         string: '',
       },
-      6,
-    ];
+      relativeSpan: { start: 0, end: 6 },
+    };
   }
 
   // In case there are 4 or 5 quote chars in row, we treat the 4th and 5th as part of the string itself.
@@ -192,22 +195,26 @@ export function tryParseStringLiteral(
     // * EOF
     const nextChar = restSlice.charCodeAt(0);
     if (isNaN(nextChar)) {
-      return new ParseError(
-        LexerTokenKind.STRING,
-        { start: 0, end: eatenChars },
-        'Unexpected EOF'
-      );
+      return {
+        isError: true,
+        kind: LexerTokenKind.STRING,
+        relativeSpan: { start: 0, end: eatenChars },
+        detail: 'Unexpected EOF',
+        category: SyntaxErrorCategory.LEXER,
+      };
     } else if (util.isStringLiteralEscapeChar(nextChar)) {
       // Eat the backslash
       eatChars(1, false);
 
       const escapeResult = resolveStringLiteralEscape(restSlice);
       if (escapeResult === undefined) {
-        return new ParseError(
-          LexerTokenKind.STRING,
-          { start: 0, end: eatenChars + 1 },
-          'Invalid escape sequence'
-        );
+        return {
+          isError: true,
+          kind: LexerTokenKind.STRING,
+          relativeSpan: { start: 0, end: eatenChars + 1 },
+          detail: 'Invalid escape sequence',
+          category: SyntaxErrorCategory.LEXER,
+        };
       }
 
       eatChars(escapeResult.length, escapeResult.value);
@@ -236,11 +243,12 @@ export function tryParseStringLiteral(
     resultString = transformBlockStringValue(resultString);
   }
 
-  return [
-    {
+  return {
+    isError: false,
+    data: {
       kind: LexerTokenKind.STRING,
       string: resultString,
     },
-    eatenChars,
-  ];
+    relativeSpan: { start: 0, end: eatenChars },
+  };
 }

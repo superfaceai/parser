@@ -1,9 +1,8 @@
-import { Span } from '../../source';
+import { SyntaxErrorCategory } from '../../../error';
 import {
   CommentTokenData,
   IdentifierTokenData,
   LexerScanRule,
-  LexerTokenData,
   LexerTokenKind,
   LITERALS_BOOL,
   LiteralTokenData,
@@ -11,24 +10,9 @@ import {
   OperatorTokenData,
   SEPARATORS,
   SeparatorTokenData,
-} from '../token';
-import * as util from '../util';
-
-/** Error returned internally by the lexer `tryParse*` methods. */
-export class ParseError {
-  constructor(
-    /** Kind of the errored token. */
-    readonly kind: LexerTokenKind,
-    /** Span of the errored token. */
-    readonly span: Span,
-    /** Optional detail message. */
-    readonly detail?: string
-  ) {}
-}
-
-export type ParseResult<T extends LexerTokenData> =
-  | ([T, number] | undefined)
-  | ParseError;
+} from '../../token';
+import * as util from '../../util';
+import { ParseResult } from '../result';
 
 function tryParseScannerRules<T>(
   slice: string,
@@ -55,13 +39,14 @@ export function tryParseSeparator(
 ): ParseResult<SeparatorTokenData> {
   // Handle EOF
   if (slice.length === 0) {
-    return [
-      {
+    return {
+      isError: false,
+      data: {
         kind: LexerTokenKind.SEPARATOR,
         separator: 'EOF',
       },
-      0,
-    ];
+      relativeSpan: { start: 0, end: 0 },
+    };
   }
 
   const parsed = tryParseScannerRules(slice, SEPARATORS);
@@ -69,13 +54,14 @@ export function tryParseSeparator(
     return undefined;
   }
 
-  return [
-    {
+  return {
+    isError: false,
+    data: {
       kind: LexerTokenKind.SEPARATOR,
       separator: parsed.value,
     },
-    parsed.length,
-  ];
+    relativeSpan: { start: 0, end: parsed.length },
+  };
 }
 
 /**
@@ -91,13 +77,14 @@ export function tryParseOperator(
     return undefined;
   }
 
-  return [
-    {
+  return {
+    isError: false,
+    data: {
       kind: LexerTokenKind.OPERATOR,
       operator: parsed.value,
     },
-    parsed.length,
-  ];
+    relativeSpan: { start: 0, end: parsed.length },
+  };
 }
 
 function tryParseLiteralBoolean(slice: string): ParseResult<LiteralTokenData> {
@@ -106,13 +93,14 @@ function tryParseLiteralBoolean(slice: string): ParseResult<LiteralTokenData> {
     return undefined;
   }
 
-  return [
-    {
+  return {
+    isError: false,
+    data: {
       kind: LexerTokenKind.LITERAL,
       literal: parsed.value,
     },
-    parsed.length,
-  ];
+    relativeSpan: { start: 0, end: parsed.length },
+  };
 }
 
 function tryParseLiteralNumber(slice: string): ParseResult<LiteralTokenData> {
@@ -138,11 +126,13 @@ function tryParseLiteralNumber(slice: string): ParseResult<LiteralTokenData> {
   );
   if (startingNumbers === 0) {
     if (keywordLiteralBase.value !== 10) {
-      return new ParseError(
-        LexerTokenKind.LITERAL,
-        { start: 0, end: keywordLiteralBase.length + 1 },
-        'Expected a number following integer base prefix'
-      );
+      return {
+        isError: true,
+        kind: LexerTokenKind.LITERAL,
+        detail: 'Expected a number following integer base prefix',
+        category: SyntaxErrorCategory.LEXER,
+        relativeSpan: { start: 0, end: keywordLiteralBase.length + 1 },
+      };
     } else {
       return undefined;
     }
@@ -177,13 +167,17 @@ function tryParseLiteralNumber(slice: string): ParseResult<LiteralTokenData> {
     throw 'Invalid lexer state. This in an error in the lexer.';
   }
 
-  return [
-    {
+  return {
+    isError: false,
+    data: {
       kind: LexerTokenKind.LITERAL,
       literal: numberValue,
     },
-    keywordLiteralBase.length + numberLiteralLength,
-  ];
+    relativeSpan: {
+      start: 0,
+      end: keywordLiteralBase.length + numberLiteralLength,
+    },
+  };
 }
 
 /**
@@ -214,13 +208,14 @@ export function tryParseIdentifier(
     return undefined;
   }
 
-  return [
-    {
+  return {
+    isError: false,
+    data: {
       kind: LexerTokenKind.IDENTIFIER,
       identifier: slice.slice(0, identLength),
     },
-    identLength,
-  ];
+    relativeSpan: { start: 0, end: identLength },
+  };
 }
 
 /**
@@ -236,13 +231,14 @@ export function tryParseComment(slice: string): ParseResult<CommentTokenData> {
       commentSlice
     );
 
-    return [
-      {
+    return {
+      isError: false,
+      data: {
         kind: LexerTokenKind.COMMENT,
         comment: commentSlice.slice(0, length),
       },
-      length + 1,
-    ];
+      relativeSpan: { start: 0, end: length + 1 },
+    };
   } else {
     return undefined;
   }

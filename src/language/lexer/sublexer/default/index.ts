@@ -4,6 +4,8 @@ export {
   tryParseLiteral,
   tryParseOperator,
   tryParseSeparator,
-  ParseError,
 } from './rules';
-export * from './string';
+
+export { tryParseStringLiteral } from './string';
+
+export { tryParseDefault } from './glue';

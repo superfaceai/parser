@@ -1,4 +1,4 @@
-import { validateScript, ValidationError } from './ScriptValidator';
+import { ForbiddenConstructProtoError, validateScript } from './validator';
 
 // Declare custom matcher for sake of Typescript
 declare global {
@@ -12,13 +12,13 @@ declare global {
 // Add the actual custom matcher
 expect.extend({
   toBeValidScript(script: string, ...errors: string[]) {
-    function formatError(err: ValidationError): string {
+    function formatError(err: ForbiddenConstructProtoError): string {
       const hint = err.hint ?? 'not provided';
 
-      return `${err.message} (hint: ${hint})`;
+      return `${err.detail} (hint: ${hint})`;
     }
 
-    const report = validateScript(script);
+    const protoErrors = validateScript(script);
 
     let pass = true;
     let message = '';
@@ -27,14 +27,14 @@ expect.extend({
       // Expecting to fail
       pass = false; // Flip
 
-      if (report.isValid === true) {
+      if (protoErrors.length === 0) {
         pass = !pass;
         message = 'expected to fail';
       } else {
         for (let i = 0; i < errors.length; i++) {
-          const err = report.errors[i];
+          const err = protoErrors[i];
           if (
-            !err.message.includes(errors[i]) &&
+            !err.detail.includes(errors[i]) &&
             !err.hint?.includes(errors[i])
           ) {
             pass = !pass;
@@ -47,9 +47,9 @@ expect.extend({
       }
     } else {
       // Expecting to pass
-      if (report.isValid === false) {
+      if (protoErrors.length > 0) {
         pass = !pass;
-        const messages = report.errors
+        const messages = protoErrors
           .map(err => `\n\t${formatError(err)}`)
           .join('');
         message = `expected to pass, errors: ${messages}`;

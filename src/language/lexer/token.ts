@@ -4,11 +4,12 @@ import * as util from './util';
 /** Enum describing the different kinds of tokens that the lexer emits. */
 export const enum LexerTokenKind {
   SEPARATOR, // SOF/EOF, (), [], {}
-  OPERATOR, // :, !, +, -, |, =, @, ,, \n
+  OPERATOR, // :, !, +, -, |, =, @, ,, ;
   LITERAL, // number or boolean
   STRING, // string literals - separate because it makes later stages easier
   IDENTIFIER, // a-z A-Z _ 0-9
   COMMENT, // line comments (# foo)
+  JESSIE_SCRIPT, // Jessie script
 }
 
 export type LexerScanRule<T> = [T, (_: number) => boolean];
@@ -35,7 +36,7 @@ export const SEPARATORS: {
 };
 
 // Operators
-export type OperatorValue = ':' | '+' | '-' | '!' | '|' | '=' | '@' | ',';
+export type OperatorValue = ':' | '+' | '-' | '!' | '|' | '=' | '@' | ',' | ';';
 export const OPERATORS: { [P in OperatorValue]: LexerScanRule<P> } = {
   ':': [':', util.isAny],
   '+': ['+', util.isAny],
@@ -45,6 +46,7 @@ export const OPERATORS: { [P in OperatorValue]: LexerScanRule<P> } = {
   '=': ['=', util.isAny],
   '@': ['@', util.isAny],
   ',': [',', util.isAny],
+  ';': [';', util.isAny],
 };
 
 // Literals
@@ -57,6 +59,8 @@ export type StringValue = string;
 
 export type IdentifierValue = string;
 export type CommentValue = string;
+
+export type JessieScriptValue = string;
 
 // Token datas //
 
@@ -84,14 +88,22 @@ export interface CommentTokenData {
   kind: LexerTokenKind.COMMENT;
   comment: CommentValue;
 }
+export interface JessieScriptTokenData {
+  kind: LexerTokenKind.JESSIE_SCRIPT;
+  script: JessieScriptValue;
+  sourceMap: string;
+}
 
-export type LexerTokenData =
+export type DefaultSublexerTokenData =
   | SeparatorTokenData
   | OperatorTokenData
   | LiteralTokenData
   | StringTokenData
   | IdentifierTokenData
   | CommentTokenData;
+export type JessieSublexerTokenData = JessieScriptTokenData;
+
+export type LexerTokenData = DefaultSublexerTokenData | JessieSublexerTokenData;
 
 export function formatTokenKind(kind: LexerTokenKind): string {
   switch (kind) {
@@ -107,24 +119,29 @@ export function formatTokenKind(kind: LexerTokenKind): string {
       return 'identifier';
     case LexerTokenKind.COMMENT:
       return 'comment';
+    case LexerTokenKind.JESSIE_SCRIPT:
+      return 'jessie script';
   }
 }
 export function formatTokenData(
   data: LexerTokenData
 ): { kind: string; data: string } {
+  const kind = formatTokenKind(data.kind);
   switch (data.kind) {
     case LexerTokenKind.SEPARATOR:
-      return { kind: 'separator', data: data.separator.toString() };
+      return { kind, data: data.separator.toString() };
     case LexerTokenKind.OPERATOR:
-      return { kind: 'operator', data: data.operator.toString() };
+      return { kind, data: data.operator.toString() };
     case LexerTokenKind.LITERAL:
-      return { kind: 'literal', data: data.literal.toString() };
+      return { kind, data: data.literal.toString() };
     case LexerTokenKind.STRING:
-      return { kind: 'string', data: data.string.toString() };
+      return { kind, data: data.string.toString() };
     case LexerTokenKind.IDENTIFIER:
-      return { kind: 'identifier', data: data.identifier.toString() };
+      return { kind, data: data.identifier.toString() };
     case LexerTokenKind.COMMENT:
-      return { kind: 'comment', data: data.comment.toString() };
+      return { kind, data: data.comment.toString() };
+    case LexerTokenKind.JESSIE_SCRIPT:
+      return { kind, data: data.script.toString() };
   }
 }
 
