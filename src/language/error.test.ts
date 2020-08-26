@@ -9,7 +9,7 @@ import {
   RuleResultMatch,
   RuleResultNoMatch,
   SyntaxRule,
-} from './syntax/rules/rule';
+} from './syntax/rule';
 
 // Declare custom matcher for sake of Typescript
 declare global {

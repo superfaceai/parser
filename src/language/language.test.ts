@@ -1,7 +1,7 @@
 import { Source } from './source';
 import { parseProfile, parseRule } from './syntax/parser';
 import * as rule from './syntax/rules/profile';
-import { SyntaxRule } from './syntax/rules/rule';
+import { SyntaxRule } from './syntax/rule';
 
 describe('v6', () => {
   it('should parse constructs.profile', () => {

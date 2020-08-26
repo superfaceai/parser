@@ -1,6 +1,6 @@
 import { formatTokenData, LexerTokenKind } from './lexer/token';
 import { Location, Source, Span } from './source';
-import { RuleResultNoMatch } from './syntax/rules/rule';
+import { RuleResultNoMatch } from './syntax/rule';
 
 /**
  * Computes span and the initial line offset of a (up to) 3-line block that encompasses

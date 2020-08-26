@@ -11,9 +11,9 @@ import {
   SeparatorTokenData,
   SeparatorValue,
   StringTokenData,
-} from '../../lexer/token';
-import { LexerContext, LexerTokenStream } from '../../lexer'
-import { Location, Span } from '../../source';
+} from '../lexer/token';
+import { LexerContext, LexerTokenStream } from '../lexer'
+import { Location, Span } from '../source';
 
 export class MatchAttempts {
   constructor(

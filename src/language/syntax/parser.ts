@@ -4,7 +4,7 @@ import { SyntaxError } from '../error';
 import { Lexer } from '../lexer/lexer';
 import { Source } from '../source';
 import { PROFILE_DOCUMENT } from './rules/profile';
-import { SyntaxRule } from './rules/rule';
+import { SyntaxRule } from './rule';
 
 /**
  * Attempts to match `rule` onto `source`.
