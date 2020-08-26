@@ -9,7 +9,7 @@ import {
 import { Location, Span } from '../../source';
 import { ArrayLexerStream } from '../util';
 import * as rules from './profile';
-import { RuleResult } from './rule';
+import { RuleResult } from '../rule';
 
 // Declare custom matcher for sake of Typescript
 declare global {

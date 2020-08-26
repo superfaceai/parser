@@ -23,7 +23,7 @@ import {
   SyntaxRule,
   SyntaxRuleMutable,
   SyntaxRuleSeparator,
-} from './rule';
+} from '../rule';
 
 import { documentedNode, SyntaxRuleSrc, SrcNode } from './common';
 

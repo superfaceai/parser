@@ -1,5 +1,5 @@
-import { LexerToken, LexerTokenData, LexerTokenKind } from '../../lexer/token';
-import { ArrayLexerStream } from '../util';
+import { LexerToken, LexerTokenData, LexerTokenKind } from '../lexer/token';
+import { ArrayLexerStream } from './util';
 import { LexerTokenMatch, MatchAttempts, SyntaxRule } from './rule';
 
 // Ensures that token spans are correctly ordered
