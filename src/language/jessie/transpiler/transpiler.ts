@@ -55,21 +55,14 @@ export function transpileScript(
   }
 
   const sourceMapJson: unknown = JSON.parse(sourceMapText);
-  // Don't look mom, I'm hideous
   function assertSourceMapFormat(
     input: unknown
   ): asserts input is { mappings: string } {
-    function nestedEvil(input: unknown): input is { mappings: unknown } {
-      if (
-        !(typeof input === 'object' && input !== null && 'mappings' in input)
-      ) {
-        return false;
-      }
+    // This is necessary because TypeScript cannot correctly narrow type of object properties yet
+    const hasMappings = (inp: unknown): inp is { mappings: unknown } =>
+      typeof inp === 'object' && inp !== null && 'mappings' in inp;
 
-      return true;
-    }
-
-    if (!nestedEvil(input) || typeof input.mappings !== 'string') {
+    if (!hasMappings(input) || typeof input.mappings !== 'string') {
       throw 'Source map JSON is not an object in the correct format';
     }
   }
