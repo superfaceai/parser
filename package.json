@@ -30,24 +30,24 @@
     "prepush": "yarn test --clear-cache && yarn test && yarn lint && yarn format"
   },
   "devDependencies": {
-    "@types/jest": "^25.2.1",
-    "@typescript-eslint/eslint-plugin": "^2.33.0",
-    "@typescript-eslint/parser": "^2.33.0",
-    "eslint": "^7.2.0",
+    "@types/jest": "^26.0.10",
+    "@typescript-eslint/eslint-plugin": "^3.10.1",
+    "@typescript-eslint/parser": "^3.10.1",
+    "eslint": "^7.7.0",
     "eslint-config-prettier": "^6.11.0",
-    "eslint-import-resolver-typescript": "^2.0.0",
-    "eslint-plugin-import": "^2.21.2",
-    "eslint-plugin-jest": "^23.13.2",
+    "eslint-import-resolver-typescript": "^2.2.1",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-jest": "^23.20.0",
     "eslint-plugin-simple-import-sort": "^5.0.3",
-    "jest": "^26.0.1",
+    "jest": "^26.4.1",
     "parcel": "^2.0.0-beta.1",
-    "prettier": "^2.0.5",
+    "prettier": "^2.1.1",
     "rimraf": "^3.0.2",
-    "ts-jest": "^26.1.0"
+    "ts-jest": "^26.3.0"
   },
   "dependencies": {
     "@superindustries/language": "^0.0.11",
-    "typescript": "^3.9.5"
+    "typescript": "^4.0.2"
   },
   "targets": {
     "types": false,

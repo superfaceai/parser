@@ -172,7 +172,9 @@ export class LexerToken {
   }
 
   toStringDebug(): string {
-    return `(${this})@${this.location.line}:${this.location.column}[${this.span.start}; ${this.span.end}]`;
+    return `(${this.toString()})@${this.location.line}:${
+      this.location.column
+    }[${this.span.start}; ${this.span.end}]`;
   }
 
   toString(): string {

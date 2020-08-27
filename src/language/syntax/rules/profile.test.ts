@@ -79,7 +79,7 @@ function tesTok(data: LexerTokenData, bumpLine?: boolean): LexerToken {
   return new LexerToken(data, { start, end }, { line, column });
 }
 
-function tesMatch<I extends {}>(
+function tesMatch<I extends Record<string, unknown>>(
   input: I,
   first: LexerToken,
   last?: LexerToken

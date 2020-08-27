@@ -53,7 +53,20 @@ export function transpileScript(
   if (!sourceMapText) {
     throw 'Source map text is not present';
   }
-  const sourceMapJson: { mappings: string } = JSON.parse(sourceMapText);
+
+  const sourceMapJson: unknown = JSON.parse(sourceMapText);
+  function assertSourceMapFormat(
+    input: unknown
+  ): asserts input is { mappings: string } {
+    // This is necessary because TypeScript cannot correctly narrow type of object properties yet
+    const hasMappings = (inp: unknown): inp is { mappings: unknown } =>
+      typeof inp === 'object' && inp !== null && 'mappings' in inp;
+
+    if (!hasMappings(input) || typeof input.mappings !== 'string') {
+      throw 'Source map JSON is not an object in the correct format';
+    }
+  }
+  assertSourceMapFormat(sourceMapJson);
 
   let syntaxProtoError: JessieSyntaxProtoError | undefined;
   if (diagnostics && diagnostics.length > 0) {
