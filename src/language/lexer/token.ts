@@ -36,17 +36,16 @@ export const SEPARATORS: {
 };
 
 // Operators
-export type OperatorValue = ':' | '+' | '-' | '!' | '|' | '=' | '@' | ',' | ';';
+export type OperatorValue = ':' | '!' | '|' | '=' | '@' | ',' | ';' | '.';
 export const OPERATORS: { [P in OperatorValue]: LexerScanRule<P> } = {
   ':': [':', util.isAny],
-  '+': ['+', util.isAny],
-  '-': ['-', util.isAny],
   '!': ['!', util.isAny],
   '|': ['|', util.isAny],
   '=': ['=', util.isAny],
   '@': ['@', util.isAny],
   ',': [',', util.isAny],
   ';': [';', util.isAny],
+  '.': ['.', util.isAny],
 };
 
 // Literals
@@ -91,6 +90,7 @@ export interface CommentTokenData {
 export interface JessieScriptTokenData {
   kind: LexerTokenKind.JESSIE_SCRIPT;
   script: JessieScriptValue;
+  sourceScript: string;
   sourceMap: string;
 }
 

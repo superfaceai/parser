@@ -1,7 +1,6 @@
 export {
   tryParseComment,
   tryParseIdentifier,
-  tryParseLiteral,
   tryParseOperator,
   tryParseSeparator,
 } from './rules';

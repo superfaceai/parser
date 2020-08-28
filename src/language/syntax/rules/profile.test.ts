@@ -594,7 +594,7 @@ describe('syntax rules', () => {
       );
     });
 
-    it('should parse field with object type sugar', () => {
+    it('should parse field with object type', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
