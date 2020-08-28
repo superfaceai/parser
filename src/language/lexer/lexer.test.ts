@@ -145,29 +145,28 @@ describe('lexer', () => {
     });
 
     it('operators', () => {
-      const lexer = new Lexer(new Source(': ! + : | = - : ++ :: -- !! || =='));
+      const lexer = new Lexer(new Source(': ! : | = : :: !! || == , @,@@'));
       const expectedTokens: (LexerTokenData | OperatorValue)[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
         ':',
         '!',
-        '+',
         ':',
         '|',
         '=',
-        '-',
-        ':',
-        '+',
-        '+',
         ':',
         ':',
-        '-',
-        '-',
+        ':',
         '!',
         '!',
         '|',
         '|',
         '=',
         '=',
+        ',',
+        '@',
+        ',',
+        '@',
+        '@',
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
 
@@ -487,8 +486,8 @@ describe('lexer', () => {
         { kind: LexerTokenKind.OPERATOR, operator: '=' },
         {
           kind: LexerTokenKind.JESSIE_SCRIPT,
-          script:
-            '(function () { var foo = 1; return { foo: foo + 2, bar: Math.min(3, 4) }; })()',
+          script: '(function () { var foo = 1; return { foo: foo + 2, bar: Math.min(3, 4) }; })()',
+          sourceScript: 'not checked',
           sourceMap: 'not checked',
         },
         { kind: LexerTokenKind.OPERATOR, operator: ';' },
@@ -498,6 +497,7 @@ describe('lexer', () => {
         {
           kind: LexerTokenKind.JESSIE_SCRIPT,
           script: '{ x: 1, y: 2 }',
+          sourceScript: 'not checked',
           sourceMap: 'not checked',
         },
         { kind: LexerTokenKind.OPERATOR, operator: ';' },
@@ -507,6 +507,7 @@ describe('lexer', () => {
         {
           kind: LexerTokenKind.JESSIE_SCRIPT,
           script: 'true',
+          sourceScript: 'not checked',
           sourceMap: 'not checked',
         },
         { kind: LexerTokenKind.OPERATOR, operator: ';' },

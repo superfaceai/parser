@@ -1,4 +1,3 @@
-import { SyntaxErrorCategory } from '../../../error';
 import {
   CommentTokenData,
   IdentifierTokenData,
@@ -87,7 +86,7 @@ export function tryParseOperator(
   };
 }
 
-function tryParseLiteralBoolean(slice: string): ParseResult<LiteralTokenData> {
+export function tryParseBooleanLiteral(slice: string): ParseResult<LiteralTokenData> {
   const parsed = tryParseScannerRules(slice, LITERALS_BOOL);
   if (parsed === undefined) {
     return undefined;
@@ -101,94 +100,6 @@ function tryParseLiteralBoolean(slice: string): ParseResult<LiteralTokenData> {
     },
     relativeSpan: { start: 0, end: parsed.length },
   };
-}
-
-function tryParseLiteralNumber(slice: string): ParseResult<LiteralTokenData> {
-  let numberLiteralLength = 0;
-  let isFloat = false;
-
-  const keywordLiteralBase = util.checkKeywordLiteral(
-    slice,
-    '0x',
-    16,
-    _ => true
-  ) ??
-    util.checkKeywordLiteral(slice, '0b', 2, util.isAny) ??
-    util.checkKeywordLiteral(slice, '0o', 8, util.isAny) ?? {
-      value: 10,
-      length: 0,
-    };
-  // integer or float after `base` characters
-  const numberSlice = slice.slice(keywordLiteralBase.length);
-  const startingNumbers = util.countStartingNumbersRadix(
-    numberSlice,
-    keywordLiteralBase.value
-  );
-  if (startingNumbers === 0) {
-    if (keywordLiteralBase.value !== 10) {
-      return {
-        isError: true,
-        kind: LexerTokenKind.LITERAL,
-        detail: 'Expected a number following integer base prefix',
-        category: SyntaxErrorCategory.LEXER,
-        relativeSpan: { start: 0, end: keywordLiteralBase.length + 1 },
-      };
-    } else {
-      return undefined;
-    }
-  }
-  numberLiteralLength += startingNumbers;
-
-  if (keywordLiteralBase.value === 10) {
-    const afterNumberSlice = numberSlice.slice(startingNumbers);
-    // Definitely float after decimal separator
-    if (util.isDecimalSeparator(afterNumberSlice.charCodeAt(0))) {
-      // + 1 for decimal separator
-      numberLiteralLength +=
-        1 + util.countStartingNumbers(afterNumberSlice.slice(1));
-      isFloat = true;
-    }
-  }
-
-  // parse the number value from string
-  let numberValue: number;
-  if (isFloat) {
-    numberValue = parseFloat(slice.slice(0, numberLiteralLength));
-  } else {
-    numberValue = parseInt(
-      slice.slice(
-        keywordLiteralBase.length,
-        keywordLiteralBase.length + numberLiteralLength
-      ),
-      keywordLiteralBase.value
-    );
-  }
-  if (isNaN(numberValue)) {
-    throw 'Invalid lexer state. This in an error in the lexer.';
-  }
-
-  return {
-    isError: false,
-    data: {
-      kind: LexerTokenKind.LITERAL,
-      literal: numberValue,
-    },
-    relativeSpan: {
-      start: 0,
-      end: keywordLiteralBase.length + numberLiteralLength,
-    },
-  };
-}
-
-/**
- * Tries to parse a literal token at current position.
- *
- * Returns `undefined` if the current position cannot contain a literal.
- *
- * Returns an error if parsing fails.
- */
-export function tryParseLiteral(slice: string): ParseResult<LiteralTokenData> {
-  return tryParseLiteralBoolean(slice) ?? tryParseLiteralNumber(slice);
 }
 
 /**

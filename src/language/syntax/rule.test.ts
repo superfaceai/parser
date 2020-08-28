@@ -74,7 +74,7 @@ describe('syntax rule factory', () => {
   describe('operator', () => {
     it('should match operator rule', () => {
       const tokens: ReadonlyArray<LexerToken> = [
-        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '+' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '|' }),
       ];
       const stream = new ArrayLexerStream(tokens);
 
@@ -88,11 +88,11 @@ describe('syntax rule factory', () => {
 
     it('should match operator rule with filter', () => {
       const tokens: ReadonlyArray<LexerToken> = [
-        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '+' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '|' }),
       ];
       const stream = new ArrayLexerStream(tokens);
 
-      const rule = SyntaxRule.operator('+');
+      const rule = SyntaxRule.operator('|');
 
       expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
@@ -102,11 +102,11 @@ describe('syntax rule factory', () => {
 
     it("shouldn't match operator rule", () => {
       const tokens: ReadonlyArray<LexerToken> = [
-        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '+' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
       ];
       const stream = new ArrayLexerStream(tokens);
 
-      const rule = SyntaxRule.operator('-');
+      const rule = SyntaxRule.operator(',');
 
       expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'nomatch',
@@ -317,7 +317,7 @@ describe('syntax rule factory', () => {
       ];
       const stream = new ArrayLexerStream(tokens);
 
-      const secondRule = SyntaxRule.operator('+');
+      const secondRule = SyntaxRule.operator('!');
       const rule = SyntaxRule.identifier('result')
         .followedBy(secondRule)
         .andBy(SyntaxRule.literal());
