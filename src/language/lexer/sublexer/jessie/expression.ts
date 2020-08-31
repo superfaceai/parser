@@ -89,6 +89,7 @@ export function tryParseJessieScriptExpression(
           SCRIPT_WRAP.transpiled.start.length,
           transRes.output.length - SCRIPT_WRAP.transpiled.end.length
         ),
+        sourceScript: scriptText,
         sourceMap: transRes.sourceMap,
       },
       relativeSpan: { start: 0, end: scriptText.length },

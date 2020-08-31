@@ -2,6 +2,7 @@ import {
   formatTokenKind,
   IdentifierTokenData,
   IdentifierValue,
+  JessieScriptTokenData,
   LexerToken,
   LexerTokenData,
   LexerTokenKind,
@@ -152,6 +153,10 @@ export abstract class SyntaxRule<T> {
 
   static string(): SyntaxRuleString {
     return new SyntaxRuleString();
+  }
+
+  static jessie(): SyntaxRuleJessie {
+    return new SyntaxRuleJessie();
   }
 
   // Combinators
@@ -352,6 +357,30 @@ export class SyntaxRuleString extends SyntaxRule<
 
   [Symbol.toStringTag](): string {
     return formatTokenKind(LexerTokenKind.STRING);
+  }
+}
+
+// Specific nodes //
+
+export class SyntaxRuleJessie extends SyntaxRule<LexerTokenMatch<JessieScriptTokenData>> {
+  tryMatch(
+    tokens: LexerTokenStream
+  ): RuleResult<LexerTokenMatch<JessieScriptTokenData>> {
+    return this.simpleTryMatchBoilerplate(tokens, token => {
+      if (token.data.kind === LexerTokenKind.JESSIE_SCRIPT) {
+        return {
+          data: token.data,
+          span: token.span,
+          location: token.location,
+        };
+      }
+
+      return undefined;
+    }, LexerContext.JESSIE_SCRIPT_EXPRESSION);
+  }
+
+  [Symbol.toStringTag](): string {
+    return formatTokenKind(LexerTokenKind.JESSIE_SCRIPT);
   }
 }
 
