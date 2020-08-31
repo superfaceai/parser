@@ -46,7 +46,8 @@
     "ts-jest": "^26.1.0"
   },
   "dependencies": {
-    "@superindustries/language": "^0.0.11",
+    "@superindustries/language": "^0.0.12",
+    "@superindustries/superface": "^0.0.1-alpha.0",
     "typescript": "^3.9.5"
   },
   "targets": {
