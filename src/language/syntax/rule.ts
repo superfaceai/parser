@@ -1,3 +1,4 @@
+import { LexerContext, LexerTokenStream } from '../lexer';
 import {
   formatTokenKind,
   IdentifierTokenData,
@@ -13,7 +14,6 @@ import {
   SeparatorValue,
   StringTokenData,
 } from '../lexer/token';
-import { LexerContext, LexerTokenStream } from '../lexer'
 import { Location, Span } from '../source';
 
 export class MatchAttempts {
@@ -362,21 +362,27 @@ export class SyntaxRuleString extends SyntaxRule<
 
 // Specific nodes //
 
-export class SyntaxRuleJessie extends SyntaxRule<LexerTokenMatch<JessieScriptTokenData>> {
+export class SyntaxRuleJessie extends SyntaxRule<
+  LexerTokenMatch<JessieScriptTokenData>
+> {
   tryMatch(
     tokens: LexerTokenStream
   ): RuleResult<LexerTokenMatch<JessieScriptTokenData>> {
-    return this.simpleTryMatchBoilerplate(tokens, token => {
-      if (token.data.kind === LexerTokenKind.JESSIE_SCRIPT) {
-        return {
-          data: token.data,
-          span: token.span,
-          location: token.location,
-        };
-      }
+    return this.simpleTryMatchBoilerplate(
+      tokens,
+      token => {
+        if (token.data.kind === LexerTokenKind.JESSIE_SCRIPT) {
+          return {
+            data: token.data,
+            span: token.span,
+            location: token.location,
+          };
+        }
 
-      return undefined;
-    }, LexerContext.JESSIE_SCRIPT_EXPRESSION);
+        return undefined;
+      },
+      LexerContext.JESSIE_SCRIPT_EXPRESSION
+    );
   }
 
   [Symbol.toStringTag](): string {
@@ -521,9 +527,7 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
     super();
   }
 
-  tryMatch(
-    tokens: LexerTokenStream
-  ): RuleResultMatch<R | undefined> {
+  tryMatch(tokens: LexerTokenStream): RuleResultMatch<R | undefined> {
     const match = this.rule.tryMatch(tokens);
     if (match.kind === 'match') {
       return match;

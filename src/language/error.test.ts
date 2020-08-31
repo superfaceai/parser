@@ -2,7 +2,6 @@ import { SyntaxError } from './error';
 import { Lexer, LexerTokenStream } from './lexer/lexer';
 import { Source } from './source';
 import { parseProfile, parseRule } from './syntax/parser';
-import * as profile from './syntax/rules/profile';
 import {
   MatchAttempts,
   RuleResult,
@@ -10,6 +9,7 @@ import {
   RuleResultNoMatch,
   SyntaxRule,
 } from './syntax/rule';
+import * as profile from './syntax/rules/profile';
 
 // Declare custom matcher for sake of Typescript
 declare global {

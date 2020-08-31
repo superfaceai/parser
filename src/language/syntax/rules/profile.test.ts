@@ -7,9 +7,9 @@ import {
   StringTokenData,
 } from '../../lexer/token';
 import { Location, Span } from '../../source';
+import { RuleResult } from '../rule';
 import { ArrayLexerStream } from '../util';
 import * as rules from './profile';
-import { RuleResult } from '../rule';
 
 // Declare custom matcher for sake of Typescript
 declare global {

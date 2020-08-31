@@ -45,12 +45,15 @@ export type SublexerReturnType<
   : never;
 
 export type LexerSavedState = LexerToken;
-export interface LexerTokenStream extends Generator<LexerToken, undefined, LexerContext | undefined> {
-  peek(...context: [] | [LexerContext | undefined]): IteratorResult<LexerToken, undefined>;
-  
+export interface LexerTokenStream
+  extends Generator<LexerToken, undefined, LexerContext | undefined> {
+  peek(
+    ...context: [] | [LexerContext | undefined]
+  ): IteratorResult<LexerToken, undefined>;
+
   /** Saves the stream state to be restored later. */
   save(): LexerSavedState;
-  
+
   /** Roll back the state of the stream to the given saved state. */
   rollback(token: LexerSavedState): void;
 }
@@ -105,6 +108,7 @@ export class Lexer implements LexerTokenStream {
     // We use the `nextToken` field to detect first emission on EOF
     if (this.currentToken.isEOF()) {
       this.nextToken = this.currentToken;
+
       return this.currentToken;
     }
 
@@ -140,25 +144,29 @@ export class Lexer implements LexerTokenStream {
     if (tok.isEOF() && this.nextToken?.isEOF()) {
       return {
         done: true,
-        value: undefined
-      }
+        value: undefined,
+      };
     }
 
     return {
       done: false,
-      value: tok
-    }
+      value: tok,
+    };
   }
   return(value?: undefined): IteratorResult<LexerToken, undefined> {
     return {
       done: true,
-      value
-    }
+      value,
+    };
   }
-  throw(e?: any): IteratorResult<LexerToken, undefined> {
+  throw(e?: unknown): IteratorResult<LexerToken, undefined> {
     throw e;
   }
-  [Symbol.iterator](): Generator<LexerToken, undefined, LexerContext | undefined> {
+  [Symbol.iterator](): Generator<
+    LexerToken,
+    undefined,
+    LexerContext | undefined
+  > {
     return this;
   }
 
@@ -168,25 +176,25 @@ export class Lexer implements LexerTokenStream {
     if (tok.isEOF() && this.currentToken.isEOF()) {
       return {
         done: true,
-        value: undefined
-      }
+        value: undefined,
+      };
     }
 
     return {
       done: false,
-      value: tok
-    }
+      value: tok,
+    };
   }
   /** Saves the lexer state to be restored later. */
   save(): LexerSavedState {
     return this.currentToken;
   }
-  /** 
+  /**
    * Roll back the state of the lexer to the given saved state.
-   * 
+   *
    * The lexer will continue from this state forward.
    */
-  rollback(token: LexerSavedState) {
+  rollback(token: LexerSavedState): void {
     this.currentToken = token;
     this.nextToken = undefined;
   }
@@ -194,35 +202,40 @@ export class Lexer implements LexerTokenStream {
   private computeNextTokenPosition(
     lastToken: LexerToken
   ): {
-    start: number,
-    location: Location
+    start: number;
+    location: Location;
   } {
     // Count number of whitespace and newlines after the last token.
     const whitespaceAfterToken = util.countStartingWithNewlines(
-      util.isWhitespace, this.source.body.slice(lastToken.span.end)
-    )
+      util.isWhitespace,
+      this.source.body.slice(lastToken.span.end)
+    );
 
     // Compute the start of the next token by ignoring whitespace after the last token.
-    const start = lastToken.span.end + whitespaceAfterToken.count
+    const start = lastToken.span.end + whitespaceAfterToken.count;
 
     // Line is just offset by the number of newlines counted.
-    const line = lastToken.location.line + whitespaceAfterToken.newlines
+    const line = lastToken.location.line + whitespaceAfterToken.newlines;
 
     // When no newlines are encountered, it is simply an offset from the last token `column` by the width of the last token plus number of whitespace skipped
-    let column = lastToken.location.column + (start - lastToken.span.start)
+    let column = lastToken.location.column + (start - lastToken.span.start);
     if (whitespaceAfterToken.lastNewlineOffset !== undefined) {
       // When some newlines were encountered, the offset of the last newline from the slice start is stored in `lastNewlineOffset`
       // `column` is then the distance between `start` and the position after (the inner + 1) the last newline
       // Since column is 1-based, the outer + 1 is added (which actually negates the inner one, but is here for clarity)
-      column = start - (lastToken.span.end + whitespaceAfterToken.lastNewlineOffset + 1) + 1
+      column =
+        start -
+        (lastToken.span.end + whitespaceAfterToken.lastNewlineOffset + 1) +
+        1;
     }
 
     return {
       start,
       location: {
-        line, column
-      }
-    }
+        line,
+        column,
+      },
+    };
   }
 
   /** Reads the next token following the `afterPosition`. */
@@ -230,7 +243,7 @@ export class Lexer implements LexerTokenStream {
     lastToken: LexerToken,
     context?: LexerContext
   ): LexerToken {
-    const { start, location } = this.computeNextTokenPosition(lastToken)
+    const { start, location } = this.computeNextTokenPosition(lastToken);
 
     const slice = this.source.body.slice(start);
 

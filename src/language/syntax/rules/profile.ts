@@ -25,8 +25,7 @@ import {
   SyntaxRuleMutable,
   SyntaxRuleSeparator,
 } from '../rule';
-
-import { documentedNode, SyntaxRuleSrc, SrcNode } from './common';
+import { documentedNode, SrcNode, SyntaxRuleSrc } from './common';
 
 // MUTABLE RULES //
 

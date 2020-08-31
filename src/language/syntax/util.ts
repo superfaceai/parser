@@ -1,10 +1,15 @@
-import { LexerContext, LexerToken, LexerTokenKind, LexerTokenStream } from "../lexer";
+import {
+  LexerContext,
+  LexerToken,
+  LexerTokenKind,
+  LexerTokenStream,
+} from '../lexer';
 
 /**
  * LexerTokenStream implementation that takes tokens from an array instead of a Lexer.
- * 
+ *
  * This is mostly used in tests.
-*/
+ */
 export class ArrayLexerStream implements LexerTokenStream {
   private index: number;
 
@@ -18,14 +23,15 @@ export class ArrayLexerStream implements LexerTokenStream {
     if (token === undefined) {
       return {
         done: true,
-        value: undefined
-      }
+        value: undefined,
+      };
     } else {
       this.index += 1;
+
       return {
         done: false,
-        value: token
-      }
+        value: token,
+      };
     }
   }
   peek(_?: LexerContext): IteratorResult<LexerToken, undefined> {
@@ -34,13 +40,13 @@ export class ArrayLexerStream implements LexerTokenStream {
     if (token === undefined) {
       return {
         done: true,
-        value: undefined
-      }
+        value: undefined,
+      };
     } else {
       return {
         done: false,
-        value: token
-      }
+        value: token,
+      };
     }
   }
 
@@ -51,27 +57,31 @@ export class ArrayLexerStream implements LexerTokenStream {
       return new LexerToken(
         {
           kind: LexerTokenKind.SEPARATOR,
-          separator: 'SOF'
+          separator: 'SOF',
         },
         { start: -1, end: -1 },
         { line: 0, column: 0 }
-      )
+      );
     }
   }
   rollback(token: LexerToken): void {
     this.index = this.array.indexOf(token) + 1;
   }
-  
+
   return(value: undefined): IteratorResult<LexerToken, undefined> {
     return {
       done: true,
-      value
-    }
+      value,
+    };
   }
-  throw(e: any): IteratorResult<LexerToken, undefined> {
+  throw(e: unknown): IteratorResult<LexerToken, undefined> {
     throw e;
   }
-  [Symbol.iterator](): Generator<LexerToken, undefined, LexerContext | undefined> {
+  [Symbol.iterator](): Generator<
+    LexerToken,
+    undefined,
+    LexerContext | undefined
+  > {
     return this;
   }
 }
