@@ -72,36 +72,40 @@ describe('v6', () => {
     "Send single conversation message"
     usecase SendMessage unsafe {
       input {
-      to
-      from
-      channel
-      text
+        to
+        from
+        channel
+        text
       }
     
+      """
+      Title
+      Description of the result
+      """
       result {
-      messageId
+        messageId!
       }
     
       async result {
-      messageId
-      deliveryStatus
+        messageId
+        deliveryStatus
       }
     
       error {
-      problem
-      detail
-      instance
+        problem
+        detail
+        instance
       }
     }
     
     "Retrieve status of a sent message"
     usecase RetrieveMessageStatus safe {
       input {
-      messageId
+        messageId
       }
     
       result {
-      deliveryStatus
+        deliveryStatus
       }
     }
     
@@ -144,64 +148,79 @@ describe('v6', () => {
           useCaseName: 'SendMessage',
           safety: 'unsafe',
           input: {
-            kind: 'ObjectDefinition',
-            fields: [
-              {
-                kind: 'FieldDefinition',
-                fieldName: 'to',
-              },
-              {
-                kind: 'FieldDefinition',
-                fieldName: 'from',
-              },
-              {
-                kind: 'FieldDefinition',
-                fieldName: 'channel',
-              },
-              {
-                kind: 'FieldDefinition',
-                fieldName: 'text',
-              },
-            ],
+            kind: 'UseCaseSlotDefinition',
+            type: {
+              kind: 'ObjectDefinition',
+              fields: [
+                {
+                  kind: 'FieldDefinition',
+                  fieldName: 'to',
+                },
+                {
+                  kind: 'FieldDefinition',
+                  fieldName: 'from',
+                },
+                {
+                  kind: 'FieldDefinition',
+                  fieldName: 'channel',
+                },
+                {
+                  kind: 'FieldDefinition',
+                  fieldName: 'text',
+                },
+              ],
+            },
           },
           result: {
-            kind: 'ObjectDefinition',
-            fields: [
-              {
-                kind: 'FieldDefinition',
-                fieldName: 'messageId',
-              },
-            ],
+            kind: 'UseCaseSlotDefinition',
+            type: {
+              kind: 'ObjectDefinition',
+              fields: [
+                {
+                  kind: 'FieldDefinition',
+                  fieldName: 'messageId',
+                  required: true,
+                },
+              ],
+            },
+            title: 'Title',
+            description: 'Description of the result',
           },
           asyncResult: {
-            kind: 'ObjectDefinition',
-            fields: [
-              {
-                kind: 'FieldDefinition',
-                fieldName: 'messageId',
-              },
-              {
-                kind: 'FieldDefinition',
-                fieldName: 'deliveryStatus',
-              },
-            ],
+            kind: 'UseCaseSlotDefinition',
+            type: {
+              kind: 'ObjectDefinition',
+              fields: [
+                {
+                  kind: 'FieldDefinition',
+                  fieldName: 'messageId',
+                },
+                {
+                  kind: 'FieldDefinition',
+                  fieldName: 'deliveryStatus',
+                },
+              ],
+            },
           },
           error: {
-            kind: 'ObjectDefinition',
-            fields: [
-              {
-                kind: 'FieldDefinition',
-                fieldName: 'problem',
-              },
-              {
-                kind: 'FieldDefinition',
-                fieldName: 'detail',
-              },
-              {
-                kind: 'FieldDefinition',
-                fieldName: 'instance',
-              },
-            ],
+            kind: 'UseCaseSlotDefinition',
+            type: {
+              kind: 'ObjectDefinition',
+              fields: [
+                {
+                  kind: 'FieldDefinition',
+                  fieldName: 'problem',
+                },
+                {
+                  kind: 'FieldDefinition',
+                  fieldName: 'detail',
+                },
+                {
+                  kind: 'FieldDefinition',
+                  fieldName: 'instance',
+                },
+              ],
+            },
           },
         },
         {

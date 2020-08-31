@@ -249,6 +249,7 @@ describe('syntax rules', () => {
                 {
                   kind: 'FieldDefinition',
                   fieldName: (tokens[1].data as IdentifierTokenData).identifier,
+                  required: false,
                   type: undefined,
                 },
                 tokens[1]
@@ -257,6 +258,7 @@ describe('syntax rules', () => {
                 {
                   kind: 'FieldDefinition',
                   fieldName: (tokens[2].data as IdentifierTokenData).identifier,
+                  required: false,
                   type: tesMatch(
                     {
                       kind: 'ModelTypeName',
@@ -315,6 +317,7 @@ describe('syntax rules', () => {
                       kind: 'FieldDefinition',
                       fieldName: (tokens[2].data as IdentifierTokenData)
                         .identifier,
+                      required: false,
                       type: tesMatch(
                         {
                           kind: 'PrimitiveTypeName',
@@ -559,6 +562,7 @@ describe('syntax rules', () => {
           {
             kind: 'FieldDefinition',
             fieldName: (tokens[0].data as IdentifierTokenData).identifier,
+            required: false,
             type: undefined,
           },
           tokens[0]
@@ -580,6 +584,7 @@ describe('syntax rules', () => {
           {
             kind: 'FieldDefinition',
             fieldName: (tokens[0].data as IdentifierTokenData).identifier,
+            required: false,
             type: tesMatch(
               {
                 kind: 'PrimitiveTypeName',
@@ -594,7 +599,7 @@ describe('syntax rules', () => {
       );
     });
 
-    it('should parse field with object type sugar', () => {
+    it('should parse field with object type', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
@@ -610,6 +615,7 @@ describe('syntax rules', () => {
           {
             kind: 'FieldDefinition',
             fieldName: (tokens[0].data as IdentifierTokenData).identifier,
+            required: false,
             type: tesMatch(
               {
                 kind: 'ObjectDefinition',
@@ -619,6 +625,7 @@ describe('syntax rules', () => {
                       kind: 'FieldDefinition',
                       fieldName: (tokens[2].data as IdentifierTokenData)
                         .identifier,
+                      required: false,
                       type: undefined,
                     },
                     tokens[2]
@@ -631,6 +638,114 @@ describe('syntax rules', () => {
           },
           tokens[0],
           tokens[3]
+        )
+      );
+    });
+
+    it('should parse required field with type and trailing comma', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'string' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: ',' }),
+      ];
+      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+
+      const rule = rules.FIELD_DEFINITION;
+
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'FieldDefinition',
+            fieldName: (tokens[0].data as IdentifierTokenData).identifier,
+            required: true,
+            type: tesMatch(
+              {
+                kind: 'PrimitiveTypeName',
+                name: 'string',
+              },
+              tokens[2]
+            ),
+          },
+          tokens[0],
+          tokens[3]
+        )
+      );
+    });
+
+    it('should parse required field with type', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'string' }),
+      ];
+      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+
+      const rule = rules.FIELD_DEFINITION;
+
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'FieldDefinition',
+            fieldName: (tokens[0].data as IdentifierTokenData).identifier,
+            required: true,
+            type: tesMatch(
+              {
+                kind: 'PrimitiveTypeName',
+                name: 'string',
+              },
+              tokens[2]
+            ),
+          },
+          tokens[0],
+          tokens[2]
+        )
+      );
+    });
+
+    it('should parse required field with trailing comma', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: ',' }),
+      ];
+      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+
+      const rule = rules.FIELD_DEFINITION;
+
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'FieldDefinition',
+            fieldName: (tokens[0].data as IdentifierTokenData).identifier,
+            required: true,
+            type: undefined,
+          },
+          tokens[0],
+          tokens[2]
+        )
+      );
+    });
+
+    it('should parse required field', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
+      ];
+      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+
+      const rule = rules.FIELD_DEFINITION;
+
+      expect(rule.tryMatch(buf)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'FieldDefinition',
+            fieldName: (tokens[0].data as IdentifierTokenData).identifier,
+            required: true,
+            type: undefined,
+          },
+          tokens[0],
+          tokens[1]
         )
       );
     });
@@ -649,6 +764,7 @@ describe('syntax rules', () => {
           {
             kind: 'FieldDefinition',
             fieldName: (tokens[1].data as IdentifierTokenData).identifier,
+            required: false,
             type: undefined,
             title: 'Title',
             description: 'Description',
@@ -707,6 +823,7 @@ describe('syntax rules', () => {
                       kind: 'FieldDefinition',
                       fieldName: (tokens[3].data as IdentifierTokenData)
                         .identifier,
+                      required: false,
                       type: undefined,
                     },
                     tokens[3]
@@ -813,7 +930,7 @@ describe('syntax rules', () => {
       );
     });
 
-    it('should parse named model with object type sugar', () => {
+    it('should parse named model with object type', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
@@ -839,6 +956,7 @@ describe('syntax rules', () => {
                       kind: 'FieldDefinition',
                       fieldName: (tokens[3].data as IdentifierTokenData)
                         .identifier,
+                      required: false,
                       type: undefined,
                     },
                     tokens[3]
@@ -932,9 +1050,16 @@ describe('syntax rules', () => {
             input: undefined,
             result: tesMatch(
               {
-                kind: 'ModelTypeName',
-                name: (tokens[4].data as IdentifierTokenData).identifier,
+                kind: 'UseCaseSlotDefinition',
+                type: tesMatch(
+                  {
+                    kind: 'ModelTypeName',
+                    name: (tokens[4].data as IdentifierTokenData).identifier,
+                  },
+                  tokens[4]
+                ),
               },
+              tokens[3],
               tokens[4]
             ),
             asyncResult: undefined,
@@ -993,89 +1118,118 @@ describe('syntax rules', () => {
             safety: 'safe',
             input: tesMatch(
               {
-                kind: 'ObjectDefinition',
-                fields: [],
+                kind: 'UseCaseSlotDefinition',
+                type: tesMatch(
+                  {
+                    kind: 'ObjectDefinition',
+                    fields: [],
+                  },
+                  tokens[5],
+                  tokens[6]
+                ),
               },
-              tokens[5],
+              tokens[4],
               tokens[6]
             ),
             result: tesMatch(
               {
-                kind: 'ModelTypeName',
-                name: (tokens[8].data as IdentifierTokenData).identifier,
+                kind: 'UseCaseSlotDefinition',
+                type: tesMatch(
+                  {
+                    kind: 'ModelTypeName',
+                    name: (tokens[8].data as IdentifierTokenData).identifier,
+                  },
+                  tokens[8]
+                ),
               },
+              tokens[7],
               tokens[8]
             ),
             asyncResult: tesMatch(
               {
-                kind: 'NonNullDefinition',
+                kind: 'UseCaseSlotDefinition',
                 type: tesMatch(
                   {
-                    kind: 'ObjectDefinition',
-                    fields: [
-                      tesMatch(
-                        {
-                          kind: 'FieldDefinition',
-                          fieldName: (tokens[12].data as IdentifierTokenData)
-                            .identifier,
-                          type: tesMatch(
+                    kind: 'NonNullDefinition',
+                    type: tesMatch(
+                      {
+                        kind: 'ObjectDefinition',
+                        fields: [
+                          tesMatch(
                             {
-                              kind: 'PrimitiveTypeName',
-                              name: 'number',
+                              kind: 'FieldDefinition',
+                              fieldName: (tokens[12]
+                                .data as IdentifierTokenData).identifier,
+                              required: false,
+                              type: tesMatch(
+                                {
+                                  kind: 'PrimitiveTypeName',
+                                  name: 'number',
+                                },
+                                tokens[13]
+                              ),
                             },
+                            tokens[12],
                             tokens[13]
                           ),
-                        },
-                        tokens[12],
-                        tokens[13]
-                      ),
-                    ],
+                        ],
+                      },
+                      tokens[11],
+                      tokens[14]
+                    ),
                   },
                   tokens[11],
-                  tokens[14]
+                  tokens[15]
                 ),
               },
-              tokens[11],
+              tokens[10],
               tokens[15]
             ),
             error: tesMatch(
               {
-                kind: 'UnionDefinition',
-                types: [
-                  tesMatch(
-                    {
-                      kind: 'NonNullDefinition',
-                      type: tesMatch(
+                kind: 'UseCaseSlotDefinition',
+                type: tesMatch(
+                  {
+                    kind: 'UnionDefinition',
+                    types: [
+                      tesMatch(
                         {
-                          kind: 'PrimitiveTypeName',
-                          name: 'string',
+                          kind: 'NonNullDefinition',
+                          type: tesMatch(
+                            {
+                              kind: 'PrimitiveTypeName',
+                              name: 'string',
+                            },
+                            tokens[17]
+                          ),
                         },
-                        tokens[17]
+                        tokens[17],
+                        tokens[18]
                       ),
-                    },
-                    tokens[17],
-                    tokens[18]
-                  ),
-                  tesMatch(
-                    {
-                      kind: 'EnumDefinition',
-                      values: [
-                        tesMatch(
-                          {
-                            kind: 'EnumValue',
-                            value: (tokens[22].data as IdentifierTokenData)
-                              .identifier,
-                          },
-                          tokens[22]
-                        ),
-                      ],
-                    },
-                    tokens[20],
-                    tokens[23]
-                  ),
-                ],
+                      tesMatch(
+                        {
+                          kind: 'EnumDefinition',
+                          values: [
+                            tesMatch(
+                              {
+                                kind: 'EnumValue',
+                                value: (tokens[22].data as IdentifierTokenData)
+                                  .identifier,
+                              },
+                              tokens[22]
+                            ),
+                          ],
+                        },
+                        tokens[20],
+                        tokens[23]
+                      ),
+                    ],
+                  },
+                  tokens[17],
+                  tokens[23]
+                ),
               },
-              tokens[17],
+              tokens[16],
               tokens[23]
             ),
           },
@@ -1108,9 +1262,16 @@ describe('syntax rules', () => {
             input: undefined,
             result: tesMatch(
               {
-                kind: 'ModelTypeName',
-                name: (tokens[5].data as IdentifierTokenData).identifier,
+                kind: 'UseCaseSlotDefinition',
+                type: tesMatch(
+                  {
+                    kind: 'ModelTypeName',
+                    name: (tokens[5].data as IdentifierTokenData).identifier,
+                  },
+                  tokens[5]
+                ),
               },
+              tokens[4],
               tokens[5]
             ),
             asyncResult: undefined,
@@ -1269,6 +1430,7 @@ describe('syntax rules', () => {
                             kind: 'FieldDefinition',
                             fieldName: (tokens[7].data as IdentifierTokenData)
                               .identifier,
+                            required: false,
                             type: undefined,
                           },
                           tokens[7]
@@ -1292,9 +1454,17 @@ describe('syntax rules', () => {
                   input: undefined,
                   result: tesMatch(
                     {
-                      kind: 'ModelTypeName',
-                      name: (tokens[13].data as IdentifierTokenData).identifier,
+                      kind: 'UseCaseSlotDefinition',
+                      type: tesMatch(
+                        {
+                          kind: 'ModelTypeName',
+                          name: (tokens[13].data as IdentifierTokenData)
+                            .identifier,
+                        },
+                        tokens[13]
+                      ),
                     },
+                    tokens[12],
                     tokens[13]
                   ),
                   asyncResult: undefined,
