@@ -12,9 +12,25 @@ const SCANNER = ts.createScanner(
   ts.LanguageVariant.Standard
 );
 
+export type JessieExpressionTerminationToken = ';' | ')' | '}' | ']' | ',' | '\n';
+const TERMINATION_TOKEN_TO_TS_TOKEN: { [T in JessieExpressionTerminationToken]: ts.SyntaxKind } = {
+  ';': ts.SyntaxKind.SemicolonToken,
+  ')': ts.SyntaxKind.CloseParenToken,
+  '}': ts.SyntaxKind.CloseBraceToken,
+  ']': ts.SyntaxKind.CloseBracketToken,
+  ',': ts.SyntaxKind.ColonToken,
+  '\n': ts.SyntaxKind.NewLineTrivia
+}
+
 export function tryParseJessieScriptExpression(
-  slice: string
+  slice: string,
+  terminationTokens?: ReadonlyArray<JessieExpressionTerminationToken>
 ): ParseResult<JessieSublexerTokenData> {
+  const termTokens = terminationTokens?.map(tok => TERMINATION_TOKEN_TO_TS_TOKEN[tok]) ?? []
+  if (termTokens.length === 0) {
+    termTokens.push(ts.SyntaxKind.SemicolonToken)
+  }
+
   // Set the scanner text thus reusing the old scanner instance
   SCANNER.setText(slice);
 
@@ -26,13 +42,8 @@ export function tryParseJessieScriptExpression(
     // Termination checks
     const token = SCANNER.scan();
 
-    // Look ahead for a semicolon, } or (
-    if (
-      depthCounter === 0 &&
-      (token === ts.SyntaxKind.SemicolonToken ||
-        token === ts.SyntaxKind.CloseBraceToken ||
-        token === ts.SyntaxKind.CloseParenToken)
-    ) {
+    // Look ahead for a termination token
+    if (depthCounter === 0 && termTokens.includes(token)) {
       break;
     }
 

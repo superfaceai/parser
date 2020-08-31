@@ -1,4 +1,5 @@
-import { LexerContext, LexerTokenStream } from '../lexer';
+import { LexerContext, LexerContextType, LexerTokenStream } from '../lexer';
+import { JessieExpressionTerminationToken } from '../lexer/sublexer/jessie/expression';
 import {
   formatTokenKind,
   IdentifierTokenData,
@@ -155,8 +156,8 @@ export abstract class SyntaxRule<T> {
     return new SyntaxRuleString();
   }
 
-  static jessie(): SyntaxRuleJessie {
-    return new SyntaxRuleJessie();
+  static jessie(terminatingChars?: ReadonlyArray<JessieExpressionTerminationToken>): SyntaxRuleJessie {
+    return new SyntaxRuleJessie(terminatingChars);
   }
 
   // Combinators
@@ -365,6 +366,12 @@ export class SyntaxRuleString extends SyntaxRule<
 export class SyntaxRuleJessie extends SyntaxRule<
   LexerTokenMatch<JessieScriptTokenData>
 > {
+  constructor(
+    readonly terminationTokens?: ReadonlyArray<JessieExpressionTerminationToken>
+  ) {
+    super()
+  }
+
   tryMatch(
     tokens: LexerTokenStream
   ): RuleResult<LexerTokenMatch<JessieScriptTokenData>> {
@@ -381,7 +388,7 @@ export class SyntaxRuleJessie extends SyntaxRule<
 
         return undefined;
       },
-      LexerContext.JESSIE_SCRIPT_EXPRESSION
+      { type: LexerContextType.JESSIE_SCRIPT_EXPRESSION, terminationTokens: this.terminationTokens }
     );
   }
 

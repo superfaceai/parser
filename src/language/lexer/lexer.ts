@@ -1,11 +1,10 @@
 import { SyntaxError, SyntaxErrorCategory } from '../error';
 import { Location, Source } from '../source';
+import { LexerContext, LexerContextType, Sublexer } from './context'
 import { tryParseDefault } from './sublexer/default';
 import { tryParseJessieScriptExpression } from './sublexer/jessie';
 import { ParseResult } from './sublexer/result';
 import {
-  DefaultSublexerTokenData,
-  JessieSublexerTokenData,
   LexerToken,
   LexerTokenData,
   LexerTokenKind,
@@ -22,27 +21,6 @@ export const DEFAULT_TOKEN_KIND_FILER: LexerTokenKindFilter = {
   [LexerTokenKind.STRING]: false,
   [LexerTokenKind.JESSIE_SCRIPT]: false,
 };
-
-export const enum LexerContext {
-  /**
-   * Default lexer context for parsing the profile and map languages.
-   */
-  DEFAULT,
-  /**
-   * Lexer context for parsing Jessie script expressions.
-   */
-  JESSIE_SCRIPT_EXPRESSION,
-}
-export type Sublexer<C extends LexerContext> = (
-  slice: string
-) => ParseResult<SublexerReturnType<C>>;
-export type SublexerReturnType<
-  C extends LexerContext
-> = C extends LexerContext.DEFAULT
-  ? DefaultSublexerTokenData
-  : C extends LexerContext.JESSIE_SCRIPT_EXPRESSION
-  ? JessieSublexerTokenData
-  : never;
 
 export type LexerSavedState = LexerToken;
 export interface LexerTokenStream
@@ -74,7 +52,7 @@ export interface LexerTokenStream
  */
 export class Lexer implements LexerTokenStream {
   private readonly sublexers: {
-    [C in LexerContext]: Sublexer<C>;
+    [C in LexerContextType]: Sublexer<C>;
   };
 
   /** Last emitted token. */
@@ -86,8 +64,8 @@ export class Lexer implements LexerTokenStream {
 
   constructor(readonly source: Source, tokenKindFilter?: LexerTokenKindFilter) {
     this.sublexers = {
-      [LexerContext.DEFAULT]: tryParseDefault,
-      [LexerContext.JESSIE_SCRIPT_EXPRESSION]: tryParseJessieScriptExpression,
+      [LexerContextType.DEFAULT]: tryParseDefault,
+      [LexerContextType.JESSIE_SCRIPT_EXPRESSION]: tryParseJessieScriptExpression,
     };
 
     this.currentToken = new LexerToken(
@@ -249,15 +227,18 @@ export class Lexer implements LexerTokenStream {
 
     // Call one of the sublexers
     let tokenParseResult: ParseResult<LexerTokenData>;
-    switch (context ?? LexerContext.DEFAULT) {
-      case LexerContext.DEFAULT:
-        tokenParseResult = this.sublexers[LexerContext.DEFAULT](slice);
+    if (context === undefined) {
+      context = { type: LexerContextType.DEFAULT }
+    }
+    switch (context.type) {
+      case LexerContextType.DEFAULT:
+        tokenParseResult = this.sublexers[LexerContextType.DEFAULT](slice);
         break;
 
-      case LexerContext.JESSIE_SCRIPT_EXPRESSION:
+      case LexerContextType.JESSIE_SCRIPT_EXPRESSION:
         tokenParseResult = this.sublexers[
-          LexerContext.JESSIE_SCRIPT_EXPRESSION
-        ](slice);
+          LexerContextType.JESSIE_SCRIPT_EXPRESSION
+        ](slice, context.terminationTokens);
         break;
     }
 
