@@ -1,5 +1,6 @@
 import { Source } from '../source';
-import { DEFAULT_TOKEN_KIND_FILER, Lexer, LexerContext } from './lexer';
+import { LexerContext,LexerContextType } from './context'
+import { DEFAULT_TOKEN_KIND_FILER, Lexer } from './lexer';
 import {
   CommentTokenData,
   formatTokenData,
@@ -517,9 +518,9 @@ describe('lexer', () => {
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
       const contexts: { [N in number]: LexerContext | undefined } = {
-        6: LexerContext.JESSIE_SCRIPT_EXPRESSION,
-        10: LexerContext.JESSIE_SCRIPT_EXPRESSION,
-        14: LexerContext.JESSIE_SCRIPT_EXPRESSION,
+        6: { type: LexerContextType.JESSIE_SCRIPT_EXPRESSION, terminationTokens: [';'] },
+        10: { type: LexerContextType.JESSIE_SCRIPT_EXPRESSION, terminationTokens: [';'] },
+        14: { type: LexerContextType.JESSIE_SCRIPT_EXPRESSION, terminationTokens: [';'] },
       };
 
       for (let i = 0; i < expectedTokens.length; i++) {
@@ -582,7 +583,7 @@ describe('lexer', () => {
       lexer.advance(); // SOF
 
       expect(() =>
-        lexer.advance(LexerContext.JESSIE_SCRIPT_EXPRESSION)
+        lexer.advance({ type: LexerContextType.JESSIE_SCRIPT_EXPRESSION, terminationTokens: [';'] })
       ).toThrowError('Expression expected.');
     });
 
@@ -592,7 +593,7 @@ describe('lexer', () => {
       lexer.advance(); // SOF
 
       expect(() =>
-        lexer.advance(LexerContext.JESSIE_SCRIPT_EXPRESSION)
+        lexer.advance({ type: LexerContextType.JESSIE_SCRIPT_EXPRESSION, terminationTokens: ['}'] })
       ).toThrowError('FunctionExpression construct is not supported');
     });
   });
