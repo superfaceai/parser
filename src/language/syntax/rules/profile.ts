@@ -452,9 +452,20 @@ export const PROFILE_ID: SyntaxRuleSrc<ProfileIdNode> = SyntaxRule.identifier(
     }
   );
 
+const DEBUG_JESSIE_NODE = SyntaxRule.identifier('debug_jessie_node').followedBy(
+  SyntaxRule.operator('=')
+).andBy(
+  SyntaxRule.jessie([';'])
+).andBy(
+  SyntaxRule.operator(';')
+)
 export const PROFILE: SyntaxRuleSrc<ProfileNode> = documentedNode(
-  PROFILE_ID.map(
-    (profileId): SrcNode<ProfileNode> => {
+  SyntaxRule.optional(DEBUG_JESSIE_NODE).followedBy(
+    PROFILE_ID
+  ).map(
+    (matches): SrcNode<ProfileNode> => {
+      const [maybeDebug, profileId] = matches;
+
       return {
         kind: 'Profile',
         profileId,
@@ -463,7 +474,8 @@ export const PROFILE: SyntaxRuleSrc<ProfileNode> = documentedNode(
           start: profileId.span.start,
           end: profileId.span.end,
         },
-      };
+        debugNode: maybeDebug
+      } as SrcNode<ProfileNode>;
     }
   )
 );
