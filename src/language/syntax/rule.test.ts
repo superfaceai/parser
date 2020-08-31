@@ -1,6 +1,6 @@
 import { LexerToken, LexerTokenData, LexerTokenKind } from '../lexer/token';
-import { ArrayLexerStream } from './util';
 import { LexerTokenMatch, MatchAttempts, SyntaxRule } from './rule';
+import { ArrayLexerStream } from './util';
 
 // Ensures that token spans are correctly ordered
 let TES_TOK_STATE = 0;

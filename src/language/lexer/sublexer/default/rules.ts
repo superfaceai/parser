@@ -86,7 +86,9 @@ export function tryParseOperator(
   };
 }
 
-export function tryParseBooleanLiteral(slice: string): ParseResult<LiteralTokenData> {
+export function tryParseBooleanLiteral(
+  slice: string
+): ParseResult<LiteralTokenData> {
   const parsed = tryParseScannerRules(slice, LITERALS_BOOL);
   if (parsed === undefined) {
     return undefined;

@@ -3,8 +3,8 @@ import { ProfileDocumentNode } from '@superindustries/language';
 import { SyntaxError } from '../error';
 import { Lexer } from '../lexer/lexer';
 import { Source } from '../source';
-import { PROFILE_DOCUMENT } from './rules/profile';
 import { SyntaxRule } from './rule';
+import { PROFILE_DOCUMENT } from './rules/profile';
 
 /**
  * Attempts to match `rule` onto `source`.

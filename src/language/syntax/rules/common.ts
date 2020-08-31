@@ -4,8 +4,8 @@ import {
   ProfileASTNodeBase,
 } from '@superindustries/language';
 
-import { extractDocumentation } from '../util';
 import { SyntaxRule } from '../rule';
+import { extractDocumentation } from '../util';
 
 // HELPER RULES //
 

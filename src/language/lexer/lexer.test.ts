@@ -486,7 +486,8 @@ describe('lexer', () => {
         { kind: LexerTokenKind.OPERATOR, operator: '=' },
         {
           kind: LexerTokenKind.JESSIE_SCRIPT,
-          script: '(function () { var foo = 1; return { foo: foo + 2, bar: Math.min(3, 4) }; })()',
+          script:
+            '(function () { var foo = 1; return { foo: foo + 2, bar: Math.min(3, 4) }; })()',
           sourceScript: 'not checked',
           sourceMap: 'not checked',
         },
@@ -598,8 +599,8 @@ describe('lexer', () => {
 
   describe('stream', () => {
     it('handles multiple saves', () => {
-      const lexer = new Lexer(new Source('1 2 3 4 5'))
-      lexer.next() // SOF
+      const lexer = new Lexer(new Source('1 2 3 4 5'));
+      lexer.next(); // SOF
 
       expect(lexer.next().value).toMatchObject({ data: { literal: 1 } });
 
@@ -622,8 +623,8 @@ describe('lexer', () => {
     });
 
     it('yields EOF once', () => {
-      const lexer = new Lexer(new Source('1'))
-      lexer.next() // SOF
+      const lexer = new Lexer(new Source('1'));
+      lexer.next(); // SOF
 
       expect(lexer.next().value).toMatchObject({ data: { literal: 1 } });
       expect(lexer.next().value).toMatchObject({ data: { separator: 'EOF' } });

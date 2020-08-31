@@ -2,9 +2,9 @@ import { DefaultSublexerTokenData, LiteralTokenData } from '../../token';
 import { ParseResult } from '../result';
 import { tryParseNumberLiteral } from './number';
 import {
+  tryParseBooleanLiteral,
   tryParseComment,
   tryParseIdentifier,
-  tryParseBooleanLiteral,
   tryParseOperator,
   tryParseSeparator,
 } from './rules';
