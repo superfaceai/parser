@@ -3,8 +3,10 @@
   "version": "0.0.0",
   "description": "Level 5 autonomous, self-driving API client, https://superface.ai",
   "repository": "https://github.com/superindustries/superface-parser.git",
-  "source": "src/index.js",
+  "source": "lib/index.js",
   "main": "dist/index.js",
+  "module": "dist/index.es.js",
+  "browser": "dist/index.browser.js",
   "types": "dist/index.d.ts",
   "author": "Superface Team",
   "license": "MIT",
@@ -16,7 +18,8 @@
     "registry": "https://npm.pkg.github.com/"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.release.json",
+    "build": "yarn build_tsc && parcel build lib/index.js --detailed-report",
+    "build_tsc": "tsc -p tsconfig.release.json",
     "prebuild": "yarn clean",
     "clean": "rimraf dist/ && rimraf lib/",
     "test": "jest",
@@ -36,6 +39,7 @@
     "eslint-plugin-jest": "^23.20.0",
     "eslint-plugin-simple-import-sort": "^5.0.3",
     "jest": "^26.4.1",
+    "parcel": "^2.0.0-beta.1",
     "prettier": "^2.1.1",
     "rimraf": "^3.0.2",
     "ts-jest": "^26.3.0"
