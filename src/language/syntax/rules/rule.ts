@@ -174,7 +174,7 @@ export abstract class SyntaxRule<T> {
   }
 
   // Cannot return `SyntaxRuleCondition` because that would confuse TS into thinking `SyntaxRule` is contravariant over `T`
-  condition(fn: (_: RuleResultMatch<T>) => boolean): SyntaxRule<T> {
+  condition(fn: (_: T) => boolean): SyntaxRule<T> {
     return new SyntaxRuleCondition(this, fn);
   }
 
@@ -550,7 +550,7 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
 export class SyntaxRuleCondition<R> extends SyntaxRule<R> {
   constructor(
     readonly rule: SyntaxRule<R>,
-    readonly fn: (result: RuleResultMatch<R>) => boolean
+    readonly fn: (result: R) => boolean
   ) {
     super();
   }
@@ -561,7 +561,7 @@ export class SyntaxRuleCondition<R> extends SyntaxRule<R> {
     const result = this.rule.tryMatch(tokens);
     if (result.kind === 'match') {
       // If the new result is a failure, roll back the tokens state.
-      if (!this.fn(result)) {
+      if (!this.fn(result.match)) {
         tokens.restore(save);
 
         return {

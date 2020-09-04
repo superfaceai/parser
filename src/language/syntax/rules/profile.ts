@@ -17,6 +17,7 @@ import {
   Type,
   UnionDefinitionNode,
   UseCaseDefinitionNode,
+  UseCaseSlotDefinitionNode,
 } from '@superindustries/language';
 
 import { IdentifierTokenData, LexerTokenKind } from '../../lexer/token';
@@ -282,42 +283,44 @@ TYPE_MUT.rule = TYPE;
 
 // FIELDS //
 
+const FIELD_DEFINITION_BEGIN = SyntaxRule.identifier().followedBy(
+  SyntaxRule.optional(SyntaxRule.operator('!'))
+);
+const FIELD_DEFINITION_END = SyntaxRule.optional(SyntaxRule.operator(','));
+const FIELD_DEFINITION_WITH_TYPE = FIELD_DEFINITION_BEGIN.andBy(
+  SyntaxRule.optional(TYPE)
+)
+  .andBy(FIELD_DEFINITION_END)
+  .condition((matches): boolean => {
+    const [name /* maybeRequired */, , maybeType /* maybeComma */] = matches;
+
+    return (
+      maybeType === undefined || maybeType.location.line === name.location.line
+    );
+  });
+const FIELD_DEFINITION_WITHOUT_TYPE = FIELD_DEFINITION_BEGIN.andBy(
+  FIELD_DEFINITION_END
+).map(matches => [matches[0], matches[1], undefined, matches[2]] as const);
+
 /** Construct of form: `ident type`, `ident { fields... }` or `ident` */
 export const FIELD_DEFINITION: SyntaxRuleSrc<FieldDefinitionNode> = documentedNode(
-  SyntaxRule.identifier()
-    .followedBy(TYPE)
-    .condition(matchResult => {
-      const [name, type] = matchResult.match;
+  FIELD_DEFINITION_WITH_TYPE.or(FIELD_DEFINITION_WITHOUT_TYPE).map(
+    (matches): SrcNode<FieldDefinitionNode> => {
+      const [name, maybeRequired, maybeType, maybeComma] = matches;
 
-      return type.location.line === name.location.line;
-    })
-    .or(SyntaxRule.identifier())
-    .followedBy(SyntaxRule.optional(SyntaxRule.operator(',')))
-    .map(
-      (matches): SrcNode<FieldDefinitionNode> => {
-        const [field, maybeComma] = matches;
-
-        let name: LexerTokenMatch<IdentifierTokenData>;
-        let maybeType: SrcNode<Type> | undefined = undefined;
-        if (Array.isArray(field)) {
-          name = field[0];
-          maybeType = field[1];
-        } else {
-          name = field;
-        }
-
-        return {
-          kind: 'FieldDefinition',
-          fieldName: name.data.identifier,
-          type: maybeType,
-          location: name.location,
-          span: {
-            start: name.span.start,
-            end: maybeComma?.span.end ?? maybeType?.span.end ?? name.span.end,
-          },
-        };
-      }
-    )
+      return {
+        kind: 'FieldDefinition',
+        fieldName: name.data.identifier,
+        required: maybeRequired !== undefined ? true : false,
+        type: maybeType,
+        location: name.location,
+        span: {
+          start: name.span.start,
+          end: (maybeComma ?? maybeType ?? maybeRequired ?? name).span.end,
+        },
+      };
+    }
+  )
 );
 FIELD_DEFINITION_MUT.rule = FIELD_DEFINITION;
 
@@ -371,6 +374,36 @@ export const NAMED_MODEL_DEFINITION: SyntaxRuleSrc<NamedModelDefinitionNode> = d
 
 // USECASE //
 
+const USECASE_SLOT_DEFINITION_FACTORY: <T extends Type>(
+  slotName: string,
+  typeRule: SyntaxRuleSrc<T>
+) => SyntaxRuleSrc<UseCaseSlotDefinitionNode<T>> = <T extends Type>(
+  slotName: string,
+  typeRule: SyntaxRuleSrc<T>
+) =>
+  documentedNode<
+    SrcNode<UseCaseSlotDefinitionNode<T>>,
+    SyntaxRule<SrcNode<UseCaseSlotDefinitionNode<T>>>
+  >(
+    SyntaxRule.identifier(slotName)
+      .followedBy(SyntaxRule.optional(typeRule))
+      .map(
+        (matches): SrcNode<UseCaseSlotDefinitionNode<T>> => {
+          const [name, maybeType] = matches;
+
+          return {
+            kind: 'UseCaseSlotDefinition',
+            type: maybeType,
+            location: name.location,
+            span: {
+              start: name.span.start,
+              end: (maybeType ?? name).span.end,
+            },
+          };
+        }
+      )
+  );
+
 const USECASE_SAFETY: SyntaxRule<LexerTokenMatch<
   IdentifierTokenData
 >> = SyntaxRule.identifier('safe')
@@ -394,20 +427,18 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
     .andBy(SyntaxRule.separator('{'))
     .andBy(
       SyntaxRule.optional(
-        SyntaxRule.identifier('input').followedBy(OBJECT_DEFINITION)
+        USECASE_SLOT_DEFINITION_FACTORY('input', OBJECT_DEFINITION)
       )
     )
-    .andBy(
-      SyntaxRule.optional(SyntaxRule.identifier('result').followedBy(TYPE))
-    )
+    .andBy(SyntaxRule.optional(USECASE_SLOT_DEFINITION_FACTORY('result', TYPE)))
     .andBy(
       SyntaxRule.optional(
-        SyntaxRule.identifier('async')
-          .followedBy(SyntaxRule.identifier('result'))
-          .andBy(TYPE)
+        SyntaxRule.identifier('async').followedBy(
+          USECASE_SLOT_DEFINITION_FACTORY('result', TYPE)
+        )
       )
     )
-    .andBy(SyntaxRule.optional(SyntaxRule.identifier('error').followedBy(TYPE)))
+    .andBy(SyntaxRule.optional(USECASE_SLOT_DEFINITION_FACTORY('error', TYPE)))
     .andBy(SyntaxRule.separator('}'))
     .map(
       (matches): SrcNode<UseCaseDefinitionNode> => {
@@ -422,11 +453,6 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
           maybeError,
           sepEnd,
         ] = matches;
-
-        const input: SrcNode<ObjectDefinitionNode> | undefined =
-          maybeInput?.[1];
-        const asyncResult: SrcNode<Type> | undefined = maybeAsyncResult?.[2];
-        const error: SrcNode<Type> | undefined = maybeError?.[1];
 
         let safety: UseCaseDefinitionNode['safety'] = undefined;
         switch (maybeSafety?.data.identifier) {
@@ -453,10 +479,10 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
           kind: 'UseCaseDefinition',
           useCaseName: name.data.identifier,
           safety,
-          input,
-          result: maybeResult?.[1],
-          asyncResult,
-          error,
+          input: maybeInput,
+          result: maybeResult,
+          asyncResult: maybeAsyncResult?.[1],
+          error: maybeError,
           location: usecaseKey.location,
           span: { start: usecaseKey.span.start, end: sepEnd.span.end },
         };
