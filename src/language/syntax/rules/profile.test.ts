@@ -94,7 +94,7 @@ function tesMatch<I extends Record<string, unknown>>(
   };
 }
 
-describe('syntax rules', () => {
+describe('profile syntax rules', () => {
   describe('types', () => {
     it('should parse scalar type', () => {
       const tokens: ReadonlyArray<LexerToken> = [
@@ -649,11 +649,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'string' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: ',' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'FieldDefinition',
@@ -679,11 +679,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'string' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'FieldDefinition',
@@ -709,11 +709,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: ',' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'FieldDefinition',
@@ -732,11 +732,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'FieldDefinition',

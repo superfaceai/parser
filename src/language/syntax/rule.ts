@@ -167,7 +167,7 @@ export abstract class SyntaxRule<T> {
   }
 
   /**
-   * To cascade multiple `followedBy` rules, use `.andBy` method on the
+   * To cascade multiple `followedBy` rules, use `.andFollowedBy` method on the
    * `SyntaxRuleFollowedBy` object that is returned to flatten nested tuples.
    */
   followedBy<R>(rule: SyntaxRule<R>): SyntaxRuleFollowedBy<[T], R> {
@@ -434,7 +434,7 @@ export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
 
 /** Matches `first` followed by `second.
  *
- * Use `.andBy` to chain additional `followedBy` rules to flatten the `match` tuple.
+ * Use `.andFollowedBy` to chain additional `followedBy` rules to flatten the `match` tuple.
  */
 export class SyntaxRuleFollowedBy<
   F extends readonly unknown[],
@@ -444,7 +444,7 @@ export class SyntaxRuleFollowedBy<
     super();
   }
 
-  andBy<R>(rule: SyntaxRule<R>): SyntaxRuleFollowedBy<[...F, S], R> {
+  andFollowedBy<R>(rule: SyntaxRule<R>): SyntaxRuleFollowedBy<[...F, S], R> {
     return new SyntaxRuleFollowedBy(this, rule);
   }
 

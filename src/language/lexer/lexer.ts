@@ -60,9 +60,10 @@ export class Lexer implements LexerTokenStream {
   /** Next token after `currentToken`, stored when `lookahead` is called. */
   private nextToken: LexerToken | undefined;
 
+  /** Default token kind filter used if no filter is provided in the context. */
   private readonly tokenKindFilter: LexerTokenKindFilter;
 
-  constructor(readonly source: Source, tokenKindFilter?: LexerTokenKindFilter) {
+  constructor(readonly source: Source, defaultTokenKindFilter?: LexerTokenKindFilter) {
     this.sublexers = {
       [LexerContextType.DEFAULT]: tryParseDefault,
       [LexerContextType.JESSIE_SCRIPT_EXPRESSION]: tryParseJessieScriptExpression,
@@ -78,7 +79,7 @@ export class Lexer implements LexerTokenStream {
     );
     this.nextToken = this.currentToken;
 
-    this.tokenKindFilter = tokenKindFilter ?? DEFAULT_TOKEN_KIND_FILER;
+    this.tokenKindFilter = defaultTokenKindFilter ?? DEFAULT_TOKEN_KIND_FILER;
   }
 
   /** Advances the lexer returning the current token. */
@@ -107,8 +108,14 @@ export class Lexer implements LexerTokenStream {
     if (this.nextToken === undefined) {
       this.nextToken = this.readNextToken(this.currentToken, context);
     }
+
     // skip tokens if they are caught by the filter
-    while (this.tokenKindFilter[this.nextToken.data.kind]) {
+    const filter = context?.filter ?? this.tokenKindFilter;
+    while (filter[this.nextToken.data.kind]) {
+      // Always break on EOF even if separators are filtered to avoid an infinite loop.
+      if (this.nextToken.isEOF()) {
+        break;
+      }
       this.nextToken = this.readNextToken(this.nextToken, context);
     }
 
@@ -183,6 +190,9 @@ export class Lexer implements LexerTokenStream {
     start: number;
     location: Location;
   } {
+    // Count number of newlines inside the last token to correctly compute the position
+    const newlinesInToken = this.source.body.slice(lastToken.span.start, lastToken.span.end).split('\n').length - 1;
+
     // Count number of whitespace and newlines after the last token.
     const whitespaceAfterToken = util.countStartingWithNewlines(
       util.isWhitespace,
@@ -193,7 +203,7 @@ export class Lexer implements LexerTokenStream {
     const start = lastToken.span.end + whitespaceAfterToken.count;
 
     // Line is just offset by the number of newlines counted.
-    const line = lastToken.location.line + whitespaceAfterToken.newlines;
+    const line = lastToken.location.line + newlinesInToken + whitespaceAfterToken.newlines;
 
     // When no newlines are encountered, it is simply an offset from the last token `column` by the width of the last token plus number of whitespace skipped
     let column = lastToken.location.column + (start - lastToken.span.start);

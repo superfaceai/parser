@@ -281,7 +281,7 @@ describe('syntax rule factory', () => {
 
       const rule = SyntaxRule.identifier('result')
         .followedBy(SyntaxRule.operator(':'))
-        .andBy(SyntaxRule.literal());
+        .andFollowedBy(SyntaxRule.literal());
 
       expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
@@ -301,7 +301,7 @@ describe('syntax rule factory', () => {
       const firstRule = SyntaxRule.identifier('field');
       const rule = firstRule
         .followedBy(SyntaxRule.operator(':'))
-        .andBy(SyntaxRule.literal());
+        .andFollowedBy(SyntaxRule.literal());
 
       expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'nomatch',
@@ -320,7 +320,7 @@ describe('syntax rule factory', () => {
       const secondRule = SyntaxRule.operator('!');
       const rule = SyntaxRule.identifier('result')
         .followedBy(secondRule)
-        .andBy(SyntaxRule.literal());
+        .andFollowedBy(SyntaxRule.literal());
 
       expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'nomatch',
@@ -339,7 +339,7 @@ describe('syntax rule factory', () => {
       const thirdRule = SyntaxRule.identifier();
       const rule = SyntaxRule.identifier('result')
         .followedBy(SyntaxRule.operator(':'))
-        .andBy(thirdRule);
+        .andFollowedBy(thirdRule);
 
       expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'nomatch',

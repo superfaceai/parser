@@ -213,7 +213,8 @@ describe('langauge syntax errors', () => {
 
     it('should report enum value rule error', () => {
       const tokens = new Source(`enum {
-asdf = 'asdf'
+asdf = 'as
+df'
 !
 }`);
 
@@ -221,11 +222,11 @@ asdf = 'asdf'
         parseRule(profile.ENUM_DEFINITION, tokens, true)
       ).toThrowSyntaxError(
         'Expected string or identifier or `}` but found `!`',
-        '[input]:3:1',
-        "2 | asdf = 'asdf'",
-        '3 | !',
+        '[input]:4:1',
+        "3 | df'",
+        '4 | !',
         '  | ^',
-        '4 | }'
+        '5 | }'
       );
     });
   });

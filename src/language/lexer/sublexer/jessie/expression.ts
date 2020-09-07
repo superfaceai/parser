@@ -8,7 +8,7 @@ import { ParseResult } from '../result';
 // Static SCANNER to avoid reinitializing it, same thing is done inside TS library
 const SCANNER = ts.createScanner(
   ts.ScriptTarget.Latest,
-  true,
+  false,
   ts.LanguageVariant.Standard
 );
 
