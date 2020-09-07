@@ -14,12 +14,13 @@ import * as util from './util';
 export type LexerTokenKindFilter = { [K in LexerTokenKind]: boolean };
 export const DEFAULT_TOKEN_KIND_FILER: LexerTokenKindFilter = {
   [LexerTokenKind.COMMENT]: true,
+  [LexerTokenKind.NEWLINE]: true,
   [LexerTokenKind.IDENTIFIER]: false,
   [LexerTokenKind.LITERAL]: false,
   [LexerTokenKind.OPERATOR]: false,
   [LexerTokenKind.SEPARATOR]: false,
   [LexerTokenKind.STRING]: false,
-  [LexerTokenKind.JESSIE_SCRIPT]: false,
+  [LexerTokenKind.JESSIE_SCRIPT]: false
 };
 
 export type LexerSavedState = LexerToken;
@@ -61,7 +62,7 @@ export class Lexer implements LexerTokenStream {
   private nextToken: LexerToken | undefined;
 
   /** Default token kind filter used if no filter is provided in the context. */
-  private readonly tokenKindFilter: LexerTokenKindFilter;
+  readonly tokenKindFilter: LexerTokenKindFilter;
 
   constructor(readonly source: Source, defaultTokenKindFilter?: LexerTokenKindFilter) {
     this.sublexers = {
@@ -191,30 +192,37 @@ export class Lexer implements LexerTokenStream {
     location: Location;
   } {
     // Count number of newlines inside the last token to correctly compute the position
-    const newlinesInToken = this.source.body.slice(lastToken.span.start, lastToken.span.end).split('\n').length - 1;
+    const lastTokenBody = Array.from(this.source.body.slice(lastToken.span.start, lastToken.span.end))
+    const [newlinesInToken, lastNewlineOffset] = lastTokenBody.reduce(
+      (acc: [newlines: number, offset: number | undefined], char, index) => {
+        if (char === '\n') {
+          acc[0] += 1;
+          acc[1] = index;
+        }
 
-    // Count number of whitespace and newlines after the last token.
-    const whitespaceAfterToken = util.countStartingWithNewlines(
-      util.isWhitespace,
+        return acc;
+      },
+      [0, undefined]
+    )
+
+    // Count number of non-newline whitespace tokens after the last token.
+    const whitespaceAfterToken = util.countStarting(
+      (ch) => !util.isNewline(ch) && util.isWhitespace(ch),
       this.source.body.slice(lastToken.span.end)
     );
 
     // Compute the start of the next token by ignoring whitespace after the last token.
-    const start = lastToken.span.end + whitespaceAfterToken.count;
+    const start = lastToken.span.end + whitespaceAfterToken;
 
     // Line is just offset by the number of newlines counted.
-    const line = lastToken.location.line + newlinesInToken + whitespaceAfterToken.newlines;
+    const line = lastToken.location.line + newlinesInToken;
 
-    // When no newlines are encountered, it is simply an offset from the last token `column` by the width of the last token plus number of whitespace skipped
+    // When no newlines are encountered, column is simply an offset from the last token `column` by the length of the last token plus number of whitespaces skipped.
     let column = lastToken.location.column + (start - lastToken.span.start);
-    if (whitespaceAfterToken.lastNewlineOffset !== undefined) {
+    if (lastNewlineOffset !== undefined) {
       // When some newlines were encountered, the offset of the last newline from the slice start is stored in `lastNewlineOffset`
-      // `column` is then the distance between `start` and the position after (the inner + 1) the last newline
-      // Since column is 1-based, the outer + 1 is added (which actually negates the inner one, but is here for clarity)
-      column =
-        start -
-        (lastToken.span.end + whitespaceAfterToken.lastNewlineOffset + 1) +
-        1;
+      // `column` is then the distance between the position *after* the last newline and `start` plus 1 because it is 1-based
+      column = start - (lastToken.span.start + lastNewlineOffset + 1) + 1; // the ones cancel out but they are left here for clarity
     }
 
     return {

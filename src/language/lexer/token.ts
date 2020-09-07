@@ -6,9 +6,10 @@ export const enum LexerTokenKind {
   SEPARATOR, // SOF/EOF, (), [], {}
   OPERATOR, // :, !, +, -, |, =, @, ,, ;
   LITERAL, // number or boolean
-  STRING, // string literals - separate because it makes later stages easier
+  STRING, // string literals
   IDENTIFIER, // a-z A-Z _ 0-9
   COMMENT, // line comments (# foo)
+  NEWLINE, // newline
   JESSIE_SCRIPT, // Jessie script
 }
 
@@ -55,10 +56,8 @@ export const LITERALS_BOOL: Record<string, LexerScanRule<boolean>> = {
 };
 export type LiteralValue = number | boolean;
 export type StringValue = string;
-
 export type IdentifierValue = string;
 export type CommentValue = string;
-
 export type JessieScriptValue = string;
 
 // Token datas //
@@ -87,6 +86,9 @@ export interface CommentTokenData {
   kind: LexerTokenKind.COMMENT;
   comment: CommentValue;
 }
+export interface NewlineTokenData {
+  kind: LexerTokenKind.NEWLINE;
+}
 export interface JessieScriptTokenData {
   kind: LexerTokenKind.JESSIE_SCRIPT;
   script: JessieScriptValue;
@@ -100,7 +102,9 @@ export type DefaultSublexerTokenData =
   | LiteralTokenData
   | StringTokenData
   | IdentifierTokenData
-  | CommentTokenData;
+  | CommentTokenData
+  | NewlineTokenData
+;
 export type JessieSublexerTokenData = JessieScriptTokenData;
 
 export type LexerTokenData = DefaultSublexerTokenData | JessieSublexerTokenData;
@@ -119,6 +123,8 @@ export function formatTokenKind(kind: LexerTokenKind): string {
       return 'identifier';
     case LexerTokenKind.COMMENT:
       return 'comment';
+    case LexerTokenKind.NEWLINE:
+      return 'newline';
     case LexerTokenKind.JESSIE_SCRIPT:
       return 'jessie script';
   }
@@ -140,6 +146,8 @@ export function formatTokenData(
       return { kind, data: data.identifier.toString() };
     case LexerTokenKind.COMMENT:
       return { kind, data: data.comment.toString() };
+    case LexerTokenKind.NEWLINE:
+      return { kind, data: '\n' };
     case LexerTokenKind.JESSIE_SCRIPT:
       return { kind, data: data.script.toString() };
   }

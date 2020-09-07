@@ -1,4 +1,5 @@
 import { LexerContext, LexerContextType, LexerTokenStream } from '../lexer';
+import { DEFAULT_TOKEN_KIND_FILER } from '../lexer/lexer';
 import { JessieExpressionTerminationToken } from '../lexer/sublexer/jessie/expression';
 import {
   formatTokenKind,
@@ -9,6 +10,7 @@ import {
   LexerTokenData,
   LexerTokenKind,
   LiteralTokenData,
+  NewlineTokenData,
   OperatorTokenData,
   OperatorValue,
   SeparatorTokenData,
@@ -154,6 +156,10 @@ export abstract class SyntaxRule<T> {
 
   static string(): SyntaxRuleString {
     return new SyntaxRuleString();
+  }
+
+  static newline(): SyntaxRuleNewline {
+    return new SyntaxRuleNewline();
   }
 
   static jessie(terminatingChars?: ReadonlyArray<JessieExpressionTerminationToken>): SyntaxRuleJessie {
@@ -362,6 +368,34 @@ export class SyntaxRuleString extends SyntaxRule<
 }
 
 // Specific nodes //
+
+export class SyntaxRuleNewline extends SyntaxRule<
+  LexerTokenMatch<NewlineTokenData>
+> {
+  tryMatch(
+    tokens: LexerTokenStream
+  ): RuleResult<LexerTokenMatch<NewlineTokenData>> {
+    return this.simpleTryMatchBoilerplate(
+      tokens,
+      token => {
+        if (token.data.kind === LexerTokenKind.NEWLINE) {
+          return {
+            data: token.data,
+            span: token.span,
+            location: token.location,
+          };
+        }
+
+        return undefined;
+      },
+      { type: LexerContextType.DEFAULT, filter: { ...DEFAULT_TOKEN_KIND_FILER, [LexerTokenKind.NEWLINE]: false } }
+    );
+  }
+
+  [Symbol.toStringTag](): string {
+    return formatTokenKind(LexerTokenKind.NEWLINE);
+  }
+}
 
 export class SyntaxRuleJessie extends SyntaxRule<
   LexerTokenMatch<JessieScriptTokenData>
