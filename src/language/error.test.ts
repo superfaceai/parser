@@ -221,7 +221,7 @@ df'
       expect(() =>
         parseRule(profile.ENUM_DEFINITION, tokens, true)
       ).toThrowSyntaxError(
-        'Expected string or identifier or `}` but found `!`',
+        'Expected `,` or `}` or string or identifier but found `!`',
         '[input]:4:1',
         "3 | df'",
         '4 | !',

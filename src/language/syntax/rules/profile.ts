@@ -79,10 +79,16 @@ export const ENUM_VALUE: SyntaxRuleSrc<EnumValueNode> = documentedNode(
           SyntaxRule.literal().or(SyntaxRule.string())
         )
       )
+    ).andFollowedBy(
+      SyntaxRule.operator(',').or(
+        SyntaxRule.lookahead(SyntaxRule.separator('}'))
+      ).or(
+        SyntaxRule.lookahead(SyntaxRule.newline())
+      )
     )
     .map(
       (matches): SrcNode<EnumValueNode> => {
-        const [name, maybeAssignment] = matches;
+        const [name, maybeAssignment, /* maybeComma */] = matches;
 
         let enumValue: string | number | boolean;
         if (maybeAssignment === undefined) {
@@ -110,7 +116,7 @@ export const ENUM_VALUE: SyntaxRuleSrc<EnumValueNode> = documentedNode(
           location: name.location,
           span: {
             start: name.span.start,
-            end: maybeAssignment?.[1].span.end ?? name.span.end,
+            end: (maybeAssignment?.[1] ?? name).span.end
           },
         };
       }
@@ -261,10 +267,14 @@ export const FIELD_DEFINITION: SyntaxRuleSrc<FieldDefinitionNode> = documentedNo
       ).followedBy(TYPE)
     )
   ).andFollowedBy(
-    SyntaxRule.optional(SyntaxRule.operator(','))
+    SyntaxRule.operator(',').or(
+      SyntaxRule.lookahead(SyntaxRule.separator('}'))
+    ).or(
+      SyntaxRule.lookahead(SyntaxRule.newline())
+    )
   ).map(
     (matches): SrcNode<FieldDefinitionNode> => {
-      const [name, maybeRequired, maybeTypeWithLookahead, maybeComma] = matches;
+      const [name, maybeRequired, maybeTypeWithLookahead, /* maybeComma */] = matches;
 
       const maybeType = maybeTypeWithLookahead?.[1]
 
@@ -276,7 +286,7 @@ export const FIELD_DEFINITION: SyntaxRuleSrc<FieldDefinitionNode> = documentedNo
         location: name.location,
         span: {
           start: name.span.start,
-          end: (maybeComma ?? maybeType ?? maybeRequired ?? name).span.end
+          end: (maybeType ?? maybeRequired ?? name).span.end
         }
       }
     }

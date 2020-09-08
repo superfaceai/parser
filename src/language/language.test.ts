@@ -296,16 +296,16 @@ describe('v6', () => {
 
   it('should parse UWE model', () => {
     const input = `model UWE {
-      f1 enum { a b }
+      f1 enum { a, b }
       f2 string 
       f3 {
         f3a
         f3b
       }
       f4 { f4a, f4b boolean }     # Ok with comma; however without comma -> error
-      # f5 f6 f7                    # -> error (in formatter?)
+      # f5 f6 f7                    # -> error
       f8, f9, f10                 # -> OK
-      # f11 string f12              # -> error (in formatter?)
+      # f11 string f12              # -> error
       f13 string, f14             # -> OK
     }`;
 
@@ -318,7 +318,7 @@ describe('v6', () => {
       type: {
         kind: 'ObjectDefinition',
         fields: [
-          // f1 enum { a b }
+          // f1 enum { a, b }
           {
             kind: 'FieldDefinition',
             fieldName: 'f1',

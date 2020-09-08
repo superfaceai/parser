@@ -15,8 +15,8 @@ import { documentedNode, SrcNode, SyntaxRuleSrc } from './common';
 export const OPERATION_DEFINITION: SyntaxRuleSrc<OperationDefinitionNode> = documentedNode(
   SyntaxRule.identifier('operator')
     .followedBy(SyntaxRule.identifier())
-    .andBy(SyntaxRule.separator('{'))
-    .andBy(SyntaxRule.separator('}'))
+    .andFollowedBy(SyntaxRule.separator('{'))
+    .andFollowedBy(SyntaxRule.separator('}'))
     .map(
       (matches): SrcNode<OperationDefinitionNode> => {
         const [
@@ -44,8 +44,8 @@ export const OPERATION_DEFINITION: SyntaxRuleSrc<OperationDefinitionNode> = docu
 export const MAP_DEFINITION: SyntaxRuleSrc<MapDefinitionNode> = documentedNode(
   SyntaxRule.identifier('map')
     .followedBy(SyntaxRule.identifier())
-    .andBy(SyntaxRule.separator('{'))
-    .andBy(SyntaxRule.separator('}'))
+    .andFollowedBy(SyntaxRule.separator('{'))
+    .andFollowedBy(SyntaxRule.separator('}'))
     .map(
       (matches): SrcNode<MapDefinitionNode> => {
         const [
@@ -75,7 +75,7 @@ export const PROFILE_ID: SyntaxRuleSrc<MapProfileIdNode> = SyntaxRule.identifier
   'profile'
 )
   .followedBy(SyntaxRuleSeparator.operator('='))
-  .andBy(SyntaxRule.string())
+  .andFollowedBy(SyntaxRule.string())
   .map(
     (matches): SrcNode<MapProfileIdNode> => {
       const [keyword /* op */, , profileId] = matches;
@@ -94,7 +94,7 @@ export const PROVIDER_ID: SyntaxRuleSrc<ProviderNode> = SyntaxRule.identifier(
   'provider'
 )
   .followedBy(SyntaxRuleSeparator.operator('='))
-  .andBy(SyntaxRule.string())
+  .andFollowedBy(SyntaxRule.string())
   .map(
     (matches): SrcNode<ProviderNode> => {
       const [keyword /* op */, , providerId] = matches;
@@ -132,8 +132,8 @@ export const MAP_DOCUMENT: SyntaxRuleSrc<MapDocumentNode> = SyntaxRule.separator
   'SOF'
 )
   .followedBy(MAP)
-  .andBy(SyntaxRule.optional(SyntaxRule.repeat(DOCUMENT_DEFINITION)))
-  .andBy(SyntaxRule.separator('EOF'))
+  .andFollowedBy(SyntaxRule.optional(SyntaxRule.repeat(DOCUMENT_DEFINITION)))
+  .andFollowedBy(SyntaxRule.separator('EOF'))
   .map(
     (matches): SrcNode<MapDocumentNode> => {
       const [, /* SOF */ map, definitions /* EOF */] = matches;

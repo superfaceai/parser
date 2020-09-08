@@ -140,19 +140,23 @@ describe('profile syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'enum' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'one' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'one' }), // 2
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({ kind: LexerTokenKind.LITERAL, literal: 1 }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'true' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'true' }), // 6
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({ kind: LexerTokenKind.LITERAL, literal: true }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: ',' }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'hello' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'hello' }), // 10
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({ kind: LexerTokenKind.STRING, string: 'hello' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: ',' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'hi' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'hi' }), // 15
 
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
@@ -176,30 +180,30 @@ describe('profile syntax rules', () => {
               tesMatch(
                 {
                   kind: 'EnumValue',
-                  value: (tokens[7].data as LiteralTokenData).literal,
+                  value: (tokens[8].data as LiteralTokenData).literal,
                 },
-                tokens[5],
-                tokens[7]
+                tokens[6],
+                tokens[8]
               ),
               tesMatch(
                 {
                   kind: 'EnumValue',
-                  value: (tokens[10].data as StringTokenData).string,
+                  value: (tokens[12].data as StringTokenData).string,
                 },
-                tokens[8],
-                tokens[10]
+                tokens[10],
+                tokens[12]
               ),
               tesMatch(
                 {
                   kind: 'EnumValue',
-                  value: (tokens[11].data as IdentifierTokenData).identifier,
+                  value: (tokens[15].data as IdentifierTokenData).identifier,
                 },
-                tokens[11]
+                tokens[15]
               ),
             ],
           },
           tokens[0],
-          tokens[12]
+          tokens[16]
         )
       );
     });
@@ -386,6 +390,7 @@ describe('profile syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'enum' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'value1' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: ',' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'value2' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
@@ -418,18 +423,18 @@ describe('profile syntax rules', () => {
                   tesMatch(
                     {
                       kind: 'EnumValue',
-                      value: (tokens[3].data as IdentifierTokenData).identifier,
+                      value: (tokens[4].data as IdentifierTokenData).identifier,
                     },
-                    tokens[3]
+                    tokens[4]
                   ),
                 ],
               },
               tokens[0],
-              tokens[4]
+              tokens[5]
             ),
           },
           tokens[0],
-          tokens[5]
+          tokens[6]
         )
       );
 
@@ -442,11 +447,11 @@ describe('profile syntax rules', () => {
                 kind: 'PrimitiveTypeName',
                 name: 'boolean',
               },
-              tokens[6]
+              tokens[7]
             ),
           },
-          tokens[6],
-          tokens[7]
+          tokens[7],
+          tokens[8]
         )
       );
 
@@ -459,11 +464,11 @@ describe('profile syntax rules', () => {
                 kind: 'ModelTypeName',
                 name: 'MyType',
               },
-              tokens[8]
+              tokens[9]
             ),
           },
-          tokens[8],
-          tokens[9]
+          tokens[9],
+          tokens[10]
         )
       );
     });
@@ -473,6 +478,7 @@ describe('profile syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'enum' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'value1' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'value2' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
 
@@ -507,22 +513,22 @@ describe('profile syntax rules', () => {
                     tesMatch(
                       {
                         kind: 'EnumValue',
-                        value: (tokens[3].data as IdentifierTokenData)
+                        value: (tokens[4].data as IdentifierTokenData)
                           .identifier,
                       },
-                      tokens[3]
+                      tokens[4]
                     ),
                   ],
                 },
                 tokens[0],
-                tokens[4]
+                tokens[5]
               ),
               tesMatch(
                 {
                   kind: 'PrimitiveTypeName',
                   name: 'boolean',
                 },
-                tokens[6]
+                tokens[7]
               ),
               tesMatch(
                 {
@@ -530,18 +536,18 @@ describe('profile syntax rules', () => {
                   type: tesMatch(
                     {
                       kind: 'ModelTypeName',
-                      name: (tokens[8].data as IdentifierTokenData).identifier,
+                      name: (tokens[9].data as IdentifierTokenData).identifier,
                     },
-                    tokens[8]
+                    tokens[9]
                   ),
                 },
-                tokens[8],
-                tokens[9]
+                tokens[9],
+                tokens[10]
               ),
             ],
           },
           tokens[0],
-          tokens[9]
+          tokens[10]
         )
       );
     });
@@ -551,6 +557,7 @@ describe('profile syntax rules', () => {
     it('should parse field without type', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE })
       ];
       const stream = new ArrayLexerStream(tokens);
 
@@ -573,6 +580,7 @@ describe('profile syntax rules', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'boolean' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE })
       ];
       const stream = new ArrayLexerStream(tokens);
 
@@ -604,6 +612,7 @@ describe('profile syntax rules', () => {
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE })
       ];
       const stream = new ArrayLexerStream(tokens);
 
@@ -667,7 +676,7 @@ describe('profile syntax rules', () => {
             ),
           },
           tokens[0],
-          tokens[3]
+          tokens[2]
         )
       );
     });
@@ -677,6 +686,7 @@ describe('profile syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'string' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE })
       ];
       const stream = new ArrayLexerStream(tokens);
 
@@ -721,7 +731,7 @@ describe('profile syntax rules', () => {
             type: undefined,
           },
           tokens[0],
-          tokens[2]
+          tokens[1]
         )
       );
     });
@@ -730,6 +740,7 @@ describe('profile syntax rules', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE })
       ];
       const stream = new ArrayLexerStream(tokens);
 
@@ -753,6 +764,7 @@ describe('profile syntax rules', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.STRING, string: 'Title\n\nDescription' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE })
       ];
       const stream = new ArrayLexerStream(tokens);
 
@@ -778,6 +790,7 @@ describe('profile syntax rules', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE })
       ];
       const stream = new ArrayLexerStream(tokens);
 
