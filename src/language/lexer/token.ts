@@ -103,8 +103,7 @@ export type DefaultSublexerTokenData =
   | StringTokenData
   | IdentifierTokenData
   | CommentTokenData
-  | NewlineTokenData
-;
+  | NewlineTokenData;
 export type JessieSublexerTokenData = JessieScriptTokenData;
 
 export type LexerTokenData = DefaultSublexerTokenData | JessieSublexerTokenData;

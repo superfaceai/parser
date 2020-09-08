@@ -27,7 +27,7 @@ export class ArrayLexerStream implements LexerTokenStream {
     }
 
     const filter = context?.filter ?? DEFAULT_TOKEN_KIND_FILER;
-    
+
     const token = this.array[this.index];
     let result: IteratorResult<LexerToken, undefined> = {
       done: false,
@@ -39,12 +39,12 @@ export class ArrayLexerStream implements LexerTokenStream {
       // Recurse
       result = this.next(context);
     }
-    
+
     return result;
   }
   peek(context?: LexerContext): IteratorResult<LexerToken, undefined> {
-    let originalIndex = this.index;
-    let result = this.next(context);
+    const originalIndex = this.index;
+    const result = this.next(context);
     this.index = originalIndex;
 
     return result;
@@ -63,8 +63,8 @@ export class ArrayLexerStream implements LexerTokenStream {
           { start: -1, end: -1 },
           { line: 0, column: 0 }
         ),
-        false
-      ]
+        false,
+      ];
     }
   }
   rollback(state: LexerSavedState): void {

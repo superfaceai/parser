@@ -457,16 +457,14 @@ describe('syntax rule factory', () => {
       ];
       const stream = new ArrayLexerStream(tokens);
 
-      const rule = SyntaxRule.lookahead(
-        SyntaxRule.string()
-      );
+      const rule = SyntaxRule.lookahead(SyntaxRule.string());
 
       expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
-        match: undefined
+        match: undefined,
       });
 
-      expect(stream.next().value).toStrictEqual(tokens[0])
+      expect(stream.next().value).toStrictEqual(tokens[0]);
     });
 
     it('should match inverted', () => {
@@ -475,16 +473,14 @@ describe('syntax rule factory', () => {
       ];
       const stream = new ArrayLexerStream(tokens);
 
-      const rule = SyntaxRule.lookahead(
-        SyntaxRule.literal(), true
-      );
+      const rule = SyntaxRule.lookahead(SyntaxRule.literal(), true);
 
       expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
-        match: undefined
+        match: undefined,
       });
 
-      expect(stream.next().value).toStrictEqual(tokens[0])
-    })
+      expect(stream.next().value).toStrictEqual(tokens[0]);
+    });
   });
 });

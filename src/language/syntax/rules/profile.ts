@@ -79,16 +79,15 @@ export const ENUM_VALUE: SyntaxRuleSrc<EnumValueNode> = documentedNode(
           SyntaxRule.literal().or(SyntaxRule.string())
         )
       )
-    ).andFollowedBy(
-      SyntaxRule.operator(',').or(
-        SyntaxRule.lookahead(SyntaxRule.separator('}'))
-      ).or(
-        SyntaxRule.lookahead(SyntaxRule.newline())
-      )
+    )
+    .andFollowedBy(
+      SyntaxRule.operator(',')
+        .or(SyntaxRule.lookahead(SyntaxRule.separator('}')))
+        .or(SyntaxRule.lookahead(SyntaxRule.newline()))
     )
     .map(
       (matches): SrcNode<EnumValueNode> => {
-        const [name, maybeAssignment, /* maybeComma */] = matches;
+        const [name, maybeAssignment /* maybeComma */] = matches;
 
         let enumValue: string | number | boolean;
         if (maybeAssignment === undefined) {
@@ -116,7 +115,7 @@ export const ENUM_VALUE: SyntaxRuleSrc<EnumValueNode> = documentedNode(
           location: name.location,
           span: {
             start: name.span.start,
-            end: (maybeAssignment?.[1] ?? name).span.end
+            end: (maybeAssignment?.[1] ?? name).span.end,
           },
         };
       }
@@ -257,41 +256,42 @@ TYPE_MUT.rule = TYPE;
 // FIELDS //
 
 export const FIELD_DEFINITION: SyntaxRuleSrc<FieldDefinitionNode> = documentedNode(
-  SyntaxRule.identifier().followedBy(
-    SyntaxRule.optional(SyntaxRule.operator('!'))
-  ).andFollowedBy(
-    SyntaxRule.optional(
-      SyntaxRule.lookahead(
-          SyntaxRule.newline(),
-          true
-      ).followedBy(TYPE)
+  SyntaxRule.identifier()
+    .followedBy(SyntaxRule.optional(SyntaxRule.operator('!')))
+    .andFollowedBy(
+      SyntaxRule.optional(
+        SyntaxRule.lookahead(SyntaxRule.newline(), true).followedBy(TYPE)
+      )
     )
-  ).andFollowedBy(
-    SyntaxRule.operator(',').or(
-      SyntaxRule.lookahead(SyntaxRule.separator('}'))
-    ).or(
-      SyntaxRule.lookahead(SyntaxRule.newline())
+    .andFollowedBy(
+      SyntaxRule.operator(',')
+        .or(SyntaxRule.lookahead(SyntaxRule.separator('}')))
+        .or(SyntaxRule.lookahead(SyntaxRule.newline()))
     )
-  ).map(
-    (matches): SrcNode<FieldDefinitionNode> => {
-      const [name, maybeRequired, maybeTypeWithLookahead, /* maybeComma */] = matches;
+    .map(
+      (matches): SrcNode<FieldDefinitionNode> => {
+        const [
+          name,
+          maybeRequired,
+          maybeTypeWithLookahead /* maybeComma */,
+        ] = matches;
 
-      const maybeType = maybeTypeWithLookahead?.[1]
+        const maybeType = maybeTypeWithLookahead?.[1];
 
-      return {
-        kind: 'FieldDefinition',
-        fieldName: name.data.identifier,
-        required: maybeRequired !== undefined,
-        type: maybeType,
-        location: name.location,
-        span: {
-          start: name.span.start,
-          end: (maybeType ?? maybeRequired ?? name).span.end
-        }
+        return {
+          kind: 'FieldDefinition',
+          fieldName: name.data.identifier,
+          required: maybeRequired !== undefined,
+          type: maybeType,
+          location: name.location,
+          span: {
+            start: name.span.start,
+            end: (maybeType ?? maybeRequired ?? name).span.end,
+          },
+        };
       }
-    }
-  )
-)
+    )
+);
 
 FIELD_DEFINITION_MUT.rule = FIELD_DEFINITION;
 
@@ -401,7 +401,9 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
         USECASE_SLOT_DEFINITION_FACTORY('input', OBJECT_DEFINITION)
       )
     )
-    .andFollowedBy(SyntaxRule.optional(USECASE_SLOT_DEFINITION_FACTORY('result', TYPE)))
+    .andFollowedBy(
+      SyntaxRule.optional(USECASE_SLOT_DEFINITION_FACTORY('result', TYPE))
+    )
     .andFollowedBy(
       SyntaxRule.optional(
         SyntaxRule.identifier('async').followedBy(
@@ -409,7 +411,9 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
         )
       )
     )
-    .andFollowedBy(SyntaxRule.optional(USECASE_SLOT_DEFINITION_FACTORY('error', TYPE)))
+    .andFollowedBy(
+      SyntaxRule.optional(USECASE_SLOT_DEFINITION_FACTORY('error', TYPE))
+    )
     .andFollowedBy(SyntaxRule.separator('}'))
     .map(
       (matches): SrcNode<UseCaseDefinitionNode> => {

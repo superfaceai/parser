@@ -1,4 +1,9 @@
-import { DefaultSublexerTokenData, LexerTokenKind, LiteralTokenData, NewlineTokenData } from '../../token';
+import {
+  DefaultSublexerTokenData,
+  LexerTokenKind,
+  LiteralTokenData,
+  NewlineTokenData,
+} from '../../token';
 import { isNewline } from '../../util';
 import { ParseResult } from '../result';
 import { tryParseNumberLiteral } from './number';
@@ -27,8 +32,8 @@ export function tryParseNewline(slice: string): ParseResult<NewlineTokenData> {
     return {
       isError: false,
       data: { kind: LexerTokenKind.NEWLINE },
-      relativeSpan: { start: 0, end: 1 }
-    }
+      relativeSpan: { start: 0, end: 1 },
+    };
   } else {
     return undefined;
   }

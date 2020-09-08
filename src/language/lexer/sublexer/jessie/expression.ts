@@ -12,24 +12,36 @@ const SCANNER = ts.createScanner(
   ts.LanguageVariant.Standard
 );
 
-export type JessieExpressionTerminationToken = ';' | ')' | '}' | ']' | ',' | '\n';
-const TERMINATION_TOKEN_TO_TS_TOKEN: { [T in JessieExpressionTerminationToken]: ts.SyntaxKind } = {
+export type JessieExpressionTerminationToken =
+  | ';'
+  | ')'
+  | '}'
+  | ']'
+  | ','
+  | '\n';
+const TERMINATION_TOKEN_TO_TS_TOKEN: {
+  [T in JessieExpressionTerminationToken]: ts.SyntaxKind;
+} = {
   ';': ts.SyntaxKind.SemicolonToken,
   ')': ts.SyntaxKind.CloseParenToken,
   '}': ts.SyntaxKind.CloseBraceToken,
   ']': ts.SyntaxKind.CloseBracketToken,
   ',': ts.SyntaxKind.ColonToken,
-  '\n': ts.SyntaxKind.NewLineTrivia
-}
-const FALLBACK_TERMINATOR_TOKENS: ReadonlyArray<JessieExpressionTerminationToken> = [';']
+  '\n': ts.SyntaxKind.NewLineTrivia,
+};
+const FALLBACK_TERMINATOR_TOKENS: ReadonlyArray<JessieExpressionTerminationToken> = [
+  ';',
+];
 
 export function tryParseJessieScriptExpression(
   slice: string,
   terminationTokens?: ReadonlyArray<JessieExpressionTerminationToken>
 ): ParseResult<JessieSublexerTokenData> {
-  const termTokens = (
-    (terminationTokens === undefined || terminationTokens.length === 0) ? FALLBACK_TERMINATOR_TOKENS : terminationTokens
-  ).map(tok => TERMINATION_TOKEN_TO_TS_TOKEN[tok])
+  const termTokens = (terminationTokens === undefined ||
+  terminationTokens.length === 0
+    ? FALLBACK_TERMINATOR_TOKENS
+    : terminationTokens
+  ).map(tok => TERMINATION_TOKEN_TO_TS_TOKEN[tok]);
 
   // Set the scanner text thus reusing the old scanner instance
   SCANNER.setText(slice);

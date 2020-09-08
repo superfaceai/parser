@@ -162,7 +162,9 @@ export abstract class SyntaxRule<T> {
     return new SyntaxRuleNewline();
   }
 
-  static jessie(terminatingChars?: ReadonlyArray<JessieExpressionTerminationToken>): SyntaxRuleJessie {
+  static jessie(
+    terminatingChars?: ReadonlyArray<JessieExpressionTerminationToken>
+  ): SyntaxRuleJessie {
     return new SyntaxRuleJessie(terminatingChars);
   }
 
@@ -196,7 +198,10 @@ export abstract class SyntaxRule<T> {
     return new SyntaxRuleOptional(rule);
   }
 
-  static lookahead<R>(rule: SyntaxRule<R>, invert?: boolean): SyntaxRuleLookahead<R> {
+  static lookahead<R>(
+    rule: SyntaxRule<R>,
+    invert?: boolean
+  ): SyntaxRuleLookahead<R> {
     return new SyntaxRuleLookahead(rule, invert);
   }
 }
@@ -383,7 +388,13 @@ export class SyntaxRuleNewline extends SyntaxRule<
 
         return undefined;
       },
-      { type: LexerContextType.DEFAULT, filter: { ...DEFAULT_TOKEN_KIND_FILER, [LexerTokenKind.NEWLINE]: false } }
+      {
+        type: LexerContextType.DEFAULT,
+        filter: {
+          ...DEFAULT_TOKEN_KIND_FILER,
+          [LexerTokenKind.NEWLINE]: false,
+        },
+      }
     );
   }
 
@@ -398,7 +409,7 @@ export class SyntaxRuleJessie extends SyntaxRule<
   constructor(
     readonly terminationTokens?: ReadonlyArray<JessieExpressionTerminationToken>
   ) {
-    super()
+    super();
   }
 
   tryMatch(
@@ -417,7 +428,10 @@ export class SyntaxRuleJessie extends SyntaxRule<
 
         return undefined;
       },
-      { type: LexerContextType.JESSIE_SCRIPT_EXPRESSION, terminationTokens: this.terminationTokens }
+      {
+        type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+        terminationTokens: this.terminationTokens,
+      }
     );
   }
 
@@ -585,9 +599,9 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
 export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
   /**
    * Invert the lookahead, matching if the inner rule fails.
-  */
+   */
   readonly invert: boolean;
-  
+
   constructor(readonly rule: SyntaxRule<R>, invert?: boolean) {
     super();
 
@@ -604,13 +618,13 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
       if (result.kind === 'nomatch') {
         return {
           kind: 'match',
-          match: undefined
-        }
+          match: undefined,
+        };
       } else {
         return {
           kind: 'nomatch',
-          attempts: new MatchAttempts(tokens.peek().value, [this])
-        }
+          attempts: new MatchAttempts(tokens.peek().value, [this]),
+        };
       }
     }
 

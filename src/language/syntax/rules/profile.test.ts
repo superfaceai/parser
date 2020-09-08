@@ -28,7 +28,8 @@ expect.extend({
 
     if (result.kind !== 'match') {
       pass = false;
-      message = SyntaxError.fromSyntaxRuleNoMatch(new Source(''), result).message;
+      message = SyntaxError.fromSyntaxRuleNoMatch(new Source(''), result)
+        .message;
     } else if (match !== undefined) {
       if (!this.equals(result.match, match)) {
         pass = false;
@@ -557,7 +558,7 @@ describe('profile syntax rules', () => {
     it('should parse field without type', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
-        tesTok({ kind: LexerTokenKind.NEWLINE })
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
       ];
       const stream = new ArrayLexerStream(tokens);
 
@@ -580,7 +581,7 @@ describe('profile syntax rules', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'boolean' }),
-        tesTok({ kind: LexerTokenKind.NEWLINE })
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
       ];
       const stream = new ArrayLexerStream(tokens);
 
@@ -612,7 +613,7 @@ describe('profile syntax rules', () => {
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
-        tesTok({ kind: LexerTokenKind.NEWLINE })
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
       ];
       const stream = new ArrayLexerStream(tokens);
 
@@ -686,7 +687,7 @@ describe('profile syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'string' }),
-        tesTok({ kind: LexerTokenKind.NEWLINE })
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
       ];
       const stream = new ArrayLexerStream(tokens);
 
@@ -740,7 +741,7 @@ describe('profile syntax rules', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
-        tesTok({ kind: LexerTokenKind.NEWLINE })
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
       ];
       const stream = new ArrayLexerStream(tokens);
 
@@ -764,7 +765,7 @@ describe('profile syntax rules', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.STRING, string: 'Title\n\nDescription' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
-        tesTok({ kind: LexerTokenKind.NEWLINE })
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
       ];
       const stream = new ArrayLexerStream(tokens);
 
@@ -790,7 +791,7 @@ describe('profile syntax rules', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
-        tesTok({ kind: LexerTokenKind.NEWLINE })
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
       ];
       const stream = new ArrayLexerStream(tokens);
 

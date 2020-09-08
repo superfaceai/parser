@@ -1,14 +1,10 @@
 import { SyntaxError, SyntaxErrorCategory } from '../error';
 import { Location, Source } from '../source';
-import { LexerContext, LexerContextType, Sublexer } from './context'
+import { LexerContext, LexerContextType, Sublexer } from './context';
 import { tryParseDefault } from './sublexer/default';
 import { tryParseJessieScriptExpression } from './sublexer/jessie';
 import { ParseResult } from './sublexer/result';
-import {
-  LexerToken,
-  LexerTokenData,
-  LexerTokenKind,
-} from './token';
+import { LexerToken, LexerTokenData, LexerTokenKind } from './token';
 import * as util from './util';
 
 export type LexerTokenKindFilter = { [K in LexerTokenKind]: boolean };
@@ -20,7 +16,7 @@ export const DEFAULT_TOKEN_KIND_FILER: LexerTokenKindFilter = {
   [LexerTokenKind.OPERATOR]: false,
   [LexerTokenKind.SEPARATOR]: false,
   [LexerTokenKind.STRING]: false,
-  [LexerTokenKind.JESSIE_SCRIPT]: false
+  [LexerTokenKind.JESSIE_SCRIPT]: false,
 };
 
 export type LexerSavedState = [LexerToken, boolean];
@@ -65,7 +61,10 @@ export class Lexer implements LexerTokenStream {
   /** Default token kind filter used if no filter is provided in the context. */
   readonly tokenKindFilter: LexerTokenKindFilter;
 
-  constructor(readonly source: Source, defaultTokenKindFilter?: LexerTokenKindFilter) {
+  constructor(
+    readonly source: Source,
+    defaultTokenKindFilter?: LexerTokenKindFilter
+  ) {
     this.sublexers = {
       [LexerContextType.DEFAULT]: tryParseDefault,
       [LexerContextType.JESSIE_SCRIPT_EXPRESSION]: tryParseJessieScriptExpression,
@@ -197,7 +196,9 @@ export class Lexer implements LexerTokenStream {
     location: Location;
   } {
     // Count number of newlines inside the last token to correctly compute the position
-    const lastTokenBody = Array.from(this.source.body.slice(lastToken.span.start, lastToken.span.end))
+    const lastTokenBody = Array.from(
+      this.source.body.slice(lastToken.span.start, lastToken.span.end)
+    );
     const [newlinesInToken, lastNewlineOffset] = lastTokenBody.reduce(
       (acc: [newlines: number, offset: number | undefined], char, index) => {
         if (char === '\n') {
@@ -208,11 +209,11 @@ export class Lexer implements LexerTokenStream {
         return acc;
       },
       [0, undefined]
-    )
+    );
 
     // Count number of non-newline whitespace tokens after the last token.
     const whitespaceAfterToken = util.countStarting(
-      (ch) => !util.isNewline(ch) && util.isWhitespace(ch),
+      ch => !util.isNewline(ch) && util.isWhitespace(ch),
       this.source.body.slice(lastToken.span.end)
     );
 
@@ -251,7 +252,7 @@ export class Lexer implements LexerTokenStream {
     // Call one of the sublexers
     let tokenParseResult: ParseResult<LexerTokenData>;
     if (context === undefined) {
-      context = { type: LexerContextType.DEFAULT }
+      context = { type: LexerContextType.DEFAULT };
     }
     switch (context.type) {
       case LexerContextType.DEFAULT:

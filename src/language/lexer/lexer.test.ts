@@ -1,5 +1,5 @@
 import { Source } from '../source';
-import { LexerContext,LexerContextType } from './context'
+import { LexerContext, LexerContextType } from './context';
 import { DEFAULT_TOKEN_KIND_FILER, Lexer } from './lexer';
 import {
   CommentTokenData,
@@ -373,7 +373,7 @@ ng2"
           ...DEFAULT_TOKEN_KIND_FILER,
           [LexerTokenKind.NEWLINE]: false,
         }
-      )
+      );
       const expectedTokens: LexerTokenData[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
         { kind: LexerTokenKind.IDENTIFIER, identifier: 'ident1' },
@@ -387,7 +387,7 @@ ng2"
         { kind: LexerTokenKind.STRING, string: 'string3' },
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
-      
+
       for (const expected of expectedTokens) {
         const actual = lexer.advance();
 
@@ -551,9 +551,18 @@ ng2"
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
       const contexts: { [N in number]: LexerContext | undefined } = {
-        6: { type: LexerContextType.JESSIE_SCRIPT_EXPRESSION, terminationTokens: [';'] },
-        10: { type: LexerContextType.JESSIE_SCRIPT_EXPRESSION, terminationTokens: [';'] },
-        14: { type: LexerContextType.JESSIE_SCRIPT_EXPRESSION, terminationTokens: [';'] },
+        6: {
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+          terminationTokens: [';'],
+        },
+        10: {
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+          terminationTokens: [';'],
+        },
+        14: {
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+          terminationTokens: [';'],
+        },
       };
 
       for (let i = 0; i < expectedTokens.length; i++) {
@@ -616,7 +625,10 @@ ng2"
       lexer.advance(); // SOF
 
       expect(() =>
-        lexer.advance({ type: LexerContextType.JESSIE_SCRIPT_EXPRESSION, terminationTokens: [';'] })
+        lexer.advance({
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+          terminationTokens: [';'],
+        })
       ).toThrowError('Expression expected.');
     });
 
@@ -626,7 +638,10 @@ ng2"
       lexer.advance(); // SOF
 
       expect(() =>
-        lexer.advance({ type: LexerContextType.JESSIE_SCRIPT_EXPRESSION, terminationTokens: ['}'] })
+        lexer.advance({
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+          terminationTokens: ['}'],
+        })
       ).toThrowError('FunctionExpression construct is not supported');
     });
   });
@@ -667,7 +682,7 @@ ng2"
   });
 
   it('should overwrite the filter from context', () => {
-    const lexer = new Lexer(new Source('1\n3 4\n5'))
+    const lexer = new Lexer(new Source('1\n3 4\n5'));
     lexer.next(); // SOF
 
     const save = lexer.save();
@@ -678,12 +693,19 @@ ng2"
     expect(lexer.next().value).toMatchObject({ data: { literal: 5 } });
 
     lexer.rollback(save);
-    const context = { type: LexerContextType.DEFAULT, filter: { ...lexer.tokenKindFilter, [LexerTokenKind.NEWLINE]: false } }
+    const context = {
+      type: LexerContextType.DEFAULT,
+      filter: { ...lexer.tokenKindFilter, [LexerTokenKind.NEWLINE]: false },
+    };
     expect(lexer.next().value).toMatchObject({ data: { literal: 1 } });
-    expect(lexer.next(context).value).toMatchObject({ data: { kind: LexerTokenKind.NEWLINE } });
+    expect(lexer.next(context).value).toMatchObject({
+      data: { kind: LexerTokenKind.NEWLINE },
+    });
     expect(lexer.next().value).toMatchObject({ data: { literal: 3 } });
     expect(lexer.next(context).value).toMatchObject({ data: { literal: 4 } });
-    expect(lexer.next(context).value).toMatchObject({ data: { kind: LexerTokenKind.NEWLINE } });
+    expect(lexer.next(context).value).toMatchObject({
+      data: { kind: LexerTokenKind.NEWLINE },
+    });
     expect(lexer.next().value).toMatchObject({ data: { literal: 5 } });
   });
 });
