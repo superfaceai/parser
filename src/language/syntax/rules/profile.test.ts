@@ -1,3 +1,4 @@
+import { SyntaxError } from '../../error';
 import {
   IdentifierTokenData,
   LexerToken,
@@ -6,7 +7,7 @@ import {
   LiteralTokenData,
   StringTokenData,
 } from '../../lexer/token';
-import { Location, Span } from '../../source';
+import { Location, Source, Span } from '../../source';
 import { RuleResult } from '../rule';
 import { ArrayLexerStream } from '../util';
 import * as rules from './profile';
@@ -27,7 +28,7 @@ expect.extend({
 
     if (result.kind !== 'match') {
       pass = false;
-      message = "Rule didn't match";
+      message = SyntaxError.fromSyntaxRuleNoMatch(new Source(''), result).message;
     } else if (match !== undefined) {
       if (!this.equals(result.match, match)) {
         pass = false;
@@ -60,21 +61,18 @@ expect.extend({
 // Ensures that token spans are correctly ordered in delcaration order
 // while also making sure that their spans and locations are random enough so that
 // equality checks find when a wrong span or location is calculated.
-let TES_TOK_STATE: { start: number; line: number } = { start: 0, line: 1 };
+let TES_TOK_STATE = 1;
 beforeEach(() => {
-  TES_TOK_STATE = { start: 0, line: 1 };
+  TES_TOK_STATE = 1;
 });
-function tesTok(data: LexerTokenData, bumpLine?: boolean): LexerToken {
-  const start = Math.floor(Math.random() * 1000) + TES_TOK_STATE.start * 10000;
-  const end = start + Math.floor(Math.random() * 100);
+function tesTok(data: LexerTokenData): LexerToken {
+  const start = Math.floor(Math.random() * 100) + TES_TOK_STATE * 10000;
+  const end = start;
 
-  if (bumpLine === true) {
-    TES_TOK_STATE.line += 1;
-  }
-  const line = TES_TOK_STATE.line;
+  const line = start;
   const column = start;
 
-  TES_TOK_STATE.start += 1;
+  TES_TOK_STATE += 1;
 
   return new LexerToken(data, { start, end }, { line, column });
 }
@@ -230,8 +228,9 @@ describe('profile syntax rules', () => {
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
 
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field1' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field2' }, true),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field2' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
 
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
@@ -257,23 +256,23 @@ describe('profile syntax rules', () => {
               tesMatch(
                 {
                   kind: 'FieldDefinition',
-                  fieldName: (tokens[2].data as IdentifierTokenData).identifier,
+                  fieldName: (tokens[3].data as IdentifierTokenData).identifier,
                   required: false,
                   type: tesMatch(
                     {
                       kind: 'ModelTypeName',
                       name: 'MyType',
                     },
-                    tokens[3]
+                    tokens[4]
                   ),
                 },
-                tokens[2],
-                tokens[3]
+                tokens[3],
+                tokens[4]
               ),
             ],
           },
           tokens[0],
-          tokens[4]
+          tokens[5]
         )
       );
     });

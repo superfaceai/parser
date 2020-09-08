@@ -21,15 +21,15 @@ const TERMINATION_TOKEN_TO_TS_TOKEN: { [T in JessieExpressionTerminationToken]: 
   ',': ts.SyntaxKind.ColonToken,
   '\n': ts.SyntaxKind.NewLineTrivia
 }
+const FALLBACK_TERMINATOR_TOKENS: ReadonlyArray<JessieExpressionTerminationToken> = [';']
 
 export function tryParseJessieScriptExpression(
   slice: string,
   terminationTokens?: ReadonlyArray<JessieExpressionTerminationToken>
 ): ParseResult<JessieSublexerTokenData> {
-  const termTokens = terminationTokens?.map(tok => TERMINATION_TOKEN_TO_TS_TOKEN[tok]) ?? []
-  if (termTokens.length === 0) {
-    termTokens.push(ts.SyntaxKind.SemicolonToken)
-  }
+  const termTokens = (
+    (terminationTokens === undefined || terminationTokens.length === 0) ? FALLBACK_TERMINATOR_TOKENS : terminationTokens
+  ).map(tok => TERMINATION_TOKEN_TO_TS_TOKEN[tok])
 
   // Set the scanner text thus reusing the old scanner instance
   SCANNER.setText(slice);

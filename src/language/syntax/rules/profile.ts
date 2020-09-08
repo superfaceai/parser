@@ -250,45 +250,39 @@ TYPE_MUT.rule = TYPE;
 
 // FIELDS //
 
-const FIELD_DEFINITION_BEGIN = SyntaxRule.identifier().followedBy(
-  SyntaxRule.optional(SyntaxRule.operator('!'))
-);
-const FIELD_DEFINITION_END = SyntaxRule.optional(SyntaxRule.operator(','));
-const FIELD_DEFINITION_WITH_TYPE = FIELD_DEFINITION_BEGIN.andFollowedBy(
-  SyntaxRule.optional(TYPE)
-)
-  .andFollowedBy(FIELD_DEFINITION_END)
-  .condition((matches): boolean => {
-    const [name /* maybeRequired */, , maybeType /* maybeComma */] = matches;
-
-    return (
-      maybeType === undefined || maybeType.location.line === name.location.line
-    );
-  });
-const FIELD_DEFINITION_WITHOUT_TYPE = FIELD_DEFINITION_BEGIN.andFollowedBy(
-  FIELD_DEFINITION_END
-).map(matches => [matches[0], matches[1], undefined, matches[2]] as const);
-
-/** Construct of form: `ident type`, `ident { fields... }` or `ident` */
 export const FIELD_DEFINITION: SyntaxRuleSrc<FieldDefinitionNode> = documentedNode(
-  FIELD_DEFINITION_WITH_TYPE.or(FIELD_DEFINITION_WITHOUT_TYPE).map(
+  SyntaxRule.identifier().followedBy(
+    SyntaxRule.optional(SyntaxRule.operator('!'))
+  ).andFollowedBy(
+    SyntaxRule.optional(
+      SyntaxRule.lookahead(
+          SyntaxRule.newline(),
+          true
+      ).followedBy(TYPE)
+    )
+  ).andFollowedBy(
+    SyntaxRule.optional(SyntaxRule.operator(','))
+  ).map(
     (matches): SrcNode<FieldDefinitionNode> => {
-      const [name, maybeRequired, maybeType, maybeComma] = matches;
+      const [name, maybeRequired, maybeTypeWithLookahead, maybeComma] = matches;
+
+      const maybeType = maybeTypeWithLookahead?.[1]
 
       return {
         kind: 'FieldDefinition',
         fieldName: name.data.identifier,
-        required: maybeRequired !== undefined ? true : false,
+        required: maybeRequired !== undefined,
         type: maybeType,
         location: name.location,
         span: {
           start: name.span.start,
-          end: (maybeComma ?? maybeType ?? maybeRequired ?? name).span.end,
-        },
-      };
+          end: (maybeComma ?? maybeType ?? maybeRequired ?? name).span.end
+        }
+      }
     }
   )
-);
+)
+
 FIELD_DEFINITION_MUT.rule = FIELD_DEFINITION;
 
 /** * Construct of form: `field ident type` or `field ident { fields... }` */

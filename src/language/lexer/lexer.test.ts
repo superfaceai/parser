@@ -362,6 +362,39 @@ describe('lexer', () => {
       }
     });
 
+    it('newlines', () => {
+      const lexer = new Lexer(
+        new Source(`ident1
+        ident2 ident3
+        "string1" "stri
+ng2"
+        "string3"`),
+        {
+          ...DEFAULT_TOKEN_KIND_FILER,
+          [LexerTokenKind.NEWLINE]: false,
+        }
+      )
+      const expectedTokens: LexerTokenData[] = [
+        { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
+        { kind: LexerTokenKind.IDENTIFIER, identifier: 'ident1' },
+        { kind: LexerTokenKind.NEWLINE },
+        { kind: LexerTokenKind.IDENTIFIER, identifier: 'ident2' },
+        { kind: LexerTokenKind.IDENTIFIER, identifier: 'ident3' },
+        { kind: LexerTokenKind.NEWLINE },
+        { kind: LexerTokenKind.STRING, string: 'string1' },
+        { kind: LexerTokenKind.STRING, string: 'stri\nng2' },
+        { kind: LexerTokenKind.NEWLINE },
+        { kind: LexerTokenKind.STRING, string: 'string3' },
+        { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
+      ];
+      
+      for (const expected of expectedTokens) {
+        const actual = lexer.advance();
+
+        expect(actual).toHaveTokenData(expected);
+      }
+    });
+
     it('is valid complex', () => {
       const lexer = new Lexer(
         new Source(
@@ -631,5 +664,26 @@ describe('lexer', () => {
       expect(lexer.next().value).toMatchObject({ data: { separator: 'EOF' } });
       expect(lexer.next()).toStrictEqual({ done: true, value: undefined });
     });
+  });
+
+  it('should overwrite the filter from context', () => {
+    const lexer = new Lexer(new Source('1\n3 4\n5'))
+    lexer.next(); // SOF
+
+    const save = lexer.save();
+
+    expect(lexer.next().value).toMatchObject({ data: { literal: 1 } });
+    expect(lexer.next().value).toMatchObject({ data: { literal: 3 } });
+    expect(lexer.next().value).toMatchObject({ data: { literal: 4 } });
+    expect(lexer.next().value).toMatchObject({ data: { literal: 5 } });
+
+    lexer.rollback(save);
+    const context = { type: LexerContextType.DEFAULT, filter: { ...lexer.tokenKindFilter, [LexerTokenKind.NEWLINE]: false } }
+    expect(lexer.next().value).toMatchObject({ data: { literal: 1 } });
+    expect(lexer.next(context).value).toMatchObject({ data: { kind: LexerTokenKind.NEWLINE } });
+    expect(lexer.next().value).toMatchObject({ data: { literal: 3 } });
+    expect(lexer.next(context).value).toMatchObject({ data: { literal: 4 } });
+    expect(lexer.next(context).value).toMatchObject({ data: { kind: LexerTokenKind.NEWLINE } });
+    expect(lexer.next().value).toMatchObject({ data: { literal: 5 } });
   });
 });

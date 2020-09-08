@@ -23,7 +23,7 @@ export const DEFAULT_TOKEN_KIND_FILER: LexerTokenKindFilter = {
   [LexerTokenKind.JESSIE_SCRIPT]: false
 };
 
-export type LexerSavedState = LexerToken;
+export type LexerSavedState = [LexerToken, boolean];
 export interface LexerTokenStream
   extends Generator<LexerToken, undefined, LexerContext | undefined> {
   peek(
@@ -58,8 +58,9 @@ export class Lexer implements LexerTokenStream {
 
   /** Last emitted token. */
   private currentToken: LexerToken;
-  /** Next token after `currentToken`, stored when `lookahead` is called. */
-  private nextToken: LexerToken | undefined;
+
+  /** Stores whether the SOF and EOF were yielded. */
+  private fileSeparatorYielded = false;
 
   /** Default token kind filter used if no filter is provided in the context. */
   readonly tokenKindFilter: LexerTokenKindFilter;
@@ -78,7 +79,6 @@ export class Lexer implements LexerTokenStream {
       { start: 0, end: 0 },
       { line: 1, column: 1 }
     );
-    this.nextToken = this.currentToken;
 
     this.tokenKindFilter = defaultTokenKindFilter ?? DEFAULT_TOKEN_KIND_FILER;
   }
@@ -87,13 +87,19 @@ export class Lexer implements LexerTokenStream {
   advance(context?: LexerContext): LexerToken {
     // We use the `nextToken` field to detect first emission on EOF
     if (this.currentToken.isEOF()) {
-      this.nextToken = this.currentToken;
+      this.fileSeparatorYielded = true;
+
+      return this.currentToken;
+    }
+
+    if (this.currentToken.isSOF() && !this.fileSeparatorYielded) {
+      this.fileSeparatorYielded = true;
 
       return this.currentToken;
     }
 
     this.currentToken = this.lookahead(context);
-    this.nextToken = undefined;
+    this.fileSeparatorYielded = false;
 
     return this.currentToken;
   }
@@ -105,29 +111,28 @@ export class Lexer implements LexerTokenStream {
       return this.currentToken;
     }
 
-    // read next token if not read already
-    if (this.nextToken === undefined) {
-      this.nextToken = this.readNextToken(this.currentToken, context);
-    }
+    // read next token
+    let nextToken = this.readNextToken(this.currentToken, context);
 
     // skip tokens if they are caught by the filter
     const filter = context?.filter ?? this.tokenKindFilter;
-    while (filter[this.nextToken.data.kind]) {
+    while (filter[nextToken.data.kind]) {
       // Always break on EOF even if separators are filtered to avoid an infinite loop.
-      if (this.nextToken.isEOF()) {
+      if (nextToken.isEOF()) {
         break;
       }
-      this.nextToken = this.readNextToken(this.nextToken, context);
+
+      nextToken = this.readNextToken(nextToken, context);
     }
 
-    return this.nextToken;
+    return nextToken;
   }
 
   next(context?: LexerContext): IteratorResult<LexerToken, undefined> {
     const tok = this.advance(context);
 
     // Ensure that EOF is yielded once
-    if (tok.isEOF() && this.nextToken?.isEOF()) {
+    if (tok.isEOF() && this.fileSeparatorYielded) {
       return {
         done: true,
         value: undefined,
@@ -173,16 +178,16 @@ export class Lexer implements LexerTokenStream {
   }
   /** Saves the lexer state to be restored later. */
   save(): LexerSavedState {
-    return this.currentToken;
+    return [this.currentToken, this.fileSeparatorYielded];
   }
   /**
    * Roll back the state of the lexer to the given saved state.
    *
    * The lexer will continue from this state forward.
    */
-  rollback(token: LexerSavedState): void {
-    this.currentToken = token;
-    this.nextToken = undefined;
+  rollback(state: LexerSavedState): void {
+    this.currentToken = state[0];
+    this.fileSeparatorYielded = state[1];
   }
 
   private computeNextTokenPosition(

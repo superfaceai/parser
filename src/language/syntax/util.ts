@@ -4,6 +4,7 @@ import {
   LexerTokenKind,
   LexerTokenStream,
 } from '../lexer';
+import { DEFAULT_TOKEN_KIND_FILER, LexerSavedState } from '../lexer/lexer';
 
 /**
  * LexerTokenStream implementation that takes tokens from an array instead of a Lexer.
@@ -17,55 +18,57 @@ export class ArrayLexerStream implements LexerTokenStream {
     this.index = 0;
   }
 
-  next(_?: LexerContext): IteratorResult<LexerToken, undefined> {
+  next(context?: LexerContext): IteratorResult<LexerToken, undefined> {
+    if (this.index >= this.array.length) {
+      return {
+        done: true,
+        value: undefined,
+      };
+    }
+
+    const filter = context?.filter ?? DEFAULT_TOKEN_KIND_FILER;
+    
     const token = this.array[this.index];
+    let result: IteratorResult<LexerToken, undefined> = {
+      done: false,
+      value: token,
+    };
 
-    if (token === undefined) {
-      return {
-        done: true,
-        value: undefined,
-      };
-    } else {
-      this.index += 1;
-
-      return {
-        done: false,
-        value: token,
-      };
+    this.index += 1;
+    if (filter[token.data.kind]) {
+      // Recurse
+      result = this.next(context);
     }
+    
+    return result;
   }
-  peek(_?: LexerContext): IteratorResult<LexerToken, undefined> {
-    const token = this.array[this.index + 1];
+  peek(context?: LexerContext): IteratorResult<LexerToken, undefined> {
+    let originalIndex = this.index;
+    let result = this.next(context);
+    this.index = originalIndex;
 
-    if (token === undefined) {
-      return {
-        done: true,
-        value: undefined,
-      };
-    } else {
-      return {
-        done: false,
-        value: token,
-      };
-    }
+    return result;
   }
 
-  save(): LexerToken {
+  save(): LexerSavedState {
     if (this.index > 0) {
-      return this.array[this.index - 1];
+      return [this.array[this.index - 1], false];
     } else {
-      return new LexerToken(
-        {
-          kind: LexerTokenKind.SEPARATOR,
-          separator: 'SOF',
-        },
-        { start: -1, end: -1 },
-        { line: 0, column: 0 }
-      );
+      return [
+        new LexerToken(
+          {
+            kind: LexerTokenKind.SEPARATOR,
+            separator: 'SOF',
+          },
+          { start: -1, end: -1 },
+          { line: 0, column: 0 }
+        ),
+        false
+      ]
     }
   }
-  rollback(token: LexerToken): void {
-    this.index = this.array.indexOf(token) + 1;
+  rollback(state: LexerSavedState): void {
+    this.index = this.array.indexOf(state[0]) + 1;
   }
 
   return(value: undefined): IteratorResult<LexerToken, undefined> {

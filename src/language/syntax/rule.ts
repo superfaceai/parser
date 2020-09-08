@@ -183,11 +183,6 @@ export abstract class SyntaxRule<T> {
     );
   }
 
-  // Cannot return `SyntaxRuleCondition` because that would confuse TS into thinking `SyntaxRule` is contravariant over `T`
-  condition(fn: (_: T) => boolean): SyntaxRule<T> {
-    return new SyntaxRuleCondition(this, fn);
-  }
-
   // Cannot return `SyntaxRuleMap` because that would confuse TS into thinking `SyntaxRule` is contravariant over `T`
   map<M>(mapper: (_: T) => M): SyntaxRule<M> {
     return new SyntaxRuleMap(this, mapper);
@@ -201,8 +196,8 @@ export abstract class SyntaxRule<T> {
     return new SyntaxRuleOptional(rule);
   }
 
-  static lookahead<R>(rule: SyntaxRule<R>): SyntaxRuleLookahead<R> {
-    return new SyntaxRuleLookahead(rule);
+  static lookahead<R>(rule: SyntaxRule<R>, invert?: boolean): SyntaxRuleLookahead<R> {
+    return new SyntaxRuleLookahead(rule, invert);
   }
 }
 
@@ -588,14 +583,36 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
 
 /** Matches rule and then restores `tokens` state. */
 export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
-  constructor(readonly rule: SyntaxRule<R>) {
+  /**
+   * Invert the lookahead, matching if the inner rule fails.
+  */
+  readonly invert: boolean;
+  
+  constructor(readonly rule: SyntaxRule<R>, invert?: boolean) {
     super();
+
+    this.invert = invert ?? false;
   }
 
   tryMatch(tokens: LexerTokenStream): RuleResult<undefined> {
     const save = tokens.save();
     const result = this.rule.tryMatch(tokens);
     tokens.rollback(save);
+
+    // Handle inversion
+    if (this.invert) {
+      if (result.kind === 'nomatch') {
+        return {
+          kind: 'match',
+          match: undefined
+        }
+      } else {
+        return {
+          kind: 'nomatch',
+          attempts: new MatchAttempts(tokens.peek().value, [this])
+        }
+      }
+    }
 
     if (result.kind === 'match') {
       return {
@@ -608,7 +625,7 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
   }
 
   [Symbol.toStringTag](): string {
-    return this.rule.toString();
+    return (this.invert ? 'not ' : '') + this.rule.toString();
   }
 }
 

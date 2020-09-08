@@ -205,6 +205,22 @@ describe('syntax rule factory', () => {
     });
   });
 
+  describe('newline', () => {
+    it('should match newline rule', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = SyntaxRule.newline();
+
+      expect(rule.tryMatch(stream)).toStrictEqual({
+        kind: 'match',
+        match: tokMatch(tokens[0]),
+      });
+    });
+  });
+
   describe('or', () => {
     it('should match first rule', () => {
       const tokens: ReadonlyArray<LexerToken> = [
@@ -432,5 +448,43 @@ describe('syntax rule factory', () => {
         optionalAttempts: new MatchAttempts(undefined, [innerRule]),
       });
     });
+  });
+
+  describe('lookahead', () => {
+    it('should match but not consume', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.STRING, string: 'I am a string' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = SyntaxRule.lookahead(
+        SyntaxRule.string()
+      );
+
+      expect(rule.tryMatch(stream)).toStrictEqual({
+        kind: 'match',
+        match: undefined
+      });
+
+      expect(stream.next().value).toStrictEqual(tokens[0])
+    });
+
+    it('should match inverted', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.STRING, string: 'I am a string' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = SyntaxRule.lookahead(
+        SyntaxRule.literal(), true
+      );
+
+      expect(rule.tryMatch(stream)).toStrictEqual({
+        kind: 'match',
+        match: undefined
+      });
+
+      expect(stream.next().value).toStrictEqual(tokens[0])
+    })
   });
 });
