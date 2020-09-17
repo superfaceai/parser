@@ -254,6 +254,7 @@ export class Lexer implements LexerTokenStream {
     if (context === undefined) {
       context = { type: LexerContextType.DEFAULT };
     }
+
     switch (context.type) {
       case LexerContextType.DEFAULT:
         tokenParseResult = this.sublexers[LexerContextType.DEFAULT](slice);
@@ -271,7 +272,7 @@ export class Lexer implements LexerTokenStream {
       throw new SyntaxError(
         this.source,
         location,
-        { start, end: start },
+        { start, end: start + 1 },
         SyntaxErrorCategory.LEXER,
         'Could not match any token'
       );

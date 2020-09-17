@@ -26,7 +26,7 @@ const TERMINATION_TOKEN_TO_TS_TOKEN: {
   ')': ts.SyntaxKind.CloseParenToken,
   '}': ts.SyntaxKind.CloseBraceToken,
   ']': ts.SyntaxKind.CloseBracketToken,
-  ',': ts.SyntaxKind.ColonToken,
+  ',': ts.SyntaxKind.CommaToken,
   '\n': ts.SyntaxKind.NewLineTrivia,
 };
 const FALLBACK_TERMINATOR_TOKENS: ReadonlyArray<JessieExpressionTerminationToken> = [

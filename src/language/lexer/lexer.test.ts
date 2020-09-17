@@ -581,7 +581,23 @@ ng2"
       lexer.advance(); // skip SOF
 
       expect(() => lexer.advance()).toThrow(
-        'Expected a number following integer base prefix'
+        'Expected a number following a sign or an integer base prefix'
+      );
+    });
+
+    test('just a number sign', () => {
+      const lexerMinus = new Lexer(new Source('-'));
+      lexerMinus.advance(); // skip SOF
+
+      expect(() => lexerMinus.advance()).toThrow(
+        'Expected a number following a sign or an integer base prefix'
+      );
+
+      const lexerPlus = new Lexer(new Source('+'));
+      lexerPlus.advance(); // skip SOF
+
+      expect(() => lexerPlus.advance()).toThrow(
+        'Expected a number following a sign or an integer base prefix'
       );
     });
 

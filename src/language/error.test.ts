@@ -134,7 +134,7 @@ describe('langauge syntax errors', () => {
       lexer.advance();
 
       expect(() => lexer.advance()).toThrowSyntaxError(
-        'Expected a number following integer base prefix',
+        'Expected a number following a sign or an integer base prefix',
         '[input]:2:2',
         '1 | before',
         '2 | \t0xx',
@@ -148,7 +148,7 @@ describe('langauge syntax errors', () => {
       lexer.advance();
 
       expect(() => lexer.advance()).toThrowSyntaxError(
-        'Expected a number following integer base prefix',
+        'Expected a number following a sign or an integer base prefix',
         '[input]:1:2',
         '1 | \t0xx',
         '  | \t^^^',
@@ -163,7 +163,7 @@ describe('langauge syntax errors', () => {
       lexer.advance();
 
       expect(() => lexer.advance()).toThrowSyntaxError(
-        'Expected a number following integer base prefix',
+        'Expected a number following a sign or an integer base prefix',
         '[input]:2:2',
         '1 | before',
         '2 | \t0xx',
@@ -178,7 +178,7 @@ describe('langauge syntax errors', () => {
       lexer.advance();
 
       expect(() => lexer.advance()).toThrowSyntaxError(
-        'Expected a number following integer base prefix',
+        'Expected a number following a sign or an integer base prefix',
         '[input]:1:2',
         '1 | \t0xx',
         '  | \t^^^'

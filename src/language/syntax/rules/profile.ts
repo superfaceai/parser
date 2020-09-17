@@ -25,7 +25,7 @@ import {
   SyntaxRuleMutable,
   SyntaxRuleSeparator,
 } from '../rule';
-import { documentedNode, SrcNode, SyntaxRuleSrc } from './common';
+import { documentedNode, SLOT_DEFINITION_FACTORY, SrcNode, SyntaxRuleSrc } from './common';
 
 // MUTABLE RULES //
 
@@ -345,35 +345,26 @@ export const NAMED_MODEL_DEFINITION: SyntaxRuleSrc<NamedModelDefinitionNode> = d
 
 // USECASE //
 
-const USECASE_SLOT_DEFINITION_FACTORY: <T extends Type>(
-  slotName: string,
-  typeRule: SyntaxRuleSrc<T>
-) => SyntaxRuleSrc<UseCaseSlotDefinitionNode<T>> = <T extends Type>(
-  slotName: string,
-  typeRule: SyntaxRuleSrc<T>
-) =>
-  documentedNode<
-    SrcNode<UseCaseSlotDefinitionNode<T>>,
-    SyntaxRule<SrcNode<UseCaseSlotDefinitionNode<T>>>
-  >(
-    SyntaxRule.identifier(slotName)
-      .followedBy(SyntaxRule.optional(typeRule))
-      .map(
-        (matches): SrcNode<UseCaseSlotDefinitionNode<T>> => {
-          const [name, maybeType] = matches;
-
-          return {
-            kind: 'UseCaseSlotDefinition',
-            type: maybeType,
-            location: name.location,
-            span: {
-              start: name.span.start,
-              end: (maybeType ?? name).span.end,
-            },
-          };
-        }
-      )
+function USECASE_SLOT_DEFINITION_FACTORY<T extends Type>(
+  name: string,
+  rule: SyntaxRuleSrc<T>
+): SyntaxRule<UseCaseSlotDefinitionNode<T>> {
+  return documentedNode(
+    SLOT_DEFINITION_FACTORY(name, rule).map(
+      ([name, maybeType]): SrcNode<UseCaseSlotDefinitionNode<T>> => {
+        return {
+          kind: 'UseCaseSlotDefinition',
+          type: maybeType,
+          location: name.location,
+          span: {
+            start: name.span.start,
+            end: (maybeType ?? name).span.end,
+          },
+        };
+      }
+    )
   );
+}
 
 const USECASE_SAFETY: SyntaxRule<LexerTokenMatch<
   IdentifierTokenData

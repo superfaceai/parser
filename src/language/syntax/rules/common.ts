@@ -9,7 +9,11 @@ import { extractDocumentation } from '../util';
 
 // HELPER RULES //
 
-type ASTNodeBase = ProfileASTNodeBase | MapASTNodeBase;
+export type ASTNodeBase = ProfileASTNodeBase | MapASTNodeBase;
+export type SrcNodeLocationInfo = {
+  span: NonNullable<ASTNodeBase['span']>;
+  location: NonNullable<ASTNodeBase['location']>;
+}
 
 // Node that has `span` and `location` non-optional.
 export type SrcNode<N extends ASTNodeBase> = N & {
