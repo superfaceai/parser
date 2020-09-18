@@ -16,24 +16,40 @@ import {
   ListDefinitionNode,
   EnumDefinitionNode,
 } from '@superindustries/language';
-import { ProfileVisitor, Variables } from '@superindustries/superface';
+// import { ProfileVisitor, Variables } from '@superindustries/superface';
 
 function assertUnreachable(node: never): never;
 function assertUnreachable(node: ProfileASTNode): never {
   throw new Error(`Invalid Node kind: ${node.kind}`);
 }
 
-type ProfileParameterKind = 'input' | 'result';
+// TODO? : create in @superface
+type ResultValidationKind = {
+  node: ObjectDefinitionNode | PrimitiveTypeNameNode | ModelTypeNameNode;
+};
+type InputValidationKind = {
+  node: ObjectDefinitionNode;
+};
+interface ValidationVariables {
+  [key: string]: ResultValidationKind | InputValidationKind;
+}
 
 type ProfileOutput = {
-  input?: Variables;
-  result?: Variables;
+  profileId: ProfileIdNode;
+  usecase: UseCaseDefinitionNode;
+  profile:
+    | { input: ValidationVariables }
+    | { result: ValidationVariables }
+    | {
+        input: ValidationVariables;
+        result: ValidationVariables;
+      };
 };
 
-type MapInput = any;
+type ProfileParameterKind = 'input' | 'result';
 
-export class ProfileValidator implements ProfileVisitor {
-  private output: Record<string, ProfileOutput> = {};
+export class ProfileValidator {
+  constructor(private readonly output: ProfileOutput) {}
 
   // parsing a parameter ===
   visit(
@@ -147,23 +163,22 @@ export class ProfileValidator implements ProfileVisitor {
     kind: ProfileParameterKind,
     usecase: string
   ): ProfileOutput {
-    if (input === undefined) {
-      return {};
-    }
-
-    if (typeof input !== 'object' || input === null) {
-      return [
-        false,
-        [
-          {
-            kind: 'wrongType',
-            context: { expected: 'object', actual: typeof input },
-          },
-        ],
-      ];
-    }
-
-    return {};
+    throw new Error('Method not implemented.');
+    // if (input === undefined) {
+    //   return {};
+    // }
+    // if (typeof input !== 'object' || input === null) {
+    //   return [
+    //     false,
+    //     [
+    //       {
+    //         kind: 'wrongType',
+    //         context: { expected: 'object', actual: typeof input },
+    //       },
+    //     ],
+    //   ];
+    // }
+    // return {};
   }
 
   visitPrimitiveTypeNameNode(
@@ -175,11 +190,13 @@ export class ProfileValidator implements ProfileVisitor {
   }
 
   visitProfileDocumentNode(
-    _node: ProfileDocumentNode,
-    _kind: ProfileParameterKind,
-    _usecase: string
+    node: ProfileDocumentNode,
+    kind: ProfileParameterKind,
+    usecase: string
   ): ProfileOutput {
+    // TODO
     throw new Error('Method not implemented.');
+    // this.visit(node.definitions, kind, usecase);
   }
 
   visitProfileIdNode(
@@ -211,12 +228,13 @@ export class ProfileValidator implements ProfileVisitor {
     kind: ProfileParameterKind,
     usecase: string
   ): ProfileOutput {
-    if (kind === 'input' && node.input) {
-      this.output.input = this.visit(node.input, kind, usecase);
-    } else if (kind === 'result' && node.result) {
-      this.output.result = this.visit(node.result, kind, usecase);
-    }
+    throw new Error('Method not implemented.');
+    //   if (kind === 'input' && node.input) {
+    //     this.output.input = this.visit(node.input, kind, usecase);
+    //   } else if (kind === 'result' && node.result) {
+    //     this.output.result = this.visit(node.result, kind, usecase);
+    //   }
 
-    return this.output;
+    //   return this.output;
   }
 }
