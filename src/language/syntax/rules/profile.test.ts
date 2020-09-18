@@ -75,7 +75,7 @@ function tesTok(data: LexerTokenData): LexerToken {
 
   TES_TOK_STATE += 1;
 
-  return new LexerToken(data, { start, end }, { line, column });
+  return new LexerToken(data, { line, column }, { start, end });
 }
 
 function tesMatch<I extends Record<string, unknown>>(

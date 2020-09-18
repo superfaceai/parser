@@ -697,7 +697,7 @@ ng2"
     });
   });
 
-  it('should overwrite the filter from context', () => {
+  it('should overwrite the filter', () => {
     const lexer = new Lexer(new Source('1\n3 4\n5'));
     lexer.next(); // SOF
 
@@ -709,19 +709,37 @@ ng2"
     expect(lexer.next().value).toMatchObject({ data: { literal: 5 } });
 
     lexer.rollback(save);
-    const context = {
-      type: LexerContextType.DEFAULT,
-      filter: { ...lexer.tokenKindFilter, [LexerTokenKind.NEWLINE]: false },
-    };
     expect(lexer.next().value).toMatchObject({ data: { literal: 1 } });
-    expect(lexer.next(context).value).toMatchObject({
+
+    lexer.tokenKindFilter = { ...lexer.tokenKindFilter, [LexerTokenKind.NEWLINE]: false };
+    expect(lexer.next().value).toMatchObject({
       data: { kind: LexerTokenKind.NEWLINE },
     });
+
+    lexer.tokenKindFilter = { ...lexer.tokenKindFilter, [LexerTokenKind.NEWLINE]: true };
     expect(lexer.next().value).toMatchObject({ data: { literal: 3 } });
-    expect(lexer.next(context).value).toMatchObject({ data: { literal: 4 } });
-    expect(lexer.next(context).value).toMatchObject({
+
+    lexer.tokenKindFilter = { ...lexer.tokenKindFilter, [LexerTokenKind.NEWLINE]: false };
+    expect(lexer.next().value).toMatchObject({ data: { literal: 4 } });
+    expect(lexer.next().value).toMatchObject({
       data: { kind: LexerTokenKind.NEWLINE },
     });
+
+    lexer.tokenKindFilter = { ...lexer.tokenKindFilter, [LexerTokenKind.NEWLINE]: true };
     expect(lexer.next().value).toMatchObject({ data: { literal: 5 } });
+  });
+
+  it('should respect the allowUnknown flag', () => {
+    let lexer = new Lexer(new Source('+'));
+    lexer.next(); // SOF
+
+    expect(() => lexer.next()).toThrow()
+
+    lexer = new Lexer(new Source('+'), undefined, true);
+    lexer.next() // SOF
+
+    expect(lexer.next().value).toMatchObject({
+      data: { kind: LexerTokenKind.UNKNOWN }
+    })
   });
 });

@@ -3,8 +3,9 @@ import {
   MapASTNodeBase,
   ProfileASTNodeBase,
 } from '@superindustries/language';
+import { IdentifierTokenData } from '../../lexer/token';
 
-import { SyntaxRule } from '../rule';
+import { LexerTokenMatch, SyntaxRule } from '../rule';
 import { extractDocumentation } from '../util';
 
 // HELPER RULES //
@@ -23,9 +24,8 @@ export type SrcNode<N extends ASTNodeBase> = N & {
 export type SyntaxRuleSrc<N extends ASTNodeBase> = SyntaxRule<SrcNode<N>>;
 
 export function documentedNode<
-  N extends SrcNode<DocumentedNode & ASTNodeBase>,
-  R extends SyntaxRule<N>
->(rule: R): SyntaxRule<N> {
+  N extends SrcNode<DocumentedNode & ASTNodeBase>
+>(rule: SyntaxRule<N>): SyntaxRule<N> {
   return SyntaxRule.optional(SyntaxRule.string())
     .followedBy(rule)
     .map(
@@ -42,4 +42,17 @@ export function documentedNode<
         return result;
       }
     );
+}
+
+export function SLOT_DEFINITION_FACTORY<T>(
+  name: string,
+  rule: SyntaxRule<T>
+): SyntaxRule<[LexerTokenMatch<IdentifierTokenData>, T]> {
+  return SyntaxRule.identifier(name)
+      .followedBy(SyntaxRule.lookahead(SyntaxRule.newline(), true))
+      .andFollowedBy(rule)
+      .map(
+        ([name, /* _lookahead */, value]) => [name, value]
+      )
+  ;
 }

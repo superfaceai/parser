@@ -1,5 +1,4 @@
 import { LexerContext, LexerContextType, LexerTokenStream } from '../lexer';
-import { DEFAULT_TOKEN_KIND_FILER } from '../lexer/lexer';
 import { JessieExpressionTerminationToken } from '../lexer/sublexer/jessie/expression';
 import {
   formatTokenKind,
@@ -375,7 +374,10 @@ export class SyntaxRuleNewline extends SyntaxRule<
   tryMatch(
     tokens: LexerTokenStream
   ): RuleResult<LexerTokenMatch<NewlineTokenData>> {
-    return this.simpleTryMatchBoilerplate(
+    const originalFilter = tokens.tokenKindFilter[LexerTokenKind.NEWLINE];
+    tokens.tokenKindFilter[LexerTokenKind.NEWLINE] = false;
+
+    const result = this.simpleTryMatchBoilerplate(
       tokens,
       token => {
         if (token.data.kind === LexerTokenKind.NEWLINE) {
@@ -387,15 +389,11 @@ export class SyntaxRuleNewline extends SyntaxRule<
         }
 
         return undefined;
-      },
-      {
-        type: LexerContextType.DEFAULT,
-        filter: {
-          ...DEFAULT_TOKEN_KIND_FILER,
-          [LexerTokenKind.NEWLINE]: false,
-        },
       }
     );
+
+    tokens.tokenKindFilter[LexerTokenKind.NEWLINE] = originalFilter;
+    return result;
   }
 
   [Symbol.toStringTag](): string {
@@ -623,9 +621,14 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
   }
 
   tryMatch(tokens: LexerTokenStream): RuleResult<undefined> {
+    const originalEmitUnknown = tokens.emitUnknown;
+    tokens.emitUnknown = true;
     const save = tokens.save();
+
     const result = this.rule.tryMatch(tokens);
+    
     tokens.rollback(save);
+    tokens.emitUnknown = originalEmitUnknown;
 
     // Handle inversion
     if (this.invert) {
@@ -658,42 +661,6 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
 }
 
 // CUSTOM LOGIC //
-
-/** Allows inserting custom code into the matching process by giving access to the result of the wrapper rule to a custom closure. */
-export class SyntaxRuleCondition<R> extends SyntaxRule<R> {
-  constructor(
-    readonly rule: SyntaxRule<R>,
-    readonly fn: (result: R) => boolean
-  ) {
-    super();
-  }
-
-  tryMatch(tokens: LexerTokenStream): RuleResult<R> {
-    const save = tokens.save();
-
-    const result = this.rule.tryMatch(tokens);
-    if (result.kind === 'match') {
-      // If the new result is a failure, roll back the tokens state.
-      if (!this.fn(result.match)) {
-        tokens.rollback(save);
-
-        return {
-          kind: 'nomatch',
-          attempts: MatchAttempts.mergePreserveOrder(
-            result.optionalAttempts,
-            new MatchAttempts(tokens.peek().value, [this])
-          ),
-        };
-      }
-    }
-
-    return result;
-  }
-
-  [Symbol.toStringTag](): string {
-    return this.rule.toString();
-  }
-}
 
 /** Maps `match` value on success. */
 export class SyntaxRuleMap<R, M> extends SyntaxRule<M> {
@@ -739,7 +706,7 @@ export class SyntaxRuleMutable<R> extends SyntaxRule<R> {
 
   tryMatch(tokens: LexerTokenStream): RuleResult<R> {
     if (this.rule === undefined) {
-      throw 'This method should never be called. This is an error in syntax rules definition.';
+      throw 'This method should never be called before the mutable rule is initialized. This is an error in syntax rules definition.';
     }
 
     return this.rule.tryMatch(tokens);
@@ -747,7 +714,7 @@ export class SyntaxRuleMutable<R> extends SyntaxRule<R> {
 
   [Symbol.toStringTag](): string {
     if (this.rule === undefined) {
-      throw 'This method should never be called. This is an error in syntax rules definition.';
+      throw 'This method should never be called before the mutable rule is initialized. This is an error in syntax rules definition.';
     }
 
     return '[Mutable Rule]';

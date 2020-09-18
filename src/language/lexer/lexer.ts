@@ -17,11 +17,16 @@ export const DEFAULT_TOKEN_KIND_FILER: LexerTokenKindFilter = {
   [LexerTokenKind.SEPARATOR]: false,
   [LexerTokenKind.STRING]: false,
   [LexerTokenKind.JESSIE_SCRIPT]: false,
+  [LexerTokenKind.UNKNOWN]: false
 };
 
 export type LexerSavedState = [LexerToken, boolean];
 export interface LexerTokenStream
   extends Generator<LexerToken, undefined, LexerContext | undefined> {
+  
+  tokenKindFilter: LexerTokenKindFilter;
+  emitUnknown: boolean;
+
   peek(
     ...context: [] | [LexerContext | undefined]
   ): IteratorResult<LexerToken, undefined>;
@@ -58,12 +63,16 @@ export class Lexer implements LexerTokenStream {
   /** Stores whether the SOF and EOF were yielded. */
   private fileSeparatorYielded = false;
 
-  /** Default token kind filter used if no filter is provided in the context. */
-  readonly tokenKindFilter: LexerTokenKindFilter;
+  /** Token kinds to filter from the stream. */
+  tokenKindFilter: LexerTokenKindFilter;
+
+  /** Whether to emit the `UNKNOWN` token instead of throwing syntax error. */
+  emitUnknown: boolean;
 
   constructor(
     readonly source: Source,
-    defaultTokenKindFilter?: LexerTokenKindFilter
+    tokenKindFilter?: LexerTokenKindFilter,
+    emitUnknown?: boolean
   ) {
     this.sublexers = {
       [LexerContextType.DEFAULT]: tryParseDefault,
@@ -75,11 +84,12 @@ export class Lexer implements LexerTokenStream {
         kind: LexerTokenKind.SEPARATOR,
         separator: 'SOF',
       },
-      { start: 0, end: 0 },
-      { line: 1, column: 1 }
+      { line: 1, column: 1 },
+      { start: 0, end: 0 }
     );
 
-    this.tokenKindFilter = defaultTokenKindFilter ?? DEFAULT_TOKEN_KIND_FILER;
+    this.tokenKindFilter = tokenKindFilter ?? DEFAULT_TOKEN_KIND_FILER;
+    this.emitUnknown = emitUnknown ?? false;
   }
 
   /** Advances the lexer returning the current token. */
@@ -114,8 +124,7 @@ export class Lexer implements LexerTokenStream {
     let nextToken = this.readNextToken(this.currentToken, context);
 
     // skip tokens if they are caught by the filter
-    const filter = context?.filter ?? this.tokenKindFilter;
-    while (filter[nextToken.data.kind]) {
+    while (this.tokenKindFilter[nextToken.data.kind]) {
       // Always break on EOF even if separators are filtered to avoid an infinite loop.
       if (nextToken.isEOF()) {
         break;
@@ -267,35 +276,41 @@ export class Lexer implements LexerTokenStream {
         break;
     }
 
-    // Didn't parse as any known token
-    if (tokenParseResult === undefined) {
-      throw new SyntaxError(
-        this.source,
-        location,
-        { start, end: start + 1 },
-        SyntaxErrorCategory.LEXER,
-        'Could not match any token'
-      );
-    }
-
     const parsedTokenSpan = {
-      start: start + tokenParseResult.relativeSpan.start,
-      end: start + tokenParseResult.relativeSpan.end,
+      start: start + (tokenParseResult?.relativeSpan.start ?? 0),
+      end: start + (tokenParseResult?.relativeSpan.end ?? 1),
     };
 
-    // Parsing error
-    if (tokenParseResult.isError) {
-      throw new SyntaxError(
+    // Didn't parse as any known token or produced an error
+    if (tokenParseResult === undefined || tokenParseResult.isError) {
+      const category = tokenParseResult?.category ?? SyntaxErrorCategory.LEXER;
+      const detail = tokenParseResult?.detail ?? 'Could not match any token';
+      const hint = tokenParseResult?.hint;
+      
+      const error = new SyntaxError(
         this.source,
         location,
         parsedTokenSpan,
-        tokenParseResult.category,
-        tokenParseResult.detail,
-        tokenParseResult.hint
+        category,
+        detail,
+        hint
       );
+
+      if (this.emitUnknown) {
+        return new LexerToken(
+          {
+            kind: LexerTokenKind.UNKNOWN,
+            error
+          },
+          location,
+          parsedTokenSpan
+        )
+      }
+
+      throw error;
     }
 
     // All is well
-    return new LexerToken(tokenParseResult.data, parsedTokenSpan, location);
+    return new LexerToken(tokenParseResult.data, location, parsedTokenSpan);
   }
 }

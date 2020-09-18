@@ -1,10 +1,14 @@
+import { SyntaxError } from '../error';
 import { Location, Span } from '../source';
 import * as util from './util';
 
 /** Enum describing the different kinds of tokens that the lexer emits. */
 export const enum LexerTokenKind {
+  /** Token unknown to the lexer. */
+  UNKNOWN,
   SEPARATOR, // SOF/EOF, (), [], {}
   OPERATOR, // :, !, +, -, |, =, @, ,, ;
+  /** Number or boolean literal. */
   LITERAL, // number or boolean
   STRING, // string literals
   IDENTIFIER, // a-z A-Z _ 0-9
@@ -62,6 +66,10 @@ export type JessieScriptValue = string;
 
 // Token datas //
 
+export interface UnknownTokenData {
+  kind: LexerTokenKind.UNKNOWN;
+  error: SyntaxError;
+}
 export interface SeparatorTokenData {
   kind: LexerTokenKind.SEPARATOR;
   separator: SeparatorValue;
@@ -97,6 +105,7 @@ export interface JessieScriptTokenData {
 }
 
 export type DefaultSublexerTokenData =
+  | UnknownTokenData
   | SeparatorTokenData
   | OperatorTokenData
   | LiteralTokenData
@@ -110,6 +119,8 @@ export type LexerTokenData = DefaultSublexerTokenData | JessieSublexerTokenData;
 
 export function formatTokenKind(kind: LexerTokenKind): string {
   switch (kind) {
+    case LexerTokenKind.UNKNOWN:
+      return 'unknown';
     case LexerTokenKind.SEPARATOR:
       return 'separator';
     case LexerTokenKind.OPERATOR:
@@ -133,6 +144,8 @@ export function formatTokenData(
 ): { kind: string; data: string } {
   const kind = formatTokenKind(data.kind);
   switch (data.kind) {
+    case LexerTokenKind.UNKNOWN:
+      return { kind, data: 'unknown' };
     case LexerTokenKind.SEPARATOR:
       return { kind, data: data.separator.toString() };
     case LexerTokenKind.OPERATOR:
@@ -158,10 +171,10 @@ export class LexerToken {
   constructor(
     /** Data of the token. */
     readonly data: LexerTokenData,
-    /** Span of the source code which this token covers. */
-    readonly span: Span,
     /** Location in the formatted source code of this token. */
-    readonly location: Location
+    readonly location: Location,
+    /** Span of the source code which this token covers. */
+    readonly span: Span
   ) {}
 
   isSOF(): boolean {
