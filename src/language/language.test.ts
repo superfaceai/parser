@@ -1,7 +1,9 @@
 import { Source } from './source';
 import { parseProfile, parseRule } from './syntax/parser';
 import { SyntaxRule } from './syntax/rule';
-import * as rule from './syntax/rules/profile';
+import * as profileRules from './syntax/rules/profile';
+import * as mapRules from './syntax/rules/map';
+import { STATEMENT_CONDITION } from './syntax/rules/map/map';
 
 describe('v6', () => {
   it('should parse constructs.profile', () => {
@@ -21,7 +23,7 @@ describe('v6', () => {
 
     const source = new Source(input);
     const definitions = parseRule(
-      SyntaxRule.repeat(rule.DOCUMENT_DEFINITION),
+      SyntaxRule.repeat(profileRules.DOCUMENT_DEFINITION),
       source,
       true
     );
@@ -310,7 +312,7 @@ describe('v6', () => {
     }`;
 
     const source = new Source(input);
-    const model = parseRule(rule.NAMED_MODEL_DEFINITION, source, true);
+    const model = parseRule(profileRules.NAMED_MODEL_DEFINITION, source, true);
 
     expect(model).toMatchObject({
       kind: 'NamedModelDefinition',
@@ -418,3 +420,304 @@ describe('v6', () => {
     });
   });
 });
+
+describe('v8', () => {
+  describe('jessie contexts', () => {
+    it('should parse jessie condition expression', () => {
+      const input = 'if ((() => { const a = 1; return { foo: a + 2 }; })())'
+
+      const source = new Source(input);
+      const condition = parseRule(STATEMENT_CONDITION, source, true);
+
+      expect(condition).toMatchObject({
+        kind: 'StatementCondition',
+        expression: {
+          kind: 'JessieExpression',
+          expression: '(function () { var a = 1; return { foo: a + 2 }; })()',
+          source: '(() => { const a = 1; return { foo: a + 2 }; })()'
+        }
+      })
+    });
+
+    it('should parse jessie rhs in object literal', () => {
+      const input = `{
+        foo = input.call()
+        bar = 1 + 2 + 3
+        baz.qux = [1, 2, 3].map(x => x * x)
+      }`
+
+      const source = new Source(input);
+      const object = parseRule(mapRules.OBJECT_LITERAL, source, true);
+
+      expect(object).toMatchObject({
+        kind: 'ObjectLiteral',
+        fields: [
+          {
+            kind: 'Assignment',
+            key: ['foo'],
+            value: {
+              kind: 'JessieExpression',
+              expression: 'input.call()'
+            }
+          },
+          {
+            kind: 'Assignment',
+            key: ['bar'],
+            value: {
+              kind: 'JessieExpression',
+              expression: '1 + 2 + 3'
+            }
+          },
+          {
+            kind: 'Assignment',
+            key: ['baz', 'qux'],
+            value: {
+              kind: 'JessieExpression',
+              expression: '[1, 2, 3].map(function (x) { return x * x; })'
+            }
+          }
+        ]
+      })
+    });
+
+    it('should parse jessie expression in array literal', () => {
+      const input = `[1 + 2, 3 * 4, 5, [true], [7] + [8]]`
+
+      const source = new Source(input);
+
+      const object = parseRule(mapRules.ARRAY_LITERAL, source, true);
+
+      expect(object).toMatchObject({
+        kind: 'ArrayLiteral',
+        elements: [
+          {
+            kind: 'JessieExpression',
+            expression: '1 + 2'
+          },
+          {
+            kind: 'JessieExpression',
+            expression: '3 * 4'
+          },
+          {
+            kind: 'PrimitiveLiteral',
+            value: 5
+          },
+          {
+            kind: 'ArrayLiteral',
+            elements: [
+              {
+                kind: 'PrimitiveLiteral',
+                value: true
+              }
+            ]
+          },
+          {
+            kind: 'JessieExpression',
+            expression: '[7] + [8]'
+          }
+        ]
+      })
+    });
+  });
+
+  it('should parse conversation.tyntec.map', () => {
+    const input = `profile = "http://superface.ai/profile/conversation/SendMessage"
+    provider = "http://superface.ai/directory/Tyntec#SMS"
+    
+    # Tyntec API documentation available at:
+    #   https://api.tyntec.com/reference/#conversations-send-messages-send-a-message
+    
+    map SendMessage {
+      http POST "https://api.tyntec.com/chat-api/v2/messages" {
+        request {
+          body {
+            to = input.to
+            channels = ['sms']
+            sms.from = input.from
+            sms.contentType = 'text'
+            sms.text = input.text
+          }
+        }
+    
+        response 200 "application/json" {
+          map result {
+            messageId = body.messageId
+          }
+        }
+      }
+    }
+    
+    map RetrieveMessageStatus {
+      messageId = input.messageId
+    
+      http GET "https://api.tyntec.com/chat-api/v2/messages/{messageId}/history" {
+        response 200 "application/json" {
+          map result {
+            deliveryStatus = body.history[0].state
+          }
+        }
+      } 
+    }
+    `
+
+    const source = new Source(input);
+    const map = parseRule(mapRules.MAP_DOCUMENT, source);
+
+    expect(map).toMatchObject({
+      kind: 'MapDocument',
+      map: {
+        kind: 'Map',
+        profileId: {
+          kind: 'ProfileId',
+          profileId: 'http://superface.ai/profile/conversation/SendMessage'
+        },
+        provider: {
+          kind: 'Provider',
+          providerId: 'http://superface.ai/directory/Tyntec#SMS'
+        }
+      },
+      definitions: [
+        {
+          kind: 'MapDefinition',
+          name: 'SendMessage',
+          usecaseName: 'SendMessage',
+          statements: [
+            {
+              kind: 'HttpCallStatement',
+              method: 'POST',
+              url: 'https://api.tyntec.com/chat-api/v2/messages',
+              requestDefinition: {
+                body: {
+                  kind: 'ObjectLiteral',
+                  fields: [
+                    {
+                      kind: 'Assignment',
+                      key: ['to'],
+                      value: {
+                        kind: 'JessieExpression',
+                        expression: 'input.to'
+                      }
+                    },
+                    {
+                      kind: 'Assignment',
+                      key: ['channels'],
+                      value: {
+                        kind: 'ArrayLiteral',
+                        elements: [
+                          {
+                            kind: 'PrimitiveLiteral',
+                            value: 'sms'
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      kind: 'Assignment',
+                      key: ['sms', 'from'],
+                      value: {
+                        kind: 'JessieExpression',
+                        expression: 'input.from'
+                      }
+                    },
+                    {
+                      kind: 'Assignment',
+                      key: ['sms', 'contentType'],
+                      value: {
+                        kind: 'PrimitiveLiteral',
+                        value: 'text'
+                      }
+                    },
+                    {
+                      kind: 'Assignment',
+                      key: ['sms', 'text'],
+                      value: {
+                        kind: 'JessieExpression',
+                        expression: 'input.text'
+                      }
+                    }
+                  ]
+                }
+              },
+              responseHandlers: [
+                {
+                  kind: 'HttpResponseHandler',
+                  statusCode: 200,
+                  contentType: 'application/json',
+                  statements: [
+                    {
+                      kind: 'MapResultStatement',
+                      value: {
+                        kind: 'ObjectLiteral',
+                        fields: [
+                          {
+                            kind: 'Assignment',
+                            key: ['messageId'],
+                            value: {
+                              kind: 'JessieExpression',
+                              expression: 'body.messageId'
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          kind: 'MapDefinition',
+          name: 'RetrieveMessageStatus',
+          usecaseName: 'RetrieveMessageStatus',
+          statements: [
+            {
+              kind: 'SetStatement',
+              assignments: [
+                {
+                  kind: 'Assignment',
+                  key: ['messageId'],
+                  value: {
+                    kind: 'JessieExpression',
+                    expression: 'input.messageId'
+                  }
+                }
+              ]
+            },
+            {
+              kind: 'HttpCallStatement',
+              method: 'GET',
+              url: 'https://api.tyntec.com/chat-api/v2/messages/{messageId}/history',
+              requestDefinition: {},
+              responseHandlers: [
+                {
+                  kind: 'HttpResponseHandler',
+                  statusCode: 200,
+                  contentType: 'application/json',
+                  statements: [
+                    {
+                      kind: 'MapResultStatement',
+                      value: {
+                        kind: 'ObjectLiteral',
+                        fields: [
+                          {
+                            kind: 'Assignment',
+                            key: ['deliveryStatus'],
+                            value: {
+                              kind: 'JessieExpression',
+                              expression: 'body.history[0].state'
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    })
+  })
+})
