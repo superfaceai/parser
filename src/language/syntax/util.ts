@@ -4,7 +4,11 @@ import {
   LexerTokenKind,
   LexerTokenStream,
 } from '../lexer';
-import { DEFAULT_TOKEN_KIND_FILER, LexerSavedState, LexerTokenKindFilter } from '../lexer/lexer';
+import {
+  DEFAULT_TOKEN_KIND_FILER,
+  LexerSavedState,
+  LexerTokenKindFilter,
+} from '../lexer/lexer';
 
 /**
  * LexerTokenStream implementation that takes tokens from an array instead of a Lexer.

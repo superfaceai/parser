@@ -17,13 +17,12 @@ export const DEFAULT_TOKEN_KIND_FILER: LexerTokenKindFilter = {
   [LexerTokenKind.SEPARATOR]: false,
   [LexerTokenKind.STRING]: false,
   [LexerTokenKind.JESSIE_SCRIPT]: false,
-  [LexerTokenKind.UNKNOWN]: false
+  [LexerTokenKind.UNKNOWN]: false,
 };
 
 export type LexerSavedState = [LexerToken, boolean];
 export interface LexerTokenStream
   extends Generator<LexerToken, undefined, LexerContext | undefined> {
-  
   tokenKindFilter: LexerTokenKindFilter;
   emitUnknown: boolean;
 
@@ -286,7 +285,7 @@ export class Lexer implements LexerTokenStream {
       const category = tokenParseResult?.category ?? SyntaxErrorCategory.LEXER;
       const detail = tokenParseResult?.detail ?? 'Could not match any token';
       const hint = tokenParseResult?.hint;
-      
+
       const error = new SyntaxError(
         this.source,
         location,
@@ -300,11 +299,11 @@ export class Lexer implements LexerTokenStream {
         return new LexerToken(
           {
             kind: LexerTokenKind.UNKNOWN,
-            error
+            error,
           },
           location,
           parsedTokenSpan
-        )
+        );
       }
 
       throw error;

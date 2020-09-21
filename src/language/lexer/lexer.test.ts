@@ -711,21 +711,33 @@ ng2"
     lexer.rollback(save);
     expect(lexer.next().value).toMatchObject({ data: { literal: 1 } });
 
-    lexer.tokenKindFilter = { ...lexer.tokenKindFilter, [LexerTokenKind.NEWLINE]: false };
+    lexer.tokenKindFilter = {
+      ...lexer.tokenKindFilter,
+      [LexerTokenKind.NEWLINE]: false,
+    };
     expect(lexer.next().value).toMatchObject({
       data: { kind: LexerTokenKind.NEWLINE },
     });
 
-    lexer.tokenKindFilter = { ...lexer.tokenKindFilter, [LexerTokenKind.NEWLINE]: true };
+    lexer.tokenKindFilter = {
+      ...lexer.tokenKindFilter,
+      [LexerTokenKind.NEWLINE]: true,
+    };
     expect(lexer.next().value).toMatchObject({ data: { literal: 3 } });
 
-    lexer.tokenKindFilter = { ...lexer.tokenKindFilter, [LexerTokenKind.NEWLINE]: false };
+    lexer.tokenKindFilter = {
+      ...lexer.tokenKindFilter,
+      [LexerTokenKind.NEWLINE]: false,
+    };
     expect(lexer.next().value).toMatchObject({ data: { literal: 4 } });
     expect(lexer.next().value).toMatchObject({
       data: { kind: LexerTokenKind.NEWLINE },
     });
 
-    lexer.tokenKindFilter = { ...lexer.tokenKindFilter, [LexerTokenKind.NEWLINE]: true };
+    lexer.tokenKindFilter = {
+      ...lexer.tokenKindFilter,
+      [LexerTokenKind.NEWLINE]: true,
+    };
     expect(lexer.next().value).toMatchObject({ data: { literal: 5 } });
   });
 
@@ -733,13 +745,13 @@ ng2"
     let lexer = new Lexer(new Source('+'));
     lexer.next(); // SOF
 
-    expect(() => lexer.next()).toThrow()
+    expect(() => lexer.next()).toThrow();
 
     lexer = new Lexer(new Source('+'), undefined, true);
-    lexer.next() // SOF
+    lexer.next(); // SOF
 
     expect(lexer.next().value).toMatchObject({
-      data: { kind: LexerTokenKind.UNKNOWN }
-    })
+      data: { kind: LexerTokenKind.UNKNOWN },
+    });
   });
 });

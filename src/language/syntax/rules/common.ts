@@ -3,8 +3,8 @@ import {
   MapASTNodeBase,
   ProfileASTNodeBase,
 } from '@superindustries/language';
-import { IdentifierTokenData } from '../../lexer/token';
 
+import { IdentifierTokenData } from '../../lexer/token';
 import { LexerTokenMatch, SyntaxRule } from '../rule';
 import { extractDocumentation } from '../util';
 
@@ -14,7 +14,7 @@ export type ASTNodeBase = ProfileASTNodeBase | MapASTNodeBase;
 export type SrcNodeLocationInfo = {
   span: NonNullable<ASTNodeBase['span']>;
   location: NonNullable<ASTNodeBase['location']>;
-}
+};
 
 // Node that has `span` and `location` non-optional.
 export type SrcNode<N extends ASTNodeBase> = N & {
@@ -23,9 +23,9 @@ export type SrcNode<N extends ASTNodeBase> = N & {
 };
 export type SyntaxRuleSrc<N extends ASTNodeBase> = SyntaxRule<SrcNode<N>>;
 
-export function documentedNode<
-  N extends SrcNode<DocumentedNode & ASTNodeBase>
->(rule: SyntaxRule<N>): SyntaxRule<N> {
+export function documentedNode<N extends SrcNode<DocumentedNode & ASTNodeBase>>(
+  rule: SyntaxRule<N>
+): SyntaxRule<N> {
   return SyntaxRule.optional(SyntaxRule.string())
     .followedBy(rule)
     .map(
@@ -49,10 +49,7 @@ export function SLOT_DEFINITION_FACTORY<T>(
   rule: SyntaxRule<T>
 ): SyntaxRule<[LexerTokenMatch<IdentifierTokenData>, T]> {
   return SyntaxRule.identifier(name)
-      .followedBy(SyntaxRule.lookahead(SyntaxRule.newline(), true))
-      .andFollowedBy(rule)
-      .map(
-        ([name, /* _lookahead */, value]) => [name, value]
-      )
-  ;
+    .followedBy(SyntaxRule.lookahead(SyntaxRule.newline(), true))
+    .andFollowedBy(rule)
+    .map(([name /* _lookahead */, , value]) => [name, value]);
 }

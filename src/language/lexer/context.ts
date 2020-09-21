@@ -37,4 +37,4 @@ type LexerJessieContext = {
   type: LexerContextType.JESSIE_SCRIPT_EXPRESSION;
   terminationTokens?: ReadonlyArray<JessieExpressionTerminationToken>;
 };
-export type LexerContext = (LexerDefaultContext | LexerJessieContext);
+export type LexerContext = LexerDefaultContext | LexerJessieContext;

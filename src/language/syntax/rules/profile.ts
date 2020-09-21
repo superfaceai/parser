@@ -25,7 +25,12 @@ import {
   SyntaxRuleMutable,
   SyntaxRuleSeparator,
 } from '../rule';
-import { documentedNode, SLOT_DEFINITION_FACTORY, SrcNode, SyntaxRuleSrc } from './common';
+import {
+  documentedNode,
+  SLOT_DEFINITION_FACTORY,
+  SrcNode,
+  SyntaxRuleSrc,
+} from './common';
 
 // MUTABLE RULES //
 

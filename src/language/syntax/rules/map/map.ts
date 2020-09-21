@@ -1,179 +1,206 @@
-import { LiteralNode, MapDocumentNode, MapProfileIdNode, ProviderNode, MapNode, MapDefinitionNode, OperationDefinitionNode, StatementConditionNode, ReturnStatementNode, FailStatementNode, MapResultStatementNode, MapErrorStatementNode, SetStatementNode, MapSubstatement, CallStatementNode } from '@superindustries/language';
+import {
+  CallStatementNode,
+  FailStatementNode,
+  LiteralNode,
+  MapDefinitionNode,
+  MapDocumentNode,
+  MapErrorStatementNode,
+  MapNode,
+  MapProfileIdNode,
+  MapResultStatementNode,
+  MapSubstatement,
+  OperationDefinitionNode,
+  ProviderNode,
+  ReturnStatementNode,
+  SetStatementNode,
+  StatementConditionNode,
+} from '@superindustries/language';
 
 import { SyntaxRule } from '../../rule';
 import { documentedNode, SrcNode, SyntaxRuleSrc } from '../common';
 import { CALL_STATEMENT_FACTORY, HTTP_CALL_STATEMENT_FACTORY } from './call';
-import { SET_BLOCK_ASSIGNMENT, JESSIE_EXPRESSION_FACTORY, VALUE_EXPRESSION_FACTORY } from './value';
+import {
+  JESSIE_EXPRESSION_FACTORY,
+  SET_BLOCK_ASSIGNMENT,
+  VALUE_EXPRESSION_FACTORY,
+} from './value';
 
 /**
  * if (<jessie>)
  */
-export const STATEMENT_CONDITION: SyntaxRuleSrc<StatementConditionNode> = SyntaxRule.identifier('if').followedBy(
-  SyntaxRule.separator('(')
-).andFollowedBy(
-  JESSIE_EXPRESSION_FACTORY(')')
-).andFollowedBy(
-  SyntaxRule.separator(')')
-).map(
-  (maches): SrcNode<StatementConditionNode> => {
-    const [key, /* sepStart */, expression, sepEnd] = maches;
-
-    return {
-      kind: 'StatementCondition',
-      expression,
-      location: key.location,
-      span: {
-        start: key.span.start,
-        end: sepEnd.span.end
-      }
-    }
-  }
+export const STATEMENT_CONDITION: SyntaxRuleSrc<StatementConditionNode> = SyntaxRule.identifier(
+  'if'
 )
+  .followedBy(SyntaxRule.separator('('))
+  .andFollowedBy(JESSIE_EXPRESSION_FACTORY(')'))
+  .andFollowedBy(SyntaxRule.separator(')'))
+  .map(
+    (maches): SrcNode<StatementConditionNode> => {
+      const [key /* sepStart */, , expression, sepEnd] = maches;
+
+      return {
+        kind: 'StatementCondition',
+        expression,
+        location: key.location,
+        span: {
+          start: key.span.start,
+          end: sepEnd.span.end,
+        },
+      };
+    }
+  );
 
 // CONTEXTUAL STATEMENTS
 
-const STATEMENT_RHS_VALUE: SyntaxRuleSrc<LiteralNode> = VALUE_EXPRESSION_FACTORY(';', '}').followedBy(
-  SyntaxRule.optional(
-    SyntaxRule.operator(';')
-  )
-).map(
-  (matches): SrcNode<LiteralNode> => {
-    const [value, /* maybeSemicolon */] = matches;
-
-    return value;
-  }
+const STATEMENT_RHS_VALUE: SyntaxRuleSrc<LiteralNode> = VALUE_EXPRESSION_FACTORY(
+  ';',
+  '}'
 )
+  .followedBy(SyntaxRule.optional(SyntaxRule.operator(';')))
+  .map(
+    (matches): SrcNode<LiteralNode> => {
+      const [value /* maybeSemicolon */] = matches;
+
+      return value;
+    }
+  );
 
 /*
 return <?condition> <value>;
 */
-export const RETURN_STATEMENT: SyntaxRuleSrc<ReturnStatementNode> = SyntaxRule.identifier('return').followedBy(
-  SyntaxRule.optional(STATEMENT_CONDITION)
-).andFollowedBy(
-  STATEMENT_RHS_VALUE
-).map(
-  (matches): SrcNode<ReturnStatementNode> => {
-    const [key, maybeCondition, value] = matches;
-
-    return {
-      kind: 'ReturnStatement',
-      condition: maybeCondition,
-      value,
-      location: key.location,
-      span: {
-        start: key.span.start,
-        end: value.span.end
-      }
-    }
-  }
+export const RETURN_STATEMENT: SyntaxRuleSrc<ReturnStatementNode> = SyntaxRule.identifier(
+  'return'
 )
+  .followedBy(SyntaxRule.optional(STATEMENT_CONDITION))
+  .andFollowedBy(STATEMENT_RHS_VALUE)
+  .map(
+    (matches): SrcNode<ReturnStatementNode> => {
+      const [key, maybeCondition, value] = matches;
+
+      return {
+        kind: 'ReturnStatement',
+        condition: maybeCondition,
+        value,
+        location: key.location,
+        span: {
+          start: key.span.start,
+          end: value.span.end,
+        },
+      };
+    }
+  );
 
 /*
 fail <?condition> <value>;
 */
-export const FAIL_STATEMENT: SyntaxRuleSrc<FailStatementNode> = SyntaxRule.identifier('fail').followedBy(
-  SyntaxRule.optional(STATEMENT_CONDITION)
-).andFollowedBy(
-  STATEMENT_RHS_VALUE
-).map(
-  (matches): SrcNode<FailStatementNode> => {
-    const [key, maybeCondition, value, /* maybeSemicolon */] = matches;
-
-    return {
-      kind: 'FailStatement',
-      condition: maybeCondition,
-      value,
-      location: key.location,
-      span: {
-        start: key.span.start,
-        end: value.span.end
-      }
-    }
-  }
+export const FAIL_STATEMENT: SyntaxRuleSrc<FailStatementNode> = SyntaxRule.identifier(
+  'fail'
 )
+  .followedBy(SyntaxRule.optional(STATEMENT_CONDITION))
+  .andFollowedBy(STATEMENT_RHS_VALUE)
+  .map(
+    (matches): SrcNode<FailStatementNode> => {
+      const [key, maybeCondition, value /* maybeSemicolon */] = matches;
+
+      return {
+        kind: 'FailStatement',
+        condition: maybeCondition,
+        value,
+        location: key.location,
+        span: {
+          start: key.span.start,
+          end: value.span.end,
+        },
+      };
+    }
+  );
 
 /**
  * map result <?condition> <value>;
  */
-export const MAP_RESULT_STATEMENT: SyntaxRuleSrc<MapResultStatementNode> = SyntaxRule.identifier('map').followedBy(
-  SyntaxRule.identifier('result')
-).andFollowedBy(
-  SyntaxRule.optional(STATEMENT_CONDITION)
-).andFollowedBy(
-  STATEMENT_RHS_VALUE
-).map(
-  (matches): SrcNode<MapResultStatementNode> => {
-    const [keyMap, /* keyResult */, maybeCondition, value] = matches;
-
-    return {
-      kind: 'MapResultStatement',
-      condition: maybeCondition,
-      value,
-      location: keyMap.location,
-      span: {
-        start: keyMap.span.start,
-        end: value.span.end
-      }
-    }
-  }
+export const MAP_RESULT_STATEMENT: SyntaxRuleSrc<MapResultStatementNode> = SyntaxRule.identifier(
+  'map'
 )
+  .followedBy(SyntaxRule.identifier('result'))
+  .andFollowedBy(SyntaxRule.optional(STATEMENT_CONDITION))
+  .andFollowedBy(STATEMENT_RHS_VALUE)
+  .map(
+    (matches): SrcNode<MapResultStatementNode> => {
+      const [keyMap /* keyResult */, , maybeCondition, value] = matches;
+
+      return {
+        kind: 'MapResultStatement',
+        condition: maybeCondition,
+        value,
+        location: keyMap.location,
+        span: {
+          start: keyMap.span.start,
+          end: value.span.end,
+        },
+      };
+    }
+  );
 
 /**
  * map error <?condition> <value>;
  */
-export const MAP_ERROR_STATEMENT: SyntaxRuleSrc<MapErrorStatementNode> = SyntaxRule.identifier('map').followedBy(
-  SyntaxRule.identifier('error')
-).andFollowedBy(
-  SyntaxRule.optional(STATEMENT_CONDITION)
-).andFollowedBy(
-  STATEMENT_RHS_VALUE
-).map(
-  (matches): SrcNode<MapErrorStatementNode> => {
-    const [keyMap, /* keyResult */, maybeCondition, value] = matches;
-
-    return {
-      kind: 'MapErrorStatement',
-      condition: maybeCondition,
-      value,
-      location: keyMap.location,
-      span: {
-        start: keyMap.span.start,
-        end: value.span.end
-      }
-    }
-  }
+export const MAP_ERROR_STATEMENT: SyntaxRuleSrc<MapErrorStatementNode> = SyntaxRule.identifier(
+  'map'
 )
+  .followedBy(SyntaxRule.identifier('error'))
+  .andFollowedBy(SyntaxRule.optional(STATEMENT_CONDITION))
+  .andFollowedBy(STATEMENT_RHS_VALUE)
+  .map(
+    (matches): SrcNode<MapErrorStatementNode> => {
+      const [keyMap /* keyResult */, , maybeCondition, value] = matches;
 
+      return {
+        kind: 'MapErrorStatement',
+        condition: maybeCondition,
+        value,
+        location: keyMap.location,
+        span: {
+          start: keyMap.span.start,
+          end: value.span.end,
+        },
+      };
+    }
+  );
 
 // STATEMENTS
 
 /**
  * set <?condition> { <...assignment> }
-*/
-const SET_STATEMENT_FULL: SyntaxRuleSrc<SetStatementNode> = SyntaxRule.identifier('set').followedBy(
-  SyntaxRule.optional(STATEMENT_CONDITION)
-).andFollowedBy(
-  SyntaxRule.separator('{')
-).andFollowedBy(
-  SyntaxRule.repeat(SET_BLOCK_ASSIGNMENT)
-).andFollowedBy(
-  SyntaxRule.separator('}')
-).map(
-  (matches): SrcNode<SetStatementNode> => {
-    const [key, maybeCondition, /* sepStart */, assignments, sepEnd] = matches;
-
-    return {
-      kind: 'SetStatement',
-      condition: maybeCondition,
-      assignments,
-      location: key.location,
-      span: {
-        start: key.span.start,
-        end: sepEnd.span.end
-      }
-    }
-  }
+ */
+const SET_STATEMENT_FULL: SyntaxRuleSrc<SetStatementNode> = SyntaxRule.identifier(
+  'set'
 )
+  .followedBy(SyntaxRule.optional(STATEMENT_CONDITION))
+  .andFollowedBy(SyntaxRule.separator('{'))
+  .andFollowedBy(SyntaxRule.repeat(SET_BLOCK_ASSIGNMENT))
+  .andFollowedBy(SyntaxRule.separator('}'))
+  .map(
+    (matches): SrcNode<SetStatementNode> => {
+      const [
+        key,
+        maybeCondition /* sepStart */,
+        ,
+        assignments,
+        sepEnd,
+      ] = matches;
+
+      return {
+        kind: 'SetStatement',
+        condition: maybeCondition,
+        assignments,
+        location: key.location,
+        span: {
+          start: key.span.start,
+          end: sepEnd.span.end,
+        },
+      };
+    }
+  );
 
 const SET_STATEMENT_RAW: SyntaxRuleSrc<SetStatementNode> = SET_BLOCK_ASSIGNMENT.map(
   (match): SrcNode<SetStatementNode> => {
@@ -181,12 +208,14 @@ const SET_STATEMENT_RAW: SyntaxRuleSrc<SetStatementNode> = SET_BLOCK_ASSIGNMENT.
       kind: 'SetStatement',
       assignments: [match],
       location: match.location,
-      span: match.span
-    }
+      span: match.span,
+    };
   }
-)
+);
 
-export const SET_STATEMENT: SyntaxRuleSrc<SetStatementNode> = SET_STATEMENT_FULL.or(SET_STATEMENT_RAW);
+export const SET_STATEMENT: SyntaxRuleSrc<SetStatementNode> = SET_STATEMENT_FULL.or(
+  SET_STATEMENT_RAW
+);
 
 // /*
 // foo(...args) if (cond) {
@@ -254,30 +283,31 @@ export const OPERATION_DEFINITION: SyntaxRuleSrc<OperationDefinitionNode> = docu
 
 // MAP DEFINITION //
 
-const MAP_DEFINITION_CONTEXTUAL_STATEMENT: SyntaxRuleSrc<MapSubstatement> = MAP_RESULT_STATEMENT.or(MAP_ERROR_STATEMENT);
-const MAP_DEFINITION_STATEMENT: SyntaxRuleSrc<SetStatementNode | CallStatementNode<MapSubstatement> | MapSubstatement> = SET_STATEMENT.or(CALL_STATEMENT_FACTORY(MAP_DEFINITION_CONTEXTUAL_STATEMENT)).or(MAP_DEFINITION_CONTEXTUAL_STATEMENT);
+const MAP_DEFINITION_CONTEXTUAL_STATEMENT: SyntaxRuleSrc<MapSubstatement> = MAP_RESULT_STATEMENT.or(
+  MAP_ERROR_STATEMENT
+);
+const MAP_DEFINITION_STATEMENT: SyntaxRuleSrc<
+  SetStatementNode | CallStatementNode<MapSubstatement> | MapSubstatement
+> = SET_STATEMENT.or(
+  CALL_STATEMENT_FACTORY(MAP_DEFINITION_CONTEXTUAL_STATEMENT)
+).or(MAP_DEFINITION_CONTEXTUAL_STATEMENT);
 
-export const MAP_DEFINITION_HTTP_CALL = HTTP_CALL_STATEMENT_FACTORY(MAP_DEFINITION_CONTEXTUAL_STATEMENT);
+export const MAP_DEFINITION_HTTP_CALL = HTTP_CALL_STATEMENT_FACTORY(
+  MAP_DEFINITION_CONTEXTUAL_STATEMENT
+);
 export const MAP_DEFINITION: SyntaxRuleSrc<MapDefinitionNode> = documentedNode(
   SyntaxRule.identifier('map')
     .followedBy(SyntaxRule.identifier())
     .andFollowedBy(SyntaxRule.separator('{'))
     .andFollowedBy(
       SyntaxRule.optional(
-        SyntaxRule.repeat(
-          MAP_DEFINITION_STATEMENT.or(MAP_DEFINITION_HTTP_CALL)
-        )
+        SyntaxRule.repeat(MAP_DEFINITION_STATEMENT.or(MAP_DEFINITION_HTTP_CALL))
       )
-    ).andFollowedBy(SyntaxRule.separator('}'))
+    )
+    .andFollowedBy(SyntaxRule.separator('}'))
     .map(
       (matches): SrcNode<MapDefinitionNode> => {
-        const [
-          key,
-          name,
-          /* sepStart */,
-          maybeStatements,
-          sepEnd
-        ] = matches;
+        const [key, name, , /* sepStart */ maybeStatements, sepEnd] = matches;
 
         return {
           kind: 'MapDefinition',
@@ -287,9 +317,9 @@ export const MAP_DEFINITION: SyntaxRuleSrc<MapDefinitionNode> = documentedNode(
           location: key.location,
           span: {
             start: key.span.start,
-            end: sepEnd.span.end
-          }
-        }
+            end: sepEnd.span.end,
+          },
+        };
       }
     )
 );

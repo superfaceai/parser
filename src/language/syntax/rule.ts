@@ -377,22 +377,20 @@ export class SyntaxRuleNewline extends SyntaxRule<
     const originalFilter = tokens.tokenKindFilter[LexerTokenKind.NEWLINE];
     tokens.tokenKindFilter[LexerTokenKind.NEWLINE] = false;
 
-    const result = this.simpleTryMatchBoilerplate(
-      tokens,
-      token => {
-        if (token.data.kind === LexerTokenKind.NEWLINE) {
-          return {
-            data: token.data,
-            span: token.span,
-            location: token.location,
-          };
-        }
-
-        return undefined;
+    const result = this.simpleTryMatchBoilerplate(tokens, token => {
+      if (token.data.kind === LexerTokenKind.NEWLINE) {
+        return {
+          data: token.data,
+          span: token.span,
+          location: token.location,
+        };
       }
-    );
+
+      return undefined;
+    });
 
     tokens.tokenKindFilter[LexerTokenKind.NEWLINE] = originalFilter;
+
     return result;
   }
 
@@ -447,16 +445,12 @@ export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
 
   static chainOr<R>(...rest: []): undefined;
   static chainOr<R>(...rest: SyntaxRule<R>[]): SyntaxRule<R>;
-  static chainOr<R>(
-    ...rest: SyntaxRule<R>[]
-  ): SyntaxRule<R> | undefined {
+  static chainOr<R>(...rest: SyntaxRule<R>[]): SyntaxRule<R> | undefined {
     if (rest.length === 0) {
       return undefined;
     }
 
-    return rest.reduce(
-      (acc, curr) => acc.or(curr)
-    )
+    return rest.reduce((acc, curr) => acc.or(curr));
   }
 
   tryMatch(tokens: LexerTokenStream): RuleResult<F | S> {
@@ -626,7 +620,7 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
     const save = tokens.save();
 
     const result = this.rule.tryMatch(tokens);
-    
+
     tokens.rollback(save);
     tokens.emitUnknown = originalEmitUnknown;
 
