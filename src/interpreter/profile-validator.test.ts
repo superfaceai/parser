@@ -568,7 +568,7 @@ describe('ProfileValidator', () => {
       });
     });
 
-    describe('and Result is a Object', () => {
+    describe('and Result is a Object Type', () => {
       const ast: ProfileDocumentNode = {
         kind: 'ProfileDocument',
         profile: {
@@ -740,7 +740,6 @@ describe('ProfileValidator', () => {
 
       test('then result contains UnionStructure', () => {
         const output = profileValidator.visit(ast);
-        writeToFile(output);
         expect(output).toMatchObject(expected);
       });
     });
