@@ -1,21 +1,20 @@
 import {
-  ProfileASTNode,
-  EnumValueNode,
-  ObjectDefinitionNode,
-  FieldDefinitionNode,
-  NamedFieldDefinitionNode,
-  PrimitiveTypeNameNode,
-  UseCaseDefinitionNode,
-  UnionDefinitionNode,
-  ProfileNode,
-  ProfileIdNode,
-  NamedModelDefinitionNode,
-  ProfileDocumentNode,
-  NonNullDefinitionNode,
-  ModelTypeNameNode,
-  ListDefinitionNode,
   EnumDefinitionNode,
-  DocumentDefinition,
+  EnumValueNode,
+  FieldDefinitionNode,
+  ListDefinitionNode,
+  ModelTypeNameNode,
+  NamedFieldDefinitionNode,
+  NamedModelDefinitionNode,
+  NonNullDefinitionNode,
+  ObjectDefinitionNode,
+  PrimitiveTypeNameNode,
+  ProfileASTNode,
+  ProfileDocumentNode,
+  ProfileIdNode,
+  ProfileNode,
+  UnionDefinitionNode,
+  UseCaseDefinitionNode,
 } from '@superindustries/language';
 import { ProfileVisitor } from '@superindustries/superface';
 
@@ -24,87 +23,96 @@ function assertUnreachable(node: ProfileASTNode): never {
   throw new Error(`Invalid Node kind: ${node.kind}`);
 }
 
+type StructureKind =
+  | 'PrimitiveStructure'
+  | 'EnumStructure'
+  | 'NonNullStructure'
+  | 'ListStructure'
+  | 'ObjectStructure'
+  | 'ModelStructure'
+  | 'UnionStructure';
+
 /**
- * @type Type - represents all possible Structures + undefined
+ * @interface Structure represents skeleton for other structures
  */
-type Type =
-  | undefined
+export interface Structure {
+  kind: StructureKind;
+  required?: boolean;
+}
+
+/**
+ * @interface PrimitiveStructure represents structure of primitive type
+ */
+export interface PrimitiveStructure extends Structure {
+  kind: 'PrimitiveStructure';
+  required?: true;
+}
+/**
+ * @interface EnumStructure represent structure of enum type
+ */
+export interface EnumStructure extends Structure {
+  kind: 'EnumStructure';
+  enums: { [enumValue: string]: string | number | boolean };
+  required?: true;
+}
+/**
+ * @interface NonNullStructure represent structure of type that is !required
+ */
+export interface NonNullStructure extends Structure {
+  kind: 'NonNullStructure';
+  required: true;
+  value?: Exclude<StructureType, UnionStructure>;
+}
+/**
+ * @interface ListStructure represent structure of []list type
+ */
+export interface ListStructure extends Structure {
+  kind: 'ListStructure';
+  value?: Exclude<StructureType, EnumStructure>;
+  required?: true;
+}
+/**
+ * @interface ObjectStructure represent structure of {}object type
+ */
+export interface ObjectStructure extends Structure {
+  kind: 'ObjectStructure';
+  fields?: { [P in string]?: StructureType };
+  required?: true;
+}
+/**
+ * @interface UnionStructure represent structure of |union type
+ */
+export interface UnionStructure extends Structure {
+  kind: 'UnionStructure';
+  types: { [P in number]?: Exclude<StructureType, UnionStructure> };
+}
+
+/**
+ * @type StructureType - represents all structures
+ */
+export type StructureType =
   | PrimitiveStructure
   | EnumStructure
   | NonNullStructure
-  | ModelStructure
   | ListStructure
   | ObjectStructure
   | UnionStructure;
-/**
- * @type TypeValue - represents three primitive types
- */
-type TypeValue = 'string' | 'number' | 'boolean';
-/**
- * @interface PrimitiveStructure represents primitive type
- */
-interface PrimitiveStructure {
-  primitiveType: TypeValue | TypeValue[];
-}
-/**
- * @interface EnumStructure represent enum type
- * NOTE: When assigning enum keys to some values, the initial keys are not parsed
- */
-interface EnumStructure {
-  [enumValue: string]: undefined | string | number | boolean;
-}
-/**
- * @interface NonNullStructure represent type that is !required
- */
-interface NonNullStructure {
-  required: true;
-  requiredType: Exclude<Type, NonNullStructure>;
-}
-/**
- * @interface ListStructure represent []list structure which can have one or more unioned types
- */
-interface ListStructure {
-  [listItem: number]: Type;
-}
-/**
- * @interface ObjectStructure represent any {}object structure
- */
-interface ObjectStructure {
-  [fieldName: string]: Type;
-}
-/**
- * @interface ModelStructure represent model structure
- */
-type ModelStructure = {
-  modelType: Type;
-};
-/**
- * @interface UnionStructure represent |union structure
- */
-interface UnionStructure {
-  [key: number]: Exclude<Type, UnionStructure>;
-}
-
-type ResultValidationObject = Type;
-type InputValidationObject = ObjectStructure;
-type ErrorValidationObject = Type;
-type AsyncValidationObject = Type;
 
 /**
- * @type ProfileVariables - represents valid usecase structure
+ * @type UseCaseStructure - represents usecase structure
  */
-type ProfileVariables = (
+type UseCaseStructure = (
   | {
-      input: InputValidationObject;
-      result: ResultValidationObject;
+      input: ObjectStructure;
+      result?: StructureType;
     }
   | {
-      result: ResultValidationObject;
+      result?: StructureType;
     }
 ) & {
   useCaseName: string;
-  async?: AsyncValidationObject;
-  error?: ErrorValidationObject;
+  async?: StructureType;
+  error?: StructureType;
 };
 
 /**
@@ -112,36 +120,40 @@ type ProfileVariables = (
  */
 export interface ProfileOutput {
   profileId: string;
-  usecase: ProfileVariables; // extend for safety and other slots
+  usecase: UseCaseStructure;
 }
 
-// type ProfileParameterKind = 'input' | 'result';
-
 export class ProfileValidator implements ProfileVisitor {
-  // private variableStack: Variables[] = [this.fields, this.models];
-  private fields: ObjectStructure = {};
-  private models: Record<string, ModelStructure> = {};
+  private fields: Record<string, StructureType | undefined> = {};
+  private models: Record<string, StructureType | undefined> = {};
 
-  visit(node: PrimitiveTypeNameNode): PrimitiveStructure;
-  visit(node: EnumValueNode): string | number | boolean;
-  visit(node: EnumDefinitionNode): EnumStructure;
-  visit(node: UnionDefinitionNode): UnionStructure;
-  visit(node: NonNullDefinitionNode): NonNullStructure;
-  visit(node: ListDefinitionNode): ListStructure;
-  visit(node: ObjectDefinitionNode): ObjectStructure;
-  visit(node: UseCaseDefinitionNode): ProfileVariables;
-  visit(node: ModelTypeNameNode | NamedModelDefinitionNode): ModelStructure;
-  visit(node: NamedFieldDefinitionNode | FieldDefinitionNode): Type;
-  visit(node: ProfileNode | ProfileIdNode): string;
+  visit(
+    node:
+      | NamedModelDefinitionNode
+      | NamedFieldDefinitionNode
+      | ModelTypeNameNode
+      | FieldDefinitionNode
+  ): StructureType | undefined;
+  visit(
+    node:
+      | PrimitiveTypeNameNode
+      | EnumDefinitionNode
+      | ListDefinitionNode
+      | ObjectDefinitionNode
+      | UnionDefinitionNode
+      | NonNullDefinitionNode
+  ): StructureType;
+  visit(node: UseCaseDefinitionNode): UseCaseStructure;
   visit(node: ProfileDocumentNode): ProfileOutput;
+  visit(node: ProfileNode | ProfileIdNode): string;
+  visit(node: EnumValueNode): string | number | boolean;
   visit(
     node: ProfileASTNode
   ):
     | undefined
+    | StructureType
+    | UseCaseStructure
     | ProfileOutput
-    | ProfileVariables
-    | Type
-    | ProfileVariables
     | string
     | number
     | boolean;
@@ -149,9 +161,9 @@ export class ProfileValidator implements ProfileVisitor {
     node: ProfileASTNode
   ):
     | undefined
+    | StructureType
+    | UseCaseStructure
     | ProfileOutput
-    | ProfileVariables
-    | Type
     | string
     | number
     | boolean {
@@ -192,13 +204,18 @@ export class ProfileValidator implements ProfileVisitor {
     }
   }
 
-  visitEnumDefinitionNode(node: EnumDefinitionNode): EnumStructure {
-    let enumeration: EnumStructure = {};
+  visitEnumDefinitionNode(node: EnumDefinitionNode): StructureType {
+    const enumeration: EnumStructure = {
+      kind: 'EnumStructure',
+      enums: {},
+    };
+
     node.values.forEach((enumValue: EnumValueNode) => {
       if (typeof enumValue.value === 'string') {
-        enumeration[enumValue.value] = this.visit(enumValue);
+        enumeration.enums[enumValue.value] = this.visit(enumValue);
       }
     });
+
     return enumeration;
   }
 
@@ -206,108 +223,118 @@ export class ProfileValidator implements ProfileVisitor {
     return node.value;
   }
 
-  visitFieldDefinitionNode(node: FieldDefinitionNode): Type {
+  visitFieldDefinitionNode(
+    node: FieldDefinitionNode
+  ): StructureType | undefined {
     if (node.type === undefined) {
       return this.fields[node.fieldName];
     }
-    return this.visit(node.type) as Type;
+
+    return this.visit(node.type) as StructureType | undefined;
   }
 
-  visitListDefinitionNode(node: ListDefinitionNode): ListStructure {
-    return this.visit(node.elementType) as ListStructure;
-  }
+  visitListDefinitionNode(node: ListDefinitionNode): StructureType {
+    const value = this.visit(node.elementType) as StructureType | undefined;
 
-  visitModelTypeNameNode(node: ModelTypeNameNode): ModelStructure {
-    const modelType = this.models[node.name];
-
-    if (modelType === undefined) {
+    if (value === undefined || value.kind !== 'EnumStructure')
       return {
-        modelType: undefined,
+        kind: 'ListStructure',
+        value,
       };
-    }
-
-    return modelType;
+    else throw new Error('Something went very wrong, this should not happen!');
   }
 
-  visitNamedFieldDefinitionNode(node: NamedFieldDefinitionNode): Type {
+  visitModelTypeNameNode(node: ModelTypeNameNode): StructureType | undefined {
+    return this.models[node.name];
+  }
+
+  visitNamedFieldDefinitionNode(
+    node: NamedFieldDefinitionNode
+  ): StructureType | undefined {
     const fieldName = node.fieldName;
-    let type = undefined;
 
     if (node.type !== undefined) {
-      type = this.visit(node.type);
+      this.fields[fieldName] = this.visit(node.type) as StructureType;
+
+      return this.fields[fieldName];
     }
 
-    this.fields[fieldName] = type as Type;
-
-    return type as Type;
+    return undefined;
   }
 
   visitNamedModelDefinitionNode(
     node: NamedModelDefinitionNode
-  ): ModelStructure {
+  ): StructureType | undefined {
     const modelName = node.modelName;
-    let type = undefined;
 
     if (node.type !== undefined) {
-      type = this.visit(node.type);
+      this.models[modelName] = this.visit(node.type) as StructureType;
+
+      return this.models[modelName];
     }
 
-    this.models[modelName] = type as ModelStructure;
-
-    return type as ModelStructure;
+    return undefined;
   }
 
-  visitNonNullDefinitionNode(node: NonNullDefinitionNode): NonNullStructure {
-    return {
-      required: true,
-      requiredType: this.visit(node.type) as Exclude<Type, NonNullStructure>,
+  visitNonNullDefinitionNode(node: NonNullDefinitionNode): StructureType {
+    const value = this.visit(node.type) as StructureType | undefined;
+
+    if (value === undefined || value.kind !== 'UnionStructure')
+      return {
+        kind: 'NonNullStructure',
+        required: true,
+        value,
+      };
+    else throw new Error('Something went very wrong, this should not happen!');
+  }
+
+  visitObjectDefinitionNode(node: ObjectDefinitionNode): StructureType {
+    const obj: ObjectStructure = {
+      kind: 'ObjectStructure',
     };
-  }
-
-  visitObjectDefinitionNode(node: ObjectDefinitionNode): ObjectStructure {
-    let obj: ObjectStructure = {};
 
     node.fields.forEach((field: FieldDefinitionNode) => {
-      obj[field.fieldName] = this.visit(field);
+      obj.fields = { ...obj.fields };
+      obj.fields[field.fieldName] = this.visit(field);
     });
 
     return obj;
   }
 
-  visitPrimitiveTypeNameNode(node: PrimitiveTypeNameNode): PrimitiveStructure {
+  visitPrimitiveTypeNameNode(_node: PrimitiveTypeNameNode): StructureType {
     return {
-      primitiveType: node.name,
+      kind: 'PrimitiveStructure',
     };
   }
 
   visitProfileDocumentNode(node: ProfileDocumentNode): ProfileOutput {
-    const profileId: string = this.visit(node.profile);
-    let usecase: ProfileVariables = {
-      useCaseName: '',
-      input: {},
-      result: {},
-    };
+    node.definitions
+      .filter(
+        (definition): definition is NamedFieldDefinitionNode =>
+          definition.kind === 'NamedFieldDefinition'
+      )
+      .forEach(field => {
+        this.fields[field.fieldName] = undefined;
+        this.visit(field);
+      });
 
-    node.definitions.sort((a, b) => {
-      if (a.kind === 'UseCaseDefinition') {
-        return 1;
-      } else if (
-        a.kind === 'NamedModelDefinition' &&
-        b.kind !== 'UseCaseDefinition'
-      ) {
-        return 1;
-      } else {
-        return -1;
-      }
-    });
+    node.definitions
+      .filter((definition): definition is NamedModelDefinitionNode => {
+        return definition.kind === 'NamedModelDefinition';
+      })
+      .forEach(model => {
+        this.models[model.modelName] = undefined;
+        this.visit(model);
+      });
 
-    node.definitions.forEach((def: DocumentDefinition) => {
-      if ('useCaseName' in def) {
-        usecase = this.visit(def);
-      } else {
-        this.visit(def);
-      }
-    });
+    const profileId = this.visit(node.profile);
+    const usecase = this.visit(
+      node.definitions.filter(
+        (definition): definition is UseCaseDefinitionNode => {
+          return definition.kind === 'UseCaseDefinition';
+        }
+      )[0]
+    );
 
     return {
       profileId,
@@ -323,30 +350,39 @@ export class ProfileValidator implements ProfileVisitor {
     return this.visit(node.profileId);
   }
 
-  visitUnionDefinitionNode(node: UnionDefinitionNode): UnionStructure {
-    let union: UnionStructure = [];
+  visitUnionDefinitionNode(node: UnionDefinitionNode): StructureType {
+    const union: UnionStructure = {
+      kind: 'UnionStructure',
+      types: [],
+    };
+
     node.types.forEach((type, i) => {
-      union[i] = this.visit(type) as Exclude<Type, UnionStructure>;
+      const structure = this.visit(type) as StructureType | undefined;
+      if (structure === undefined || structure.kind !== 'UnionStructure') {
+        union.types[i] = structure;
+      } else
+        throw new Error('Something went very wrong, this should not happen!');
     });
+
     return union;
   }
 
-  visitUseCaseDefinitionNode(node: UseCaseDefinitionNode): ProfileVariables {
+  visitUseCaseDefinitionNode(node: UseCaseDefinitionNode): UseCaseStructure {
     const useCaseName = node.useCaseName;
-    let input: ObjectStructure = {};
-    let result: Type = {};
 
-    if (node.input !== undefined) {
-      input = this.visit(node.input) as ObjectStructure;
+    if (node.input !== undefined && node.result !== undefined) {
+      return {
+        useCaseName,
+        input: this.visit(node.input) as ObjectStructure,
+        result: this.visit(node.result) as StructureType,
+      };
     }
     if (node.result !== undefined) {
-      result = this.visit(node.result) as Type;
-    }
-
-    return {
-      useCaseName,
-      input,
-      result,
-    };
+      return {
+        useCaseName,
+        result: this.visit(node.result) as StructureType,
+      };
+    } else
+      throw new Error('Something went very wrong, this should not happen!');
   }
 }
