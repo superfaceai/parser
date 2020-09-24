@@ -1,11 +1,6 @@
-import fs from 'fs';
 import { ProfileDocumentNode } from '@superindustries/language';
-import { ProfileValidator, ProfileOutput } from './profile-validator';
 
-function writeToFile(output: ProfileOutput) {
-  const json = JSON.stringify(output, null, 2);
-  fs.writeFileSync(__dirname + '/test.json', json);
-}
+import { ProfileOutput, ProfileValidator } from './profile-validator';
 
 describe('ProfileValidator', () => {
   describe('When Profile has empty Input', () => {
@@ -39,9 +34,11 @@ describe('ProfileValidator', () => {
         profileId: 'test',
         usecase: {
           useCaseName: 'Test',
-          input: {},
+          input: {
+            kind: 'ObjectStructure',
+          },
           result: {
-            primitiveType: 'string',
+            kind: 'PrimitiveStructure',
           },
         },
       };
@@ -92,10 +89,15 @@ describe('ProfileValidator', () => {
         profileId: 'test',
         usecase: {
           useCaseName: 'Test',
-          input: {},
+          input: {
+            kind: 'ObjectStructure',
+          },
           result: {
-            a: 'a',
-            b: 'b',
+            kind: 'EnumStructure',
+            enums: {
+              a: 'a',
+              b: 'b',
+            },
           },
         },
       };
@@ -149,12 +151,18 @@ describe('ProfileValidator', () => {
         profileId: 'test',
         usecase: {
           useCaseName: 'Test',
-          input: {},
+          input: {
+            kind: 'ObjectStructure',
+          },
           result: {
+            kind: 'NonNullStructure',
             required: true,
-            requiredType: {
-              a: 'a',
-              b: 'b',
+            value: {
+              kind: 'EnumStructure',
+              enums: {
+                a: 'a',
+                b: 'b',
+              },
             },
           },
         },
@@ -202,16 +210,17 @@ describe('ProfileValidator', () => {
         profileId: 'test',
         usecase: {
           useCaseName: 'Test',
-          input: {},
+          input: {
+            kind: 'ObjectStructure',
+          },
           result: {
-            primitiveType: 'boolean',
+            kind: 'PrimitiveStructure',
           },
         },
       };
 
       test('then result contain PrimitiveStructure', () => {
         const output = profileValidator.visit(ast);
-        writeToFile(output);
         expect(output).toMatchObject(expected);
       });
     });
@@ -252,9 +261,11 @@ describe('ProfileValidator', () => {
         profileId: 'test',
         usecase: {
           useCaseName: 'Test',
-          input: {},
+          input: {
+            kind: 'ObjectStructure',
+          },
           result: {
-            primitiveType: 'boolean',
+            kind: 'PrimitiveStructure',
           },
         },
       };
@@ -293,10 +304,10 @@ describe('ProfileValidator', () => {
         profileId: 'test',
         usecase: {
           useCaseName: 'Test',
-          input: {},
-          result: {
-            modelType: undefined,
+          input: {
+            kind: 'ObjectStructure',
           },
+          result: undefined,
         },
       };
 
@@ -340,9 +351,14 @@ describe('ProfileValidator', () => {
         profileId: 'test',
         usecase: {
           useCaseName: 'Test',
-          input: {},
+          input: {
+            kind: 'ObjectStructure',
+          },
           result: {
-            primitiveType: 'string',
+            kind: 'ListStructure',
+            value: {
+              kind: 'PrimitiveStructure',
+            },
           },
         },
       };
@@ -396,15 +412,23 @@ describe('ProfileValidator', () => {
         profileId: 'test',
         usecase: {
           useCaseName: 'Test',
-          input: {},
-          result: [
-            {
-              primitiveType: 'string',
+          input: {
+            kind: 'ObjectStructure',
+          },
+          result: {
+            kind: 'ListStructure',
+            value: {
+              kind: 'UnionStructure',
+              types: [
+                {
+                  kind: 'PrimitiveStructure',
+                },
+                {
+                  kind: 'PrimitiveStructure',
+                },
+              ],
             },
-            {
-              primitiveType: 'boolean',
-            },
-          ],
+          },
         },
       };
 
@@ -445,8 +469,12 @@ describe('ProfileValidator', () => {
         profileId: 'test',
         usecase: {
           useCaseName: 'Test',
-          input: {},
-          result: {},
+          input: {
+            kind: 'ObjectStructure',
+          },
+          result: {
+            kind: 'ObjectStructure',
+          },
         },
       };
 
@@ -541,22 +569,36 @@ describe('ProfileValidator', () => {
         profileId: 'test',
         usecase: {
           useCaseName: 'Test',
-          input: {},
+          input: {
+            kind: 'ObjectStructure',
+          },
           result: {
-            f1: {
-              primitiveType: 'boolean',
-            },
-            f2: [
-              {
-                primitiveType: 'string',
+            kind: 'ObjectStructure',
+            fields: {
+              f1: {
+                kind: 'PrimitiveStructure',
               },
-              {
-                primitiveType: 'boolean',
+              f2: {
+                kind: 'ListStructure',
+                value: {
+                  kind: 'UnionStructure',
+                  types: [
+                    {
+                      kind: 'PrimitiveStructure',
+                    },
+                    {
+                      kind: 'PrimitiveStructure',
+                    },
+                  ],
+                },
               },
-            ],
-            f3: {
-              A: 'A',
-              B: 'B',
+              f3: {
+                kind: 'EnumStructure',
+                enums: {
+                  A: 'A',
+                  B: 'B',
+                },
+              },
             },
           },
         },
@@ -625,12 +667,23 @@ describe('ProfileValidator', () => {
         profileId: 'test',
         usecase: {
           useCaseName: 'Test',
-          input: {},
+          input: {
+            kind: 'ObjectStructure',
+          },
           result: {
-            test: {
-              hello: {
-                goodbye: {
-                  primitiveType: 'boolean',
+            kind: 'ObjectStructure',
+            fields: {
+              test: {
+                kind: 'ObjectStructure',
+                fields: {
+                  hello: {
+                    kind: 'ObjectStructure',
+                    fields: {
+                      goodbye: {
+                        kind: 'PrimitiveStructure',
+                      },
+                    },
+                  },
                 },
               },
             },
@@ -717,28 +770,197 @@ describe('ProfileValidator', () => {
         profileId: 'test',
         usecase: {
           useCaseName: 'Test',
-          input: {},
-          result: [
-            {
-              primitiveType: 'boolean',
-            },
-            [
+          input: {
+            kind: 'ObjectStructure',
+          },
+          result: {
+            kind: 'UnionStructure',
+            types: [
               {
-                primitiveType: 'string',
+                kind: 'PrimitiveStructure',
               },
               {
-                primitiveType: 'boolean',
+                kind: 'ListStructure',
+                value: {
+                  kind: 'UnionStructure',
+                  types: [
+                    {
+                      kind: 'PrimitiveStructure',
+                    },
+                    {
+                      kind: 'PrimitiveStructure',
+                    },
+                  ],
+                },
+              },
+              {
+                kind: 'EnumStructure',
+                enums: {
+                  A: 'A',
+                  B: 'B',
+                },
               },
             ],
-            {
-              A: 'A',
-              B: 'B',
-            },
-          ],
+          },
         },
       };
 
       test('then result contains UnionStructure', () => {
+        const output = profileValidator.visit(ast);
+        expect(output).toMatchObject(expected);
+      });
+    });
+
+    describe('and Result is a undefined model', () => {
+      const ast: ProfileDocumentNode = {
+        kind: 'ProfileDocument',
+        profile: {
+          kind: 'Profile',
+          profileId: {
+            kind: 'ProfileId',
+            profileId: 'test',
+          },
+        },
+        definitions: [
+          {
+            kind: 'NamedModelDefinition',
+            modelName: 'm1',
+          },
+          {
+            kind: 'UseCaseDefinition',
+            useCaseName: 'Test',
+            result: {
+              kind: 'ModelTypeName',
+              name: 'm1',
+            },
+          },
+        ],
+      };
+      const profileValidator = new ProfileValidator();
+      const expected: ProfileOutput = {
+        profileId: 'test',
+        usecase: {
+          useCaseName: 'Test',
+          result: undefined,
+        },
+      };
+
+      test('then result is not defined', () => {
+        const output = profileValidator.visit(ast);
+        expect(output).toMatchObject(expected);
+      });
+    });
+
+    describe('and Result is an Object with undefined fields', () => {
+      const ast: ProfileDocumentNode = {
+        kind: 'ProfileDocument',
+        profile: {
+          kind: 'Profile',
+          profileId: {
+            kind: 'ProfileId',
+            profileId: 'test',
+          },
+        },
+        definitions: [
+          {
+            kind: 'UseCaseDefinition',
+            useCaseName: 'Test',
+            result: {
+              kind: 'ObjectDefinition',
+              fields: [
+                {
+                  kind: 'FieldDefinition',
+                  fieldName: 'f1',
+                },
+                {
+                  kind: 'FieldDefinition',
+                  fieldName: 'f2',
+                },
+              ],
+            },
+          },
+          {
+            kind: 'NamedFieldDefinition',
+            fieldName: 'f2',
+          },
+          {
+            kind: 'NamedFieldDefinition',
+            fieldName: 'f1',
+          },
+        ],
+      };
+      const profileValidator = new ProfileValidator();
+      const expected: ProfileOutput = {
+        profileId: 'test',
+        usecase: {
+          useCaseName: 'Test',
+          result: {
+            kind: 'ObjectStructure',
+            fields: {
+              f1: undefined,
+              f2: undefined,
+            },
+          },
+        },
+      };
+
+      test('then result is an object with two undefined fields', () => {
+        const output = profileValidator.visit(ast);
+        expect(output).toMatchObject(expected);
+      });
+    });
+
+    describe('and Result is an Union with undefined models', () => {
+      const ast: ProfileDocumentNode = {
+        kind: 'ProfileDocument',
+        profile: {
+          kind: 'Profile',
+          profileId: {
+            kind: 'ProfileId',
+            profileId: 'test',
+          },
+        },
+        definitions: [
+          {
+            kind: 'NamedModelDefinition',
+            modelName: 'm1',
+          },
+          {
+            kind: 'NamedModelDefinition',
+            modelName: 'm2',
+          },
+          {
+            kind: 'UseCaseDefinition',
+            useCaseName: 'Test',
+            result: {
+              kind: 'UnionDefinition',
+              types: [
+                {
+                  kind: 'ModelTypeName',
+                  name: 'm1',
+                },
+                {
+                  kind: 'ModelTypeName',
+                  name: 'm2',
+                },
+              ],
+            },
+          },
+        ],
+      };
+      const profileValidator = new ProfileValidator();
+      const expected: ProfileOutput = {
+        profileId: 'test',
+        usecase: {
+          useCaseName: 'Test',
+          result: {
+            kind: 'UnionStructure',
+            types: [undefined, undefined],
+          },
+        },
+      };
+
+      test('then result is an Union of two undefined types', () => {
         const output = profileValidator.visit(ast);
         expect(output).toMatchObject(expected);
       });

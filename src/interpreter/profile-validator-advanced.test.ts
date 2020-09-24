@@ -1,11 +1,10 @@
-import fs from 'fs';
 import { ProfileDocumentNode } from '@superindustries/language';
-import { ProfileValidator, ProfileOutput } from './profile-validator';
 
-function writeToFile(output: ProfileOutput) {
-  const json = JSON.stringify(output, null, 2);
-  fs.writeFileSync(__dirname + '/test.json', json);
-}
+import {
+  ObjectStructure,
+  ProfileOutput,
+  ProfileValidator,
+} from './profile-validator';
 
 describe('ProfileValidator Advanced', () => {
   describe('When Profile has empty Input', () => {
@@ -173,56 +172,99 @@ describe('ProfileValidator Advanced', () => {
         profileId: 'test',
         usecase: {
           useCaseName: 'Test',
-          input: {},
-          result: [
-            {},
-            {
-              required: true,
-              requiredType: {
+          input: {
+            kind: 'ObjectStructure',
+          },
+          result: {
+            kind: 'UnionStructure',
+            types: [
+              { kind: 'ObjectStructure' },
+              {
+                kind: 'NonNullStructure',
                 required: true,
-                requiredType: {
-                  primitiveType: 'boolean',
+                value: {
+                  kind: 'NonNullStructure',
+                  required: true,
+                  value: {
+                    kind: 'PrimitiveStructure',
+                  },
                 },
               },
-            },
-            {
-              required: true,
-              requiredType: [
-                { required: true, requiredType: { primitiveType: 'string' } },
-                { required: true, requiredType: { primitiveType: 'boolean' } },
-              ],
-            },
-            {
-              required: true,
-              requiredType: {
-                S: 'S',
-                B: 'B',
-              },
-            },
-            {
-              f1: {
-                primitiveType: 'string',
-              },
-            },
-            {
-              f1: {
+              {
+                kind: 'NonNullStructure',
                 required: true,
-                requiredType: {
-                  primitiveType: 'boolean',
+                value: {
+                  kind: 'ListStructure',
+                  value: {
+                    kind: 'UnionStructure',
+                    types: [
+                      {
+                        kind: 'NonNullStructure',
+                        required: true,
+                        value: { kind: 'PrimitiveStructure' },
+                      },
+                      {
+                        kind: 'NonNullStructure',
+                        required: true,
+                        value: { kind: 'PrimitiveStructure' },
+                      },
+                    ],
+                  },
                 },
               },
-              f2: [
-                { required: true, requiredType: { primitiveType: 'string' } },
-                { required: true, requiredType: { primitiveType: 'boolean' } },
-              ],
-            },
-          ],
+              {
+                kind: 'NonNullStructure',
+                required: true,
+                value: {
+                  kind: 'EnumStructure',
+                  enums: {
+                    S: 'S',
+                    B: 'B',
+                  },
+                },
+              },
+              {
+                kind: 'ObjectStructure',
+                fields: {
+                  f1: {
+                    kind: 'PrimitiveStructure',
+                  },
+                },
+              },
+              {
+                kind: 'ObjectStructure',
+                fields: {
+                  f1: {
+                    kind: 'NonNullStructure',
+                    required: true,
+                    value: {
+                      kind: 'PrimitiveStructure',
+                    },
+                  },
+                  f2: {
+                    kind: 'UnionStructure',
+                    types: [
+                      {
+                        kind: 'NonNullStructure',
+                        required: true,
+                        value: { kind: 'PrimitiveStructure' },
+                      },
+                      {
+                        kind: 'NonNullStructure',
+                        required: true,
+                        value: { kind: 'PrimitiveStructure' },
+                      },
+                    ],
+                  },
+                },
+              },
+            ],
+          },
         },
       };
 
       test('then result contains UnionStructure', () => {
         const output = profileValidator.visit(ast);
-        writeToFile(output);
         expect(output).toMatchObject(expected);
       });
     });
@@ -375,21 +417,29 @@ describe('ProfileValidator Advanced', () => {
       };
 
       const profileValidator = new ProfileValidator();
-      const expectedObjectStructure = {
-        f1: { primitiveType: 'string' },
-        f2: { primitiveType: 'boolean' },
+      const expectedObjectStructure: ObjectStructure = {
+        kind: 'ObjectStructure',
+        fields: {
+          f1: { kind: 'PrimitiveStructure' },
+          f2: { kind: 'PrimitiveStructure' },
+        },
       };
       const expected: ProfileOutput = {
         profileId: 'test',
         usecase: {
           useCaseName: 'Test',
-          input: {},
-          result: [
-            expectedObjectStructure,
-            expectedObjectStructure,
-            expectedObjectStructure,
-            expectedObjectStructure,
-          ],
+          input: {
+            kind: 'ObjectStructure',
+          },
+          result: {
+            kind: 'UnionStructure',
+            types: [
+              expectedObjectStructure,
+              expectedObjectStructure,
+              expectedObjectStructure,
+              expectedObjectStructure,
+            ],
+          },
         },
       };
 
@@ -429,7 +479,7 @@ describe('ProfileValidator Advanced', () => {
         }
      *
      */
-    describe.only('and Result is a Union Type that reference NamedModels of Object Types that reference NamedFields', () => {
+    describe('and Result is a Union Type that reference NamedModels of Object Types that references NamedFields', () => {
       const ast: ProfileDocumentNode = {
         kind: 'ProfileDocument',
         profile: {
@@ -666,85 +716,134 @@ describe('ProfileValidator Advanced', () => {
         profileId: 'test',
         usecase: {
           useCaseName: 'Test',
-          input: {},
-          result: [
-            {
-              f1: [
-                {
-                  required: true,
-                  requiredType: {
-                    if1: {
-                      primitiveType: 'string',
-                    },
-                    if2: {
-                      primitiveType: 'boolean',
-                    },
-                  },
-                },
-                {
-                  required: true,
-                  requiredType: {
-                    modelType: undefined,
-                  },
-                },
-              ],
-              f2: {
-                required: true,
-                requiredType: [
-                  {
-                    primitiveType: 'string',
-                  },
-                  {
-                    primitiveType: 'boolean',
-                  },
-                ],
-              },
-            },
-            {
-              f3: {
-                required: true,
-                requiredType: {
-                  STRING: 'STRING',
-                  BOOLEAN: 'BOOLEAN',
-                },
-              },
-              f4: {
-                inner: {
-                  required: true,
-                  requiredType: {
-                    value: [
+          input: {
+            kind: 'ObjectStructure',
+          },
+          result: {
+            kind: 'UnionStructure',
+            types: [
+              {
+                kind: 'ObjectStructure',
+                fields: {
+                  f1: {
+                    kind: 'UnionStructure',
+                    types: [
                       {
-                        STRING: 'STRING',
-                        BOOLEAN: 'BOOLEAN',
+                        kind: 'NonNullStructure',
+                        required: true,
+                        value: {
+                          kind: 'ObjectStructure',
+                          fields: {
+                            if1: {
+                              kind: 'PrimitiveStructure',
+                            },
+                            if2: {
+                              kind: 'PrimitiveStructure',
+                            },
+                          },
+                        },
                       },
-                      [
-                        {
-                          primitiveType: 'string',
-                        },
-                        {
-                          primitiveType: 'boolean',
-                        },
-                      ],
                       {
-                        if1: {
-                          primitiveType: 'string',
-                        },
-                        if2: {
-                          primitiveType: 'boolean',
-                        },
+                        kind: 'NonNullStructure',
+                        required: true,
+                        value: undefined,
                       },
                     ],
                   },
+                  f2: {
+                    kind: 'NonNullStructure',
+                    required: true,
+                    value: {
+                      kind: 'ListStructure',
+                      value: {
+                        kind: 'UnionStructure',
+                        types: [
+                          {
+                            kind: 'PrimitiveStructure',
+                          },
+                          {
+                            kind: 'PrimitiveStructure',
+                          },
+                        ],
+                      },
+                    },
+                  },
                 },
               },
-            },
-          ],
+              {
+                kind: 'ObjectStructure',
+                fields: {
+                  f3: {
+                    kind: 'NonNullStructure',
+                    required: true,
+                    value: {
+                      kind: 'EnumStructure',
+                      enums: {
+                        STRING: 'STRING',
+                        BOOLEAN: 'BOOLEAN',
+                      },
+                    },
+                  },
+                  f4: {
+                    kind: 'ObjectStructure',
+                    fields: {
+                      inner: {
+                        kind: 'NonNullStructure',
+                        required: true,
+                        value: {
+                          kind: 'ObjectStructure',
+                          fields: {
+                            value: {
+                              kind: 'UnionStructure',
+                              types: [
+                                {
+                                  kind: 'EnumStructure',
+                                  enums: {
+                                    STRING: 'STRING',
+                                    BOOLEAN: 'BOOLEAN',
+                                  },
+                                },
+                                {
+                                  kind: 'ListStructure',
+                                  value: {
+                                    kind: 'UnionStructure',
+                                    types: [
+                                      {
+                                        kind: 'PrimitiveStructure',
+                                      },
+                                      {
+                                        kind: 'PrimitiveStructure',
+                                      },
+                                    ],
+                                  },
+                                },
+                                {
+                                  kind: 'ObjectStructure',
+                                  fields: {
+                                    if1: {
+                                      kind: 'PrimitiveStructure',
+                                    },
+                                    if2: {
+                                      kind: 'PrimitiveStructure',
+                                    },
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            ],
+          },
         },
       };
 
       test('then result contains UnionStructure', () => {
         const output = profileValidator.visit(ast);
-        writeToFile(output);
         expect(output).toMatchObject(expected);
       });
     });
