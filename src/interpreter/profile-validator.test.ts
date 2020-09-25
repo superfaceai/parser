@@ -94,10 +94,6 @@ describe('ProfileValidator', () => {
           },
           result: {
             kind: 'EnumStructure',
-            enums: {
-              a: 'a',
-              b: 'b',
-            },
           },
         },
       };
@@ -159,10 +155,6 @@ describe('ProfileValidator', () => {
             required: true,
             value: {
               kind: 'EnumStructure',
-              enums: {
-                a: 'a',
-                b: 'b',
-              },
             },
           },
         },
@@ -594,10 +586,6 @@ describe('ProfileValidator', () => {
               },
               f3: {
                 kind: 'EnumStructure',
-                enums: {
-                  A: 'A',
-                  B: 'B',
-                },
               },
             },
           },
@@ -795,10 +783,6 @@ describe('ProfileValidator', () => {
               },
               {
                 kind: 'EnumStructure',
-                enums: {
-                  A: 'A',
-                  B: 'B',
-                },
               },
             ],
           },

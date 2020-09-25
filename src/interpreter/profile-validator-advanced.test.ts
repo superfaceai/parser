@@ -217,10 +217,6 @@ describe('ProfileValidator Advanced', () => {
                 required: true,
                 value: {
                   kind: 'EnumStructure',
-                  enums: {
-                    S: 'S',
-                    B: 'B',
-                  },
                 },
               },
               {
@@ -778,10 +774,6 @@ describe('ProfileValidator Advanced', () => {
                     required: true,
                     value: {
                       kind: 'EnumStructure',
-                      enums: {
-                        STRING: 'STRING',
-                        BOOLEAN: 'BOOLEAN',
-                      },
                     },
                   },
                   f4: {
@@ -798,10 +790,6 @@ describe('ProfileValidator Advanced', () => {
                               types: [
                                 {
                                   kind: 'EnumStructure',
-                                  enums: {
-                                    STRING: 'STRING',
-                                    BOOLEAN: 'BOOLEAN',
-                                  },
                                 },
                                 {
                                   kind: 'ListStructure',
