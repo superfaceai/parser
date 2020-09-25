@@ -13,6 +13,7 @@ import {
   ProfileDocumentNode,
   ProfileIdNode,
   ProfileNode,
+  Type,
   UnionDefinitionNode,
   UseCaseDefinitionNode,
 } from '@superindustries/language';
@@ -23,7 +24,7 @@ function assertUnreachable(node: ProfileASTNode): never {
   throw new Error(`Invalid Node kind: ${node.kind}`);
 }
 
-type StructureKind =
+export type StructureKind =
   | 'PrimitiveStructure'
   | 'EnumStructure'
   | 'NonNullStructure'
@@ -52,7 +53,6 @@ export interface PrimitiveStructure extends Structure {
  */
 export interface EnumStructure extends Structure {
   kind: 'EnumStructure';
-  enums: { [enumValue: string]: string | number | boolean };
   required?: true;
 }
 /**
@@ -99,34 +99,31 @@ export type StructureType =
   | UnionStructure;
 
 /**
- * @type UseCaseStructure - represents usecase structure
+ * @interface UseCaseStructure - represents usecase structure
  */
-type UseCaseStructure = (
-  | {
-      input: ObjectStructure;
-      result?: StructureType;
-    }
-  | {
-      result?: StructureType;
-    }
-) & {
+interface UseCaseStructure {
   useCaseName: string;
+  input?: ObjectStructure;
+  result?: StructureType;
   async?: StructureType;
   error?: StructureType;
-};
+}
 
 /**
  * @interface ProfileOutput - represent profile output for next validation
  */
 export interface ProfileOutput {
   profileId: string;
-  usecase: UseCaseStructure;
+  usecase?: UseCaseStructure;
 }
 
 export class ProfileValidator implements ProfileVisitor {
   private fields: Record<string, StructureType | undefined> = {};
   private models: Record<string, StructureType | undefined> = {};
 
+  visit(node: ProfileDocumentNode): ProfileOutput;
+  visit(node: ProfileNode | ProfileIdNode): string;
+  visit(node: UseCaseDefinitionNode): UseCaseStructure;
   visit(
     node:
       | NamedModelDefinitionNode
@@ -134,39 +131,11 @@ export class ProfileValidator implements ProfileVisitor {
       | ModelTypeNameNode
       | FieldDefinitionNode
   ): StructureType | undefined;
-  visit(
-    node:
-      | PrimitiveTypeNameNode
-      | EnumDefinitionNode
-      | ListDefinitionNode
-      | ObjectDefinitionNode
-      | UnionDefinitionNode
-      | NonNullDefinitionNode
-  ): StructureType;
-  visit(node: UseCaseDefinitionNode): UseCaseStructure;
-  visit(node: ProfileDocumentNode): ProfileOutput;
-  visit(node: ProfileNode | ProfileIdNode): string;
-  visit(node: EnumValueNode): string | number | boolean;
+  visit(node: ObjectDefinitionNode): ObjectStructure;
+  visit(node: Type): StructureType;
   visit(
     node: ProfileASTNode
-  ):
-    | undefined
-    | StructureType
-    | UseCaseStructure
-    | ProfileOutput
-    | string
-    | number
-    | boolean;
-  visit(
-    node: ProfileASTNode
-  ):
-    | undefined
-    | StructureType
-    | UseCaseStructure
-    | ProfileOutput
-    | string
-    | number
-    | boolean {
+  ): undefined | StructureType | UseCaseStructure | ProfileOutput | string {
     switch (node.kind) {
       case 'EnumDefinition':
         return this.visitEnumDefinitionNode(node);
@@ -204,23 +173,14 @@ export class ProfileValidator implements ProfileVisitor {
     }
   }
 
-  visitEnumDefinitionNode(node: EnumDefinitionNode): StructureType {
-    const enumeration: EnumStructure = {
+  visitEnumDefinitionNode(_node: EnumDefinitionNode): StructureType {
+    return {
       kind: 'EnumStructure',
-      enums: {},
     };
-
-    node.values.forEach((enumValue: EnumValueNode) => {
-      if (typeof enumValue.value === 'string') {
-        enumeration.enums[enumValue.value] = this.visit(enumValue);
-      }
-    });
-
-    return enumeration;
   }
 
-  visitEnumValueNode(node: EnumValueNode): string | number | boolean {
-    return node.value;
+  visitEnumValueNode(_node: EnumValueNode): never {
+    throw new Error('Method not implemented.');
   }
 
   visitFieldDefinitionNode(
@@ -230,18 +190,20 @@ export class ProfileValidator implements ProfileVisitor {
       return this.fields[node.fieldName];
     }
 
-    return this.visit(node.type) as StructureType | undefined;
+    return this.visit(node.type);
   }
 
   visitListDefinitionNode(node: ListDefinitionNode): StructureType {
-    const value = this.visit(node.elementType) as StructureType | undefined;
+    const value = this.visit(node.elementType);
 
-    if (value === undefined || value.kind !== 'EnumStructure')
-      return {
-        kind: 'ListStructure',
-        value,
-      };
-    else throw new Error('Something went very wrong, this should not happen!');
+    if (value !== undefined && value.kind === 'EnumStructure') {
+      throw new Error('Something went very wrong, this should not happen!');
+    }
+
+    return {
+      kind: 'ListStructure',
+      value,
+    };
   }
 
   visitModelTypeNameNode(node: ModelTypeNameNode): StructureType | undefined {
@@ -254,7 +216,7 @@ export class ProfileValidator implements ProfileVisitor {
     const fieldName = node.fieldName;
 
     if (node.type !== undefined) {
-      this.fields[fieldName] = this.visit(node.type) as StructureType;
+      this.fields[fieldName] = this.visit(node.type);
 
       return this.fields[fieldName];
     }
@@ -268,7 +230,7 @@ export class ProfileValidator implements ProfileVisitor {
     const modelName = node.modelName;
 
     if (node.type !== undefined) {
-      this.models[modelName] = this.visit(node.type) as StructureType;
+      this.models[modelName] = this.visit(node.type);
 
       return this.models[modelName];
     }
@@ -277,15 +239,17 @@ export class ProfileValidator implements ProfileVisitor {
   }
 
   visitNonNullDefinitionNode(node: NonNullDefinitionNode): StructureType {
-    const value = this.visit(node.type) as StructureType | undefined;
+    const value = this.visit(node.type);
 
-    if (value === undefined || value.kind !== 'UnionStructure')
-      return {
-        kind: 'NonNullStructure',
-        required: true,
-        value,
-      };
-    else throw new Error('Something went very wrong, this should not happen!');
+    if (value !== undefined && value.kind === 'UnionStructure') {
+      throw new Error('Something went very wrong, this should not happen!');
+    }
+
+    return {
+      kind: 'NonNullStructure',
+      required: true,
+      value,
+    };
   }
 
   visitObjectDefinitionNode(node: ObjectDefinitionNode): StructureType {
@@ -319,22 +283,23 @@ export class ProfileValidator implements ProfileVisitor {
       });
 
     node.definitions
-      .filter((definition): definition is NamedModelDefinitionNode => {
-        return definition.kind === 'NamedModelDefinition';
-      })
+      .filter(
+        (definition): definition is NamedModelDefinitionNode =>
+          definition.kind === 'NamedModelDefinition'
+      )
       .forEach(model => {
         this.models[model.modelName] = undefined;
         this.visit(model);
       });
 
     const profileId = this.visit(node.profile);
-    const usecase = this.visit(
-      node.definitions.filter(
-        (definition): definition is UseCaseDefinitionNode => {
-          return definition.kind === 'UseCaseDefinition';
-        }
-      )[0]
+    const useCaseDefinition = node.definitions.find(
+      (definition): definition is UseCaseDefinitionNode =>
+        definition.kind === 'UseCaseDefinition'
     );
+    const usecase = useCaseDefinition
+      ? this.visit(useCaseDefinition)
+      : undefined;
 
     return {
       profileId,
@@ -357,32 +322,21 @@ export class ProfileValidator implements ProfileVisitor {
     };
 
     node.types.forEach((type, i) => {
-      const structure = this.visit(type) as StructureType | undefined;
+      const structure = this.visit(type);
+
       if (structure === undefined || structure.kind !== 'UnionStructure') {
         union.types[i] = structure;
-      } else
-        throw new Error('Something went very wrong, this should not happen!');
+      }
     });
 
     return union;
   }
 
   visitUseCaseDefinitionNode(node: UseCaseDefinitionNode): UseCaseStructure {
-    const useCaseName = node.useCaseName;
-
-    if (node.input !== undefined && node.result !== undefined) {
-      return {
-        useCaseName,
-        input: this.visit(node.input) as ObjectStructure,
-        result: this.visit(node.result) as StructureType,
-      };
-    }
-    if (node.result !== undefined) {
-      return {
-        useCaseName,
-        result: this.visit(node.result) as StructureType,
-      };
-    } else
-      throw new Error('Something went very wrong, this should not happen!');
+    return {
+      useCaseName: node.useCaseName,
+      input: node.input ? this.visit(node.input) : undefined,
+      result: node.result ? this.visit(node.result) : undefined,
+    };
   }
 }
