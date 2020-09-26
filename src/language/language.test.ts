@@ -3,6 +3,7 @@ import { parseProfile, parseRule } from './syntax/parser';
 import { SyntaxRule } from './syntax/rule';
 import * as mapRules from './syntax/rules/map';
 import { STATEMENT_CONDITION } from './syntax/rules/map/map';
+import { ARGUMENT_LIST_ASSIGNMENT } from './syntax/rules/map/value';
 import * as profileRules from './syntax/rules/profile';
 
 describe('v6', () => {
@@ -518,6 +519,53 @@ describe('v8', () => {
         ],
       });
     });
+
+    it('should parse jessie rhs in operation call arguments', () => {
+      const input = 'foo = "hi", bar = 1 + 2, baz = `format ${formatMe + `${nested}`} and ${formatThat} please`, quz = true)'
+
+      const source = new Source(input);
+
+      const args = parseRule(
+        SyntaxRule.repeat(ARGUMENT_LIST_ASSIGNMENT),
+        source,
+        true
+      );
+
+      expect(args).toMatchObject([
+        {
+          kind: 'Assignment',
+          key: ['foo'],
+          value: {
+            kind: 'PrimitiveLiteral',
+            value: 'hi'
+          }
+        },
+        {
+          kind: 'Assignment',
+          key: ['bar'],
+          value: {
+            kind: 'JessieExpression',
+            expression: '1 + 2'
+          }
+        },
+        {
+          kind: 'Assignment',
+          key: ['baz'],
+          value: {
+            kind: 'JessieExpression',
+            expression: '"format " + (formatMe + ("" + nested)) + " and " + formatThat + " please"'
+          }
+        },
+        {
+          kind: 'Assignment',
+          key: ['quz'],
+          value: {
+            kind: 'PrimitiveLiteral',
+            value: true
+          }
+        }
+      ])
+    });
   });
 
   it('should parse conversation.tyntec.map', () => {
@@ -720,5 +768,276 @@ describe('v8', () => {
         },
       ],
     });
+  });
+
+  it('should parse computation.map', () => {
+    const input = `operation foo {
+      return {
+        answer = 42
+        hash = { a = 1, b = 2 }
+      }
+    }
+    
+    operation fooWithArgs {
+      return if (args.success) {
+        answer = 42
+      }
+    
+      fail if (!args.success) {
+        message = "I am supposed to fail"
+      }
+    }
+    
+    operation bar {
+      call fooWithArgs(success = \x60Muj string \x24{someVar}\x60, neco.foo = 4+2 ) {
+        return if (!error) {
+          finalAnswer = "The final answer is " + data.answer
+        }
+    
+        fail if (error) {
+          finalAnswer = "There was an error " + error.message
+        }
+      }
+    
+    }
+    
+    operation countArray {
+      count = args.array.reduce((acc, curr) => acc + 1, 0)
+    
+      return {
+        answer = "This is the count " + count
+      }
+    }
+    `
+
+    const source = new Source(input);
+
+    const definitions = parseRule(
+      SyntaxRule.repeat(mapRules.DOCUMENT_DEFINITION),
+      source,
+      true
+    );
+
+    expect(definitions[0]).toMatchObject(
+      {
+        kind: 'OperationDefinition',
+        name: 'foo',
+        statements: [
+          {
+            kind: 'ReturnStatement',
+            value: {
+              kind: 'ObjectLiteral',
+              fields: [
+                {
+                  kind: 'Assignment',
+                  key: ['answer'],
+                  value: {
+                    kind: 'PrimitiveLiteral',
+                    value: 42
+                  }
+                },
+                {
+                  kind: 'Assignment',
+                  key: ['hash'],
+                  value: {
+                    kind: 'ObjectLiteral',
+                    fields: [
+                      {
+                        kind: 'Assignment',
+                        key: ['a'],
+                        value: {
+                          kind: 'PrimitiveLiteral',
+                          value: 1
+                        }
+                      },
+                      {
+                        kind: 'Assignment',
+                        key: ['b'],
+                        value: {
+                          kind: 'PrimitiveLiteral',
+                          value: 2
+                        }
+                      },
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    )
+
+    expect(definitions[1]).toMatchObject(
+      {
+        kind: 'OperationDefinition',
+        name: 'fooWithArgs',
+        statements: [
+          {
+            kind: 'ReturnStatement',
+            condition: {
+              kind: 'StatementCondition',
+              expression: {
+                kind: 'JessieExpression',
+                expression: 'args.success'
+              }
+            },
+            value: {
+              kind: 'ObjectLiteral',
+              fields: [
+                {
+                  kind: 'Assignment',
+                  key: ['answer'],
+                  value: {
+                    kind: 'PrimitiveLiteral',
+                    value: 42
+                  }
+                }
+              ]
+            }
+          },
+          {
+            kind: 'FailStatement',
+            condition: {
+              kind: 'StatementCondition',
+              expression: {
+                kind: 'JessieExpression',
+                expression: '!args.success'
+              }
+            },
+            value: {
+              kind: 'ObjectLiteral',
+              fields: [
+                {
+                  kind: 'Assignment',
+                  key: ['message'],
+                  value: {
+                    kind: 'PrimitiveLiteral',
+                    value: "I am supposed to fail"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    )
+
+    expect(definitions[2]).toMatchObject(
+      {
+        kind: 'OperationDefinition',
+        name: 'bar',
+        statements: [
+          {
+            kind: 'CallStatement',
+            operationName: 'fooWithArgs',
+            arguments: [
+              {
+                kind: 'Assignment',
+                key: ['success'],
+                value: {
+                  kind: 'JessieExpression',
+                  expression: '"Muj string " + someVar'
+                }
+              },
+              {
+                kind: 'Assignment',
+                key: ['neco', 'foo'],
+                value: {
+                  kind: 'JessieExpression',
+                  expression: '4 + 2'
+                }
+              }
+            ],
+            statements: [
+              {
+                kind: 'ReturnStatement',
+                condition: {
+                  kind: 'StatementCondition',
+                  expression: {
+                    kind: 'JessieExpression',
+                    expression: '!error'
+                  }
+                },
+                value: {
+                  kind: 'ObjectLiteral',
+                  fields: [
+                    {
+                      kind: 'Assignment',
+                      key: ['finalAnswer'],
+                      value: {
+                        kind: 'JessieExpression',
+                        expression: '"The final answer is " + data.answer'
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                kind: 'FailStatement',
+                condition: {
+                  kind: 'StatementCondition',
+                  expression: {
+                    kind: 'JessieExpression',
+                    expression: 'error'
+                  }
+                },
+                value: {
+                  kind: 'ObjectLiteral',
+                  fields: [
+                    {
+                      kind: 'Assignment',
+                      key: ['finalAnswer'],
+                      value: {
+                        kind: 'JessieExpression',
+                        expression: '"There was an error " + error.message'
+                      }
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    )
+
+    expect(definitions[3]).toMatchObject(
+      {
+        kind: 'OperationDefinition',
+        name: 'countArray',
+        statements: [
+          {
+            kind: 'SetStatement',
+            assignments: [
+              {
+                kind: 'Assignment',
+                key: ['count'],
+                value: {
+                  kind: 'JessieExpression',
+                  expression: 'args.array.reduce(function (acc, curr) { return acc + 1; }, 0)'
+                }
+              }
+            ]
+          },
+          {
+            kind: 'ReturnStatement',
+            value: {
+              kind: 'ObjectLiteral',
+              fields: [
+                {
+                  kind: 'Assignment',
+                  key: ['answer'],
+                  value: {
+                    kind: 'JessieExpression',
+                    expression: '"This is the count " + count'
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      }
+    )
   });
 });

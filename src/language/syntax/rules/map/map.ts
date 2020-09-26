@@ -10,6 +10,7 @@ import {
   MapResultStatementNode,
   MapSubstatement,
   OperationDefinitionNode,
+  OperationSubstatement,
   ProviderNode,
   ReturnStatementNode,
   SetStatementNode,
@@ -54,7 +55,8 @@ export const STATEMENT_CONDITION: SyntaxRuleSrc<StatementConditionNode> = Syntax
 
 const STATEMENT_RHS_VALUE: SyntaxRuleSrc<LiteralNode> = VALUE_EXPRESSION_FACTORY(
   ';',
-  '}'
+  '}',
+  '\n'
 )
   .followedBy(SyntaxRule.optional(SyntaxRule.operator(';')))
   .map(
@@ -254,29 +256,45 @@ export const SET_STATEMENT: SyntaxRuleSrc<SetStatementNode> = SET_STATEMENT_FULL
 
 // OPERATION DEFINITION //
 
+const OPERATION_DEFINITION_CONTEXTUAL_STATEMENT: SyntaxRuleSrc<OperationSubstatement> = RETURN_STATEMENT.or(
+  FAIL_STATEMENT
+);
+const OPERATION_DEFINITION_STATEMENT: SyntaxRuleSrc<
+  SetStatementNode | CallStatementNode<OperationSubstatement> | OperationSubstatement
+> = SET_STATEMENT.or(
+  CALL_STATEMENT_FACTORY(OPERATION_DEFINITION_CONTEXTUAL_STATEMENT)
+).or(OPERATION_DEFINITION_CONTEXTUAL_STATEMENT);
+
+export const OPERATION_DEFINITION_HTTP_CALL = HTTP_CALL_STATEMENT_FACTORY(
+  OPERATION_DEFINITION_CONTEXTUAL_STATEMENT
+);
+
 export const OPERATION_DEFINITION: SyntaxRuleSrc<OperationDefinitionNode> = documentedNode(
   SyntaxRule.identifier('operation')
     .followedBy(SyntaxRule.identifier())
     .andFollowedBy(SyntaxRule.separator('{'))
+    .andFollowedBy(
+      SyntaxRule.optional(
+        SyntaxRule.repeat(
+          OPERATION_DEFINITION_STATEMENT.or(OPERATION_DEFINITION_HTTP_CALL)
+        )
+      )
+    )
     .andFollowedBy(SyntaxRule.separator('}'))
     .map(
       (matches): SrcNode<OperationDefinitionNode> => {
-        const [
-          ,
-          ,
-          ,/* opKey */
-        /* name */
-        /* sepStart */
-        /* sepEnd */
-        ] = matches;
+        const [key, name, /* sepStart */, maybeStatements, sepEnd] = matches;
 
-        throw 'TODO';
-        // return {
-        //   kind: 'OperationDefinition',
-        //   operationName: name.data.identifier,
-        //   location: opKey.location,
-        //   span: { start: opKey.span.start, end: sepEnd.span.end }
-        // }
+        return {
+          kind: 'OperationDefinition',
+          name: name.data.identifier,
+          statements: maybeStatements ?? [],
+          location: key.location,
+          span: {
+            start: key.span.start,
+            end: sepEnd.span.end
+          }
+        }
       }
     )
 );
