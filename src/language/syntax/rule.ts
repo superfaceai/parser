@@ -203,6 +203,12 @@ export abstract class SyntaxRule<T> {
   ): SyntaxRuleLookahead<R> {
     return new SyntaxRuleLookahead(rule, invert);
   }
+
+  static withUnknown<R>(
+    rule: SyntaxRule<R>
+  ): SyntaxRule<R> {
+    return new SyntaxRuleWithUnknown(rule);
+  }
 }
 
 // Basic nodes //
@@ -651,6 +657,27 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
 
   [Symbol.toStringTag](): string {
     return (this.invert ? 'not ' : '') + this.rule.toString();
+  }
+}
+
+export class SyntaxRuleWithUnknown<R> extends SyntaxRule<R> {
+  constructor(readonly rule: SyntaxRule<R>) {
+    super();
+  }
+
+  tryMatch(tokens: LexerTokenStream): RuleResult<R> {
+    const originalEmitUnknown = tokens.emitUnknown;
+    tokens.emitUnknown = true;
+
+    const result = this.rule.tryMatch(tokens);
+
+    tokens.emitUnknown = originalEmitUnknown;
+
+    return result;
+  }
+
+  [Symbol.toStringTag](): string {
+    return this.rule.toString();
   }
 }
 
