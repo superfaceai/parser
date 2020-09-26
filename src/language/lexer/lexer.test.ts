@@ -1,6 +1,6 @@
 import { Source } from '../source';
 import { LexerContext, LexerContextType } from './context';
-import { DEFAULT_TOKEN_KIND_FILER, Lexer } from './lexer';
+import { DEFAULT_TOKEN_KIND_FILTER, Lexer } from './lexer';
 import {
   CommentTokenData,
   formatTokenData,
@@ -116,7 +116,7 @@ expect.extend({
 
 describe('lexer', () => {
   describe('valid', () => {
-    it('separators', () => {
+    test('separators', () => {
       const lexer = new Lexer(new Source('[( {  )\n}(\t \t(	[ ]]))'));
       const expectedTokens: ReadonlyArray<SeparatorValue> = [
         'SOF',
@@ -145,7 +145,7 @@ describe('lexer', () => {
       }
     });
 
-    it('operators', () => {
+    test('operators', () => {
       const lexer = new Lexer(new Source(': ! : | = : :: !! || == , @,@@'));
       const expectedTokens: (LexerTokenData | OperatorValue)[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
@@ -185,7 +185,7 @@ describe('lexer', () => {
       }
     });
 
-    it('literals', () => {
+    test('literals', () => {
       const lexer = new Lexer(
         new Source('true false\n1 0x10 0xFa 0b10 0o10 10 10.1 1234 false')
       );
@@ -219,7 +219,7 @@ describe('lexer', () => {
       }
     });
 
-    it('strings', () => {
+    test('strings', () => {
       const lexer = new Lexer(
         new Source(
           `
@@ -262,7 +262,7 @@ describe('lexer', () => {
       }
     });
 
-    it('soft keywords', () => {
+    test('soft keywords', () => {
       const lexer = new Lexer(
         new Source(
           'usecase field model input result async errors Number String \n\tBoolean Enum'
@@ -298,7 +298,7 @@ describe('lexer', () => {
       }
     });
 
-    it('identifiers', () => {
+    test('identifiers', () => {
       const lexer = new Lexer(
         new Source(
           'ident my fier pls usecaseNOT modelout boolean b00lean a123456789_0'
@@ -332,7 +332,7 @@ describe('lexer', () => {
       }
     });
 
-    it('comments', () => {
+    test('comments', () => {
       const lexer = new Lexer(
         new Source(`
         # line comment
@@ -341,7 +341,7 @@ describe('lexer', () => {
         asdf
       `),
         {
-          ...DEFAULT_TOKEN_KIND_FILER,
+          ...DEFAULT_TOKEN_KIND_FILTER,
           [LexerTokenKind.COMMENT]: false,
         }
       );
@@ -362,7 +362,7 @@ describe('lexer', () => {
       }
     });
 
-    it('newlines', () => {
+    test('newlines', () => {
       const lexer = new Lexer(
         new Source(`ident1
         ident2 ident3
@@ -370,7 +370,7 @@ describe('lexer', () => {
 ng2"
         "string3"`),
         {
-          ...DEFAULT_TOKEN_KIND_FILER,
+          ...DEFAULT_TOKEN_KIND_FILTER,
           [LexerTokenKind.NEWLINE]: false,
         }
       );
@@ -395,7 +395,7 @@ ng2"
       }
     });
 
-    it('is valid complex', () => {
+    test('complex', () => {
       const lexer = new Lexer(
         new Source(
           `'''
@@ -499,7 +499,7 @@ ng2"
       }
     });
 
-    it('is valid map with scripts', () => {
+    test('map with scripts', () => {
       const lexer = new Lexer(
         new Source(
           `map test {
@@ -573,6 +573,32 @@ ng2"
         expect(actual).toHaveTokenData(expected);
       }
     });
+
+    test('complex jessie expression', () => {
+      const lexer = new Lexer(
+        new Source(
+          '`Template ${string} with ${more + `${nested} and ${complex}`} expressions ${here}` ;'
+        )
+      );
+
+      expect(lexer.advance()).toHaveTokenData({ kind: LexerTokenKind.SEPARATOR, separator: 'SOF' });
+
+      expect(lexer.advance(
+        {
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION
+        }
+      )).toHaveTokenData(
+        {
+          kind: LexerTokenKind.JESSIE_SCRIPT,
+          sourceMap: 'not checked',
+          sourceScript: 'not checked',
+          script: '"Template " + string + " with " + (more + (nested + " and " + complex)) + " expressions " + here',
+        }
+      )
+
+      expect(lexer.advance()).toHaveTokenData({ kind: LexerTokenKind.OPERATOR, operator: ';' });
+      expect(lexer.advance()).toHaveTokenData({ kind: LexerTokenKind.SEPARATOR, separator: 'EOF' });
+    })
   });
 
   describe('invalid', () => {

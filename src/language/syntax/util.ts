@@ -5,7 +5,7 @@ import {
   LexerTokenStream,
 } from '../lexer';
 import {
-  DEFAULT_TOKEN_KIND_FILER,
+  DEFAULT_TOKEN_KIND_FILTER,
   LexerSavedState,
   LexerTokenKindFilter,
 } from '../lexer/lexer';
@@ -23,7 +23,7 @@ export class ArrayLexerStream implements LexerTokenStream {
 
   constructor(private readonly array: ReadonlyArray<LexerToken>) {
     this.index = 0;
-    this.tokenKindFilter = DEFAULT_TOKEN_KIND_FILER;
+    this.tokenKindFilter = DEFAULT_TOKEN_KIND_FILTER;
     this.emitUnknown = false;
   }
 

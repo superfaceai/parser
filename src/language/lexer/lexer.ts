@@ -8,7 +8,7 @@ import { LexerToken, LexerTokenData, LexerTokenKind } from './token';
 import * as util from './util';
 
 export type LexerTokenKindFilter = { [K in LexerTokenKind]: boolean };
-export const DEFAULT_TOKEN_KIND_FILER: LexerTokenKindFilter = {
+export const DEFAULT_TOKEN_KIND_FILTER: LexerTokenKindFilter = {
   [LexerTokenKind.COMMENT]: true,
   [LexerTokenKind.NEWLINE]: true,
   [LexerTokenKind.IDENTIFIER]: false,
@@ -87,7 +87,7 @@ export class Lexer implements LexerTokenStream {
       { start: 0, end: 0 }
     );
 
-    this.tokenKindFilter = tokenKindFilter ?? DEFAULT_TOKEN_KIND_FILER;
+    this.tokenKindFilter = tokenKindFilter ?? DEFAULT_TOKEN_KIND_FILTER;
     this.emitUnknown = emitUnknown ?? false;
   }
 

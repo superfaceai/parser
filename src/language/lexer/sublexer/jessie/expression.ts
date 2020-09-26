@@ -5,7 +5,7 @@ import { validateAndTranspile } from '../../../jessie';
 import { JessieSublexerTokenData, LexerTokenKind } from '../../token';
 import { ParseResult } from '../result';
 
-// Static SCANNER to avoid reinitializing it, same thing is done inside TS library
+// Static SCANNER to avoid reinitializing it, same thing is done inside TS codebase.
 const SCANNER = ts.createScanner(
   ts.ScriptTarget.Latest,
   false,
@@ -46,16 +46,38 @@ export function tryParseJessieScriptExpression(
   // Set the scanner text thus reusing the old scanner instance
   SCANNER.setText(slice);
 
-  // Counts the number of open (, [ and { pairs
+  // Counts the number of open (), [] and {} pairs.
   let depthCounter = 0;
-  // Stores position after last valid token
+  // Keeps track of whether we are inside a (nested) template string.
+  // The Typescript scanner produces a `}` token for the closing part of the template expression (the `${expr}`).
+  // We need to manually detect this case and ask the scanner to rescan it with this in mind.
+  let templateStringDepthCounter = 0;
+
+  // Stores position after last valid token.
   let lastTokenEnd = 0;
   for (;;) {
     // Termination checks
-    const token = SCANNER.scan();
+    let token = SCANNER.scan();
+
+    if (templateStringDepthCounter > 0) {
+      // When `}` is found and we are inside a template string, issue a rescan.
+      // This will either produce the TemplateMiddle token or a TemplateTail token.
+      if (token === ts.SyntaxKind.CloseBraceToken) {
+        SCANNER.reScanTemplateToken(false);
+        token = SCANNER.getToken();
+      }
+
+      // End the template token context if tail is found
+      if (token === ts.SyntaxKind.TemplateTail) {
+        templateStringDepthCounter -= 1;
+      }
+    }
+    if (token === ts.SyntaxKind.TemplateHead) {
+      templateStringDepthCounter += 1;
+    }
 
     // Look ahead for a termination token
-    if (depthCounter === 0 && termTokens.includes(token)) {
+    if (depthCounter === 0 && templateStringDepthCounter === 0 && termTokens.includes(token)) {
       break;
     }
 
