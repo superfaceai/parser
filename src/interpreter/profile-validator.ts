@@ -19,11 +19,6 @@ import {
 } from '@superindustries/language';
 import { ProfileVisitor } from '@superindustries/superface';
 
-function assertUnreachable(node: never): never;
-function assertUnreachable(node: ProfileASTNode): never {
-  throw new Error(`Invalid Node kind: ${node.kind}`);
-}
-
 export type StructureKind =
   | 'PrimitiveStructure'
   | 'EnumStructure'
@@ -101,7 +96,7 @@ export type StructureType =
 /**
  * @interface UseCaseStructure - represents usecase structure
  */
-interface UseCaseStructure {
+export interface UseCaseStructure {
   useCaseName: string;
   input?: ObjectStructure;
   result?: StructureType;
@@ -133,10 +128,11 @@ export class ProfileValidator implements ProfileVisitor {
   ): StructureType | undefined;
   visit(node: ObjectDefinitionNode): ObjectStructure;
   visit(node: Type): StructureType;
+  visit(node: ProfileASTNode | undefined): undefined;
   visit(
     node: ProfileASTNode
   ): undefined | StructureType | UseCaseStructure | ProfileOutput | string {
-    switch (node.kind) {
+    switch (node?.kind) {
       case 'EnumDefinition':
         return this.visitEnumDefinitionNode(node);
       case 'EnumValue':
@@ -169,7 +165,7 @@ export class ProfileValidator implements ProfileVisitor {
         return this.visitUseCaseDefinitionNode(node);
 
       default:
-        assertUnreachable(node);
+        return undefined;
     }
   }
 
@@ -196,7 +192,7 @@ export class ProfileValidator implements ProfileVisitor {
   visitListDefinitionNode(node: ListDefinitionNode): StructureType {
     const value = this.visit(node.elementType);
 
-    if (value !== undefined && value.kind === 'EnumStructure') {
+    if (value?.kind === 'EnumStructure') {
       throw new Error('Something went very wrong, this should not happen!');
     }
 
@@ -241,7 +237,7 @@ export class ProfileValidator implements ProfileVisitor {
   visitNonNullDefinitionNode(node: NonNullDefinitionNode): StructureType {
     const value = this.visit(node.type);
 
-    if (value !== undefined && value.kind === 'UnionStructure') {
+    if (value?.kind === 'UnionStructure') {
       throw new Error('Something went very wrong, this should not happen!');
     }
 
@@ -293,13 +289,12 @@ export class ProfileValidator implements ProfileVisitor {
       });
 
     const profileId = this.visit(node.profile);
-    const useCaseDefinition = node.definitions.find(
-      (definition): definition is UseCaseDefinitionNode =>
-        definition.kind === 'UseCaseDefinition'
+    const usecase = this.visit(
+      node.definitions.find(
+        (definition): definition is UseCaseDefinitionNode =>
+          definition.kind === 'UseCaseDefinition'
+      )
     );
-    const usecase = useCaseDefinition
-      ? this.visit(useCaseDefinition)
-      : undefined;
 
     return {
       profileId,
@@ -324,7 +319,7 @@ export class ProfileValidator implements ProfileVisitor {
     node.types.forEach((type, i) => {
       const structure = this.visit(type);
 
-      if (structure === undefined || structure.kind !== 'UnionStructure') {
+      if (structure?.kind !== 'UnionStructure') {
         union.types[i] = structure;
       }
     });
@@ -335,8 +330,8 @@ export class ProfileValidator implements ProfileVisitor {
   visitUseCaseDefinitionNode(node: UseCaseDefinitionNode): UseCaseStructure {
     return {
       useCaseName: node.useCaseName,
-      input: node.input ? this.visit(node.input) : undefined,
-      result: node.result ? this.visit(node.result) : undefined,
+      input: this.visit(node.input),
+      result: this.visit(node.result),
     };
   }
 }
