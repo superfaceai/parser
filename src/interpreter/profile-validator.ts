@@ -19,6 +19,11 @@ import {
 } from '@superindustries/language';
 import { ProfileVisitor } from '@superindustries/superface';
 
+function assertUnreachable(node: never): never;
+function assertUnreachable(node: ProfileASTNode): never {
+  throw new Error(`Invalid Node kind: ${node.kind}`);
+}
+
 export type StructureKind =
   | 'PrimitiveStructure'
   | 'EnumStructure'
@@ -132,7 +137,10 @@ export class ProfileValidator implements ProfileVisitor {
   visit(
     node: ProfileASTNode
   ): undefined | StructureType | UseCaseStructure | ProfileOutput | string {
-    switch (node?.kind) {
+    if (!node) {
+      return undefined;
+    }
+    switch (node.kind) {
       case 'EnumDefinition':
         return this.visitEnumDefinitionNode(node);
       case 'EnumValue':
@@ -165,7 +173,7 @@ export class ProfileValidator implements ProfileVisitor {
         return this.visitUseCaseDefinitionNode(node);
 
       default:
-        return undefined;
+        assertUnreachable(node);
     }
   }
 
