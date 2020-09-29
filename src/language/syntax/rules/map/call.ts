@@ -71,7 +71,7 @@ const HTTP_CALL_STATEMENT_REQUEST_HEADERS_SLOT = SLOT_DEFINITION_FACTORY(
 );
 const HTTP_CALL_STATEMENT_REQUEST_BODY_SLOT = SLOT_DEFINITION_FACTORY(
   'body',
-  VALUE_EXPRESSION_FACTORY('\n')
+  VALUE_EXPRESSION_FACTORY('\n', '}')
 );
 
 const HTTP_CALL_STATEMENT_REQUEST_SLOT = SyntaxRule.identifier('request')
@@ -95,7 +95,7 @@ const HTTP_CALL_STATEMENT_REQUEST_SLOT = SyntaxRule.identifier('request')
         ] = matches;
 
         return {
-          queryParametersDefinition: maybeQuery?.[1],
+          queryParameters: maybeQuery?.[1],
           headers: maybeHeaders?.[1],
           body: maybeBody?.[1],
         };
@@ -105,7 +105,7 @@ const HTTP_CALL_STATEMENT_REQUEST_SLOT = SyntaxRule.identifier('request')
           HttpCallStatementNode<SubstatementType>['requestDefinition']
         >(
           HTTP_CALL_STATEMENT_REQUEST_QUERY_SLOT.map(([_name, value]) => {
-            return { queryParametersDefinition: value };
+            return { queryParameters: value };
           }),
           HTTP_CALL_STATEMENT_REQUEST_HEADERS_SLOT.map(([_name, value]) => {
             return { headers: value };

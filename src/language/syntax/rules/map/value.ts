@@ -71,7 +71,7 @@ export function VALUE_EXPRESSION_FACTORY(
     SyntaxRule.lookahead(SyntaxRuleOr.chainOr(...terminatorLookahead))
   ).map(([lit, _lookahead]) => lit);
 
-  return SyntaxRule.withUnknown(structuredLiteral).or(
+  return structuredLiteral.peekUnknown().or(
     JESSIE_EXPRESSION_FACTORY(...terminators).map(jessie => {
       if (jessie.source === undefined) {
         throw 'Unexpected `JessieExpressionNode.source === undefined`. This is an error in the lexer.';

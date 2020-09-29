@@ -42,6 +42,8 @@ export function tryParseJessieScriptExpression(
     ? FALLBACK_TERMINATOR_TOKENS
     : terminationTokens
   ).map(tok => TERMINATION_TOKEN_TO_TS_TOKEN[tok]);
+  // slang comments start with #
+  termTokens.push(ts.SyntaxKind.PrivateIdentifier);
 
   // Set the scanner text thus reusing the old scanner instance
   SCANNER.setText(slice);

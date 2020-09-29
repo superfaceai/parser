@@ -37,13 +37,6 @@ export class MatchAttempts {
     return first.merge(second);
   }
 
-  static mergePreserveOrder(
-    first: MatchAttempts | undefined,
-    second: MatchAttempts
-  ): MatchAttempts {
-    return first?.merge(second) ?? second;
-  }
-
   /** Merges two rule attempts according to the furthest token heuristic. */
   merge(other: MatchAttempts | undefined): MatchAttempts {
     if (other === undefined) {
@@ -56,7 +49,7 @@ export class MatchAttempts {
       return new MatchAttempts(this.token, [...this.rules, ...other.rules]);
     }
 
-    // undefined is treated as grater than defined
+    // undefined is treated as greater than defined
     if (this.token === undefined) {
       return this;
     } else if (
@@ -204,14 +197,16 @@ export abstract class SyntaxRule<T> {
     return new SyntaxRuleLookahead(rule, invert);
   }
 
-  static withUnknown<R>(
-    rule: SyntaxRule<R>
-  ): SyntaxRule<R> {
-    return new SyntaxRuleWithUnknown(rule);
+  peekUnknown(): SyntaxRulePeekUnknown<T> {
+    return new SyntaxRulePeekUnknown(this);
+  }
+
+  debug(): SyntaxRule<T> {
+    return new SyntaxRuleDebugLog(this);
   }
 }
 
-// Basic nodes //
+// BASIC //
 
 export class SyntaxRuleSeparator extends SyntaxRule<
   LexerTokenMatch<SeparatorTokenData>
@@ -372,7 +367,7 @@ export class SyntaxRuleString extends SyntaxRule<
   }
 }
 
-// Specific nodes //
+// SPECIFIC //
 
 export class SyntaxRuleNewline extends SyntaxRule<
   LexerTokenMatch<NewlineTokenData>
@@ -442,7 +437,7 @@ export class SyntaxRuleJessie extends SyntaxRule<
   }
 }
 
-// Combinators //
+// COMBINATORS //
 
 export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
   constructor(readonly first: SyntaxRule<F>, readonly second: SyntaxRule<S>) {
@@ -519,10 +514,7 @@ export class SyntaxRuleFollowedBy<
 
       return {
         ...secondMatch,
-        attempts: MatchAttempts.mergePreserveOrder(
-          firstMatch.optionalAttempts,
-          secondMatch.attempts
-        ),
+        attempts: secondMatch.attempts.merge(firstMatch.optionalAttempts)
       };
     }
 
@@ -568,10 +560,7 @@ export class SyntaxRuleRepeat<R> extends SyntaxRule<R[]> {
       return {
         kind: 'match',
         match: matches,
-        optionalAttempts: MatchAttempts.mergePreserveOrder(
-          lastMatch?.optionalAttempts,
-          lastResult.attempts
-        ),
+        optionalAttempts: lastResult.attempts.merge(lastMatch?.optionalAttempts)
       };
     }
 
@@ -591,6 +580,7 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
 
   tryMatch(tokens: LexerTokenStream): RuleResultMatch<R | undefined> {
     const match = this.rule.tryMatch(tokens);
+  
     if (match.kind === 'match') {
       return match;
     }
@@ -607,7 +597,12 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
   }
 }
 
-/** Matches rule and then restores `tokens` state. */
+// META //
+
+/** Matches rule and then restores `tokens` state.
+ * 
+ * This rule automatically uses the `emitUnknown` flag.
+*/
 export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
   /**
    * Invert the lookahead, matching if the inner rule fails.
@@ -626,7 +621,7 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
     const save = tokens.save();
 
     const result = this.rule.tryMatch(tokens);
-
+    
     tokens.rollback(save);
     tokens.emitUnknown = originalEmitUnknown;
 
@@ -660,7 +655,12 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
   }
 }
 
-export class SyntaxRuleWithUnknown<R> extends SyntaxRule<R> {
+/** Peeks the first token with the `emitUnknown` flag enabled and returns nomatch in case it is unknown.
+ * 
+ * This rule is used in optional rules where the candidates use different lexer contexts and might fail on unknown 
+ * tokens even though the following candidate would match.
+*/
+export class SyntaxRulePeekUnknown<R> extends SyntaxRule<R> {
   constructor(readonly rule: SyntaxRule<R>) {
     super();
   }
@@ -668,12 +668,19 @@ export class SyntaxRuleWithUnknown<R> extends SyntaxRule<R> {
   tryMatch(tokens: LexerTokenStream): RuleResult<R> {
     const originalEmitUnknown = tokens.emitUnknown;
     tokens.emitUnknown = true;
-
-    const result = this.rule.tryMatch(tokens);
+    
+    const peekedToken = tokens.peek().value;
 
     tokens.emitUnknown = originalEmitUnknown;
 
-    return result;
+    if (peekedToken?.data.kind === LexerTokenKind.UNKNOWN) {
+      return {
+        kind: 'nomatch',
+        attempts: new MatchAttempts(peekedToken, [this.rule])
+      }
+    }
+
+    return this.rule.tryMatch(tokens);
   }
 
   [Symbol.toStringTag](): string {
@@ -739,5 +746,52 @@ export class SyntaxRuleMutable<R> extends SyntaxRule<R> {
     }
 
     return '[Mutable Rule]';
+  }
+}
+
+export class SyntaxRuleDebugLog<R> extends SyntaxRule<R> {
+  constructor(readonly rule: SyntaxRule<R>) {
+    super();
+  }
+
+  tryMatch(tokens: LexerTokenStream): RuleResult<R> {
+    const emitUnknown = tokens.emitUnknown;
+    tokens.emitUnknown = true;
+    const nextToken = tokens.peek();
+    tokens.emitUnknown = emitUnknown;
+
+    let result
+    try {
+      result = this.rule.tryMatch(tokens)
+    } catch (err) {
+      console.debug(
+        'With unknown:', emitUnknown,
+        '\nRule:', this.rule,
+        '\nException:', err,
+        '\nToken:', nextToken
+      )
+      throw err;
+    }
+    
+    if (result.kind === 'nomatch') {
+      console.debug(
+        'With unknown:', emitUnknown,
+        '\nRule:', this.rule,
+        '\nAttempts:', result.attempts,
+        '\nFirst token:', nextToken
+      )
+    } else {
+      console.debug(
+        'With unknown:', emitUnknown,
+        '\nRule:', this.rule,
+        '\nMatch:', result.match,
+        '\nFirst token:', nextToken
+      )
+    }
+    return result;
+  }
+
+  [Symbol.toStringTag](): string {
+    return this.rule.toString();
   }
 }
