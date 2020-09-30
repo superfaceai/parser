@@ -69,99 +69,108 @@ describe('ProfileValidator Advanced', () => {
             kind: 'UseCaseDefinition',
             useCaseName: 'Test',
             input: {
-              kind: 'ObjectDefinition',
-              fields: [],
+              kind: 'UseCaseSlotDefinition',
+              type: {
+                kind: 'ObjectDefinition',
+                fields: [],
+              },
             },
             result: {
-              kind: 'UnionDefinition',
-              types: [
-                {
-                  kind: 'ObjectDefinition',
-                  fields: [],
-                },
-                {
-                  kind: 'NonNullDefinition',
-                  type: {
-                    kind: 'ModelTypeName',
-                    name: 'm1',
+              kind: 'UseCaseSlotDefinition',
+              type: {
+                kind: 'UnionDefinition',
+                types: [
+                  {
+                    kind: 'ObjectDefinition',
+                    fields: [],
                   },
-                },
-                {
-                  kind: 'NonNullDefinition',
-                  type: {
-                    kind: 'ListDefinition',
-                    elementType: {
-                      kind: 'UnionDefinition',
-                      types: [
-                        {
-                          kind: 'NonNullDefinition',
-                          type: {
-                            kind: 'PrimitiveTypeName',
-                            name: 'string',
+                  {
+                    kind: 'NonNullDefinition',
+                    type: {
+                      kind: 'ModelTypeName',
+                      name: 'm1',
+                    },
+                  },
+                  {
+                    kind: 'NonNullDefinition',
+                    type: {
+                      kind: 'ListDefinition',
+                      elementType: {
+                        kind: 'UnionDefinition',
+                        types: [
+                          {
+                            kind: 'NonNullDefinition',
+                            type: {
+                              kind: 'PrimitiveTypeName',
+                              name: 'string',
+                            },
                           },
+                          {
+                            kind: 'NonNullDefinition',
+                            type: {
+                              kind: 'PrimitiveTypeName',
+                              name: 'boolean',
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  },
+                  {
+                    kind: 'NonNullDefinition',
+                    type: {
+                      kind: 'EnumDefinition',
+                      values: [
+                        {
+                          kind: 'EnumValue',
+                          value: 'S',
                         },
                         {
-                          kind: 'NonNullDefinition',
-                          type: {
-                            kind: 'PrimitiveTypeName',
-                            name: 'boolean',
-                          },
+                          kind: 'EnumValue',
+                          value: 'B',
                         },
                       ],
                     },
                   },
-                },
-                {
-                  kind: 'NonNullDefinition',
-                  type: {
-                    kind: 'EnumDefinition',
-                    values: [
+                  {
+                    kind: 'ObjectDefinition',
+                    fields: [
                       {
-                        kind: 'EnumValue',
-                        value: 'S',
-                      },
-                      {
-                        kind: 'EnumValue',
-                        value: 'B',
+                        kind: 'FieldDefinition',
+                        required: false,
+                        fieldName: 'f1',
+                        type: {
+                          kind: 'PrimitiveTypeName',
+                          name: 'string',
+                        },
                       },
                     ],
                   },
-                },
-                {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'PrimitiveTypeName',
-                        name: 'string',
+                  {
+                    kind: 'ObjectDefinition',
+                    fields: [
+                      {
+                        kind: 'FieldDefinition',
+                        required: false,
+                        fieldName: 'f1',
+                        type: {
+                          kind: 'ModelTypeName',
+                          name: 'm1',
+                        },
                       },
-                    },
-                  ],
-                },
-                {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'ModelTypeName',
-                        name: 'm1',
+                      {
+                        kind: 'FieldDefinition',
+                        required: false,
+                        fieldName: 'f2',
+                        type: {
+                          kind: 'ModelTypeName',
+                          name: 'm2',
+                        },
                       },
-                    },
-                    {
-                      kind: 'FieldDefinition',
-                      fieldName: 'f2',
-                      type: {
-                        kind: 'ModelTypeName',
-                        name: 'm2',
-                      },
-                    },
-                  ],
-                },
-              ],
+                    ],
+                  },
+                ],
+              },
             },
           },
         ],
@@ -300,55 +309,65 @@ describe('ProfileValidator Advanced', () => {
             kind: 'UseCaseDefinition',
             useCaseName: 'Test',
             input: {
-              kind: 'ObjectDefinition',
-              fields: [],
+              kind: 'UseCaseSlotDefinition',
+              type: {
+                kind: 'ObjectDefinition',
+                fields: [],
+              },
             },
             result: {
-              kind: 'UnionDefinition',
-              types: [
-                {
-                  kind: 'ModelTypeName',
-                  name: 'm1',
-                },
-                {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'PrimitiveTypeName',
-                        name: 'string',
+              kind: 'UseCaseSlotDefinition',
+              type: {
+                kind: 'UnionDefinition',
+                types: [
+                  {
+                    kind: 'ModelTypeName',
+                    name: 'm1',
+                  },
+                  {
+                    kind: 'ObjectDefinition',
+                    fields: [
+                      {
+                        kind: 'FieldDefinition',
+                        required: false,
+                        fieldName: 'f1',
+                        type: {
+                          kind: 'PrimitiveTypeName',
+                          name: 'string',
+                        },
                       },
-                    },
-                    {
-                      kind: 'FieldDefinition',
-                      fieldName: 'f2',
-                      type: {
-                        kind: 'PrimitiveTypeName',
-                        name: 'boolean',
+                      {
+                        kind: 'FieldDefinition',
+                        required: false,
+                        fieldName: 'f2',
+                        type: {
+                          kind: 'PrimitiveTypeName',
+                          name: 'boolean',
+                        },
                       },
-                    },
-                  ],
-                },
-                {
-                  kind: 'ModelTypeName',
-                  name: 'm2',
-                },
-                {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      fieldName: 'f1',
-                    },
-                    {
-                      kind: 'FieldDefinition',
-                      fieldName: 'f2',
-                    },
-                  ],
-                },
-              ],
+                    ],
+                  },
+                  {
+                    kind: 'ModelTypeName',
+                    name: 'm2',
+                  },
+                  {
+                    kind: 'ObjectDefinition',
+                    fields: [
+                      {
+                        kind: 'FieldDefinition',
+                        required: false,
+                        fieldName: 'f1',
+                      },
+                      {
+                        kind: 'FieldDefinition',
+                        required: false,
+                        fieldName: 'f2',
+                      },
+                    ],
+                  },
+                ],
+              },
             },
           },
           {
@@ -359,10 +378,12 @@ describe('ProfileValidator Advanced', () => {
               fields: [
                 {
                   kind: 'FieldDefinition',
+                  required: false,
                   fieldName: 'f1',
                 },
                 {
                   kind: 'FieldDefinition',
+                  required: false,
                   fieldName: 'f2',
                 },
               ],
@@ -376,6 +397,7 @@ describe('ProfileValidator Advanced', () => {
               fields: [
                 {
                   kind: 'FieldDefinition',
+                  required: false,
                   fieldName: 'f1',
                   type: {
                     kind: 'PrimitiveTypeName',
@@ -384,6 +406,7 @@ describe('ProfileValidator Advanced', () => {
                 },
                 {
                   kind: 'FieldDefinition',
+                  required: false,
                   fieldName: 'f2',
                   type: {
                     kind: 'PrimitiveTypeName',
@@ -499,6 +522,7 @@ describe('ProfileValidator Advanced', () => {
                     fields: [
                       {
                         kind: 'FieldDefinition',
+                        required: false,
                         fieldName: 'if1',
                         type: {
                           kind: 'PrimitiveTypeName',
@@ -507,6 +531,7 @@ describe('ProfileValidator Advanced', () => {
                       },
                       {
                         kind: 'FieldDefinition',
+                        required: false,
                         fieldName: 'if2',
                         type: {
                           kind: 'PrimitiveTypeName',
@@ -577,6 +602,7 @@ describe('ProfileValidator Advanced', () => {
               fields: [
                 {
                   kind: 'FieldDefinition',
+                  required: false,
                   fieldName: 'inner',
                   type: {
                     kind: 'NonNullDefinition',
@@ -585,6 +611,7 @@ describe('ProfileValidator Advanced', () => {
                       fields: [
                         {
                           kind: 'FieldDefinition',
+                          required: false,
                           fieldName: 'value',
                           type: {
                             kind: 'UnionDefinition',
@@ -623,6 +650,7 @@ describe('ProfileValidator Advanced', () => {
                                 fields: [
                                   {
                                     kind: 'FieldDefinition',
+                                    required: false,
                                     fieldName: 'if1',
                                     type: {
                                       kind: 'PrimitiveTypeName',
@@ -631,6 +659,7 @@ describe('ProfileValidator Advanced', () => {
                                   },
                                   {
                                     kind: 'FieldDefinition',
+                                    required: false,
                                     fieldName: 'if2',
                                     type: {
                                       kind: 'PrimitiveTypeName',
@@ -657,10 +686,12 @@ describe('ProfileValidator Advanced', () => {
               fields: [
                 {
                   kind: 'FieldDefinition',
+                  required: false,
                   fieldName: 'f1',
                 },
                 {
                   kind: 'FieldDefinition',
+                  required: false,
                   fieldName: 'f2',
                 },
               ],
@@ -674,10 +705,12 @@ describe('ProfileValidator Advanced', () => {
               fields: [
                 {
                   kind: 'FieldDefinition',
+                  required: false,
                   fieldName: 'f3',
                 },
                 {
                   kind: 'FieldDefinition',
+                  required: false,
                   fieldName: 'f4',
                 },
               ],
@@ -687,21 +720,27 @@ describe('ProfileValidator Advanced', () => {
             kind: 'UseCaseDefinition',
             useCaseName: 'Test',
             input: {
-              kind: 'ObjectDefinition',
-              fields: [],
+              kind: 'UseCaseSlotDefinition',
+              type: {
+                kind: 'ObjectDefinition',
+                fields: [],
+              },
             },
             result: {
-              kind: 'UnionDefinition',
-              types: [
-                {
-                  kind: 'ModelTypeName',
-                  name: 'm1',
-                },
-                {
-                  kind: 'ModelTypeName',
-                  name: 'm2',
-                },
-              ],
+              kind: 'UseCaseSlotDefinition',
+              type: {
+                kind: 'UnionDefinition',
+                types: [
+                  {
+                    kind: 'ModelTypeName',
+                    name: 'm1',
+                  },
+                  {
+                    kind: 'ModelTypeName',
+                    name: 'm2',
+                  },
+                ],
+              },
             },
           },
         ],

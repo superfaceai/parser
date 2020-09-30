@@ -338,8 +338,8 @@ export class ProfileValidator implements ProfileVisitor {
   visitUseCaseDefinitionNode(node: UseCaseDefinitionNode): UseCaseStructure {
     return {
       useCaseName: node.useCaseName,
-      input: this.visit(node.input),
-      result: this.visit(node.result),
+      input: this.visit(node.input?.type),
+      result: this.visit(node.result?.type),
     };
   }
 }
