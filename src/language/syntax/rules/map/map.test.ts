@@ -12,7 +12,7 @@ import { Location, Source, Span } from '../../../source';
 import { RuleResult } from '../../rule';
 import { ArrayLexerStream } from '../../util';
 import * as rules from './index';
-import { MAP_DEFINITION_HTTP_CALL, STATEMENT_CONDITION } from './map';
+import { MAP, MAP_DEFINITION_HTTP_CALL, MAP_DEFINITION_STATEMENT, MAP_DOCUMENT,OPERATION_DEFINITION_HTTP_CALL, OPERATION_DEFINITION_STATEMENT, PROFILE_ID, PROVIDER_ID, STATEMENT_CONDITION } from './map';
 import { ARGUMENT_LIST_ASSIGNMENT, SET_BLOCK_ASSIGNMENT } from './value';
 
 // Declare custom matcher for sake of Typescript
@@ -63,23 +63,18 @@ expect.extend({
 });
 
 // Ensures that token spans are correctly ordered in delcaration order
-// while also making sure that their spans and locations are random enough so that
-// equality checks find when a wrong span or location is calculated.
-let TES_TOK_STATE: { start: number; line: number } = { start: 0, line: 1 };
+let TES_TOK_STATE = 1;
 beforeEach(() => {
-  TES_TOK_STATE = { start: 0, line: 1 };
+  TES_TOK_STATE = 1;
 });
-function tesTok(data: LexerTokenData, bumpLine?: boolean): LexerToken {
-  const start = Math.floor(Math.random() * 1000) + TES_TOK_STATE.start * 10000;
-  const end = start + Math.floor(Math.random() * 100);
+function tesTok(data: LexerTokenData): LexerToken {
+  const start = Math.floor(Math.random() * 100) + TES_TOK_STATE * 10000;
+  const end = start;
 
-  if (bumpLine === true) {
-    TES_TOK_STATE.line += 1;
-  }
-  const line = TES_TOK_STATE.line;
+  const line = start;
   const column = start;
 
-  TES_TOK_STATE.start += 1;
+  TES_TOK_STATE += 1;
 
   return new LexerToken(data, { line, column }, { start, end });
 }
@@ -102,7 +97,8 @@ function tesMatchJessie(
   token: LexerToken
 ) {
   const data = token.data as JessieScriptTokenData;
-  return tesMatch(
+  
+return tesMatch(
     {
       kind: 'JessieExpression',
       expression: data.script,
@@ -201,7 +197,7 @@ describe('map syntax rules', () => {
           sourceMap: '',
         }),
 
-        tesTok({ kind: LexerTokenKind.STRING, string: 'bar' }, true),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'bar' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({
           kind: LexerTokenKind.JESSIE_SCRIPT,
@@ -724,7 +720,7 @@ describe('map syntax rules', () => {
 
           tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'headers' }), // 12
           tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
-            tesTok({ kind: LexerTokenKind.STRING, string: "content-type" }), // 14 
+            tesTok({ kind: LexerTokenKind.STRING, string: 'content-type' }), // 14 
             tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
             tesTok({ kind: LexerTokenKind.JESSIE_SCRIPT, script: '"application/json"', sourceScript: '"application/json"', sourceMap: '' }),
           tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
@@ -767,162 +763,405 @@ describe('map syntax rules', () => {
 
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'response' }), // 45
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'map' }),
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'error' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'value' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({ kind: LexerTokenKind.JESSIE_SCRIPT, script: '7', sourceScript: '7', sourceMap: '' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
 
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
       const stream = new ArrayLexerStream(tokens);
+      const streamStart = stream.save();
 
-      const rule = MAP_DEFINITION_HTTP_CALL;
+      const expected = tesMatch(
+        {
+          kind: 'HttpCallStatement',
+          method: (tokens[1].data as IdentifierTokenData).identifier,
+          url: (tokens[2].data as StringTokenData).string,
+          requestDefinition: {
+            queryParameters: tesMatch(
+              {
+                kind: 'ObjectLiteral',
+                fields: [
+                  tesMatch(
+                    {
+                      kind: 'Assignment',
+                      key: [
+                        (tokens[8].data as IdentifierTokenData).identifier
+                      ],
+                      value: tesMatchJessie(tokens[10]),
+                    },
+                    tokens[8],
+                    tokens[10]
+                  )
+                ]
+              },
+              tokens[7],
+              tokens[11]
+            ),
+            headers: tesMatch(
+              {
+                kind: 'ObjectLiteral',
+                fields: [
+                  tesMatch(
+                    {
+                      kind: 'Assignment',
+                      key: [
+                        (tokens[14].data as StringTokenData).string
+                      ],
+                      value: tesMatchJessiePrimitive(tokens[16]),
+                    },
+                    tokens[14],
+                    tokens[16]
+                  )
+                ]
+              },
+              tokens[13],
+              tokens[17]
+            ),
+            body: tesMatch(
+              {
+                kind: 'ObjectLiteral',
+                fields: [
+                  tesMatch(
+                    {
+                      kind: 'Assignment',
+                      key: [
+                        (tokens[20].data as IdentifierTokenData).identifier,
+                      ],
+                      value: tesMatch(
+                        {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            tesMatch(
+                              {
+                                kind: 'Assignment',
+                                key: [
+                                  (tokens[23].data as IdentifierTokenData).identifier,
+                                ],
+                                value: tesMatchJessiePrimitive(tokens[25])
+                              },
+                              tokens[23],
+                              tokens[25]
+                            ),
+                            tesMatch(
+                              {
+                                kind: 'Assignment',
+                                key: [
+                                  (tokens[27].data as IdentifierTokenData).identifier,
+                                ],
+                                value: tesMatchJessiePrimitive(tokens[29])
+                              },
+                              tokens[27],
+                              tokens[29]
+                            )
+                          ]
+                        },
+                        tokens[22],
+                        tokens[30]
+                      )
+                    },
+                    tokens[20],
+                    tokens[30]
+                  ),
+                  tesMatch(
+                    {
+                      kind: 'Assignment',
+                      key: [
+                        (tokens[32].data as IdentifierTokenData).identifier,
+                        (tokens[34].data as IdentifierTokenData).identifier,
+                      ],
+                      value: tesMatchJessiePrimitive(tokens[36]),
+                    },
+                    tokens[32],
+                    tokens[36]
+                  )
+                ]
+              },
+              tokens[19],
+              tokens[37]
+            )
+          },
+          responseHandlers: [
+            tesMatch(
+              {
+                kind: 'HttpResponseHandler',
+                statusCode: (tokens[40].data as LiteralTokenData).literal,
+                contentType: (tokens[41].data as StringTokenData).string,
+                contentLanguage: (tokens[42].data as StringTokenData).string,
+                statements: []
+              },
+              tokens[39],
+              tokens[44]
+            ),
+            tesMatch(
+              {
+                kind: 'HttpResponseHandler',
+                statements: [
+                  tesMatch(
+                    {
+                      kind: 'SetStatement',
+                      assignments: [
+                          tesMatch(
+                          {
+                            kind: 'Assignment',
+                            key: [
+                              (tokens[47].data as IdentifierTokenData).identifier
+                            ],
+                            value: tesMatchJessiePrimitive(tokens[49])
+                          },
+                          tokens[47],
+                          tokens[49]
+                        )
+                      ]
+                    },
+                    tokens[47],
+                    tokens[49]
+                  )
+                ]
+              },
+              tokens[45],
+              tokens[50]
+            )
+          ],
+        },
+        tokens[0],
+        tokens[51]
+      );
+
+      expect(MAP_DEFINITION_HTTP_CALL.tryMatch(stream)).toBeAMatch(
+        expected
+      );
+      stream.rollback(streamStart);
+      expect(OPERATION_DEFINITION_HTTP_CALL.tryMatch(stream)).toBeAMatch(
+        expected
+      );
+    });
+
+    it('should parse call statement', () => {
+      const tokens = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'call' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'Foo' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '(' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: ')' }),
+
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'if' }), // 4
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '(' }),
+        tesTok({
+          kind: LexerTokenKind.JESSIE_SCRIPT,
+          script: 'bar',
+          sourceScript: 'bar',
+          sourceMap: '',
+        }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: ')' }),
+
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+      const streamStart = stream.save();
+
+      const expected = tesMatch(
+        {
+          kind: 'CallStatement',
+          condition: tesMatch(
+            {
+              kind: 'StatementCondition',
+              expression: tesMatchJessie(tokens[6])
+            },
+            tokens[4],
+            tokens[7]
+          ),
+          operationName: (tokens[1].data as IdentifierTokenData).identifier,
+          arguments: [],
+          statements: []
+        },
+        tokens[0],
+        tokens[9]
+      );
+
+      expect(MAP_DEFINITION_STATEMENT.tryMatch(stream)).toBeAMatch(
+        expected
+      );
+      stream.rollback(streamStart);
+      expect(OPERATION_DEFINITION_STATEMENT.tryMatch(stream)).toBeAMatch(
+        expected
+      );
+    });
+
+    // TODO
+    // it('should parse inline call statement', () => {
+
+    // });
+  });
+
+  describe('document', () => {
+    it('should parse profile id', () => {
+      const tokens = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'http://example.com/profile' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = PROFILE_ID;
 
       expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
-            kind: 'HttpCallStatement',
-            method: (tokens[1].data as IdentifierTokenData).identifier,
-            url: (tokens[2].data as StringTokenData).string,
-            requestDefinition: {
-              queryParameters: tesMatch(
-                {
-                  kind: 'ObjectLiteral',
-                  fields: [
-                    tesMatch(
-                      {
-                        kind: 'Assignment',
-                        key: [
-                          (tokens[8].data as IdentifierTokenData).identifier
-                        ],
-                        value: tesMatchJessie(tokens[10]),
-                      },
-                      tokens[8],
-                      tokens[10]
-                    )
-                  ]
-                },
-                tokens[7],
-                tokens[11]
-              ),
-              headers: tesMatch(
-                {
-                  kind: 'ObjectLiteral',
-                  fields: [
-                    tesMatch(
-                      {
-                        kind: 'Assignment',
-                        key: [
-                          (tokens[14].data as StringTokenData).string
-                        ],
-                        value: tesMatchJessiePrimitive(tokens[16]),
-                      },
-                      tokens[14],
-                      tokens[16]
-                    )
-                  ]
-                },
-                tokens[13],
-                tokens[17]
-              ),
-              body: tesMatch(
-                {
-                  kind: 'ObjectLiteral',
-                  fields: [
-                    tesMatch(
-                      {
-                        kind: 'Assignment',
-                        key: [
-                          (tokens[20].data as IdentifierTokenData).identifier,
-                        ],
-                        value: tesMatch(
-                          {
-                            kind: 'ObjectLiteral',
-                            fields: [
-                              tesMatch(
-                                {
-                                  kind: 'Assignment',
-                                  key: [
-                                    (tokens[23].data as IdentifierTokenData).identifier,
-                                  ],
-                                  value: tesMatchJessiePrimitive(tokens[25])
-                                },
-                                tokens[23],
-                                tokens[25]
-                              ),
-                              tesMatch(
-                                {
-                                  kind: 'Assignment',
-                                  key: [
-                                    (tokens[27].data as IdentifierTokenData).identifier,
-                                  ],
-                                  value: tesMatchJessiePrimitive(tokens[29])
-                                },
-                                tokens[27],
-                                tokens[29]
-                              )
-                            ]
-                          },
-                          tokens[22],
-                          tokens[30]
-                        )
-                      },
-                      tokens[20],
-                      tokens[30]
-                    ),
-                    tesMatch(
-                      {
-                        kind: 'Assignment',
-                        key: [
-                          (tokens[32].data as IdentifierTokenData).identifier,
-                          (tokens[34].data as IdentifierTokenData).identifier,
-                        ],
-                        value: tesMatchJessiePrimitive(tokens[36]),
-                      },
-                      tokens[32],
-                      tokens[36]
-                    )
-                  ]
-                },
-                tokens[19],
-                tokens[37]
-              )
-            },
-            responseHandlers: [
-              tesMatch(
-                {
-                  kind: 'HttpResponseHandler',
-                  statusCode: (tokens[40].data as LiteralTokenData).literal,
-                  contentType: (tokens[41].data as StringTokenData).string,
-                  contentLanguage: (tokens[42].data as StringTokenData).string,
-                  statements: []
-                },
-                tokens[39],
-                tokens[44]
-              ),
-              tesMatch(
-                {
-                  kind: 'HttpResponseHandler',
-                  statements: [
-                    tesMatch(
-                      {
-                        kind: 'MapErrorStatement',
-                        value: tesMatchJessiePrimitive(tokens[49])
-                      },
-                      tokens[47],
-                      tokens[49]
-                    )
-                  ]
-                },
-                tokens[45],
-                tokens[50]
-              )
-            ],
+            kind: 'ProfileId',
+            profileId: (tokens[2].data as StringTokenData).string
           },
           tokens[0],
-          tokens[51]
+          tokens[2]
         )
-      );
+      )
+    });
+
+    it('should parse provider', () => {
+      const tokens = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'provider' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'http://example.com/provider' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = PROVIDER_ID;
+
+      expect(rule.tryMatch(stream)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'Provider',
+            providerId: (tokens[2].data as StringTokenData).string
+          },
+          tokens[0],
+          tokens[2]
+        )
+      )
+    });
+
+    it('should parse map', () => {
+      const tokens = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'http://example.com/profile' }),
+
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'provider' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'http://example.com/provider' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = MAP;
+
+      expect(rule.tryMatch(stream)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'Map',
+            profileId: tesMatch(
+              {
+                kind: 'ProfileId',
+                profileId: (tokens[2].data as StringTokenData).string
+              },
+              tokens[0],
+              tokens[2]
+            ),
+            provider: tesMatch(
+              {
+                kind: 'Provider',
+                providerId: (tokens[5].data as StringTokenData).string
+              },
+              tokens[3],
+              tokens[5]
+            )
+          },
+          tokens[0],
+          tokens[5]
+        )
+      )
+    });
+
+    it('should parse MapDocument', () => {
+      const tokens = [
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: 'SOF' }),
+
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'http://example.com/profile' }),
+
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'provider' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'http://example.com/provider' }),
+
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'map' }), // 7
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'Foo' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'operation' }), // 11
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'Foo' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: 'EOF' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = MAP_DOCUMENT;
+
+      expect(rule.tryMatch(stream)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'MapDocument',
+            map: tesMatch(
+              {
+                kind: 'Map',
+                profileId: tesMatch(
+                  {
+                    kind: 'ProfileId',
+                    profileId: (tokens[3].data as StringTokenData).string
+                  },
+                  tokens[1],
+                  tokens[3]
+                ),
+                provider: tesMatch(
+                  {
+                    kind: 'Provider',
+                    providerId: (tokens[6].data as StringTokenData).string
+                  },
+                  tokens[4],
+                  tokens[6]
+                )
+              },
+              tokens[1],
+              tokens[6]
+            ),
+            definitions: [
+              tesMatch(
+                {
+                  kind: 'MapDefinition',
+                  name: (tokens[8].data as IdentifierTokenData).identifier,
+                  usecaseName: (tokens[8].data as IdentifierTokenData).identifier, // TODO
+                  statements: []
+                },
+                tokens[7],
+                tokens[10]
+              ),
+              tesMatch(
+                {
+                  kind: 'OperationDefinition',
+                  name: (tokens[12].data as IdentifierTokenData).identifier,
+                  statements: []
+                },
+                tokens[11],
+                tokens[14]
+              )
+            ]
+          },
+          tokens[1],
+          tokens[14]
+          )
+      )
     });
   });
 });

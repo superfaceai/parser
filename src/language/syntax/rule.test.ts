@@ -2,17 +2,17 @@ import { LexerToken, LexerTokenData, LexerTokenKind } from '../lexer/token';
 import { LexerTokenMatch, MatchAttempts, SyntaxRule } from './rule';
 import { ArrayLexerStream } from './util';
 
-// Ensures that token spans are correctly ordered
-let TES_TOK_STATE = 0;
+// Ensures that token spans are correctly ordered in delcaration order
+let TES_TOK_STATE = 1;
 beforeEach(() => {
-  TES_TOK_STATE = 0;
+  TES_TOK_STATE = 1;
 });
 function tesTok(data: LexerTokenData): LexerToken {
-  const start = Math.floor(Math.random() * 1000) + TES_TOK_STATE * 10000;
-  const end = start + Math.floor(Math.random() * 100);
+  const start = Math.floor(Math.random() * 100) + TES_TOK_STATE * 10000;
+  const end = start;
 
-  const line = Math.floor(Math.random() * 500);
-  const column = Math.floor(Math.random() * 80);
+  const line = start;
+  const column = start;
 
   TES_TOK_STATE += 1;
 

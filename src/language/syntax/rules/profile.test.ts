@@ -60,8 +60,6 @@ expect.extend({
 });
 
 // Ensures that token spans are correctly ordered in delcaration order
-// while also making sure that their spans and locations are random enough so that
-// equality checks find when a wrong span or location is calculated.
 let TES_TOK_STATE = 1;
 beforeEach(() => {
   TES_TOK_STATE = 1;

@@ -788,6 +788,7 @@ export class SyntaxRuleDebugLog<R> extends SyntaxRule<R> {
         '\nFirst token:', nextToken
       )
     }
+    
     return result;
   }
 

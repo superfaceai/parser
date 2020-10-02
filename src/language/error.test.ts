@@ -125,6 +125,7 @@ class TestSyntaxRule<R extends RuleResult<T>, T = unknown> extends SyntaxRule<
   }
 }
 
+
 describe('langauge syntax errors', () => {
   describe('lexer', () => {
     it('before', () => {
@@ -221,7 +222,7 @@ df'
       expect(() =>
         parseRule(profile.ENUM_DEFINITION, tokens, true)
       ).toThrowSyntaxError(
-        'Expected `,` or `}` or string or identifier but found `!`',
+        'Expected `}` or identifier or string or `,` but found `!`',
         '[input]:4:1',
         "3 | df'",
         '4 | !',
@@ -312,8 +313,8 @@ df'
         expect(rule.tryMatch(tokens)).toStrictEqual({
           kind: 'nomatch',
           attempts: new MatchAttempts(undefined, [
-            ...match[0].result?.optionalAttempts?.rules,
             ...nomatch[0].result?.attempts.rules,
+            ...match[0].result?.optionalAttempts?.rules,
           ]),
         });
       });

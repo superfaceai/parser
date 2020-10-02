@@ -219,47 +219,12 @@ export const SET_STATEMENT: SyntaxRuleSrc<SetStatementNode> = SET_STATEMENT_FULL
   SET_STATEMENT_RAW
 );
 
-// /*
-// foo(...args) if (cond) {
-//   # body
-// }
-// */
-// export const OPERATION_CALL_DEFINITION = SyntaxRule.identifier().followedBy(
-//   SyntaxRule.separator('(')
-// ).andFollowedBy(
-//   ARGUMENT_LIST_ASSIGNMENT.followedBy(
-//     SyntaxRule.optional(
-//       SyntaxRule.repeat(
-//         SyntaxRule.operator(',').followedBy(ARGUMENT_LIST_ASSIGNMENT)
-//       )
-//     )
-//   ).andFollowedBy(
-//     SyntaxRule.optional(
-//       SyntaxRule.operator(',')
-//     )
-//   )
-// ).andFollowedBy(
-//   SyntaxRule.separator(')')
-// ).andFollowedBy(
-//   SyntaxRule.optional(STATEMENT_CONDITION)
-// ).andFollowedBy(
-//   SyntaxRule.separator('{')
-// ).andFollowedBy(
-//   // body
-// ).andFollowedBy(
-//   SyntaxRule.separator('}')
-// ).map(
-//   (matches): SrcNode<CallStatementNode> => {
-//     throw ''
-//   }
-// )
-
 // OPERATION DEFINITION //
 
 const OPERATION_DEFINITION_CONTEXTUAL_STATEMENT: SyntaxRuleSrc<OperationSubstatement> = RETURN_STATEMENT.or(
   FAIL_STATEMENT
 );
-const OPERATION_DEFINITION_STATEMENT: SyntaxRuleSrc<
+export const OPERATION_DEFINITION_STATEMENT: SyntaxRuleSrc<
   SetStatementNode | CallStatementNode<OperationSubstatement> | OperationSubstatement
 > = OPERATION_DEFINITION_CONTEXTUAL_STATEMENT.or(
   CALL_STATEMENT_FACTORY(OPERATION_DEFINITION_CONTEXTUAL_STATEMENT)
@@ -304,7 +269,7 @@ export const OPERATION_DEFINITION: SyntaxRuleSrc<OperationDefinitionNode> = docu
 const MAP_DEFINITION_CONTEXTUAL_STATEMENT: SyntaxRuleSrc<MapSubstatement> = MAP_RESULT_STATEMENT.or(
   MAP_ERROR_STATEMENT
 );
-const MAP_DEFINITION_STATEMENT: SyntaxRuleSrc<
+export const MAP_DEFINITION_STATEMENT: SyntaxRuleSrc<
   SetStatementNode | CallStatementNode<MapSubstatement> | MapSubstatement
 > = MAP_DEFINITION_CONTEXTUAL_STATEMENT.or(
   CALL_STATEMENT_FACTORY(MAP_DEFINITION_CONTEXTUAL_STATEMENT)
