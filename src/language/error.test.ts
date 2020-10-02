@@ -125,7 +125,6 @@ class TestSyntaxRule<R extends RuleResult<T>, T = unknown> extends SyntaxRule<
   }
 }
 
-
 describe('langauge syntax errors', () => {
   describe('lexer', () => {
     it('before', () => {

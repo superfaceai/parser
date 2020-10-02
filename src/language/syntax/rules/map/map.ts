@@ -49,7 +49,8 @@ export const STATEMENT_CONDITION: SyntaxRuleSrc<StatementConditionNode> = Syntax
         },
       };
     }
-  ).peekUnknown();
+  )
+  .peekUnknown();
 
 // CONTEXTUAL STATEMENTS
 
@@ -225,7 +226,9 @@ const OPERATION_DEFINITION_CONTEXTUAL_STATEMENT: SyntaxRuleSrc<OperationSubstate
   FAIL_STATEMENT
 );
 export const OPERATION_DEFINITION_STATEMENT: SyntaxRuleSrc<
-  SetStatementNode | CallStatementNode<OperationSubstatement> | OperationSubstatement
+  | SetStatementNode
+  | CallStatementNode<OperationSubstatement>
+  | OperationSubstatement
 > = OPERATION_DEFINITION_CONTEXTUAL_STATEMENT.or(
   CALL_STATEMENT_FACTORY(OPERATION_DEFINITION_CONTEXTUAL_STATEMENT)
 ).or(SET_STATEMENT);
@@ -248,7 +251,7 @@ export const OPERATION_DEFINITION: SyntaxRuleSrc<OperationDefinitionNode> = docu
     .andFollowedBy(SyntaxRule.separator('}'))
     .map(
       (matches): SrcNode<OperationDefinitionNode> => {
-        const [key, name, /* sepStart */, maybeStatements, sepEnd] = matches;
+        const [key, name /* sepStart */, , maybeStatements, sepEnd] = matches;
 
         return {
           kind: 'OperationDefinition',
@@ -257,9 +260,9 @@ export const OPERATION_DEFINITION: SyntaxRuleSrc<OperationDefinitionNode> = docu
           location: key.location,
           span: {
             start: key.span.start,
-            end: sepEnd.span.end
-          }
-        }
+            end: sepEnd.span.end,
+          },
+        };
       }
     )
 );
@@ -371,7 +374,9 @@ export const MAP_DOCUMENT: SyntaxRuleSrc<MapDocumentNode> = SyntaxRule.separator
   'SOF'
 )
   .followedBy(MAP)
-  .andFollowedBy(SyntaxRule.optional(SyntaxRule.repeat(MAP_DOCUMENT_DEFINITION)))
+  .andFollowedBy(
+    SyntaxRule.optional(SyntaxRule.repeat(MAP_DOCUMENT_DEFINITION))
+  )
   .andFollowedBy(SyntaxRule.separator('EOF'))
   .map(
     (matches): SrcNode<MapDocumentNode> => {

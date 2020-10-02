@@ -581,24 +581,32 @@ ng2"
         )
       );
 
-      expect(lexer.advance()).toHaveTokenData({ kind: LexerTokenKind.SEPARATOR, separator: 'SOF' });
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.SEPARATOR,
+        separator: 'SOF',
+      });
 
-      expect(lexer.advance(
-        {
-          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION
-        }
-      )).toHaveTokenData(
-        {
-          kind: LexerTokenKind.JESSIE_SCRIPT,
-          sourceMap: 'not checked',
-          sourceScript: 'not checked',
-          script: '"Template " + string + " with " + (more + (nested + " and " + complex)) + " expressions " + here',
-        }
-      )
+      expect(
+        lexer.advance({
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+        })
+      ).toHaveTokenData({
+        kind: LexerTokenKind.JESSIE_SCRIPT,
+        sourceMap: 'not checked',
+        sourceScript: 'not checked',
+        script:
+          '"Template " + string + " with " + (more + (nested + " and " + complex)) + " expressions " + here',
+      });
 
-      expect(lexer.advance()).toHaveTokenData({ kind: LexerTokenKind.OPERATOR, operator: ';' });
-      expect(lexer.advance()).toHaveTokenData({ kind: LexerTokenKind.SEPARATOR, separator: 'EOF' });
-    })
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.OPERATOR,
+        operator: ';',
+      });
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.SEPARATOR,
+        separator: 'EOF',
+      });
+    });
   });
 
   describe('invalid', () => {

@@ -505,7 +505,9 @@ export const PROFILE_DOCUMENT: SyntaxRuleSrc<ProfileDocumentNode> = SyntaxRule.s
   'SOF'
 )
   .followedBy(PROFILE)
-  .andFollowedBy(SyntaxRule.optional(SyntaxRule.repeat(PROFILE_DOCUMENT_DEFINITION)))
+  .andFollowedBy(
+    SyntaxRule.optional(SyntaxRule.repeat(PROFILE_DOCUMENT_DEFINITION))
+  )
   .andFollowedBy(SyntaxRule.separator('EOF'))
   .map(
     (matches): SrcNode<ProfileDocumentNode> => {

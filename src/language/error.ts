@@ -255,7 +255,7 @@ export class SyntaxError {
       sourceLocation,
     } = generateErrorVisualization(this.source, this.span, this.location);
 
-    let categoryInfo = ''
+    let categoryInfo = '';
     switch (this.category) {
       case SyntaxErrorCategory.JESSIE_SYNTAX:
       case SyntaxErrorCategory.JESSIE_FORBIDDEN_CONSTRUCT:

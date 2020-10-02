@@ -5,7 +5,7 @@ export {
   MAP_ERROR_STATEMENT,
   MAP_DOCUMENT,
   SET_STATEMENT,
-  MAP_DOCUMENT_DEFINITION
+  MAP_DOCUMENT_DEFINITION,
 } from './map';
 export { ARRAY_LITERAL, OBJECT_LITERAL } from './value';
 export {} from './call';

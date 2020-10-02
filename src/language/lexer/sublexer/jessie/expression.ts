@@ -79,7 +79,11 @@ export function tryParseJessieScriptExpression(
     }
 
     // Look ahead for a termination token
-    if (depthCounter === 0 && templateStringDepthCounter === 0 && termTokens.includes(token)) {
+    if (
+      depthCounter === 0 &&
+      templateStringDepthCounter === 0 &&
+      termTokens.includes(token)
+    ) {
       break;
     }
 

@@ -521,7 +521,8 @@ describe('v8', () => {
     });
 
     it('should parse jessie rhs in operation call arguments', () => {
-      const input = 'foo = "hi", bar = 1 + 2, baz = `format ${formatMe + `${nested}`} and ${formatThat} please`, quz = true)'
+      const input =
+        'foo = "hi", bar = 1 + 2, baz = `format ${formatMe + `${nested}`} and ${formatThat} please`, quz = true)';
 
       const source = new Source(input);
 
@@ -537,34 +538,35 @@ describe('v8', () => {
           key: ['foo'],
           value: {
             kind: 'PrimitiveLiteral',
-            value: 'hi'
-          }
+            value: 'hi',
+          },
         },
         {
           kind: 'Assignment',
           key: ['bar'],
           value: {
             kind: 'JessieExpression',
-            expression: '1 + 2'
-          }
+            expression: '1 + 2',
+          },
         },
         {
           kind: 'Assignment',
           key: ['baz'],
           value: {
             kind: 'JessieExpression',
-            expression: '"format " + (formatMe + ("" + nested)) + " and " + formatThat + " please"'
-          }
+            expression:
+              '"format " + (formatMe + ("" + nested)) + " and " + formatThat + " please"',
+          },
         },
         {
           kind: 'Assignment',
           key: ['quz'],
           value: {
             kind: 'PrimitiveLiteral',
-            value: true
-          }
-        }
-      ])
+            value: true,
+          },
+        },
+      ]);
     });
   });
 
@@ -808,7 +810,7 @@ describe('v8', () => {
         answer = "This is the count " + count
       }
     }
-    `
+    `;
 
     const source = new Source(input);
 
@@ -818,227 +820,220 @@ describe('v8', () => {
       true
     );
 
-    expect(definitions[0]).toMatchObject(
-      {
-        kind: 'OperationDefinition',
-        name: 'foo',
-        statements: [
-          {
-            kind: 'ReturnStatement',
-            value: {
-              kind: 'ObjectLiteral',
-              fields: [
-                {
-                  kind: 'Assignment',
-                  key: ['answer'],
-                  value: {
-                    kind: 'PrimitiveLiteral',
-                    value: 42
-                  }
-                },
-                {
-                  kind: 'Assignment',
-                  key: ['hash'],
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['a'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 1
-                        }
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['b'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2
-                        }
-                      },
-                    ]
-                  }
-                }
-              ]
-            }
-          }
-        ]
-      }
-    )
-
-    expect(definitions[1]).toMatchObject(
-      {
-        kind: 'OperationDefinition',
-        name: 'fooWithArgs',
-        statements: [
-          {
-            kind: 'ReturnStatement',
-            condition: {
-              kind: 'StatementCondition',
-              expression: {
-                kind: 'JessieExpression',
-                expression: 'args.success'
-              }
-            },
-            value: {
-              kind: 'ObjectLiteral',
-              fields: [
-                {
-                  kind: 'Assignment',
-                  key: ['answer'],
-                  value: {
-                    kind: 'PrimitiveLiteral',
-                    value: 42
-                  }
-                }
-              ]
-            }
-          },
-          {
-            kind: 'FailStatement',
-            condition: {
-              kind: 'StatementCondition',
-              expression: {
-                kind: 'JessieExpression',
-                expression: '!args.success'
-              }
-            },
-            value: {
-              kind: 'ObjectLiteral',
-              fields: [
-                {
-                  kind: 'Assignment',
-                  key: ['message'],
-                  value: {
-                    kind: 'PrimitiveLiteral',
-                    value: 'I am supposed to fail'
-                  }
-                }
-              ]
-            }
-          }
-        ]
-      }
-    )
-
-    expect(definitions[2]).toMatchObject(
-      {
-        kind: 'OperationDefinition',
-        name: 'bar',
-        statements: [
-          {
-            kind: 'CallStatement',
-            operationName: 'fooWithArgs',
-            arguments: [
+    expect(definitions[0]).toMatchObject({
+      kind: 'OperationDefinition',
+      name: 'foo',
+      statements: [
+        {
+          kind: 'ReturnStatement',
+          value: {
+            kind: 'ObjectLiteral',
+            fields: [
               {
                 kind: 'Assignment',
-                key: ['success'],
+                key: ['answer'],
                 value: {
-                  kind: 'JessieExpression',
-                  expression: '"Muj string " + someVar'
-                }
+                  kind: 'PrimitiveLiteral',
+                  value: 42,
+                },
               },
               {
                 kind: 'Assignment',
-                key: ['neco', 'foo'],
+                key: ['hash'],
                 value: {
-                  kind: 'JessieExpression',
-                  expression: '4 + 2'
-                }
-              }
+                  kind: 'ObjectLiteral',
+                  fields: [
+                    {
+                      kind: 'Assignment',
+                      key: ['a'],
+                      value: {
+                        kind: 'PrimitiveLiteral',
+                        value: 1,
+                      },
+                    },
+                    {
+                      kind: 'Assignment',
+                      key: ['b'],
+                      value: {
+                        kind: 'PrimitiveLiteral',
+                        value: 2,
+                      },
+                    },
+                  ],
+                },
+              },
             ],
-            statements: [
-              {
-                kind: 'ReturnStatement',
-                condition: {
-                  kind: 'StatementCondition',
-                  expression: {
-                    kind: 'JessieExpression',
-                    expression: '!error'
-                  }
-                },
-                value: {
-                  kind: 'ObjectLiteral',
-                  fields: [
-                    {
-                      kind: 'Assignment',
-                      key: ['finalAnswer'],
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: '"The final answer is " + data.answer'
-                      }
-                    }
-                  ]
-                }
-              },
-              {
-                kind: 'FailStatement',
-                condition: {
-                  kind: 'StatementCondition',
-                  expression: {
-                    kind: 'JessieExpression',
-                    expression: 'error'
-                  }
-                },
-                value: {
-                  kind: 'ObjectLiteral',
-                  fields: [
-                    {
-                      kind: 'Assignment',
-                      key: ['finalAnswer'],
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: '"There was an error " + error.message'
-                      }
-                    }
-                  ]
-                }
-              }
-            ]
-          }
-        ]
-      }
-    )
+          },
+        },
+      ],
+    });
 
-    expect(definitions[3]).toMatchObject(
-      {
-        kind: 'OperationDefinition',
-        name: 'countArray',
-        statements: [
-          {
-            kind: 'SetStatement',
-            assignments: [
+    expect(definitions[1]).toMatchObject({
+      kind: 'OperationDefinition',
+      name: 'fooWithArgs',
+      statements: [
+        {
+          kind: 'ReturnStatement',
+          condition: {
+            kind: 'StatementCondition',
+            expression: {
+              kind: 'JessieExpression',
+              expression: 'args.success',
+            },
+          },
+          value: {
+            kind: 'ObjectLiteral',
+            fields: [
               {
                 kind: 'Assignment',
-                key: ['count'],
+                key: ['answer'],
+                value: {
+                  kind: 'PrimitiveLiteral',
+                  value: 42,
+                },
+              },
+            ],
+          },
+        },
+        {
+          kind: 'FailStatement',
+          condition: {
+            kind: 'StatementCondition',
+            expression: {
+              kind: 'JessieExpression',
+              expression: '!args.success',
+            },
+          },
+          value: {
+            kind: 'ObjectLiteral',
+            fields: [
+              {
+                kind: 'Assignment',
+                key: ['message'],
+                value: {
+                  kind: 'PrimitiveLiteral',
+                  value: 'I am supposed to fail',
+                },
+              },
+            ],
+          },
+        },
+      ],
+    });
+
+    expect(definitions[2]).toMatchObject({
+      kind: 'OperationDefinition',
+      name: 'bar',
+      statements: [
+        {
+          kind: 'CallStatement',
+          operationName: 'fooWithArgs',
+          arguments: [
+            {
+              kind: 'Assignment',
+              key: ['success'],
+              value: {
+                kind: 'JessieExpression',
+                expression: '"Muj string " + someVar',
+              },
+            },
+            {
+              kind: 'Assignment',
+              key: ['neco', 'foo'],
+              value: {
+                kind: 'JessieExpression',
+                expression: '4 + 2',
+              },
+            },
+          ],
+          statements: [
+            {
+              kind: 'ReturnStatement',
+              condition: {
+                kind: 'StatementCondition',
+                expression: {
+                  kind: 'JessieExpression',
+                  expression: '!error',
+                },
+              },
+              value: {
+                kind: 'ObjectLiteral',
+                fields: [
+                  {
+                    kind: 'Assignment',
+                    key: ['finalAnswer'],
+                    value: {
+                      kind: 'JessieExpression',
+                      expression: '"The final answer is " + data.answer',
+                    },
+                  },
+                ],
+              },
+            },
+            {
+              kind: 'FailStatement',
+              condition: {
+                kind: 'StatementCondition',
+                expression: {
+                  kind: 'JessieExpression',
+                  expression: 'error',
+                },
+              },
+              value: {
+                kind: 'ObjectLiteral',
+                fields: [
+                  {
+                    kind: 'Assignment',
+                    key: ['finalAnswer'],
+                    value: {
+                      kind: 'JessieExpression',
+                      expression: '"There was an error " + error.message',
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(definitions[3]).toMatchObject({
+      kind: 'OperationDefinition',
+      name: 'countArray',
+      statements: [
+        {
+          kind: 'SetStatement',
+          assignments: [
+            {
+              kind: 'Assignment',
+              key: ['count'],
+              value: {
+                kind: 'JessieExpression',
+                expression:
+                  'args.array.reduce(function (acc, curr) { return acc + 1; }, 0)',
+              },
+            },
+          ],
+        },
+        {
+          kind: 'ReturnStatement',
+          value: {
+            kind: 'ObjectLiteral',
+            fields: [
+              {
+                kind: 'Assignment',
+                key: ['answer'],
                 value: {
                   kind: 'JessieExpression',
-                  expression: 'args.array.reduce(function (acc, curr) { return acc + 1; }, 0)'
-                }
-              }
-            ]
+                  expression: '"This is the count " + count',
+                },
+              },
+            ],
           },
-          {
-            kind: 'ReturnStatement',
-            value: {
-              kind: 'ObjectLiteral',
-              fields: [
-                {
-                  kind: 'Assignment',
-                  key: ['answer'],
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '"This is the count " + count'
-                  }
-                }
-              ]
-            }
-          }
-        ]
-      }
-    )
+        },
+      ],
+    });
   });
 
   it('should parse map.example.slang', () => {
@@ -1147,7 +1142,7 @@ describe('v8', () => {
       call Bar(text = "error") if (map.error) {}
     
       # after the map finishes executing, the map-global \`result\` and \`error\` variables are returned as per the usecase definition
-    }`
+    }`;
 
     const source = new Source(input);
     const map = parseRule(mapRules.MAP_DOCUMENT, source);
@@ -1181,16 +1176,16 @@ describe('v8', () => {
                     elements: [
                       {
                         kind: 'PrimitiveLiteral',
-                        value: 'hello'
+                        value: 'hello',
                       },
                       {
                         kind: 'PrimitiveLiteral',
-                        value: 'world'
-                      }
-                    ]
-                  }
-                }
-              ]
+                        value: 'world',
+                      },
+                    ],
+                  },
+                },
+              ],
             },
             {
               kind: 'SetStatement',
@@ -1200,10 +1195,10 @@ describe('v8', () => {
                   key: ['b', 'c'],
                   value: {
                     kind: 'JessieExpression',
-                    expression: '1 + 2'
-                  }
-                }
-              ]
+                    expression: '1 + 2',
+                  },
+                },
+              ],
             },
             {
               kind: 'SetStatement',
@@ -1219,21 +1214,21 @@ describe('v8', () => {
                         key: ['f'],
                         value: {
                           kind: 'PrimitiveLiteral',
-                          value: 3
-                        }
+                          value: 3,
+                        },
                       },
                       {
                         kind: 'Assignment',
                         key: ['g'],
                         value: {
                           kind: 'PrimitiveLiteral',
-                          value: 4
-                        }
-                      }
-                    ]
-                  }
-                }
-              ]
+                          value: 4,
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
             },
             {
               kind: 'SetStatement',
@@ -1241,8 +1236,8 @@ describe('v8', () => {
                 kind: 'StatementCondition',
                 expression: {
                   kind: 'JessieExpression',
-                  expression: 'condition'
-                }
+                  expression: 'condition',
+                },
               },
               assignments: [
                 {
@@ -1250,18 +1245,18 @@ describe('v8', () => {
                   key: ['h'],
                   value: {
                     kind: 'PrimitiveLiteral',
-                    value: true
-                  }
+                    value: true,
+                  },
                 },
                 {
                   kind: 'Assignment',
                   key: ['i'],
                   value: {
                     kind: 'PrimitiveLiteral',
-                    value: false
-                  }
-                }
-              ]
+                    value: false,
+                  },
+                },
+              ],
             },
             {
               kind: 'FailStatement',
@@ -1269,8 +1264,8 @@ describe('v8', () => {
                 kind: 'StatementCondition',
                 expression: {
                   kind: 'JessieExpression',
-                  expression: 'args.fail'
-                }
+                  expression: 'args.fail',
+                },
               },
               value: {
                 kind: 'ObjectLiteral',
@@ -1280,11 +1275,11 @@ describe('v8', () => {
                     key: ['code'],
                     value: {
                       kind: 'PrimitiveLiteral',
-                      value: 16
-                    }
-                  }
-                ]
-              }
+                      value: 16,
+                    },
+                  },
+                ],
+              },
             },
             {
               kind: 'ReturnStatement',
@@ -1292,13 +1287,13 @@ describe('v8', () => {
                 kind: 'StatementCondition',
                 expression: {
                   kind: 'JessieExpression',
-                  expression: 'b.c === 3'
-                }
+                  expression: 'b.c === 3',
+                },
               },
               value: {
                 kind: 'PrimitiveLiteral',
-                value: 'early return'
-              }
+                value: 'early return',
+              },
             },
             {
               kind: 'FailStatement',
@@ -1306,22 +1301,22 @@ describe('v8', () => {
                 kind: 'StatementCondition',
                 expression: {
                   kind: 'JessieExpression',
-                  expression: 'false'
-                }
+                  expression: 'false',
+                },
               },
               value: {
                 kind: 'PrimitiveLiteral',
-                value: 'error'
-              }
+                value: 'error',
+              },
             },
             {
               kind: 'ReturnStatement',
               value: {
                 kind: 'JessieExpression',
-                expression: '"Hello " + a'
-              }
-            }
-          ]
+                expression: '"Hello " + a',
+              },
+            },
+          ],
         },
         {
           kind: 'OperationDefinition',
@@ -1333,8 +1328,8 @@ describe('v8', () => {
                 kind: 'StatementCondition',
                 expression: {
                   kind: 'JessieExpression',
-                  expression: 'bar'
-                }
+                  expression: 'bar',
+                },
               },
               operationName: 'Foo',
               arguments: [
@@ -1343,9 +1338,9 @@ describe('v8', () => {
                   key: ['fail'],
                   value: {
                     kind: 'PrimitiveLiteral',
-                    value: false
-                  }
-                }
+                    value: false,
+                  },
+                },
               ],
               statements: [
                 {
@@ -1354,8 +1349,8 @@ describe('v8', () => {
                     kind: 'StatementCondition',
                     expression: {
                       kind: 'JessieExpression',
-                      expression: 'error'
-                    }
+                      expression: 'error',
+                    },
                   },
                   value: {
                     kind: 'ObjectLiteral',
@@ -1365,11 +1360,11 @@ describe('v8', () => {
                         key: ['errorCode'],
                         value: {
                           kind: 'JessieExpression',
-                          expression: 'error.code'
-                        }
-                      }
-                    ]
-                  }
+                          expression: 'error.code',
+                        },
+                      },
+                    ],
+                  },
                 },
                 {
                   kind: 'ReturnStatement',
@@ -1377,17 +1372,17 @@ describe('v8', () => {
                     kind: 'StatementCondition',
                     expression: {
                       kind: 'JessieExpression',
-                      expression: 'data === "Hello"'
-                    }
+                      expression: 'data === "Hello"',
+                    },
                   },
                   value: {
                     kind: 'JessieExpression',
-                    expression: 'data'
-                  }
-                }
-              ]
-            }
-          ]
+                    expression: 'data',
+                  },
+                },
+              ],
+            },
+          ],
         },
         {
           kind: 'MapDefinition',
@@ -1407,10 +1402,10 @@ describe('v8', () => {
                       key: ['q'],
                       value: {
                         kind: 'JessieExpression',
-                        expression: 'input.query'
-                      }
-                    }
-                  ]
+                        expression: 'input.query',
+                      },
+                    },
+                  ],
                 },
                 headers: {
                   kind: 'ObjectLiteral',
@@ -1420,10 +1415,10 @@ describe('v8', () => {
                       key: ['content-type'],
                       value: {
                         kind: 'PrimitiveLiteral',
-                        value: 'application/json'
-                      }
-                    }
-                  ]
+                        value: 'application/json',
+                      },
+                    },
+                  ],
                 },
                 body: {
                   kind: 'ObjectLiteral',
@@ -1439,30 +1434,30 @@ describe('v8', () => {
                             key: ['first'],
                             value: {
                               kind: 'PrimitiveLiteral',
-                              value: 'john'
-                            }
+                              value: 'john',
+                            },
                           },
                           {
                             kind: 'Assignment',
                             key: ['last'],
                             value: {
                               kind: 'PrimitiveLiteral',
-                              value: 'doe'
-                            }
-                          }
-                        ]
-                      }
+                              value: 'doe',
+                            },
+                          },
+                        ],
+                      },
                     },
                     {
                       kind: 'Assignment',
                       key: ['address', 'zip'],
                       value: {
                         kind: 'PrimitiveLiteral',
-                        value: 123
-                      }
-                    }
-                  ]
-                }
+                        value: 123,
+                      },
+                    },
+                  ],
+                },
               },
               responseHandlers: [
                 {
@@ -1481,35 +1476,35 @@ describe('v8', () => {
                             key: ['code'],
                             value: {
                               kind: 'PrimitiveLiteral',
-                              value: 200
-                            }
+                              value: 200,
+                            },
                           },
                           {
                             kind: 'Assignment',
                             key: ['type'],
                             value: {
                               kind: 'PrimitiveLiteral',
-                              value: 'json'
-                            }
+                              value: 'json',
+                            },
                           },
                           {
                             kind: 'Assignment',
                             key: ['lang'],
                             value: {
                               kind: 'PrimitiveLiteral',
-                              value: 'en'
-                            }
+                              value: 'en',
+                            },
                           },
                           // TODO
                           // {
                           //   kind: 'Assignment',
                           //   key: ['text'],
-                          //   value: 
+                          //   value:
                           // }
-                        ]
-                      }
-                    }
-                  ]
+                        ],
+                      },
+                    },
+                  ],
                 },
                 {
                   kind: 'HttpResponseHandler',
@@ -1525,13 +1520,13 @@ describe('v8', () => {
                             key: ['code'],
                             value: {
                               kind: 'PrimitiveLiteral',
-                              value: 200
-                            }
-                          }
-                        ]
-                      }
-                    }
-                  ]
+                              value: 200,
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
                 },
                 {
                   kind: 'HttpResponseHandler',
@@ -1546,15 +1541,15 @@ describe('v8', () => {
                             key: ['code'],
                             value: {
                               kind: 'JessieExpression',
-                              expression: 'response.code'
-                            }
-                          }
-                        ]
-                      }
-                    }
-                  ]
+                              expression: 'response.code',
+                            },
+                          },
+                        ],
+                      },
+                    },
+                  ],
                 },
-              ]
+              ],
             },
             {
               kind: 'CallStatement',
@@ -1562,8 +1557,8 @@ describe('v8', () => {
                 kind: 'StatementCondition',
                 expression: {
                   kind: 'JessieExpression',
-                  expression: 'map.error'
-                }
+                  expression: 'map.error',
+                },
               },
               operationName: 'Bar',
               arguments: [
@@ -1572,13 +1567,13 @@ describe('v8', () => {
                   key: ['text'],
                   value: {
                     kind: 'PrimitiveLiteral',
-                    value: 'error'
-                  }
-                }
-              ]
-            }
-          ]
-        }
+                    value: 'error',
+                  },
+                },
+              ],
+            },
+          ],
+        },
       ],
     });
   });

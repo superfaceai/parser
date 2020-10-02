@@ -15,32 +15,32 @@ import {
 } from './value';
 
 const CALL_STATEMENT_HEAD = SyntaxRule.identifier('call')
-.followedBy(SyntaxRule.identifier())
-.andFollowedBy(SyntaxRule.separator('('))
-.andFollowedBy(
-  SyntaxRule.optional(SyntaxRule.repeat(ARGUMENT_LIST_ASSIGNMENT))
-)
-.andFollowedBy(SyntaxRule.separator(')'))
+  .followedBy(SyntaxRule.identifier())
+  .andFollowedBy(SyntaxRule.separator('('))
+  .andFollowedBy(
+    SyntaxRule.optional(SyntaxRule.repeat(ARGUMENT_LIST_ASSIGNMENT))
+  )
+  .andFollowedBy(SyntaxRule.separator(')'));
 
-export const INLINE_CALL_STATEMENT: SyntaxRuleSrc<CallStatementNode<never>> = CALL_STATEMENT_HEAD.map(
+export const INLINE_CALL_STATEMENT: SyntaxRuleSrc<CallStatementNode<
+  never
+>> = CALL_STATEMENT_HEAD.map(
   (matches): SrcNode<CallStatementNode<never>> => {
-    const [
-      key, name, /* sepArgStart */, maybeArguments, sepArgEnd
-    ] = matches;
-    
+    const [key, name /* sepArgStart */, , maybeArguments, sepArgEnd] = matches;
+
     return {
       kind: 'CallStatement',
-      operationName:  name.data.identifier,
+      operationName: name.data.identifier,
       arguments: maybeArguments ?? [],
       statements: [],
       location: key.location,
       span: {
         start: key.span.start,
-        end: sepArgEnd.span.end
-      }
-    }
+        end: sepArgEnd.span.end,
+      },
+    };
   }
-)
+);
 
 /**
  * call name(<...arguments>) <?condition> { <...statements> }
@@ -48,8 +48,9 @@ export const INLINE_CALL_STATEMENT: SyntaxRuleSrc<CallStatementNode<never>> = CA
 export function CALL_STATEMENT_FACTORY<S extends SubstatementType>(
   substatementRule: SyntaxRuleSrc<S>
 ): SyntaxRuleSrc<CallStatementNode<S>> {
-  return CALL_STATEMENT_HEAD
-    .andFollowedBy(SyntaxRule.optional(STATEMENT_CONDITION))
+  return CALL_STATEMENT_HEAD.andFollowedBy(
+    SyntaxRule.optional(STATEMENT_CONDITION)
+  )
     .andFollowedBy(SyntaxRule.separator('{'))
     .andFollowedBy(SyntaxRule.optional(SyntaxRule.repeat(substatementRule)))
     .andFollowedBy(SyntaxRule.separator('}'))

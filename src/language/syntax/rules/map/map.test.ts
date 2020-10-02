@@ -12,7 +12,17 @@ import { Location, Source, Span } from '../../../source';
 import { RuleResult } from '../../rule';
 import { ArrayLexerStream } from '../../util';
 import * as rules from './index';
-import { MAP, MAP_DEFINITION_HTTP_CALL, MAP_DEFINITION_STATEMENT, MAP_DOCUMENT,OPERATION_DEFINITION_HTTP_CALL, OPERATION_DEFINITION_STATEMENT, PROFILE_ID, PROVIDER_ID, STATEMENT_CONDITION } from './map';
+import {
+  MAP,
+  MAP_DEFINITION_HTTP_CALL,
+  MAP_DEFINITION_STATEMENT,
+  MAP_DOCUMENT,
+  OPERATION_DEFINITION_HTTP_CALL,
+  OPERATION_DEFINITION_STATEMENT,
+  PROFILE_ID,
+  PROVIDER_ID,
+  STATEMENT_CONDITION,
+} from './map';
 import { ARGUMENT_LIST_ASSIGNMENT, SET_BLOCK_ASSIGNMENT } from './value';
 
 // Declare custom matcher for sake of Typescript
@@ -93,44 +103,40 @@ function tesMatch<I extends Record<string, unknown>>(
     },
   };
 }
-function tesMatchJessie(
-  token: LexerToken
-) {
+function tesMatchJessie(token: LexerToken) {
   const data = token.data as JessieScriptTokenData;
-  
-return tesMatch(
+
+  return tesMatch(
     {
       kind: 'JessieExpression',
       expression: data.script,
       source: data.sourceScript,
-      sourceMap: data.sourceMap
+      sourceMap: data.sourceMap,
     },
     token
-  )
+  );
 }
-function tesMatchJessiePrimitive(
-  token: LexerToken
-) {
+function tesMatchJessiePrimitive(token: LexerToken) {
   const script = (token.data as JessieScriptTokenData).script;
-  
-  let value
+
+  let value;
   if (script.startsWith('"') && script.endsWith('"')) {
-    value = script.slice(1, script.length - 1)
+    value = script.slice(1, script.length - 1);
   } else if (script === 'true') {
-    value = true
+    value = true;
   } else if (script === 'false') {
-    value = false
+    value = false;
   } else {
-    value = parseInt(script)
+    value = parseInt(script);
   }
 
   return tesMatch(
     {
       kind: 'PrimitiveLiteral',
-      value
+      value,
     },
     token
-  )
+  );
 }
 
 describe('map syntax rules', () => {
@@ -221,7 +227,7 @@ describe('map syntax rules', () => {
                 {
                   kind: 'Assignment',
                   key: [(tokens[1].data as StringTokenData).string],
-                  value: tesMatchJessie(tokens[3])
+                  value: tesMatchJessie(tokens[3]),
                 },
                 tokens[1],
                 tokens[3]
@@ -711,46 +717,71 @@ describe('map syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'request' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
 
-          tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'query' }), // 6
-          tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
-            tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'q' }), // 8
-            tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-            tesTok({ kind: LexerTokenKind.JESSIE_SCRIPT, script: 'input.query', sourceScript: 'input.query', sourceMap: '' }),
-          tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'query' }), // 6
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'q' }), // 8
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({
+          kind: LexerTokenKind.JESSIE_SCRIPT,
+          script: 'input.query',
+          sourceScript: 'input.query',
+          sourceMap: '',
+        }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
 
-          tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'headers' }), // 12
-          tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
-            tesTok({ kind: LexerTokenKind.STRING, string: 'content-type' }), // 14 
-            tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-            tesTok({ kind: LexerTokenKind.JESSIE_SCRIPT, script: '"application/json"', sourceScript: '"application/json"', sourceMap: '' }),
-          tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'headers' }), // 12
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'content-type' }), // 14
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({
+          kind: LexerTokenKind.JESSIE_SCRIPT,
+          script: '"application/json"',
+          sourceScript: '"application/json"',
+          sourceMap: '',
+        }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
 
-          tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'body' }), // 18
-          tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'body' }), // 18
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
 
-            tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'name' }), // 20
-            tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-              tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'name' }), // 20
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
 
-              tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'first' }), // 23
-              tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-              tesTok({ kind: LexerTokenKind.JESSIE_SCRIPT, script: '"john"', sourceScript: '"john"', sourceMap: '' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'first' }), // 23
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({
+          kind: LexerTokenKind.JESSIE_SCRIPT,
+          script: '"john"',
+          sourceScript: '"john"',
+          sourceMap: '',
+        }),
 
-              tesTok({ kind: LexerTokenKind.NEWLINE }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
 
-              tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'last' }), // 27
-              tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-              tesTok({ kind: LexerTokenKind.JESSIE_SCRIPT, script: '"doe"', sourceScript: '"doe"', sourceMap: '' }),
-              
-              tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
-              tesTok({ kind: LexerTokenKind.NEWLINE }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'last' }), // 27
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({
+          kind: LexerTokenKind.JESSIE_SCRIPT,
+          script: '"doe"',
+          sourceScript: '"doe"',
+          sourceMap: '',
+        }),
 
-            tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'address' }), // 32
-            tesTok({ kind: LexerTokenKind.OPERATOR, operator: '.' }),
-            tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'zip' }),
-            tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-            tesTok({ kind: LexerTokenKind.JESSIE_SCRIPT, script: '123', sourceScript: '123', sourceMap: '' }),
-          tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }), // end body
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
+
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'address' }), // 32
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '.' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'zip' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({
+          kind: LexerTokenKind.JESSIE_SCRIPT,
+          script: '123',
+          sourceScript: '123',
+          sourceMap: '',
+        }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }), // end body
 
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }), // end request
 
@@ -765,7 +796,12 @@ describe('map syntax rules', () => {
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'value' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-        tesTok({ kind: LexerTokenKind.JESSIE_SCRIPT, script: '7', sourceScript: '7', sourceMap: '' }),
+        tesTok({
+          kind: LexerTokenKind.JESSIE_SCRIPT,
+          script: '7',
+          sourceScript: '7',
+          sourceMap: '',
+        }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
 
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
@@ -786,15 +822,13 @@ describe('map syntax rules', () => {
                   tesMatch(
                     {
                       kind: 'Assignment',
-                      key: [
-                        (tokens[8].data as IdentifierTokenData).identifier
-                      ],
+                      key: [(tokens[8].data as IdentifierTokenData).identifier],
                       value: tesMatchJessie(tokens[10]),
                     },
                     tokens[8],
                     tokens[10]
-                  )
-                ]
+                  ),
+                ],
               },
               tokens[7],
               tokens[11]
@@ -806,15 +840,13 @@ describe('map syntax rules', () => {
                   tesMatch(
                     {
                       kind: 'Assignment',
-                      key: [
-                        (tokens[14].data as StringTokenData).string
-                      ],
+                      key: [(tokens[14].data as StringTokenData).string],
                       value: tesMatchJessiePrimitive(tokens[16]),
                     },
                     tokens[14],
                     tokens[16]
-                  )
-                ]
+                  ),
+                ],
               },
               tokens[13],
               tokens[17]
@@ -837,9 +869,10 @@ describe('map syntax rules', () => {
                               {
                                 kind: 'Assignment',
                                 key: [
-                                  (tokens[23].data as IdentifierTokenData).identifier,
+                                  (tokens[23].data as IdentifierTokenData)
+                                    .identifier,
                                 ],
-                                value: tesMatchJessiePrimitive(tokens[25])
+                                value: tesMatchJessiePrimitive(tokens[25]),
                               },
                               tokens[23],
                               tokens[25]
@@ -848,18 +881,19 @@ describe('map syntax rules', () => {
                               {
                                 kind: 'Assignment',
                                 key: [
-                                  (tokens[27].data as IdentifierTokenData).identifier,
+                                  (tokens[27].data as IdentifierTokenData)
+                                    .identifier,
                                 ],
-                                value: tesMatchJessiePrimitive(tokens[29])
+                                value: tesMatchJessiePrimitive(tokens[29]),
                               },
                               tokens[27],
                               tokens[29]
-                            )
-                          ]
+                            ),
+                          ],
                         },
                         tokens[22],
                         tokens[30]
-                      )
+                      ),
                     },
                     tokens[20],
                     tokens[30]
@@ -875,12 +909,12 @@ describe('map syntax rules', () => {
                     },
                     tokens[32],
                     tokens[36]
-                  )
-                ]
+                  ),
+                ],
               },
               tokens[19],
               tokens[37]
-            )
+            ),
           },
           responseHandlers: [
             tesMatch(
@@ -889,7 +923,7 @@ describe('map syntax rules', () => {
                 statusCode: (tokens[40].data as LiteralTokenData).literal,
                 contentType: (tokens[41].data as StringTokenData).string,
                 contentLanguage: (tokens[42].data as StringTokenData).string,
-                statements: []
+                statements: [],
               },
               tokens[39],
               tokens[44]
@@ -902,36 +936,35 @@ describe('map syntax rules', () => {
                     {
                       kind: 'SetStatement',
                       assignments: [
-                          tesMatch(
+                        tesMatch(
                           {
                             kind: 'Assignment',
                             key: [
-                              (tokens[47].data as IdentifierTokenData).identifier
+                              (tokens[47].data as IdentifierTokenData)
+                                .identifier,
                             ],
-                            value: tesMatchJessiePrimitive(tokens[49])
+                            value: tesMatchJessiePrimitive(tokens[49]),
                           },
                           tokens[47],
                           tokens[49]
-                        )
-                      ]
+                        ),
+                      ],
                     },
                     tokens[47],
                     tokens[49]
-                  )
-                ]
+                  ),
+                ],
               },
               tokens[45],
               tokens[50]
-            )
+            ),
           ],
         },
         tokens[0],
         tokens[51]
       );
 
-      expect(MAP_DEFINITION_HTTP_CALL.tryMatch(stream)).toBeAMatch(
-        expected
-      );
+      expect(MAP_DEFINITION_HTTP_CALL.tryMatch(stream)).toBeAMatch(expected);
       stream.rollback(streamStart);
       expect(OPERATION_DEFINITION_HTTP_CALL.tryMatch(stream)).toBeAMatch(
         expected
@@ -967,22 +1000,20 @@ describe('map syntax rules', () => {
           condition: tesMatch(
             {
               kind: 'StatementCondition',
-              expression: tesMatchJessie(tokens[6])
+              expression: tesMatchJessie(tokens[6]),
             },
             tokens[4],
             tokens[7]
           ),
           operationName: (tokens[1].data as IdentifierTokenData).identifier,
           arguments: [],
-          statements: []
+          statements: [],
         },
         tokens[0],
         tokens[9]
       );
 
-      expect(MAP_DEFINITION_STATEMENT.tryMatch(stream)).toBeAMatch(
-        expected
-      );
+      expect(MAP_DEFINITION_STATEMENT.tryMatch(stream)).toBeAMatch(expected);
       stream.rollback(streamStart);
       expect(OPERATION_DEFINITION_STATEMENT.tryMatch(stream)).toBeAMatch(
         expected
@@ -1000,7 +1031,10 @@ describe('map syntax rules', () => {
       const tokens = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-        tesTok({ kind: LexerTokenKind.STRING, string: 'http://example.com/profile' }),
+        tesTok({
+          kind: LexerTokenKind.STRING,
+          string: 'http://example.com/profile',
+        }),
       ];
       const stream = new ArrayLexerStream(tokens);
 
@@ -1010,19 +1044,22 @@ describe('map syntax rules', () => {
         tesMatch(
           {
             kind: 'ProfileId',
-            profileId: (tokens[2].data as StringTokenData).string
+            profileId: (tokens[2].data as StringTokenData).string,
           },
           tokens[0],
           tokens[2]
         )
-      )
+      );
     });
 
     it('should parse provider', () => {
       const tokens = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'provider' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-        tesTok({ kind: LexerTokenKind.STRING, string: 'http://example.com/provider' }),
+        tesTok({
+          kind: LexerTokenKind.STRING,
+          string: 'http://example.com/provider',
+        }),
       ];
       const stream = new ArrayLexerStream(tokens);
 
@@ -1032,23 +1069,29 @@ describe('map syntax rules', () => {
         tesMatch(
           {
             kind: 'Provider',
-            providerId: (tokens[2].data as StringTokenData).string
+            providerId: (tokens[2].data as StringTokenData).string,
           },
           tokens[0],
           tokens[2]
         )
-      )
+      );
     });
 
     it('should parse map', () => {
       const tokens = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-        tesTok({ kind: LexerTokenKind.STRING, string: 'http://example.com/profile' }),
+        tesTok({
+          kind: LexerTokenKind.STRING,
+          string: 'http://example.com/profile',
+        }),
 
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'provider' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-        tesTok({ kind: LexerTokenKind.STRING, string: 'http://example.com/provider' }),
+        tesTok({
+          kind: LexerTokenKind.STRING,
+          string: 'http://example.com/provider',
+        }),
       ];
       const stream = new ArrayLexerStream(tokens);
 
@@ -1061,7 +1104,7 @@ describe('map syntax rules', () => {
             profileId: tesMatch(
               {
                 kind: 'ProfileId',
-                profileId: (tokens[2].data as StringTokenData).string
+                profileId: (tokens[2].data as StringTokenData).string,
               },
               tokens[0],
               tokens[2]
@@ -1069,16 +1112,16 @@ describe('map syntax rules', () => {
             provider: tesMatch(
               {
                 kind: 'Provider',
-                providerId: (tokens[5].data as StringTokenData).string
+                providerId: (tokens[5].data as StringTokenData).string,
               },
               tokens[3],
               tokens[5]
-            )
+            ),
           },
           tokens[0],
           tokens[5]
         )
-      )
+      );
     });
 
     it('should parse MapDocument', () => {
@@ -1087,11 +1130,17 @@ describe('map syntax rules', () => {
 
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-        tesTok({ kind: LexerTokenKind.STRING, string: 'http://example.com/profile' }),
+        tesTok({
+          kind: LexerTokenKind.STRING,
+          string: 'http://example.com/profile',
+        }),
 
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'provider' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-        tesTok({ kind: LexerTokenKind.STRING, string: 'http://example.com/provider' }),
+        tesTok({
+          kind: LexerTokenKind.STRING,
+          string: 'http://example.com/provider',
+        }),
 
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'map' }), // 7
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'Foo' }),
@@ -1119,7 +1168,7 @@ describe('map syntax rules', () => {
                 profileId: tesMatch(
                   {
                     kind: 'ProfileId',
-                    profileId: (tokens[3].data as StringTokenData).string
+                    profileId: (tokens[3].data as StringTokenData).string,
                   },
                   tokens[1],
                   tokens[3]
@@ -1127,11 +1176,11 @@ describe('map syntax rules', () => {
                 provider: tesMatch(
                   {
                     kind: 'Provider',
-                    providerId: (tokens[6].data as StringTokenData).string
+                    providerId: (tokens[6].data as StringTokenData).string,
                   },
                   tokens[4],
                   tokens[6]
-                )
+                ),
               },
               tokens[1],
               tokens[6]
@@ -1141,8 +1190,9 @@ describe('map syntax rules', () => {
                 {
                   kind: 'MapDefinition',
                   name: (tokens[8].data as IdentifierTokenData).identifier,
-                  usecaseName: (tokens[8].data as IdentifierTokenData).identifier, // TODO
-                  statements: []
+                  usecaseName: (tokens[8].data as IdentifierTokenData)
+                    .identifier, // TODO
+                  statements: [],
                 },
                 tokens[7],
                 tokens[10]
@@ -1151,17 +1201,17 @@ describe('map syntax rules', () => {
                 {
                   kind: 'OperationDefinition',
                   name: (tokens[12].data as IdentifierTokenData).identifier,
-                  statements: []
+                  statements: [],
                 },
                 tokens[11],
                 tokens[14]
-              )
-            ]
+              ),
+            ],
           },
           tokens[1],
           tokens[14]
-          )
-      )
+        )
+      );
     });
   });
 });
