@@ -1,5 +1,5 @@
 import { Source } from './source';
-import { parseProfile, parseRule } from './syntax/parser';
+import { parseMap, parseProfile, parseRule } from './syntax/parser';
 import { SyntaxRule } from './syntax/rule';
 import * as mapRules from './syntax/rules/map';
 import { STATEMENT_CONDITION } from './syntax/rules/map/map';
@@ -1145,7 +1145,7 @@ describe('v8', () => {
     }`;
 
     const source = new Source(input);
-    const map = parseRule(mapRules.MAP_DOCUMENT, source);
+    const map = parseMap(source);
 
     expect(map).toMatchObject({
       kind: 'MapDocument',

@@ -1,9 +1,13 @@
-import { ProfileDocumentNode } from '@superindustries/language';
+import {
+  MapDocumentNode,
+  ProfileDocumentNode,
+} from '@superindustries/language';
 
 import { SyntaxError } from '../error';
 import { Lexer } from '../lexer/lexer';
 import { Source } from '../source';
 import { SyntaxRule } from './rule';
+import { MAP_DOCUMENT } from './rules/map';
 import { PROFILE_DOCUMENT } from './rules/profile';
 
 /**
@@ -33,4 +37,8 @@ export function parseRule<N>(
 
 export function parseProfile(source: Source): ProfileDocumentNode {
   return parseRule(PROFILE_DOCUMENT, source);
+}
+
+export function parseMap(source: Source): MapDocumentNode {
+  return parseRule(MAP_DOCUMENT, source);
 }
