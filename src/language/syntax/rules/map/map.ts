@@ -363,7 +363,7 @@ export const MAP: SyntaxRuleSrc<MapNode> = documentedNode(
   )
 );
 
-export const DOCUMENT_DEFINITION: SyntaxRuleSrc<
+export const MAP_DOCUMENT_DEFINITION: SyntaxRuleSrc<
   MapDefinitionNode | OperationDefinitionNode
 > = MAP_DEFINITION.or(OPERATION_DEFINITION);
 
@@ -371,7 +371,7 @@ export const MAP_DOCUMENT: SyntaxRuleSrc<MapDocumentNode> = SyntaxRule.separator
   'SOF'
 )
   .followedBy(MAP)
-  .andFollowedBy(SyntaxRule.optional(SyntaxRule.repeat(DOCUMENT_DEFINITION)))
+  .andFollowedBy(SyntaxRule.optional(SyntaxRule.repeat(MAP_DOCUMENT_DEFINITION)))
   .andFollowedBy(SyntaxRule.separator('EOF'))
   .map(
     (matches): SrcNode<MapDocumentNode> => {

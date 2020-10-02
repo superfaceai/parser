@@ -24,7 +24,7 @@ describe('v6', () => {
 
     const source = new Source(input);
     const definitions = parseRule(
-      SyntaxRule.repeat(profileRules.DOCUMENT_DEFINITION),
+      SyntaxRule.repeat(profileRules.PROFILE_DOCUMENT_DEFINITION),
       source,
       true
     );
@@ -813,7 +813,7 @@ describe('v8', () => {
     const source = new Source(input);
 
     const definitions = parseRule(
-      SyntaxRule.repeat(mapRules.DOCUMENT_DEFINITION),
+      SyntaxRule.repeat(mapRules.MAP_DOCUMENT_DEFINITION),
       source,
       true
     );

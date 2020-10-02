@@ -498,14 +498,14 @@ export const PROFILE: SyntaxRuleSrc<ProfileNode> = documentedNode(
   )
 );
 
-export const DOCUMENT_DEFINITION: SyntaxRuleSrc<DocumentDefinition> = USECASE_DEFINITION.or(
+export const PROFILE_DOCUMENT_DEFINITION: SyntaxRuleSrc<DocumentDefinition> = USECASE_DEFINITION.or(
   NAMED_FIELD_DEFINITION
 ).or(NAMED_MODEL_DEFINITION);
 export const PROFILE_DOCUMENT: SyntaxRuleSrc<ProfileDocumentNode> = SyntaxRule.separator(
   'SOF'
 )
   .followedBy(PROFILE)
-  .andFollowedBy(SyntaxRule.optional(SyntaxRule.repeat(DOCUMENT_DEFINITION)))
+  .andFollowedBy(SyntaxRule.optional(SyntaxRule.repeat(PROFILE_DOCUMENT_DEFINITION)))
   .andFollowedBy(SyntaxRule.separator('EOF'))
   .map(
     (matches): SrcNode<ProfileDocumentNode> => {
