@@ -3,9 +3,8 @@ import { ProfileDocumentNode } from '@superindustries/language';
 import { SyntaxError } from '../error';
 import { Lexer } from '../lexer/lexer';
 import { Source } from '../source';
+import { SyntaxRule } from './rule';
 import { PROFILE_DOCUMENT } from './rules/profile';
-import { SyntaxRule } from './rules/rule';
-import { BufferedIterator } from './util';
 
 /**
  * Attempts to match `rule` onto `source`.
@@ -19,12 +18,11 @@ export function parseRule<N>(
   skipSOF?: boolean
 ): N {
   const lexer = new Lexer(source);
-  const buf = new BufferedIterator(lexer[Symbol.iterator]());
   if (skipSOF === true) {
-    buf.next();
+    lexer.next();
   }
 
-  const result = rule.tryMatch(buf);
+  const result = rule.tryMatch(lexer);
 
   if (result.kind === 'nomatch') {
     throw SyntaxError.fromSyntaxRuleNoMatch(source, result);

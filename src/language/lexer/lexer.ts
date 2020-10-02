@@ -1,20 +1,16 @@
 import { SyntaxError, SyntaxErrorCategory } from '../error';
-import { Source } from '../source';
+import { Location, Source } from '../source';
+import { LexerContext, LexerContextType, Sublexer } from './context';
 import { tryParseDefault } from './sublexer/default';
 import { tryParseJessieScriptExpression } from './sublexer/jessie';
 import { ParseResult } from './sublexer/result';
-import {
-  DefaultSublexerTokenData,
-  JessieSublexerTokenData,
-  LexerToken,
-  LexerTokenData,
-  LexerTokenKind,
-} from './token';
+import { LexerToken, LexerTokenData, LexerTokenKind } from './token';
 import * as util from './util';
 
 export type LexerTokenKindFilter = { [K in LexerTokenKind]: boolean };
 export const DEFAULT_TOKEN_KIND_FILER: LexerTokenKindFilter = {
   [LexerTokenKind.COMMENT]: true,
+  [LexerTokenKind.NEWLINE]: true,
   [LexerTokenKind.IDENTIFIER]: false,
   [LexerTokenKind.LITERAL]: false,
   [LexerTokenKind.OPERATOR]: false,
@@ -23,26 +19,19 @@ export const DEFAULT_TOKEN_KIND_FILER: LexerTokenKindFilter = {
   [LexerTokenKind.JESSIE_SCRIPT]: false,
 };
 
-export const enum LexerContext {
-  /**
-   * Default lexer context for parsing the profile and map languages.
-   */
-  DEFAULT,
-  /**
-   * Lexer context for parsing Jessie script expressions.
-   */
-  JESSIE_SCRIPT_EXPRESSION,
+export type LexerSavedState = [LexerToken, boolean];
+export interface LexerTokenStream
+  extends Generator<LexerToken, undefined, LexerContext | undefined> {
+  peek(
+    ...context: [] | [LexerContext | undefined]
+  ): IteratorResult<LexerToken, undefined>;
+
+  /** Saves the stream state to be restored later. */
+  save(): LexerSavedState;
+
+  /** Roll back the state of the stream to the given saved state. */
+  rollback(token: LexerSavedState): void;
 }
-export type Sublexer<C extends LexerContext> = (
-  slice: string
-) => ParseResult<SublexerReturnType<C>>;
-export type SublexerReturnType<
-  C extends LexerContext
-> = C extends LexerContext.DEFAULT
-  ? DefaultSublexerTokenData
-  : C extends LexerContext.JESSIE_SCRIPT_EXPRESSION
-  ? JessieSublexerTokenData
-  : never;
 
 /**
  * Lexer tokenizes input string into tokens.
@@ -58,27 +47,27 @@ export type SublexerReturnType<
  * The advance function also accepts an optional `context` parameter which can be used to control the lexer context
  * for the next token.
  */
-export class Lexer {
+export class Lexer implements LexerTokenStream {
   private readonly sublexers: {
-    [C in LexerContext]: Sublexer<C>;
+    [C in LexerContextType]: Sublexer<C>;
   };
 
   /** Last emitted token. */
   private currentToken: LexerToken;
-  /** Next token after `currentToken`, stored when `lookahead` is called. */
-  private nextToken: LexerToken | undefined;
 
-  /** Indexed from 1 */
-  private currentLine: number;
-  /** Character offset in the `source.body` at which current line begins. */
-  private currentLineStart: number;
+  /** Stores whether the SOF and EOF were yielded. */
+  private fileSeparatorYielded = false;
 
-  private readonly tokenKindFilter: LexerTokenKindFilter;
+  /** Default token kind filter used if no filter is provided in the context. */
+  readonly tokenKindFilter: LexerTokenKindFilter;
 
-  constructor(readonly source: Source, tokenKindFilter?: LexerTokenKindFilter) {
+  constructor(
+    readonly source: Source,
+    defaultTokenKindFilter?: LexerTokenKindFilter
+  ) {
     this.sublexers = {
-      [LexerContext.DEFAULT]: tryParseDefault,
-      [LexerContext.JESSIE_SCRIPT_EXPRESSION]: tryParseJessieScriptExpression,
+      [LexerContextType.DEFAULT]: tryParseDefault,
+      [LexerContextType.JESSIE_SCRIPT_EXPRESSION]: tryParseJessieScriptExpression,
     };
 
     this.currentToken = new LexerToken(
@@ -89,18 +78,27 @@ export class Lexer {
       { start: 0, end: 0 },
       { line: 1, column: 1 }
     );
-    this.nextToken = this.currentToken;
 
-    this.currentLine = 1;
-    this.currentLineStart = 0;
-
-    this.tokenKindFilter = tokenKindFilter ?? DEFAULT_TOKEN_KIND_FILER;
+    this.tokenKindFilter = defaultTokenKindFilter ?? DEFAULT_TOKEN_KIND_FILER;
   }
 
   /** Advances the lexer returning the current token. */
   advance(context?: LexerContext): LexerToken {
+    // We use the `nextToken` field to detect first emission on EOF
+    if (this.currentToken.isEOF()) {
+      this.fileSeparatorYielded = true;
+
+      return this.currentToken;
+    }
+
+    if (this.currentToken.isSOF() && !this.fileSeparatorYielded) {
+      this.fileSeparatorYielded = true;
+
+      return this.currentToken;
+    }
+
     this.currentToken = this.lookahead(context);
-    this.nextToken = undefined;
+    this.fileSeparatorYielded = false;
 
     return this.currentToken;
   }
@@ -112,81 +110,159 @@ export class Lexer {
       return this.currentToken;
     }
 
-    // read next token if not read already
-    if (this.nextToken === undefined) {
-      this.nextToken = this.readNextToken(this.currentToken, context);
-    }
+    // read next token
+    let nextToken = this.readNextToken(this.currentToken, context);
+
     // skip tokens if they are caught by the filter
-    while (this.tokenKindFilter[this.nextToken.data.kind]) {
-      this.nextToken = this.readNextToken(this.nextToken, context);
+    const filter = context?.filter ?? this.tokenKindFilter;
+    while (filter[nextToken.data.kind]) {
+      // Always break on EOF even if separators are filtered to avoid an infinite loop.
+      if (nextToken.isEOF()) {
+        break;
+      }
+
+      nextToken = this.readNextToken(nextToken, context);
     }
 
-    return this.nextToken;
+    return nextToken;
   }
 
-  /**
-   * Returns a generator adaptor that produces generator-compatible values.
-   *
-   * The generator yields the result of `advance()` until `EOF` token is found, at which point it returns the `EOF` token.
-   */
+  next(context?: LexerContext): IteratorResult<LexerToken, undefined> {
+    const tok = this.advance(context);
+
+    // Ensure that EOF is yielded once
+    if (tok.isEOF() && this.fileSeparatorYielded) {
+      return {
+        done: true,
+        value: undefined,
+      };
+    }
+
+    return {
+      done: false,
+      value: tok,
+    };
+  }
+  return(value?: undefined): IteratorResult<LexerToken, undefined> {
+    return {
+      done: true,
+      value,
+    };
+  }
+  throw(e?: unknown): IteratorResult<LexerToken, undefined> {
+    throw e;
+  }
   [Symbol.iterator](): Generator<
     LexerToken,
     undefined,
     LexerContext | undefined
   > {
-    // This rule is intended to catch assigning `this` to a variable when an arrow function would suffice
-    // Generators cannot be defined using an arrow function and thus don't preserve `this`
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    const lexer = this;
-
-    function* generatorClosure(): Generator<
-      LexerToken,
-      undefined,
-      LexerContext | undefined
-    > {
-      let currentToken = lexer.advance(); // No way to specify context for the first invocation.
-
-      while (!currentToken.isEOF()) {
-        const context = yield currentToken;
-        currentToken = lexer.advance(context);
-      }
-
-      // Yield the EOF once
-      yield currentToken;
-
-      return undefined;
-    }
-
-    return generatorClosure();
+    return this;
   }
 
-  /** Reads the next token following the `afterToken`. */
+  peek(context?: LexerContext): IteratorResult<LexerToken, undefined> {
+    const tok = this.lookahead(context);
+
+    if (tok.isEOF() && this.currentToken.isEOF()) {
+      return {
+        done: true,
+        value: undefined,
+      };
+    }
+
+    return {
+      done: false,
+      value: tok,
+    };
+  }
+  /** Saves the lexer state to be restored later. */
+  save(): LexerSavedState {
+    return [this.currentToken, this.fileSeparatorYielded];
+  }
+  /**
+   * Roll back the state of the lexer to the given saved state.
+   *
+   * The lexer will continue from this state forward.
+   */
+  rollback(state: LexerSavedState): void {
+    this.currentToken = state[0];
+    this.fileSeparatorYielded = state[1];
+  }
+
+  private computeNextTokenPosition(
+    lastToken: LexerToken
+  ): {
+    start: number;
+    location: Location;
+  } {
+    // Count number of newlines inside the last token to correctly compute the position
+    const lastTokenBody = Array.from(
+      this.source.body.slice(lastToken.span.start, lastToken.span.end)
+    );
+    const [newlinesInToken, lastNewlineOffset] = lastTokenBody.reduce(
+      (acc: [newlines: number, offset: number | undefined], char, index) => {
+        if (char === '\n') {
+          acc[0] += 1;
+          acc[1] = index;
+        }
+
+        return acc;
+      },
+      [0, undefined]
+    );
+
+    // Count number of non-newline whitespace tokens after the last token.
+    const whitespaceAfterToken = util.countStarting(
+      ch => !util.isNewline(ch) && util.isWhitespace(ch),
+      this.source.body.slice(lastToken.span.end)
+    );
+
+    // Compute the start of the next token by ignoring whitespace after the last token.
+    const start = lastToken.span.end + whitespaceAfterToken;
+
+    // Line is just offset by the number of newlines counted.
+    const line = lastToken.location.line + newlinesInToken;
+
+    // When no newlines are encountered, column is simply an offset from the last token `column` by the length of the last token plus number of whitespaces skipped.
+    let column = lastToken.location.column + (start - lastToken.span.start);
+    if (lastNewlineOffset !== undefined) {
+      // When some newlines were encountered, the offset of the last newline from the slice start is stored in `lastNewlineOffset`
+      // `column` is then the distance between the position *after* the last newline and `start` plus 1 because it is 1-based
+      column = start - (lastToken.span.start + lastNewlineOffset + 1) + 1; // the ones cancel out but they are left here for clarity
+    }
+
+    return {
+      start,
+      location: {
+        line,
+        column,
+      },
+    };
+  }
+
+  /** Reads the next token following the `afterPosition`. */
   private readNextToken(
-    afterToken: LexerToken,
+    lastToken: LexerToken,
     context?: LexerContext
   ): LexerToken {
-    // Compute the start of the next token by ignoring whitespace after last token.
-    const start =
-      afterToken.span.end +
-      this.countStartingWithNewlines(util.isWhitespace, afterToken.span.end);
-    const location = {
-      line: this.currentLine,
-      column: start - this.currentLineStart + 1,
-    };
+    const { start, location } = this.computeNextTokenPosition(lastToken);
 
     const slice = this.source.body.slice(start);
 
     // Call one of the sublexers
     let tokenParseResult: ParseResult<LexerTokenData>;
-    switch (context ?? LexerContext.DEFAULT) {
-      case LexerContext.DEFAULT:
-        tokenParseResult = this.sublexers[LexerContext.DEFAULT](slice);
+    if (context === undefined) {
+      context = { type: LexerContextType.DEFAULT };
+    }
+    switch (context.type) {
+      case LexerContextType.DEFAULT:
+        tokenParseResult = this.sublexers[LexerContextType.DEFAULT](slice);
         break;
 
-      case LexerContext.JESSIE_SCRIPT_EXPRESSION:
+      case LexerContextType.JESSIE_SCRIPT_EXPRESSION:
         tokenParseResult = this.sublexers[
-          LexerContext.JESSIE_SCRIPT_EXPRESSION
-        ](slice);
+          LexerContextType.JESSIE_SCRIPT_EXPRESSION
+        ](slice, context.terminationTokens);
         break;
     }
 
@@ -218,37 +294,7 @@ export class Lexer {
       );
     }
 
-    // Go over the characters the token covers and count newlines, updating the state.
-    this.countStartingWithNewlines(
-      _ => true,
-      parsedTokenSpan.start,
-      parsedTokenSpan.end
-    );
-
     // All is well
     return new LexerToken(tokenParseResult.data, parsedTokenSpan, location);
-  }
-
-  /**
-   * Returns the count from `countStarting` and updates inner state
-   * with the newlines encountered.
-   */
-  private countStartingWithNewlines(
-    predicate: (_: number) => boolean,
-    start: number,
-    end?: number
-  ): number {
-    const res = util.countStartingWithNewlines(
-      predicate,
-      this.source.body.slice(start, end)
-    );
-
-    this.currentLine += res.newlines;
-    if (typeof res.lastNewlineOffset === 'number') {
-      // Plus one because the new line starts after the newline
-      this.currentLineStart = start + res.lastNewlineOffset + 1;
-    }
-
-    return res.count;
   }
 }

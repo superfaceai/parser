@@ -1,19 +1,23 @@
+import { LexerContext, LexerContextType, LexerTokenStream } from '../lexer';
+import { DEFAULT_TOKEN_KIND_FILER } from '../lexer/lexer';
+import { JessieExpressionTerminationToken } from '../lexer/sublexer/jessie/expression';
 import {
   formatTokenKind,
   IdentifierTokenData,
   IdentifierValue,
+  JessieScriptTokenData,
   LexerToken,
   LexerTokenData,
   LexerTokenKind,
   LiteralTokenData,
+  NewlineTokenData,
   OperatorTokenData,
   OperatorValue,
   SeparatorTokenData,
   SeparatorValue,
   StringTokenData,
-} from '../../lexer/token';
-import { Location, Span } from '../../source';
-import { BufferedIterator } from '../util';
+} from '../lexer/token';
+import { Location, Span } from '../source';
 
 export class MatchAttempts {
   constructor(
@@ -96,22 +100,21 @@ export abstract class SyntaxRule<T> {
    * If the rule doesn't match `RuleResultNoMatch` is returned and no tokens are
    * consumed (iterator state is restored).
    */
-  abstract tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<T>;
+  abstract tryMatch(tokens: LexerTokenStream): RuleResult<T>;
 
   protected simpleTryMatchBoilerplate(
-    tokens: BufferedIterator<LexerToken>,
-    predicate: (token: LexerToken) => T | undefined
+    tokens: LexerTokenStream,
+    predicate: (token: LexerToken) => T | undefined,
+    context?: LexerContext
   ): RuleResult<T> {
     const save = tokens.save();
 
-    const next = tokens.next();
+    const next = tokens.next(context);
     if (next.done === false) {
       const token = next.value;
 
       const match = predicate(token);
       if (match !== undefined) {
-        tokens.endSave();
-
         return {
           kind: 'match',
           match: match,
@@ -119,8 +122,7 @@ export abstract class SyntaxRule<T> {
       }
     }
 
-    tokens.restore(save);
-    tokens.endSave();
+    tokens.rollback(save);
 
     return {
       kind: 'nomatch',
@@ -156,6 +158,16 @@ export abstract class SyntaxRule<T> {
     return new SyntaxRuleString();
   }
 
+  static newline(): SyntaxRuleNewline {
+    return new SyntaxRuleNewline();
+  }
+
+  static jessie(
+    terminatingChars?: ReadonlyArray<JessieExpressionTerminationToken>
+  ): SyntaxRuleJessie {
+    return new SyntaxRuleJessie(terminatingChars);
+  }
+
   // Combinators
 
   or<R>(rule: SyntaxRule<R>): SyntaxRuleOr<T, R> {
@@ -163,7 +175,7 @@ export abstract class SyntaxRule<T> {
   }
 
   /**
-   * To cascade multiple `followedBy` rules, use `.andBy` method on the
+   * To cascade multiple `followedBy` rules, use `.andFollowedBy` method on the
    * `SyntaxRuleFollowedBy` object that is returned to flatten nested tuples.
    */
   followedBy<R>(rule: SyntaxRule<R>): SyntaxRuleFollowedBy<[T], R> {
@@ -171,11 +183,6 @@ export abstract class SyntaxRule<T> {
       this.map(m => [m]),
       rule
     );
-  }
-
-  // Cannot return `SyntaxRuleCondition` because that would confuse TS into thinking `SyntaxRule` is contravariant over `T`
-  condition(fn: (_: T) => boolean): SyntaxRule<T> {
-    return new SyntaxRuleCondition(this, fn);
   }
 
   // Cannot return `SyntaxRuleMap` because that would confuse TS into thinking `SyntaxRule` is contravariant over `T`
@@ -191,8 +198,11 @@ export abstract class SyntaxRule<T> {
     return new SyntaxRuleOptional(rule);
   }
 
-  static lookahead<R>(rule: SyntaxRule<R>): SyntaxRuleLookahead<R> {
-    return new SyntaxRuleLookahead(rule);
+  static lookahead<R>(
+    rule: SyntaxRule<R>,
+    invert?: boolean
+  ): SyntaxRuleLookahead<R> {
+    return new SyntaxRuleLookahead(rule, invert);
   }
 }
 
@@ -206,7 +216,7 @@ export class SyntaxRuleSeparator extends SyntaxRule<
   }
 
   tryMatch(
-    tokens: BufferedIterator<LexerToken>
+    tokens: LexerTokenStream
   ): RuleResult<LexerTokenMatch<SeparatorTokenData>> {
     return this.simpleTryMatchBoilerplate(tokens, token => {
       if (token.data.kind === LexerTokenKind.SEPARATOR) {
@@ -243,7 +253,7 @@ export class SyntaxRuleOperator extends SyntaxRule<
   }
 
   tryMatch(
-    tokens: BufferedIterator<LexerToken>
+    tokens: LexerTokenStream
   ): RuleResult<LexerTokenMatch<OperatorTokenData>> {
     return this.simpleTryMatchBoilerplate(tokens, token => {
       if (token.data.kind === LexerTokenKind.OPERATOR) {
@@ -280,7 +290,7 @@ export class SyntaxRuleIdentifier extends SyntaxRule<
   }
 
   tryMatch(
-    tokens: BufferedIterator<LexerToken>
+    tokens: LexerTokenStream
   ): RuleResult<LexerTokenMatch<IdentifierTokenData>> {
     return this.simpleTryMatchBoilerplate(tokens, token => {
       if (token.data.kind === LexerTokenKind.IDENTIFIER) {
@@ -313,7 +323,7 @@ export class SyntaxRuleLiteral extends SyntaxRule<
   LexerTokenMatch<LiteralTokenData>
 > {
   tryMatch(
-    tokens: BufferedIterator<LexerToken>
+    tokens: LexerTokenStream
   ): RuleResult<LexerTokenMatch<LiteralTokenData>> {
     return this.simpleTryMatchBoilerplate(tokens, token => {
       if (token.data.kind === LexerTokenKind.LITERAL) {
@@ -337,7 +347,7 @@ export class SyntaxRuleString extends SyntaxRule<
   LexerTokenMatch<StringTokenData>
 > {
   tryMatch(
-    tokens: BufferedIterator<LexerToken>
+    tokens: LexerTokenStream
   ): RuleResult<LexerTokenMatch<StringTokenData>> {
     return this.simpleTryMatchBoilerplate(tokens, token => {
       if (token.data.kind === LexerTokenKind.STRING) {
@@ -357,6 +367,79 @@ export class SyntaxRuleString extends SyntaxRule<
   }
 }
 
+// Specific nodes //
+
+export class SyntaxRuleNewline extends SyntaxRule<
+  LexerTokenMatch<NewlineTokenData>
+> {
+  tryMatch(
+    tokens: LexerTokenStream
+  ): RuleResult<LexerTokenMatch<NewlineTokenData>> {
+    return this.simpleTryMatchBoilerplate(
+      tokens,
+      token => {
+        if (token.data.kind === LexerTokenKind.NEWLINE) {
+          return {
+            data: token.data,
+            span: token.span,
+            location: token.location,
+          };
+        }
+
+        return undefined;
+      },
+      {
+        type: LexerContextType.DEFAULT,
+        filter: {
+          ...DEFAULT_TOKEN_KIND_FILER,
+          [LexerTokenKind.NEWLINE]: false,
+        },
+      }
+    );
+  }
+
+  [Symbol.toStringTag](): string {
+    return formatTokenKind(LexerTokenKind.NEWLINE);
+  }
+}
+
+export class SyntaxRuleJessie extends SyntaxRule<
+  LexerTokenMatch<JessieScriptTokenData>
+> {
+  constructor(
+    readonly terminationTokens?: ReadonlyArray<JessieExpressionTerminationToken>
+  ) {
+    super();
+  }
+
+  tryMatch(
+    tokens: LexerTokenStream
+  ): RuleResult<LexerTokenMatch<JessieScriptTokenData>> {
+    return this.simpleTryMatchBoilerplate(
+      tokens,
+      token => {
+        if (token.data.kind === LexerTokenKind.JESSIE_SCRIPT) {
+          return {
+            data: token.data,
+            span: token.span,
+            location: token.location,
+          };
+        }
+
+        return undefined;
+      },
+      {
+        type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+        terminationTokens: this.terminationTokens,
+      }
+    );
+  }
+
+  [Symbol.toStringTag](): string {
+    return formatTokenKind(LexerTokenKind.JESSIE_SCRIPT);
+  }
+}
+
 // Combinators //
 
 export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
@@ -364,7 +447,7 @@ export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
     super();
   }
 
-  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<F | S> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<F | S> {
     // Basic rules automatically restore `tokens` state on `nomatch`
     const firstMatch = this.first.tryMatch(tokens);
     if (firstMatch.kind === 'match') {
@@ -394,7 +477,7 @@ export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
 
 /** Matches `first` followed by `second.
  *
- * Use `.andBy` to chain additional `followedBy` rules to flatten the `match` tuple.
+ * Use `.andFollowedBy` to chain additional `followedBy` rules to flatten the `match` tuple.
  */
 export class SyntaxRuleFollowedBy<
   F extends readonly unknown[],
@@ -404,25 +487,23 @@ export class SyntaxRuleFollowedBy<
     super();
   }
 
-  andBy<R>(rule: SyntaxRule<R>): SyntaxRuleFollowedBy<[...F, S], R> {
+  andFollowedBy<R>(rule: SyntaxRule<R>): SyntaxRuleFollowedBy<[...F, S], R> {
     return new SyntaxRuleFollowedBy(this, rule);
   }
 
-  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<[...F, S]> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<[...F, S]> {
     const save = tokens.save();
 
     const firstMatch = this.first.tryMatch(tokens);
     if (firstMatch.kind === 'nomatch') {
-      tokens.restore(save);
-      tokens.endSave();
+      tokens.rollback(save);
 
       return firstMatch;
     }
 
     const secondMatch = this.second.tryMatch(tokens);
     if (secondMatch.kind === 'nomatch') {
-      tokens.restore(save);
-      tokens.endSave();
+      tokens.rollback(save);
 
       return {
         ...secondMatch,
@@ -432,8 +513,6 @@ export class SyntaxRuleFollowedBy<
         ),
       };
     }
-
-    tokens.endSave();
 
     return {
       kind: 'match',
@@ -456,7 +535,7 @@ export class SyntaxRuleRepeat<R> extends SyntaxRule<R[]> {
     super();
   }
 
-  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R[]> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<R[]> {
     const matches: R[] = [];
 
     let lastMatch: RuleResultMatch<R> | undefined;
@@ -498,9 +577,7 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
     super();
   }
 
-  tryMatch(
-    tokens: BufferedIterator<LexerToken>
-  ): RuleResultMatch<R | undefined> {
+  tryMatch(tokens: LexerTokenStream): RuleResultMatch<R | undefined> {
     const match = this.rule.tryMatch(tokens);
     if (match.kind === 'match') {
       return match;
@@ -520,14 +597,36 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
 
 /** Matches rule and then restores `tokens` state. */
 export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
-  constructor(readonly rule: SyntaxRule<R>) {
+  /**
+   * Invert the lookahead, matching if the inner rule fails.
+   */
+  readonly invert: boolean;
+
+  constructor(readonly rule: SyntaxRule<R>, invert?: boolean) {
     super();
+
+    this.invert = invert ?? false;
   }
 
-  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<undefined> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<undefined> {
     const save = tokens.save();
     const result = this.rule.tryMatch(tokens);
-    tokens.restore(save);
+    tokens.rollback(save);
+
+    // Handle inversion
+    if (this.invert) {
+      if (result.kind === 'nomatch') {
+        return {
+          kind: 'match',
+          match: undefined,
+        };
+      } else {
+        return {
+          kind: 'nomatch',
+          attempts: new MatchAttempts(tokens.peek().value, [this]),
+        };
+      }
+    }
 
     if (result.kind === 'match') {
       return {
@@ -540,7 +639,7 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
   }
 
   [Symbol.toStringTag](): string {
-    return this.rule.toString();
+    return (this.invert ? 'not ' : '') + this.rule.toString();
   }
 }
 
@@ -555,14 +654,14 @@ export class SyntaxRuleCondition<R> extends SyntaxRule<R> {
     super();
   }
 
-  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<R> {
     const save = tokens.save();
 
     const result = this.rule.tryMatch(tokens);
     if (result.kind === 'match') {
       // If the new result is a failure, roll back the tokens state.
       if (!this.fn(result.match)) {
-        tokens.restore(save);
+        tokens.rollback(save);
 
         return {
           kind: 'nomatch',
@@ -588,7 +687,7 @@ export class SyntaxRuleMap<R, M> extends SyntaxRule<M> {
     super();
   }
 
-  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<M> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<M> {
     const match = this.rule.tryMatch(tokens);
     if (match.kind === 'match') {
       return {
@@ -624,7 +723,7 @@ export class SyntaxRuleMutable<R> extends SyntaxRule<R> {
     super();
   }
 
-  tryMatch(tokens: BufferedIterator<LexerToken>): RuleResult<R> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<R> {
     if (this.rule === undefined) {
       throw 'This method should never be called. This is an error in syntax rules definition.';
     }

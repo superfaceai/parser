@@ -8,13 +8,41 @@ import { ParseResult } from '../result';
 // Static SCANNER to avoid reinitializing it, same thing is done inside TS library
 const SCANNER = ts.createScanner(
   ts.ScriptTarget.Latest,
-  true,
+  false,
   ts.LanguageVariant.Standard
 );
 
+export type JessieExpressionTerminationToken =
+  | ';'
+  | ')'
+  | '}'
+  | ']'
+  | ','
+  | '\n';
+const TERMINATION_TOKEN_TO_TS_TOKEN: {
+  [T in JessieExpressionTerminationToken]: ts.SyntaxKind;
+} = {
+  ';': ts.SyntaxKind.SemicolonToken,
+  ')': ts.SyntaxKind.CloseParenToken,
+  '}': ts.SyntaxKind.CloseBraceToken,
+  ']': ts.SyntaxKind.CloseBracketToken,
+  ',': ts.SyntaxKind.ColonToken,
+  '\n': ts.SyntaxKind.NewLineTrivia,
+};
+const FALLBACK_TERMINATOR_TOKENS: ReadonlyArray<JessieExpressionTerminationToken> = [
+  ';',
+];
+
 export function tryParseJessieScriptExpression(
-  slice: string
+  slice: string,
+  terminationTokens?: ReadonlyArray<JessieExpressionTerminationToken>
 ): ParseResult<JessieSublexerTokenData> {
+  const termTokens = (terminationTokens === undefined ||
+  terminationTokens.length === 0
+    ? FALLBACK_TERMINATOR_TOKENS
+    : terminationTokens
+  ).map(tok => TERMINATION_TOKEN_TO_TS_TOKEN[tok]);
+
   // Set the scanner text thus reusing the old scanner instance
   SCANNER.setText(slice);
 
@@ -26,13 +54,8 @@ export function tryParseJessieScriptExpression(
     // Termination checks
     const token = SCANNER.scan();
 
-    // Look ahead for a semicolon, } or (
-    if (
-      depthCounter === 0 &&
-      (token === ts.SyntaxKind.SemicolonToken ||
-        token === ts.SyntaxKind.CloseBraceToken ||
-        token === ts.SyntaxKind.CloseParenToken)
-    ) {
+    // Look ahead for a termination token
+    if (depthCounter === 0 && termTokens.includes(token)) {
       break;
     }
 
@@ -89,6 +112,7 @@ export function tryParseJessieScriptExpression(
           SCRIPT_WRAP.transpiled.start.length,
           transRes.output.length - SCRIPT_WRAP.transpiled.end.length
         ),
+        sourceScript: scriptText,
         sourceMap: transRes.sourceMap,
       },
       relativeSpan: { start: 0, end: scriptText.length },

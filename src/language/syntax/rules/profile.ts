@@ -1,6 +1,5 @@
 import {
   DocumentDefinition,
-  DocumentedNode,
   EnumDefinitionNode,
   EnumValueNode,
   FieldDefinitionNode,
@@ -10,7 +9,6 @@ import {
   NamedModelDefinitionNode,
   ObjectDefinitionNode,
   PrimitiveTypeNameNode,
-  ProfileASTNodeBase,
   ProfileDocumentNode,
   ProfileIdNode,
   ProfileNode,
@@ -21,44 +19,13 @@ import {
 } from '@superindustries/language';
 
 import { IdentifierTokenData, LexerTokenKind } from '../../lexer/token';
-import { extractDocumentation } from '../util';
 import {
   LexerTokenMatch,
   SyntaxRule,
   SyntaxRuleMutable,
   SyntaxRuleSeparator,
-} from './rule';
-
-// HELPER RULES //
-
-// Node that has `span` and `location` non-optional.
-export type SrcNode<N extends ProfileASTNodeBase> = N & {
-  span: NonNullable<N['span']>;
-  location: NonNullable<N['location']>;
-};
-type SyntaxRuleSrc<N extends ProfileASTNodeBase> = SyntaxRule<SrcNode<N>>;
-
-function documentedNode<
-  N extends SrcNode<DocumentedNode & ProfileASTNodeBase>,
-  R extends SyntaxRule<N>
->(rule: R): SyntaxRule<N> {
-  return SyntaxRule.optional(SyntaxRule.string())
-    .followedBy(rule)
-    .map(
-      (matches): N => {
-        const [maybeDoc, result] = matches;
-        if (maybeDoc !== undefined) {
-          const doc = extractDocumentation(maybeDoc.data.string);
-          result.title = doc.title;
-          result.description = doc.description;
-          result.location = maybeDoc.location;
-          result.span.start = maybeDoc.span.start;
-        }
-
-        return result;
-      }
-    );
-}
+} from '../rule';
+import { documentedNode, SrcNode, SyntaxRuleSrc } from './common';
 
 // MUTABLE RULES //
 
@@ -113,9 +80,14 @@ export const ENUM_VALUE: SyntaxRuleSrc<EnumValueNode> = documentedNode(
         )
       )
     )
+    .andFollowedBy(
+      SyntaxRule.operator(',')
+        .or(SyntaxRule.lookahead(SyntaxRule.separator('}')))
+        .or(SyntaxRule.lookahead(SyntaxRule.newline()))
+    )
     .map(
       (matches): SrcNode<EnumValueNode> => {
-        const [name, maybeAssignment] = matches;
+        const [name, maybeAssignment /* maybeComma */] = matches;
 
         let enumValue: string | number | boolean;
         if (maybeAssignment === undefined) {
@@ -143,7 +115,7 @@ export const ENUM_VALUE: SyntaxRuleSrc<EnumValueNode> = documentedNode(
           location: name.location,
           span: {
             start: name.span.start,
-            end: maybeAssignment?.[1].span.end ?? name.span.end,
+            end: (maybeAssignment?.[1] ?? name).span.end,
           },
         };
       }
@@ -154,8 +126,8 @@ export const ENUM_DEFINITION: SyntaxRuleSrc<EnumDefinitionNode> = SyntaxRule.ide
   'enum'
 )
   .followedBy(SyntaxRule.separator('{'))
-  .andBy(SyntaxRule.repeat(ENUM_VALUE))
-  .andBy(SyntaxRule.separator('}'))
+  .andFollowedBy(SyntaxRule.repeat(ENUM_VALUE))
+  .andFollowedBy(SyntaxRule.separator('}'))
   .map(
     (matches): SrcNode<EnumDefinitionNode> => {
       const [keyword /* sepStart */, , values, sepEnd] = matches;
@@ -186,7 +158,7 @@ export const OBJECT_DEFINITION: SyntaxRuleSrc<ObjectDefinitionNode> = SyntaxRule
   '{'
 )
   .followedBy(SyntaxRule.optional(SyntaxRule.repeat(FIELD_DEFINITION_MUT)))
-  .andBy(SyntaxRule.separator('}'))
+  .andFollowedBy(SyntaxRule.separator('}'))
   .map(
     (matches): SrcNode<ObjectDefinitionNode> => {
       const [sepStart, fields, sepEnd] = matches;
@@ -217,7 +189,7 @@ export const LIST_DEFINITION: SyntaxRuleSrc<ListDefinitionNode> = SyntaxRule.sep
   '['
 )
   .followedBy(TYPE_MUT)
-  .andBy(SyntaxRule.separator(']'))
+  .andFollowedBy(SyntaxRule.separator(']'))
   .map(
     (matches): SrcNode<ListDefinitionNode> => {
       const [sepStart, type, sepEnd] = matches;
@@ -283,52 +255,51 @@ TYPE_MUT.rule = TYPE;
 
 // FIELDS //
 
-const FIELD_DEFINITION_BEGIN = SyntaxRule.identifier().followedBy(
-  SyntaxRule.optional(SyntaxRule.operator('!'))
-);
-const FIELD_DEFINITION_END = SyntaxRule.optional(SyntaxRule.operator(','));
-const FIELD_DEFINITION_WITH_TYPE = FIELD_DEFINITION_BEGIN.andBy(
-  SyntaxRule.optional(TYPE)
-)
-  .andBy(FIELD_DEFINITION_END)
-  .condition((matches): boolean => {
-    const [name /* maybeRequired */, , maybeType /* maybeComma */] = matches;
-
-    return (
-      maybeType === undefined || maybeType.location.line === name.location.line
-    );
-  });
-const FIELD_DEFINITION_WITHOUT_TYPE = FIELD_DEFINITION_BEGIN.andBy(
-  FIELD_DEFINITION_END
-).map(matches => [matches[0], matches[1], undefined, matches[2]] as const);
-
-/** Construct of form: `ident type`, `ident { fields... }` or `ident` */
 export const FIELD_DEFINITION: SyntaxRuleSrc<FieldDefinitionNode> = documentedNode(
-  FIELD_DEFINITION_WITH_TYPE.or(FIELD_DEFINITION_WITHOUT_TYPE).map(
-    (matches): SrcNode<FieldDefinitionNode> => {
-      const [name, maybeRequired, maybeType, maybeComma] = matches;
+  SyntaxRule.identifier()
+    .followedBy(SyntaxRule.optional(SyntaxRule.operator('!')))
+    .andFollowedBy(
+      SyntaxRule.optional(
+        SyntaxRule.lookahead(SyntaxRule.newline(), true).followedBy(TYPE)
+      )
+    )
+    .andFollowedBy(
+      SyntaxRule.operator(',')
+        .or(SyntaxRule.lookahead(SyntaxRule.separator('}')))
+        .or(SyntaxRule.lookahead(SyntaxRule.newline()))
+    )
+    .map(
+      (matches): SrcNode<FieldDefinitionNode> => {
+        const [
+          name,
+          maybeRequired,
+          maybeTypeWithLookahead /* maybeComma */,
+        ] = matches;
 
-      return {
-        kind: 'FieldDefinition',
-        fieldName: name.data.identifier,
-        required: maybeRequired !== undefined ? true : false,
-        type: maybeType,
-        location: name.location,
-        span: {
-          start: name.span.start,
-          end: (maybeComma ?? maybeType ?? maybeRequired ?? name).span.end,
-        },
-      };
-    }
-  )
+        const maybeType = maybeTypeWithLookahead?.[1];
+
+        return {
+          kind: 'FieldDefinition',
+          fieldName: name.data.identifier,
+          required: maybeRequired !== undefined,
+          type: maybeType,
+          location: name.location,
+          span: {
+            start: name.span.start,
+            end: (maybeType ?? maybeRequired ?? name).span.end,
+          },
+        };
+      }
+    )
 );
+
 FIELD_DEFINITION_MUT.rule = FIELD_DEFINITION;
 
 /** * Construct of form: `field ident type` or `field ident { fields... }` */
 export const NAMED_FIELD_DEFINITION: SyntaxRuleSrc<NamedFieldDefinitionNode> = documentedNode(
   SyntaxRule.identifier('field')
     .followedBy(SyntaxRule.identifier())
-    .andBy(SyntaxRule.optional(TYPE))
+    .andFollowedBy(SyntaxRule.optional(TYPE))
     .map(
       (matches): SrcNode<NamedFieldDefinitionNode> => {
         const [keyword, fieldName, type] = matches;
@@ -353,7 +324,7 @@ export const NAMED_FIELD_DEFINITION: SyntaxRuleSrc<NamedFieldDefinitionNode> = d
 export const NAMED_MODEL_DEFINITION: SyntaxRuleSrc<NamedModelDefinitionNode> = documentedNode(
   SyntaxRule.identifier('model')
     .followedBy(SyntaxRule.identifier())
-    .andBy(SyntaxRule.optional(TYPE))
+    .andFollowedBy(SyntaxRule.optional(TYPE))
     .map(
       (matches): SrcNode<NamedModelDefinitionNode> => {
         const [keyword, modelName, type] = matches;
@@ -423,23 +394,27 @@ usecase ident safety {
 export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = documentedNode(
   SyntaxRule.identifier('usecase')
     .followedBy(SyntaxRule.identifier(undefined))
-    .andBy(SyntaxRule.optional(USECASE_SAFETY))
-    .andBy(SyntaxRule.separator('{'))
-    .andBy(
+    .andFollowedBy(SyntaxRule.optional(USECASE_SAFETY))
+    .andFollowedBy(SyntaxRule.separator('{'))
+    .andFollowedBy(
       SyntaxRule.optional(
         USECASE_SLOT_DEFINITION_FACTORY('input', OBJECT_DEFINITION)
       )
     )
-    .andBy(SyntaxRule.optional(USECASE_SLOT_DEFINITION_FACTORY('result', TYPE)))
-    .andBy(
+    .andFollowedBy(
+      SyntaxRule.optional(USECASE_SLOT_DEFINITION_FACTORY('result', TYPE))
+    )
+    .andFollowedBy(
       SyntaxRule.optional(
         SyntaxRule.identifier('async').followedBy(
           USECASE_SLOT_DEFINITION_FACTORY('result', TYPE)
         )
       )
     )
-    .andBy(SyntaxRule.optional(USECASE_SLOT_DEFINITION_FACTORY('error', TYPE)))
-    .andBy(SyntaxRule.separator('}'))
+    .andFollowedBy(
+      SyntaxRule.optional(USECASE_SLOT_DEFINITION_FACTORY('error', TYPE))
+    )
+    .andFollowedBy(SyntaxRule.separator('}'))
     .map(
       (matches): SrcNode<UseCaseDefinitionNode> => {
         const [
@@ -497,7 +472,7 @@ export const PROFILE_ID: SyntaxRuleSrc<ProfileIdNode> = SyntaxRule.identifier(
   'profile'
 )
   .followedBy(SyntaxRuleSeparator.operator('='))
-  .andBy(SyntaxRule.string())
+  .andFollowedBy(SyntaxRule.string())
   .map(
     (matches): SrcNode<ProfileIdNode> => {
       const [keyword /* op */, , profileId] = matches;
@@ -534,8 +509,8 @@ export const PROFILE_DOCUMENT: SyntaxRuleSrc<ProfileDocumentNode> = SyntaxRule.s
   'SOF'
 )
   .followedBy(PROFILE)
-  .andBy(SyntaxRule.optional(SyntaxRule.repeat(DOCUMENT_DEFINITION)))
-  .andBy(SyntaxRule.separator('EOF'))
+  .andFollowedBy(SyntaxRule.optional(SyntaxRule.repeat(DOCUMENT_DEFINITION)))
+  .andFollowedBy(SyntaxRule.separator('EOF'))
   .map(
     (matches): SrcNode<ProfileDocumentNode> => {
       const [, /* SOF */ profile, definitions /* EOF */] = matches;

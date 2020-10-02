@@ -1,17 +1,15 @@
 import { SyntaxError } from './error';
-import { Lexer } from './lexer/lexer';
-import { LexerToken } from './lexer/token';
+import { Lexer, LexerTokenStream } from './lexer/lexer';
 import { Source } from './source';
 import { parseProfile, parseRule } from './syntax/parser';
-import * as profile from './syntax/rules/profile';
 import {
   MatchAttempts,
   RuleResult,
   RuleResultMatch,
   RuleResultNoMatch,
   SyntaxRule,
-} from './syntax/rules/rule';
-import { BufferedIterator } from './syntax/util';
+} from './syntax/rule';
+import * as profile from './syntax/rules/profile';
 
 // Declare custom matcher for sake of Typescript
 declare global {
@@ -114,7 +112,7 @@ class TestSyntaxRule<R extends RuleResult<T>, T = unknown> extends SyntaxRule<
     super();
   }
 
-  tryMatch(_tokens: BufferedIterator<LexerToken>): R {
+  tryMatch(_tokens: LexerTokenStream): R {
     if (this.result === undefined) {
       throw 'test syntax rule error';
     }
@@ -215,25 +213,26 @@ describe('langauge syntax errors', () => {
 
     it('should report enum value rule error', () => {
       const tokens = new Source(`enum {
-asdf = 'asdf'
+asdf = 'as
+df'
 !
 }`);
 
       expect(() =>
         parseRule(profile.ENUM_DEFINITION, tokens, true)
       ).toThrowSyntaxError(
-        'Expected string or identifier or `}` but found `!`',
-        '[input]:3:1',
-        "2 | asdf = 'asdf'",
-        '3 | !',
+        'Expected `,` or `}` or string or identifier but found `!`',
+        '[input]:4:1',
+        "3 | df'",
+        '4 | !',
         '  | ^',
-        '4 | }'
+        '5 | }'
       );
     });
   });
 
   describe('combinators and propagation', () => {
-    const tokens = new BufferedIterator([][Symbol.iterator]());
+    const tokens = new Lexer(new Source(''));
 
     const match: TestSyntaxRule<RuleResultMatch<unknown>>[] = [];
     {
@@ -351,7 +350,7 @@ asdf = 'asdf'
             this.state = 0;
           }
 
-          tryMatch(_tokens: BufferedIterator<LexerToken>): RuleResult<T> {
+          tryMatch(_tokens: LexerTokenStream): RuleResult<T> {
             if (this.state === 0) {
               this.state = 1;
 
