@@ -21,9 +21,13 @@ import {
   OPERATION_DEFINITION_STATEMENT,
   PROFILE_ID,
   PROVIDER_ID,
-  STATEMENT_CONDITION,
+  SET_STATEMENT,
 } from './map';
-import { ARGUMENT_LIST_ASSIGNMENT, SET_BLOCK_ASSIGNMENT } from './value';
+import {
+  ARGUMENT_LIST_ASSIGNMENT,
+  SET_BLOCK_ASSIGNMENT,
+  STATEMENT_CONDITION,
+} from './value';
 
 // Declare custom matcher for sake of Typescript
 declare global {
@@ -41,8 +45,18 @@ expect.extend({
 
     if (result.kind !== 'match') {
       pass = false;
-      message = SyntaxError.fromSyntaxRuleNoMatch(new Source(''), result)
-        .message;
+
+      const token = result.attempts.token;
+      const tokenInfo =
+        token === undefined
+          ? ''
+          : ' at token #' +
+            Math.trunc(token.location.line / 10000).toString() +
+            ': ' +
+            token.toString();
+      message =
+        SyntaxError.fromSyntaxRuleNoMatch(new Source(''), result).message +
+        tokenInfo;
     } else if (match !== undefined) {
       if (!this.equals(result.match, match)) {
         pass = false;
@@ -116,80 +130,9 @@ function tesMatchJessie(token: LexerToken) {
     token
   );
 }
-function tesMatchJessiePrimitive(token: LexerToken) {
-  const script = (token.data as JessieScriptTokenData).script;
-
-  let value;
-  if (script.startsWith('"') && script.endsWith('"')) {
-    value = script.slice(1, script.length - 1);
-  } else if (script === 'true') {
-    value = true;
-  } else if (script === 'false') {
-    value = false;
-  } else {
-    value = parseInt(script);
-  }
-
-  return tesMatch(
-    {
-      kind: 'PrimitiveLiteral',
-      value,
-    },
-    token
-  );
-}
 
 describe('map syntax rules', () => {
   describe('atoms', () => {
-    it('should parse array literal', () => {
-      const tokens = [
-        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '[' }),
-
-        tesTok({
-          kind: LexerTokenKind.JESSIE_SCRIPT,
-          script: '42',
-          sourceScript: '42',
-          sourceMap: '',
-        }), // 3
-        tesTok({ kind: LexerTokenKind.OPERATOR, operator: ',' }),
-
-        tesTok({
-          kind: LexerTokenKind.JESSIE_SCRIPT,
-          script: '1 + 2',
-          sourceScript: '1 + 2',
-          sourceMap: '',
-        }), // 3
-        tesTok({ kind: LexerTokenKind.OPERATOR, operator: ',' }),
-
-        tesTok({
-          kind: LexerTokenKind.JESSIE_SCRIPT,
-          script: 'call()',
-          sourceScript: 'call()',
-          sourceMap: '',
-        }), // 5
-
-        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: ']' }),
-      ];
-      const stream = new ArrayLexerStream(tokens);
-
-      const rule = rules.ARRAY_LITERAL;
-
-      expect(rule.tryMatch(stream)).toBeAMatch(
-        tesMatch(
-          {
-            kind: 'ArrayLiteral',
-            elements: [
-              tesMatchJessiePrimitive(tokens[1]),
-              tesMatchJessie(tokens[3]),
-              tesMatchJessie(tokens[5]),
-            ],
-          },
-          tokens[0],
-          tokens[6]
-        )
-      );
-    });
-
     it('should parse object literal', () => {
       const tokens = [
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
@@ -236,7 +179,7 @@ describe('map syntax rules', () => {
                 {
                   kind: 'Assignment',
                   key: [(tokens[4].data as StringTokenData).string],
-                  value: tesMatchJessiePrimitive(tokens[6]),
+                  value: tesMatchJessie(tokens[6]),
                 },
                 tokens[4],
                 tokens[6]
@@ -407,7 +350,7 @@ describe('map syntax rules', () => {
               tokens[2],
               tokens[5]
             ),
-            value: tesMatchJessiePrimitive(tokens[6]),
+            value: tesMatchJessie(tokens[6]),
           },
           tokens[0],
           tokens[6]
@@ -453,7 +396,7 @@ describe('map syntax rules', () => {
               tokens[2],
               tokens[5]
             ),
-            value: tesMatchJessiePrimitive(tokens[6]),
+            value: tesMatchJessie(tokens[6]),
           },
           tokens[0],
           tokens[6]
@@ -494,7 +437,7 @@ describe('map syntax rules', () => {
               (tokens[2].data as IdentifierTokenData).identifier,
               (tokens[4].data as StringTokenData).string,
             ],
-            value: tesMatchJessiePrimitive(tokens[6]),
+            value: tesMatchJessie(tokens[6]),
           },
           tokens[0],
           tokens[6]
@@ -530,7 +473,7 @@ describe('map syntax rules', () => {
               (tokens[0].data as StringTokenData).string,
               (tokens[2].data as IdentifierTokenData).identifier,
             ],
-            value: tesMatchJessiePrimitive(tokens[4]),
+            value: tesMatchJessie(tokens[4]),
           },
           tokens[0],
           tokens[4]
@@ -569,7 +512,7 @@ describe('map syntax rules', () => {
               (tokens[2].data as IdentifierTokenData).identifier,
               (tokens[4].data as StringTokenData).string,
             ],
-            value: tesMatchJessiePrimitive(tokens[6]),
+            value: tesMatchJessie(tokens[6]),
           },
           tokens[0],
           tokens[6]
@@ -605,7 +548,7 @@ describe('map syntax rules', () => {
                 {
                   kind: 'Assignment',
                   key: [(tokens[0].data as IdentifierTokenData).identifier],
-                  value: tesMatchJessiePrimitive(tokens[2]),
+                  value: tesMatchJessie(tokens[2]),
                 },
                 tokens[0],
                 tokens[2]
@@ -666,7 +609,7 @@ describe('map syntax rules', () => {
                 {
                   kind: 'Assignment',
                   key: [(tokens[6].data as IdentifierTokenData).identifier],
-                  value: tesMatchJessiePrimitive(tokens[8]),
+                  value: tesMatchJessie(tokens[8]),
                 },
                 tokens[6],
                 tokens[8]
@@ -745,10 +688,9 @@ describe('map syntax rules', () => {
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
 
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'name' }), // 20
-        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'first' }), // 23
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'first' }), // 22
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({
           kind: LexerTokenKind.JESSIE_SCRIPT,
@@ -759,7 +701,7 @@ describe('map syntax rules', () => {
 
         tesTok({ kind: LexerTokenKind.NEWLINE }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'last' }), // 27
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'last' }), // 26
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({
           kind: LexerTokenKind.JESSIE_SCRIPT,
@@ -771,7 +713,7 @@ describe('map syntax rules', () => {
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
         tesTok({ kind: LexerTokenKind.NEWLINE }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'address' }), // 32
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'address' }), // 31
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '.' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'zip' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
@@ -785,14 +727,14 @@ describe('map syntax rules', () => {
 
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }), // end request
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'response' }), // 39
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'response' }), // 38
         tesTok({ kind: LexerTokenKind.LITERAL, literal: 200 }),
         tesTok({ kind: LexerTokenKind.STRING, string: 'application/json' }),
         tesTok({ kind: LexerTokenKind.STRING, string: 'en-US' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'response' }), // 45
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'response' }), // 44
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'value' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
@@ -841,7 +783,7 @@ describe('map syntax rules', () => {
                     {
                       kind: 'Assignment',
                       key: [(tokens[14].data as StringTokenData).string],
-                      value: tesMatchJessiePrimitive(tokens[16]),
+                      value: tesMatchJessie(tokens[16]),
                     },
                     tokens[14],
                     tokens[16]
@@ -869,64 +811,64 @@ describe('map syntax rules', () => {
                               {
                                 kind: 'Assignment',
                                 key: [
-                                  (tokens[23].data as IdentifierTokenData)
+                                  (tokens[22].data as IdentifierTokenData)
                                     .identifier,
                                 ],
-                                value: tesMatchJessiePrimitive(tokens[25]),
+                                value: tesMatchJessie(tokens[24]),
                               },
-                              tokens[23],
-                              tokens[25]
+                              tokens[22],
+                              tokens[24]
                             ),
                             tesMatch(
                               {
                                 kind: 'Assignment',
                                 key: [
-                                  (tokens[27].data as IdentifierTokenData)
+                                  (tokens[26].data as IdentifierTokenData)
                                     .identifier,
                                 ],
-                                value: tesMatchJessiePrimitive(tokens[29]),
+                                value: tesMatchJessie(tokens[28]),
                               },
-                              tokens[27],
-                              tokens[29]
+                              tokens[26],
+                              tokens[28]
                             ),
                           ],
                         },
-                        tokens[22],
-                        tokens[30]
+                        tokens[21],
+                        tokens[29]
                       ),
                     },
                     tokens[20],
-                    tokens[30]
+                    tokens[29]
                   ),
                   tesMatch(
                     {
                       kind: 'Assignment',
                       key: [
-                        (tokens[32].data as IdentifierTokenData).identifier,
-                        (tokens[34].data as IdentifierTokenData).identifier,
+                        (tokens[31].data as IdentifierTokenData).identifier,
+                        (tokens[33].data as IdentifierTokenData).identifier,
                       ],
-                      value: tesMatchJessiePrimitive(tokens[36]),
+                      value: tesMatchJessie(tokens[35]),
                     },
-                    tokens[32],
-                    tokens[36]
+                    tokens[31],
+                    tokens[35]
                   ),
                 ],
               },
               tokens[19],
-              tokens[37]
+              tokens[36]
             ),
           },
           responseHandlers: [
             tesMatch(
               {
                 kind: 'HttpResponseHandler',
-                statusCode: (tokens[40].data as LiteralTokenData).literal,
-                contentType: (tokens[41].data as StringTokenData).string,
-                contentLanguage: (tokens[42].data as StringTokenData).string,
+                statusCode: (tokens[39].data as LiteralTokenData).literal,
+                contentType: (tokens[40].data as StringTokenData).string,
+                contentLanguage: (tokens[41].data as StringTokenData).string,
                 statements: [],
               },
-              tokens[39],
-              tokens[44]
+              tokens[38],
+              tokens[43]
             ),
             tesMatch(
               {
@@ -940,28 +882,28 @@ describe('map syntax rules', () => {
                           {
                             kind: 'Assignment',
                             key: [
-                              (tokens[47].data as IdentifierTokenData)
+                              (tokens[46].data as IdentifierTokenData)
                                 .identifier,
                             ],
-                            value: tesMatchJessiePrimitive(tokens[49]),
+                            value: tesMatchJessie(tokens[48]),
                           },
-                          tokens[47],
-                          tokens[49]
+                          tokens[46],
+                          tokens[48]
                         ),
                       ],
                     },
-                    tokens[47],
-                    tokens[49]
+                    tokens[46],
+                    tokens[48]
                   ),
                 ],
               },
-              tokens[45],
-              tokens[50]
+              tokens[44],
+              tokens[49]
             ),
           ],
         },
         tokens[0],
-        tokens[51]
+        tokens[50]
       );
 
       expect(MAP_DEFINITION_HTTP_CALL.tryMatch(stream)).toBeAMatch(expected);
@@ -1020,10 +962,49 @@ describe('map syntax rules', () => {
       );
     });
 
-    // TODO
-    // it('should parse inline call statement', () => {
+    it('should parse inline call statement', () => {
+      const tokens = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'foo' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'call' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'Foo' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '(' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: ')' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
 
-    // });
+      const rule = SET_STATEMENT;
+
+      expect(rule.tryMatch(stream)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'SetStatement',
+            assignments: [
+              tesMatch(
+                {
+                  kind: 'Assignment',
+                  key: [(tokens[0].data as IdentifierTokenData).identifier],
+                  value: tesMatch(
+                    {
+                      kind: 'InlineCall',
+                      operationName: (tokens[3].data as IdentifierTokenData)
+                        .identifier,
+                      arguments: [],
+                    },
+                    tokens[2],
+                    tokens[5]
+                  ),
+                },
+                tokens[0],
+                tokens[5]
+              ),
+            ],
+          },
+          tokens[0],
+          tokens[5]
+        )
+      );
+    });
   });
 
   describe('document', () => {

@@ -7,5 +7,5 @@ export {
   SET_STATEMENT,
   MAP_DOCUMENT_DEFINITION,
 } from './map';
-export { ARRAY_LITERAL, OBJECT_LITERAL } from './value';
-export {} from './call';
+export { OBJECT_LITERAL } from './value';
+export {} from './http';

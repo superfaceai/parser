@@ -1,7 +1,6 @@
 import {
   CallStatementNode,
   FailStatementNode,
-  LiteralNode,
   MapDefinitionNode,
   MapDocumentNode,
   MapErrorStatementNode,
@@ -14,59 +13,17 @@ import {
   ProviderNode,
   ReturnStatementNode,
   SetStatementNode,
-  StatementConditionNode,
 } from '@superindustries/language';
 
 import { SyntaxRule } from '../../rule';
 import { documentedNode, SrcNode, SyntaxRuleSrc } from '../common';
-import { CALL_STATEMENT_FACTORY, HTTP_CALL_STATEMENT_FACTORY } from './call';
+import { HTTP_CALL_STATEMENT_FACTORY } from './http';
 import {
-  JESSIE_EXPRESSION_FACTORY,
+  CALL_STATEMENT_FACTORY,
   SET_BLOCK_ASSIGNMENT,
-  VALUE_EXPRESSION_FACTORY,
+  STATEMENT_CONDITION,
+  STATEMENT_RHS_VALUE,
 } from './value';
-
-/**
- * if (<jessie>)
- */
-export const STATEMENT_CONDITION: SyntaxRuleSrc<StatementConditionNode> = SyntaxRule.identifier(
-  'if'
-)
-  .followedBy(SyntaxRule.separator('('))
-  .andFollowedBy(JESSIE_EXPRESSION_FACTORY(')'))
-  .andFollowedBy(SyntaxRule.separator(')'))
-  .map(
-    (maches): SrcNode<StatementConditionNode> => {
-      const [key /* sepStart */, , expression, sepEnd] = maches;
-
-      return {
-        kind: 'StatementCondition',
-        expression,
-        location: key.location,
-        span: {
-          start: key.span.start,
-          end: sepEnd.span.end,
-        },
-      };
-    }
-  )
-  .peekUnknown();
-
-// CONTEXTUAL STATEMENTS
-
-const STATEMENT_RHS_VALUE: SyntaxRuleSrc<LiteralNode> = VALUE_EXPRESSION_FACTORY(
-  ';',
-  '}',
-  '\n'
-)
-  .followedBy(SyntaxRule.optional(SyntaxRule.operator(';')))
-  .map(
-    (matches): SrcNode<LiteralNode> => {
-      const [value /* maybeSemicolon */] = matches;
-
-      return value;
-    }
-  );
 
 /*
 return <?condition> <value>;

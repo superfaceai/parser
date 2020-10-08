@@ -2,11 +2,13 @@ import { Source } from './source';
 import { parseMap, parseProfile, parseRule } from './syntax/parser';
 import { SyntaxRule } from './syntax/rule';
 import * as mapRules from './syntax/rules/map';
-import { STATEMENT_CONDITION } from './syntax/rules/map/map';
-import { ARGUMENT_LIST_ASSIGNMENT } from './syntax/rules/map/value';
+import {
+  ARGUMENT_LIST_ASSIGNMENT,
+  STATEMENT_CONDITION,
+} from './syntax/rules/map/value';
 import * as profileRules from './syntax/rules/profile';
 
-describe('v6', () => {
+describe('profile', () => {
   it('should parse constructs.profile', () => {
     const input = `
     model X [
@@ -422,7 +424,7 @@ describe('v6', () => {
   });
 });
 
-describe('v8', () => {
+describe('map', () => {
   describe('jessie contexts', () => {
     it('should parse jessie condition expression', () => {
       const input = 'if ((() => { const a = 1; return { foo: a + 2 }; })())';
@@ -476,45 +478,6 @@ describe('v8', () => {
               kind: 'JessieExpression',
               expression: '[1, 2, 3].map(function (x) { return x * x; })',
             },
-          },
-        ],
-      });
-    });
-
-    it('should parse jessie expression in array literal', () => {
-      const input = '[1 + 2, 3 * 4, 5, [true], [7] + [8]]';
-
-      const source = new Source(input);
-
-      const object = parseRule(mapRules.ARRAY_LITERAL, source, true);
-
-      expect(object).toMatchObject({
-        kind: 'ArrayLiteral',
-        elements: [
-          {
-            kind: 'JessieExpression',
-            expression: '1 + 2',
-          },
-          {
-            kind: 'JessieExpression',
-            expression: '3 * 4',
-          },
-          {
-            kind: 'PrimitiveLiteral',
-            value: 5,
-          },
-          {
-            kind: 'ArrayLiteral',
-            elements: [
-              {
-                kind: 'PrimitiveLiteral',
-                value: true,
-              },
-            ],
-          },
-          {
-            kind: 'JessieExpression',
-            expression: '[7] + [8]',
           },
         ],
       });
@@ -652,13 +615,8 @@ describe('v8', () => {
                       kind: 'Assignment',
                       key: ['channels'],
                       value: {
-                        kind: 'ArrayLiteral',
-                        elements: [
-                          {
-                            kind: 'PrimitiveLiteral',
-                            value: 'sms',
-                          },
-                        ],
+                        kind: 'JessieExpression',
+                        expression: "['sms']",
                       },
                     },
                     {
@@ -776,7 +734,7 @@ describe('v8', () => {
     const input = `operation foo {
       return {
         answer = 42
-        hash = { a = 1, b = 2 }
+        hash { a = 1, b = 2 }
       }
     }
     
@@ -1051,7 +1009,7 @@ describe('v8', () => {
       a = ["hello", "world"];
       b.c = 1 + 2 # semantically expands to: \`b: { c: 1 + 2 }\`
       
-      d."e.e" = {
+      d."e.e" {
         f = 3, g = 4
       } # semantically expands to: \`d: { e: { f: 3, g: 4 } }\`
     
@@ -1100,7 +1058,7 @@ describe('v8', () => {
           }
     
           body {
-            name = {
+            name {
               first = "john"
               last = "doe"
             }
@@ -1119,7 +1077,7 @@ describe('v8', () => {
             # a special case of inline call
             # here the \`data\` is assigned to the text field
             # any failure produces an expection
-            # text = call Foo(body = response.body) TODO
+            text = call Foo(body = response.body)
           }
         }
     
@@ -1172,17 +1130,8 @@ describe('v8', () => {
                   kind: 'Assignment',
                   key: ['a'],
                   value: {
-                    kind: 'ArrayLiteral',
-                    elements: [
-                      {
-                        kind: 'PrimitiveLiteral',
-                        value: 'hello',
-                      },
-                      {
-                        kind: 'PrimitiveLiteral',
-                        value: 'world',
-                      },
-                    ],
+                    kind: 'JessieExpression',
+                    expression: '["hello", "world"]',
                   },
                 },
               ],
@@ -1495,12 +1444,24 @@ describe('v8', () => {
                               value: 'en',
                             },
                           },
-                          // TODO
-                          // {
-                          //   kind: 'Assignment',
-                          //   key: ['text'],
-                          //   value:
-                          // }
+                          {
+                            kind: 'Assignment',
+                            key: ['text'],
+                            value: {
+                              kind: 'InlineCall',
+                              operationName: 'Foo',
+                              arguments: [
+                                {
+                                  kind: 'Assignment',
+                                  key: ['body'],
+                                  value: {
+                                    kind: 'JessieExpression',
+                                    expression: 'response.body',
+                                  },
+                                },
+                              ],
+                            },
+                          },
                         ],
                       },
                     },

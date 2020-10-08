@@ -1,5 +1,4 @@
 import {
-  CallStatementNode,
   HttpCallStatementNode,
   HttpResponseHandlerNode,
   SubstatementType,
@@ -7,82 +6,8 @@ import {
 
 import { SyntaxRule, SyntaxRuleOr } from '../../rule';
 import { SLOT_DEFINITION_FACTORY, SrcNode, SyntaxRuleSrc } from '../common';
-import { SET_STATEMENT, STATEMENT_CONDITION } from './map';
-import {
-  ARGUMENT_LIST_ASSIGNMENT,
-  OBJECT_LITERAL,
-  VALUE_EXPRESSION_FACTORY,
-} from './value';
-
-const CALL_STATEMENT_HEAD = SyntaxRule.identifier('call')
-  .followedBy(SyntaxRule.identifier())
-  .andFollowedBy(SyntaxRule.separator('('))
-  .andFollowedBy(
-    SyntaxRule.optional(SyntaxRule.repeat(ARGUMENT_LIST_ASSIGNMENT))
-  )
-  .andFollowedBy(SyntaxRule.separator(')'));
-
-export const INLINE_CALL_STATEMENT: SyntaxRuleSrc<CallStatementNode<
-  never
->> = CALL_STATEMENT_HEAD.map(
-  (matches): SrcNode<CallStatementNode<never>> => {
-    const [key, name /* sepArgStart */, , maybeArguments, sepArgEnd] = matches;
-
-    return {
-      kind: 'CallStatement',
-      operationName: name.data.identifier,
-      arguments: maybeArguments ?? [],
-      statements: [],
-      location: key.location,
-      span: {
-        start: key.span.start,
-        end: sepArgEnd.span.end,
-      },
-    };
-  }
-);
-
-/**
- * call name(<...arguments>) <?condition> { <...statements> }
- */
-export function CALL_STATEMENT_FACTORY<S extends SubstatementType>(
-  substatementRule: SyntaxRuleSrc<S>
-): SyntaxRuleSrc<CallStatementNode<S>> {
-  return CALL_STATEMENT_HEAD.andFollowedBy(
-    SyntaxRule.optional(STATEMENT_CONDITION)
-  )
-    .andFollowedBy(SyntaxRule.separator('{'))
-    .andFollowedBy(SyntaxRule.optional(SyntaxRule.repeat(substatementRule)))
-    .andFollowedBy(SyntaxRule.separator('}'))
-    .map(
-      (matches): SrcNode<CallStatementNode<S>> => {
-        const [
-          key,
-          name,
-          ,
-          /* sepArgStart */ maybeArguments,
-          ,
-          /* sepArgEnd */ maybeCondition,
-          ,
-          /* sepStart */ statements,
-          sepEnd,
-        ] = matches;
-
-        return {
-          kind: 'CallStatement',
-          condition: maybeCondition,
-          operationName: name.data.identifier,
-          arguments: maybeArguments ?? [],
-          statements: statements ?? [],
-          location: key.location,
-          span: {
-            start: key.span.start,
-            end: sepEnd.span.end,
-          },
-        };
-      }
-    );
-}
+import { SET_STATEMENT } from './map';
+import { OBJECT_LITERAL, RHS_LITERAL_FACTORY } from './value';
 
 const HTTP_CALL_STATEMENT_REQUEST_QUERY_SLOT = SLOT_DEFINITION_FACTORY(
   'query',
@@ -94,7 +19,7 @@ const HTTP_CALL_STATEMENT_REQUEST_HEADERS_SLOT = SLOT_DEFINITION_FACTORY(
 );
 const HTTP_CALL_STATEMENT_REQUEST_BODY_SLOT = SLOT_DEFINITION_FACTORY(
   'body',
-  VALUE_EXPRESSION_FACTORY('\n', '}')
+  RHS_LITERAL_FACTORY('\n', '}')
 );
 
 const HTTP_CALL_STATEMENT_REQUEST_SLOT = SyntaxRule.identifier('request')
