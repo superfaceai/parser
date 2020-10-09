@@ -70,7 +70,17 @@ function HTTP_CALL_STATEMENT_RESPONSE_HANDLER<S extends SubstatementType>(
   substatementRule: SyntaxRuleSrc<S>
 ): SyntaxRuleSrc<HttpResponseHandlerNode<S>> {
   return SyntaxRule.identifier('response')
-    .followedBy(SyntaxRule.optional(SyntaxRule.literal()))
+    .followedBy(
+      SyntaxRule.optional(
+        SyntaxRule.literal().andThen(
+          match =>
+            typeof match.data.literal === 'number'
+              ? { kind: 'match', value: match }
+              : { kind: 'nomatch' },
+          'number literal'
+        )
+      )
+    )
     .andFollowedBy(SyntaxRule.optional(SyntaxRule.string()))
     .andFollowedBy(SyntaxRule.optional(SyntaxRule.string()))
     .andFollowedBy(SyntaxRule.separator('{'))
@@ -92,7 +102,7 @@ function HTTP_CALL_STATEMENT_RESPONSE_HANDLER<S extends SubstatementType>(
 
         const statusCode = maybeStatusCode?.data.literal;
         if (typeof statusCode === 'boolean') {
-          throw 'TODO: status code cannot be boolean';
+          throw 'Unexpected boolean literal. This is an error in the syntax rule definition';
         }
 
         return {

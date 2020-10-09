@@ -112,7 +112,7 @@ export function tryParseBooleanLiteral(
 export function tryParseIdentifier(
   slice: string
 ): ParseResult<IdentifierTokenData> {
-  if (!util.isValidIdentififerStartChar(slice.charCodeAt(0))) {
+  if (!util.isValidIdentifierStartChar(slice.charCodeAt(0))) {
     return undefined;
   }
 

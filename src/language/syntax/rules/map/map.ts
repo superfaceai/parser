@@ -255,7 +255,7 @@ export const MAP_DEFINITION: SyntaxRuleSrc<MapDefinitionNode> = documentedNode(
         return {
           kind: 'MapDefinition',
           name: name.data.identifier,
-          usecaseName: name.data.identifier, // TODO
+          usecaseName: name.data.identifier,
           statements: maybeStatements ?? [],
           location: key.location,
           span: {

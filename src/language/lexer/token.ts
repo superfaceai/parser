@@ -126,7 +126,7 @@ export function formatTokenKind(kind: LexerTokenKind): string {
     case LexerTokenKind.OPERATOR:
       return 'operator';
     case LexerTokenKind.LITERAL:
-      return 'literal';
+      return 'number or boolean literal';
     case LexerTokenKind.STRING:
       return 'string';
     case LexerTokenKind.IDENTIFIER:

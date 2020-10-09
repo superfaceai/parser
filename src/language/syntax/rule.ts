@@ -182,6 +182,13 @@ export abstract class SyntaxRule<T> {
     return new SyntaxRuleMap(this, mapper);
   }
 
+  andThen<M>(
+    then: (_: T) => AndThenResult<M>,
+    description?: string
+  ): SyntaxRule<M> {
+    return new SyntaxRuleAndThen(this, then, description);
+  }
+
   static repeat<R>(rule: SyntaxRule<R>): SyntaxRuleRepeat<R> {
     return new SyntaxRuleRepeat(rule);
   }
@@ -712,6 +719,48 @@ export class SyntaxRuleMap<R, M> extends SyntaxRule<M> {
 
   [Symbol.toStringTag](): string {
     return this.rule.toString();
+  }
+}
+
+type AndThenResult<T> = { kind: 'match'; value: T } | { kind: 'nomatch' };
+export class SyntaxRuleAndThen<R, M> extends SyntaxRule<M> {
+  constructor(
+    readonly rule: SyntaxRule<R>,
+    readonly then: (_: R) => AndThenResult<M>,
+    readonly description?: string
+  ) {
+    super();
+  }
+
+  tryMatch(tokens: LexerTokenStream): RuleResult<M> {
+    const peek = tokens.peek().value;
+
+    const match = this.rule.tryMatch(tokens);
+
+    if (match.kind === 'match') {
+      const then = this.then(match.match);
+
+      if (then.kind == 'match') {
+        return {
+          kind: 'match',
+          match: then.value,
+          optionalAttempts: match.optionalAttempts,
+        };
+      } else {
+        return {
+          kind: 'nomatch',
+          attempts: new MatchAttempts(peek, [this]).merge(
+            match.optionalAttempts
+          ),
+        };
+      }
+    }
+
+    return match;
+  }
+
+  [Symbol.toStringTag](): string {
+    return this.description ?? this.rule.toString();
   }
 }
 

@@ -1,4 +1,9 @@
-import { LexerToken, LexerTokenData, LexerTokenKind } from '../lexer/token';
+import {
+  LexerToken,
+  LexerTokenData,
+  LexerTokenKind,
+  StringTokenData,
+} from '../lexer/token';
 import { LexerTokenMatch, MatchAttempts, SyntaxRule } from './rule';
 import { ArrayLexerStream } from './util';
 
@@ -481,6 +486,52 @@ describe('syntax rule factory', () => {
       });
 
       expect(stream.next().value).toStrictEqual(tokens[0]);
+    });
+  });
+
+  describe('andThen', () => {
+    it('should pass through optionalAttempts on match', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.STRING, string: 'I am a string' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const innerRule = SyntaxRule.literal();
+      const rule = innerRule.or(SyntaxRule.string()).andThen(match => {
+        return {
+          kind: 'match',
+          value: (match.data as StringTokenData).string.length,
+        };
+      }, 'description here');
+
+      expect(rule.toString()).toBe('description here');
+
+      expect(rule.tryMatch(stream)).toStrictEqual({
+        kind: 'match',
+        match: (tokens[0].data as StringTokenData).string.length,
+        optionalAttempts: new MatchAttempts(tokens[0], [innerRule]),
+      });
+    });
+
+    it('should merge attempts on nomatch', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.STRING, string: 'I am a string' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const innerRule = SyntaxRule.string();
+      const rule = innerRule.andThen(_match => {
+        return {
+          kind: 'nomatch',
+        };
+      });
+
+      expect(rule.toString()).toBe(innerRule.toString());
+
+      expect(rule.tryMatch(stream)).toStrictEqual({
+        kind: 'nomatch',
+        attempts: new MatchAttempts(tokens[0], [rule]),
+      });
     });
   });
 });

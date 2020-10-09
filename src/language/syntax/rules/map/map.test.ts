@@ -1172,7 +1172,7 @@ describe('map syntax rules', () => {
                   kind: 'MapDefinition',
                   name: (tokens[8].data as IdentifierTokenData).identifier,
                   usecaseName: (tokens[8].data as IdentifierTokenData)
-                    .identifier, // TODO
+                    .identifier,
                   statements: [],
                 },
                 tokens[7],

@@ -78,13 +78,13 @@ export function isDecimalSeparator(char: number): boolean {
   return char === 46;
 }
 
-export function isValidIdentififerStartChar(char: number): boolean {
+export function isValidIdentifierStartChar(char: number): boolean {
   // _
   return char === 95 || isLetter(char);
 }
 
 export function isValidIdentifierChar(char: number): boolean {
-  return isValidIdentififerStartChar(char) || isDecimalNumber(char);
+  return isValidIdentifierStartChar(char) || isDecimalNumber(char);
 }
 export const countStartingIdentifierChars = countStarting.bind(
   undefined,
