@@ -49,7 +49,7 @@ export function SLOT_DEFINITION_FACTORY<T>(
   rule: SyntaxRule<T>
 ): SyntaxRule<[LexerTokenMatch<IdentifierTokenData>, T]> {
   return SyntaxRule.identifier(name)
-    .followedBy(SyntaxRule.lookahead(SyntaxRule.newline(), true))
+    .followedBy(SyntaxRule.lookahead(SyntaxRule.newline(), 'invert'))
     .andFollowedBy(rule)
     .map(([name /* _lookahead */, , value]) => [name, value]);
 }

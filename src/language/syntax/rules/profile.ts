@@ -265,7 +265,7 @@ export const FIELD_DEFINITION: SyntaxRuleSrc<FieldDefinitionNode> = documentedNo
     .followedBy(SyntaxRule.optional(SyntaxRule.operator('!')))
     .andFollowedBy(
       SyntaxRule.optional(
-        SyntaxRule.lookahead(SyntaxRule.newline(), true).followedBy(TYPE)
+        SyntaxRule.lookahead(SyntaxRule.newline(), 'invert').followedBy(TYPE)
       )
     )
     .andFollowedBy(

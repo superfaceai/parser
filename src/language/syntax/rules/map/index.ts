@@ -1,11 +1,5 @@
-export {
-  RETURN_STATEMENT,
-  FAIL_STATEMENT,
-  MAP_RESULT_STATEMENT,
-  MAP_ERROR_STATEMENT,
-  MAP_DOCUMENT,
-  SET_STATEMENT,
-  MAP_DOCUMENT_DEFINITION,
-} from './map';
-export { OBJECT_LITERAL } from './value';
-export {} from './http';
+import * as mapCommon from './common';
+import * as mapExtended from './extended';
+import * as mapStrict from './strict';
+
+export { mapCommon, mapStrict, mapExtended };

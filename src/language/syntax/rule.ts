@@ -199,9 +199,9 @@ export abstract class SyntaxRule<T> {
 
   static lookahead<R>(
     rule: SyntaxRule<R>,
-    invert?: boolean
+    invert?: 'invert'
   ): SyntaxRuleLookahead<R> {
-    return new SyntaxRuleLookahead(rule, invert);
+    return new SyntaxRuleLookahead(rule, invert === 'invert' ? true : false);
   }
 
   peekUnknown(): SyntaxRulePeekUnknown<T> {

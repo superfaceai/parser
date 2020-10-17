@@ -7,7 +7,7 @@ import { SyntaxError } from '../error';
 import { Lexer } from '../lexer/lexer';
 import { Source } from '../source';
 import { SyntaxRule } from './rule';
-import { MAP_DOCUMENT } from './rules/map';
+import { mapExtended, mapStrict } from './rules/map';
 import { PROFILE_DOCUMENT } from './rules/profile';
 
 /**
@@ -29,7 +29,13 @@ export function parseRule<N>(
   const result = rule.tryMatch(lexer);
 
   if (result.kind === 'nomatch') {
-    throw SyntaxError.fromSyntaxRuleNoMatch(source, result);
+    const error = SyntaxError.fromSyntaxRuleNoMatch(source, result);
+
+    if (process.env.LOG_LEVEL === 'debug') {
+      console.debug(error.format());
+    }
+
+    throw error;
   }
 
   return result.match;
@@ -39,6 +45,16 @@ export function parseProfile(source: Source): ProfileDocumentNode {
   return parseRule(PROFILE_DOCUMENT, source);
 }
 
+/**
+ * Attempts to parse the source using rules that strictly adhere to the specification.
+ */
 export function parseMap(source: Source): MapDocumentNode {
-  return parseRule(MAP_DOCUMENT, source);
+  return parseRule(mapStrict.MAP_DOCUMENT, source);
+}
+
+/**
+ * Attempts to parse the source using rules that may have parser-specific extensions.
+ */
+export function parseMapExtended(source: Source): MapDocumentNode {
+  return parseRule(mapExtended.MAP_DOCUMENT, source);
 }

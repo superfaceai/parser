@@ -1,11 +1,12 @@
 import { Source } from './source';
-import { parseMap, parseProfile, parseRule } from './syntax/parser';
-import { SyntaxRule } from './syntax/rule';
-import * as mapRules from './syntax/rules/map';
 import {
-  ARGUMENT_LIST_ASSIGNMENT,
-  STATEMENT_CONDITION,
-} from './syntax/rules/map/value';
+  parseMap,
+  parseMapExtended,
+  parseProfile,
+  parseRule,
+} from './syntax/parser';
+import { SyntaxRule } from './syntax/rule';
+import { mapCommon, mapStrict } from './syntax/rules/map';
 import * as profileRules from './syntax/rules/profile';
 
 describe('profile', () => {
@@ -424,13 +425,568 @@ describe('profile', () => {
   });
 });
 
-describe('map', () => {
+const STRICT_MAP = `
+# https://sfspec.surge.sh/map#sec-Map-Document
+"""
+Strict Map
+
+Example of the map syntax adhering to the strict syntax.
+"""
+
+profile = "http://example.com/profile"
+provider = "http://example.com/provider"
+
+# https://sfspec.surge.sh/map#sec-Usecase-Map
+"Map Foo
+Description of the map Foo"
+map Foo {
+	# https://sfspec.surge.sh/map#sec-Set-Variables
+
+	set if (!cond) {
+		foo = 1
+		"foo" = 1 + 1
+		"foo.bar".bar = call Op()
+  	}
+	
+	set {
+		foo = 1
+	}
+
+	foo = 1
+	"foo.bar".bar = call Op()
+
+	# https://sfspec.surge.sh/map#sec-Operation-Call
+
+	call Op(foo = 1, bar = 1 + 1) if (cond) {
+		# https://sfspec.surge.sh/map#SetOutcome
+		# https://sfspec.surge.sh/map#SetMapOutcome
+
+		# https://sfspec.surge.sh/map#MapResult
+		map result if (cond) {
+			foo = 1
+		}
+		return map result if (cond) {
+			"foo" = 1
+		}
+
+		# https://sfspec.surge.sh/map#sec-Map-Error
+		map error if (cond) {
+			"foo.bar" = 1
+		}
+		return map error if (cond) {
+			foo.bar = 1
+		}
+	}
+
+	# https://sfspec.surge.sh/map#HTTPCall
+	http GET "/api/{foo}/bar" {
+		# https://sfspec.surge.sh/map#HTTPRequest
+		request "application/json" {
+			# https://sfspec.surge.sh/map#URLQuery
+			query {
+				foo = "hello",
+				bar = "world"
+			}
+
+			# https://sfspec.surge.sh/map#HTTPHeaders
+			headers {
+				"User-Agent" = "superface v1"
+			}
+
+			# https://sfspec.surge.sh/map#HTTPBody
+			body {
+				foo = 1,
+				bar = 1 + 1,
+				"foo.bar".bar = "3"
+			}
+		}
+
+		# https://sfspec.surge.sh/map#HTTPRespose
+		response 300 {
+			map result {
+				foo = 1
+			}
+		}
+
+		# https://sfspec.surge.sh/map#HTTPRespose
+		response "application/json" {
+			map error {
+				foo = 1
+			}
+		}
+
+		# https://sfspec.surge.sh/map#HTTPRespose
+		response "*" "en-US" {
+			return map result {
+				foo = 1
+			}
+		}
+
+		# https://sfspec.surge.sh/map#HTTPRespose
+		response {
+			return map error {
+				foo = 1
+			}
+		}
+	}
+
+	http POST "/" {
+		# https://sfspec.surge.sh/map#HTTPRequest
+		request {
+			# https://sfspec.surge.sh/map#HTTPBody
+			body = [1, 2, 3]
+		}
+
+		response 404 "text/html" "en-US" {
+			foo = 1
+		}
+	}
+}
+`;
+
+const STRICT_MAP_AST = {
+  kind: 'MapDocument',
+  map: {
+    kind: 'Map',
+    profileId: {
+      kind: 'ProfileId',
+      profileId: 'http://example.com/profile',
+    },
+    provider: {
+      kind: 'Provider',
+      providerId: 'http://example.com/provider',
+    },
+  },
+  definitions: [
+    {
+      kind: 'MapDefinition',
+      name: 'Foo',
+      usecaseName: 'Foo',
+      statements: [
+        {
+          kind: 'SetStatement',
+          condition: {
+            kind: 'StatementCondition',
+            expression: {
+              kind: 'JessieExpression',
+              expression: '!cond',
+            },
+          },
+          assignments: [
+            {
+              kind: 'Assignment',
+              key: ['foo'],
+              value: {
+                kind: 'PrimitiveLiteral',
+                value: 1,
+              },
+            },
+            {
+              kind: 'Assignment',
+              key: ['foo'],
+              value: {
+                kind: 'JessieExpression',
+                expression: '1 + 1',
+              },
+            },
+            {
+              kind: 'Assignment',
+              key: ['foo.bar', 'bar'],
+              value: {
+                kind: 'InlineCall',
+                operationName: 'Op',
+                arguments: [],
+              },
+            },
+          ],
+        },
+        {
+          kind: 'SetStatement',
+          assignments: [
+            {
+              kind: 'Assignment',
+              key: ['foo'],
+              value: {
+                kind: 'PrimitiveLiteral',
+                value: 1,
+              },
+            },
+          ],
+        },
+        {
+          kind: 'SetStatement',
+          assignments: [
+            {
+              kind: 'Assignment',
+              key: ['foo'],
+              value: {
+                kind: 'PrimitiveLiteral',
+                value: 1,
+              },
+            },
+          ],
+        },
+        {
+          kind: 'SetStatement',
+          assignments: [
+            {
+              kind: 'Assignment',
+              key: ['foo.bar', 'bar'],
+              value: {
+                kind: 'InlineCall',
+                operationName: 'Op',
+                arguments: [],
+              },
+            },
+          ],
+        },
+        {
+          kind: 'CallStatement',
+          operationName: 'Op',
+          arguments: [
+            {
+              kind: 'Assignment',
+              key: ['foo'],
+              value: {
+                kind: 'PrimitiveLiteral',
+                value: 1,
+              },
+            },
+            {
+              kind: 'Assignment',
+              key: ['bar'],
+              value: {
+                kind: 'JessieExpression',
+                expression: '1 + 1',
+              },
+            },
+          ],
+          condition: {
+            kind: 'StatementCondition',
+            expression: {
+              kind: 'JessieExpression',
+              expression: 'cond',
+            },
+          },
+          statements: [
+            {
+              kind: 'OutcomeStatement',
+              condition: {
+                kind: 'StatementCondition',
+                expression: {
+                  kind: 'JessieExpression',
+                  expression: 'cond',
+                },
+              },
+              isError: false,
+              terminateFlow: false,
+              value: {
+                kind: 'ObjectLiteral',
+                fields: [
+                  {
+                    kind: 'Assignment',
+                    key: ['foo'],
+                    value: {
+                      kind: 'PrimitiveLiteral',
+                      value: 1,
+                    },
+                  },
+                ],
+              },
+            },
+            {
+              kind: 'OutcomeStatement',
+              condition: {
+                kind: 'StatementCondition',
+                expression: {
+                  kind: 'JessieExpression',
+                  expression: 'cond',
+                },
+              },
+              isError: false,
+              terminateFlow: true,
+              value: {
+                kind: 'ObjectLiteral',
+                fields: [
+                  {
+                    kind: 'Assignment',
+                    key: ['foo'],
+                    value: {
+                      kind: 'PrimitiveLiteral',
+                      value: 1,
+                    },
+                  },
+                ],
+              },
+            },
+            {
+              kind: 'OutcomeStatement',
+              condition: {
+                kind: 'StatementCondition',
+                expression: {
+                  kind: 'JessieExpression',
+                  expression: 'cond',
+                },
+              },
+              isError: true,
+              terminateFlow: false,
+              value: {
+                kind: 'ObjectLiteral',
+                fields: [
+                  {
+                    kind: 'Assignment',
+                    key: ['foo.bar'],
+                    value: {
+                      kind: 'PrimitiveLiteral',
+                      value: 1,
+                    },
+                  },
+                ],
+              },
+            },
+            {
+              kind: 'OutcomeStatement',
+              condition: {
+                kind: 'StatementCondition',
+                expression: {
+                  kind: 'JessieExpression',
+                  expression: 'cond',
+                },
+              },
+              isError: true,
+              terminateFlow: true,
+              value: {
+                kind: 'ObjectLiteral',
+                fields: [
+                  {
+                    kind: 'Assignment',
+                    key: ['foo', 'bar'],
+                    value: {
+                      kind: 'PrimitiveLiteral',
+                      value: 1,
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        },
+        {
+          kind: 'HttpCallStatement',
+          method: 'GET',
+          url: '/api/{foo}/bar',
+          request: {
+            kind: 'HttpRequest',
+            contentType: 'application/json',
+            query: {
+              kind: 'ObjectLiteral',
+              fields: [
+                {
+                  kind: 'Assignment',
+                  key: ['foo'],
+                  value: {
+                    kind: 'PrimitiveLiteral',
+                    value: 'hello',
+                  },
+                },
+                {
+                  kind: 'Assignment',
+                  key: ['bar'],
+                  value: {
+                    kind: 'PrimitiveLiteral',
+                    value: 'world',
+                  },
+                },
+              ],
+            },
+            headers: {
+              kind: 'ObjectLiteral',
+              fields: [
+                {
+                  kind: 'Assignment',
+                  key: ['User-Agent'],
+                  value: {
+                    kind: 'PrimitiveLiteral',
+                    value: 'superface v1',
+                  },
+                },
+              ],
+            },
+            body: {
+              kind: 'ObjectLiteral',
+              fields: [
+                {
+                  kind: 'Assignment',
+                  key: ['foo'],
+                  value: {
+                    kind: 'PrimitiveLiteral',
+                    value: 1,
+                  },
+                },
+                {
+                  kind: 'Assignment',
+                  key: ['bar'],
+                  value: {
+                    kind: 'JessieExpression',
+                    expression: '1 + 1',
+                  },
+                },
+                {
+                  kind: 'Assignment',
+                  key: ['foo.bar', 'bar'],
+                  value: {
+                    kind: 'PrimitiveLiteral',
+                    value: '3',
+                  },
+                },
+              ],
+            },
+          },
+          responseHandlers: [
+            {
+              kind: 'HttpResponseHandler',
+              statusCode: 300,
+              statements: [
+                {
+                  kind: 'OutcomeStatement',
+                  isError: false,
+                  terminateFlow: false,
+                  value: {
+                    kind: 'ObjectLiteral',
+                    fields: [
+                      {
+                        kind: 'Assignment',
+                        key: ['foo'],
+                        value: {
+                          kind: 'PrimitiveLiteral',
+                          value: 1,
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+            {
+              kind: 'HttpResponseHandler',
+              contentType: 'application/json',
+              statements: [
+                {
+                  kind: 'OutcomeStatement',
+                  isError: true,
+                  terminateFlow: false,
+                  value: {
+                    kind: 'ObjectLiteral',
+                    fields: [
+                      {
+                        kind: 'Assignment',
+                        key: ['foo'],
+                        value: {
+                          kind: 'PrimitiveLiteral',
+                          value: 1,
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+            {
+              kind: 'HttpResponseHandler',
+              contentLanguage: 'en-US',
+              statements: [
+                {
+                  kind: 'OutcomeStatement',
+                  isError: false,
+                  terminateFlow: true,
+                  value: {
+                    kind: 'ObjectLiteral',
+                    fields: [
+                      {
+                        kind: 'Assignment',
+                        key: ['foo'],
+                        value: {
+                          kind: 'PrimitiveLiteral',
+                          value: 1,
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+            {
+              kind: 'HttpResponseHandler',
+              statements: [
+                {
+                  kind: 'OutcomeStatement',
+                  isError: true,
+                  terminateFlow: true,
+                  value: {
+                    kind: 'ObjectLiteral',
+                    fields: [
+                      {
+                        kind: 'Assignment',
+                        key: ['foo'],
+                        value: {
+                          kind: 'PrimitiveLiteral',
+                          value: 1,
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        },
+        {
+          kind: 'HttpCallStatement',
+          method: 'POST',
+          url: '/',
+          request: {
+            kind: 'HttpRequest',
+            body: {
+              kind: 'JessieExpression',
+              expression: '[1, 2, 3]',
+            },
+          },
+          responseHandlers: [
+            {
+              kind: 'HttpResponseHandler',
+              statusCode: 404,
+              contentType: 'text/html',
+              contentLanguage: 'en-US',
+              statements: [
+                {
+                  kind: 'SetStatement',
+                  assignments: [
+                    {
+                      kind: 'Assignment',
+                      key: ['foo'],
+                      value: {
+                        kind: 'PrimitiveLiteral',
+                        value: 1,
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ],
+};
+
+describe('map strict', () => {
   describe('jessie contexts', () => {
     it('should parse jessie condition expression', () => {
       const input = 'if ((() => { const a = 1; return { foo: a + 2 }; })())';
 
       const source = new Source(input);
-      const condition = parseRule(STATEMENT_CONDITION, source, true);
+      const condition = parseRule(mapCommon.STATEMENT_CONDITION, source, true);
 
       expect(condition).toMatchObject({
         kind: 'StatementCondition',
@@ -450,9 +1006,9 @@ describe('map', () => {
       }`;
 
       const source = new Source(input);
-      const object = parseRule(mapRules.OBJECT_LITERAL, source, true);
 
-      expect(object).toMatchObject({
+      const objectStrict = parseRule(mapStrict.OBJECT_LITERAL, source, true);
+      expect(objectStrict).toMatchObject({
         kind: 'ObjectLiteral',
         fields: [
           {
@@ -485,12 +1041,12 @@ describe('map', () => {
 
     it('should parse jessie rhs in operation call arguments', () => {
       const input =
-        'foo = "hi", bar = 1 + 2, baz = `format ${formatMe + `${nested}`} and ${formatThat} please`, quz = true)';
+        'foo = "hi", bar = 1 + 2, baz = `format ${formatMe + `${nested}`} and ${formatThat} please`, quz = true )';
 
       const source = new Source(input);
 
       const args = parseRule(
-        SyntaxRule.repeat(ARGUMENT_LIST_ASSIGNMENT),
+        SyntaxRule.repeat(mapStrict.ARGUMENT_LIST_ASSIGNMENT),
         source,
         true
       );
@@ -533,1009 +1089,19 @@ describe('map', () => {
     });
   });
 
-  it('should parse conversation.tyntec.map', () => {
-    const input = `profile = "http://superface.ai/profile/conversation/SendMessage"
-    provider = "http://superface.ai/directory/Tyntec#SMS"
-    
-    # Tyntec API documentation available at:
-    #   https://api.tyntec.com/reference/#conversations-send-messages-send-a-message
-    
-    map SendMessage {
-      http POST "https://api.tyntec.com/chat-api/v2/messages" {
-        request {
-          body {
-            to = input.to
-            channels = ['sms']
-            sms.from = input.from
-            sms.contentType = 'text'
-            sms.text = input.text
-          }
-        }
-    
-        response 200 "application/json" {
-          map result {
-            messageId = body.messageId
-          }
-        }
-      }
-    }
-    
-    map RetrieveMessageStatus {
-      messageId = input.messageId
-    
-      http GET "https://api.tyntec.com/chat-api/v2/messages/{messageId}/history" {
-        response 200 "application/json" {
-          map result {
-            deliveryStatus = body.history[0].state
-          }
-        }
-      } 
-    }
-    `;
-
-    const source = new Source(input);
-    const map = parseRule(mapRules.MAP_DOCUMENT, source);
-
-    expect(map).toMatchObject({
-      kind: 'MapDocument',
-      map: {
-        kind: 'Map',
-        profileId: {
-          kind: 'ProfileId',
-          profileId: 'http://superface.ai/profile/conversation/SendMessage',
-        },
-        provider: {
-          kind: 'Provider',
-          providerId: 'http://superface.ai/directory/Tyntec#SMS',
-        },
-      },
-      definitions: [
-        {
-          kind: 'MapDefinition',
-          name: 'SendMessage',
-          usecaseName: 'SendMessage',
-          statements: [
-            {
-              kind: 'HttpCallStatement',
-              method: 'POST',
-              url: 'https://api.tyntec.com/chat-api/v2/messages',
-              requestDefinition: {
-                body: {
-                  kind: 'ObjectLiteral',
-                  fields: [
-                    {
-                      kind: 'Assignment',
-                      key: ['to'],
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: 'input.to',
-                      },
-                    },
-                    {
-                      kind: 'Assignment',
-                      key: ['channels'],
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: "['sms']",
-                      },
-                    },
-                    {
-                      kind: 'Assignment',
-                      key: ['sms', 'from'],
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: 'input.from',
-                      },
-                    },
-                    {
-                      kind: 'Assignment',
-                      key: ['sms', 'contentType'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'text',
-                      },
-                    },
-                    {
-                      kind: 'Assignment',
-                      key: ['sms', 'text'],
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: 'input.text',
-                      },
-                    },
-                  ],
-                },
-              },
-              responseHandlers: [
-                {
-                  kind: 'HttpResponseHandler',
-                  statusCode: 200,
-                  contentType: 'application/json',
-                  statements: [
-                    {
-                      kind: 'MapResultStatement',
-                      value: {
-                        kind: 'ObjectLiteral',
-                        fields: [
-                          {
-                            kind: 'Assignment',
-                            key: ['messageId'],
-                            value: {
-                              kind: 'JessieExpression',
-                              expression: 'body.messageId',
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-        {
-          kind: 'MapDefinition',
-          name: 'RetrieveMessageStatus',
-          usecaseName: 'RetrieveMessageStatus',
-          statements: [
-            {
-              kind: 'SetStatement',
-              assignments: [
-                {
-                  kind: 'Assignment',
-                  key: ['messageId'],
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'input.messageId',
-                  },
-                },
-              ],
-            },
-            {
-              kind: 'HttpCallStatement',
-              method: 'GET',
-              url:
-                'https://api.tyntec.com/chat-api/v2/messages/{messageId}/history',
-              requestDefinition: {},
-              responseHandlers: [
-                {
-                  kind: 'HttpResponseHandler',
-                  statusCode: 200,
-                  contentType: 'application/json',
-                  statements: [
-                    {
-                      kind: 'MapResultStatement',
-                      value: {
-                        kind: 'ObjectLiteral',
-                        fields: [
-                          {
-                            kind: 'Assignment',
-                            key: ['deliveryStatus'],
-                            value: {
-                              kind: 'JessieExpression',
-                              expression: 'body.history[0].state',
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    });
-  });
-
-  it('should parse computation.map', () => {
-    const input = `operation foo {
-      return {
-        answer = 42
-        hash { a = 1, b = 2 }
-      }
-    }
-    
-    operation fooWithArgs {
-      return if (args.success) {
-        answer = 42
-      }
-    
-      fail if (!args.success) {
-        message = "I am supposed to fail"
-      }
-    }
-    
-    operation bar {
-      call fooWithArgs(success = \x60Muj string \x24{someVar}\x60, neco.foo = 4+2 ) {
-        return if (!error) {
-          finalAnswer = "The final answer is " + data.answer
-        }
-    
-        fail if (error) {
-          finalAnswer = "There was an error " + error.message
-        }
-      }
-    
-    }
-    
-    operation countArray {
-      count = args.array.reduce((acc, curr) => acc + 1, 0)
-    
-      return {
-        answer = "This is the count " + count
-      }
-    }
-    `;
-
-    const source = new Source(input);
-
-    const definitions = parseRule(
-      SyntaxRule.repeat(mapRules.MAP_DOCUMENT_DEFINITION),
-      source,
-      true
-    );
-
-    expect(definitions[0]).toMatchObject({
-      kind: 'OperationDefinition',
-      name: 'foo',
-      statements: [
-        {
-          kind: 'ReturnStatement',
-          value: {
-            kind: 'ObjectLiteral',
-            fields: [
-              {
-                kind: 'Assignment',
-                key: ['answer'],
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 42,
-                },
-              },
-              {
-                kind: 'Assignment',
-                key: ['hash'],
-                value: {
-                  kind: 'ObjectLiteral',
-                  fields: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 1,
-                      },
-                    },
-                    {
-                      kind: 'Assignment',
-                      key: ['b'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 2,
-                      },
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-        },
-      ],
-    });
-
-    expect(definitions[1]).toMatchObject({
-      kind: 'OperationDefinition',
-      name: 'fooWithArgs',
-      statements: [
-        {
-          kind: 'ReturnStatement',
-          condition: {
-            kind: 'StatementCondition',
-            expression: {
-              kind: 'JessieExpression',
-              expression: 'args.success',
-            },
-          },
-          value: {
-            kind: 'ObjectLiteral',
-            fields: [
-              {
-                kind: 'Assignment',
-                key: ['answer'],
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 42,
-                },
-              },
-            ],
-          },
-        },
-        {
-          kind: 'FailStatement',
-          condition: {
-            kind: 'StatementCondition',
-            expression: {
-              kind: 'JessieExpression',
-              expression: '!args.success',
-            },
-          },
-          value: {
-            kind: 'ObjectLiteral',
-            fields: [
-              {
-                kind: 'Assignment',
-                key: ['message'],
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'I am supposed to fail',
-                },
-              },
-            ],
-          },
-        },
-      ],
-    });
-
-    expect(definitions[2]).toMatchObject({
-      kind: 'OperationDefinition',
-      name: 'bar',
-      statements: [
-        {
-          kind: 'CallStatement',
-          operationName: 'fooWithArgs',
-          arguments: [
-            {
-              kind: 'Assignment',
-              key: ['success'],
-              value: {
-                kind: 'JessieExpression',
-                expression: '"Muj string " + someVar',
-              },
-            },
-            {
-              kind: 'Assignment',
-              key: ['neco', 'foo'],
-              value: {
-                kind: 'JessieExpression',
-                expression: '4 + 2',
-              },
-            },
-          ],
-          statements: [
-            {
-              kind: 'ReturnStatement',
-              condition: {
-                kind: 'StatementCondition',
-                expression: {
-                  kind: 'JessieExpression',
-                  expression: '!error',
-                },
-              },
-              value: {
-                kind: 'ObjectLiteral',
-                fields: [
-                  {
-                    kind: 'Assignment',
-                    key: ['finalAnswer'],
-                    value: {
-                      kind: 'JessieExpression',
-                      expression: '"The final answer is " + data.answer',
-                    },
-                  },
-                ],
-              },
-            },
-            {
-              kind: 'FailStatement',
-              condition: {
-                kind: 'StatementCondition',
-                expression: {
-                  kind: 'JessieExpression',
-                  expression: 'error',
-                },
-              },
-              value: {
-                kind: 'ObjectLiteral',
-                fields: [
-                  {
-                    kind: 'Assignment',
-                    key: ['finalAnswer'],
-                    value: {
-                      kind: 'JessieExpression',
-                      expression: '"There was an error " + error.message',
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      ],
-    });
-
-    expect(definitions[3]).toMatchObject({
-      kind: 'OperationDefinition',
-      name: 'countArray',
-      statements: [
-        {
-          kind: 'SetStatement',
-          assignments: [
-            {
-              kind: 'Assignment',
-              key: ['count'],
-              value: {
-                kind: 'JessieExpression',
-                expression:
-                  'args.array.reduce(function (acc, curr) { return acc + 1; }, 0)',
-              },
-            },
-          ],
-        },
-        {
-          kind: 'ReturnStatement',
-          value: {
-            kind: 'ObjectLiteral',
-            fields: [
-              {
-                kind: 'Assignment',
-                key: ['answer'],
-                value: {
-                  kind: 'JessieExpression',
-                  expression: '"This is the count " + count',
-                },
-              },
-            ],
-          },
-        },
-      ],
-    });
-  });
-
-  it('should parse map.example.slang', () => {
-    const input = `profile = "http://example.com/profile"
-    provider = "http://example.com/provider"
-    
-    # Line comment
-    
-    """
-    Operation Foo
-    This operation showcases some of the syntax available in operations
-    """
-    operation Foo {
-      # set variable (without explicit set block)
-      a = ["hello", "world"];
-      b.c = 1 + 2 # semantically expands to: \`b: { c: 1 + 2 }\`
-      
-      d."e.e" {
-        f = 3, g = 4
-      } # semantically expands to: \`d: { e: { f: 3, g: 4 } }\`
-    
-      # conditional set blocks have to be explicit
-      set if (condition) {
-        h = true; i = false
-      }
-    
-      # fail with an object literal (with slang syntax) with a condition
-      # \`args\` is a scope-injected variable holding the arguments passed from the caller
-      fail if (args.fail) {
-        code = 16
-      }
-    
-      # return a literal with condition
-      return if (b.c === 3) "early return";
-    
-      fail if (false) "error";
-    
-      # return a jessie literal without condition
-      return \`Hello \x24{a}\`
-    }
-    
-    operation Bar {
-      # both maps and operations can call other operations
-      call Foo(fail = false) if (bar) {
-        # this scope block has access to injected variables \`data\` and \`error\` filled by the operation 
-    
-        fail if (error) { errorCode = error.code }
-    
-        return if (data === "Hello") data
-      }
-    }
-    
-    map Baz {
-      # operations and maps can also make http requests
-      http GET "example.com/api" {
-        # the request object describes the request variables
-        request {
-          query {
-            q = input.query # map also has access to the \`input\` variable from the usecase definition
-          }
-    
-          headers {
-            "content-type" = "application/json"
-          }
-    
-          body {
-            name {
-              first = "john"
-              last = "doe"
-            }
-            address.zip = 123
-          }
-        }
-    
-        # the response blocks can filter specific responses
-        response 200 "application/json" "en-US" {
-          # mapping into the result mutates the map-global result variable
-          map result {
-            code = 200
-            type = "json"
-            lang = "en"
-    
-            # a special case of inline call
-            # here the \`data\` is assigned to the text field
-            # any failure produces an expection
-            text = call Foo(body = response.body)
-          }
-        }
-    
-        response 200 {
-          map result {
-            code = 200
-          }
-        }
-    
-        response {
-          # mapping into the error mutates the map-global error variable
-          # once anything is mapped into the error, the map will result into an error mapping
-          map error {
-            code = response.code
-          }
-        }
-      }
-    
-      # mapping into result/error does not end the execution, so cleanup can still be run
-      call Bar(text = "error") if (map.error) {}
-    
-      # after the map finishes executing, the map-global \`result\` and \`error\` variables are returned as per the usecase definition
-    }`;
-
+  it('should parse the spec, only the spec and nothing but the spec in strict mode', () => {
+    const input = STRICT_MAP;
     const source = new Source(input);
     const map = parseMap(source);
+    expect(map).toMatchObject(STRICT_MAP_AST);
+  });
+});
 
-    expect(map).toMatchObject({
-      kind: 'MapDocument',
-      map: {
-        kind: 'Map',
-        profileId: {
-          kind: 'ProfileId',
-          profileId: 'http://example.com/profile',
-        },
-        provider: {
-          kind: 'Provider',
-          providerId: 'http://example.com/provider',
-        },
-      },
-      definitions: [
-        {
-          kind: 'OperationDefinition',
-          name: 'Foo',
-          statements: [
-            {
-              kind: 'SetStatement',
-              assignments: [
-                {
-                  kind: 'Assignment',
-                  key: ['a'],
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '["hello", "world"]',
-                  },
-                },
-              ],
-            },
-            {
-              kind: 'SetStatement',
-              assignments: [
-                {
-                  kind: 'Assignment',
-                  key: ['b', 'c'],
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '1 + 2',
-                  },
-                },
-              ],
-            },
-            {
-              kind: 'SetStatement',
-              assignments: [
-                {
-                  kind: 'Assignment',
-                  key: ['d', 'e.e'],
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['g'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 4,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-            {
-              kind: 'SetStatement',
-              condition: {
-                kind: 'StatementCondition',
-                expression: {
-                  kind: 'JessieExpression',
-                  expression: 'condition',
-                },
-              },
-              assignments: [
-                {
-                  kind: 'Assignment',
-                  key: ['h'],
-                  value: {
-                    kind: 'PrimitiveLiteral',
-                    value: true,
-                  },
-                },
-                {
-                  kind: 'Assignment',
-                  key: ['i'],
-                  value: {
-                    kind: 'PrimitiveLiteral',
-                    value: false,
-                  },
-                },
-              ],
-            },
-            {
-              kind: 'FailStatement',
-              condition: {
-                kind: 'StatementCondition',
-                expression: {
-                  kind: 'JessieExpression',
-                  expression: 'args.fail',
-                },
-              },
-              value: {
-                kind: 'ObjectLiteral',
-                fields: [
-                  {
-                    kind: 'Assignment',
-                    key: ['code'],
-                    value: {
-                      kind: 'PrimitiveLiteral',
-                      value: 16,
-                    },
-                  },
-                ],
-              },
-            },
-            {
-              kind: 'ReturnStatement',
-              condition: {
-                kind: 'StatementCondition',
-                expression: {
-                  kind: 'JessieExpression',
-                  expression: 'b.c === 3',
-                },
-              },
-              value: {
-                kind: 'PrimitiveLiteral',
-                value: 'early return',
-              },
-            },
-            {
-              kind: 'FailStatement',
-              condition: {
-                kind: 'StatementCondition',
-                expression: {
-                  kind: 'JessieExpression',
-                  expression: 'false',
-                },
-              },
-              value: {
-                kind: 'PrimitiveLiteral',
-                value: 'error',
-              },
-            },
-            {
-              kind: 'ReturnStatement',
-              value: {
-                kind: 'JessieExpression',
-                expression: '"Hello " + a',
-              },
-            },
-          ],
-        },
-        {
-          kind: 'OperationDefinition',
-          name: 'Bar',
-          statements: [
-            {
-              kind: 'CallStatement',
-              condition: {
-                kind: 'StatementCondition',
-                expression: {
-                  kind: 'JessieExpression',
-                  expression: 'bar',
-                },
-              },
-              operationName: 'Foo',
-              arguments: [
-                {
-                  kind: 'Assignment',
-                  key: ['fail'],
-                  value: {
-                    kind: 'PrimitiveLiteral',
-                    value: false,
-                  },
-                },
-              ],
-              statements: [
-                {
-                  kind: 'FailStatement',
-                  condition: {
-                    kind: 'StatementCondition',
-                    expression: {
-                      kind: 'JessieExpression',
-                      expression: 'error',
-                    },
-                  },
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['errorCode'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'error.code',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'ReturnStatement',
-                  condition: {
-                    kind: 'StatementCondition',
-                    expression: {
-                      kind: 'JessieExpression',
-                      expression: 'data === "Hello"',
-                    },
-                  },
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'data',
-                  },
-                },
-              ],
-            },
-          ],
-        },
-        {
-          kind: 'MapDefinition',
-          name: 'Baz',
-          usecaseName: 'Baz',
-          statements: [
-            {
-              kind: 'HttpCallStatement',
-              method: 'GET',
-              url: 'example.com/api',
-              requestDefinition: {
-                queryParameters: {
-                  kind: 'ObjectLiteral',
-                  fields: [
-                    {
-                      kind: 'Assignment',
-                      key: ['q'],
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: 'input.query',
-                      },
-                    },
-                  ],
-                },
-                headers: {
-                  kind: 'ObjectLiteral',
-                  fields: [
-                    {
-                      kind: 'Assignment',
-                      key: ['content-type'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'application/json',
-                      },
-                    },
-                  ],
-                },
-                body: {
-                  kind: 'ObjectLiteral',
-                  fields: [
-                    {
-                      kind: 'Assignment',
-                      key: ['name'],
-                      value: {
-                        kind: 'ObjectLiteral',
-                        fields: [
-                          {
-                            kind: 'Assignment',
-                            key: ['first'],
-                            value: {
-                              kind: 'PrimitiveLiteral',
-                              value: 'john',
-                            },
-                          },
-                          {
-                            kind: 'Assignment',
-                            key: ['last'],
-                            value: {
-                              kind: 'PrimitiveLiteral',
-                              value: 'doe',
-                            },
-                          },
-                        ],
-                      },
-                    },
-                    {
-                      kind: 'Assignment',
-                      key: ['address', 'zip'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 123,
-                      },
-                    },
-                  ],
-                },
-              },
-              responseHandlers: [
-                {
-                  kind: 'HttpResponseHandler',
-                  statusCode: 200,
-                  contentType: 'application/json',
-                  contentLanguage: 'en-US',
-                  statements: [
-                    {
-                      kind: 'MapResultStatement',
-                      value: {
-                        kind: 'ObjectLiteral',
-                        fields: [
-                          {
-                            kind: 'Assignment',
-                            key: ['code'],
-                            value: {
-                              kind: 'PrimitiveLiteral',
-                              value: 200,
-                            },
-                          },
-                          {
-                            kind: 'Assignment',
-                            key: ['type'],
-                            value: {
-                              kind: 'PrimitiveLiteral',
-                              value: 'json',
-                            },
-                          },
-                          {
-                            kind: 'Assignment',
-                            key: ['lang'],
-                            value: {
-                              kind: 'PrimitiveLiteral',
-                              value: 'en',
-                            },
-                          },
-                          {
-                            kind: 'Assignment',
-                            key: ['text'],
-                            value: {
-                              kind: 'InlineCall',
-                              operationName: 'Foo',
-                              arguments: [
-                                {
-                                  kind: 'Assignment',
-                                  key: ['body'],
-                                  value: {
-                                    kind: 'JessieExpression',
-                                    expression: 'response.body',
-                                  },
-                                },
-                              ],
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'HttpResponseHandler',
-                  statusCode: 200,
-                  statements: [
-                    {
-                      kind: 'MapResultStatement',
-                      value: {
-                        kind: 'ObjectLiteral',
-                        fields: [
-                          {
-                            kind: 'Assignment',
-                            key: ['code'],
-                            value: {
-                              kind: 'PrimitiveLiteral',
-                              value: 200,
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'HttpResponseHandler',
-                  statements: [
-                    {
-                      kind: 'MapErrorStatement',
-                      value: {
-                        kind: 'ObjectLiteral',
-                        fields: [
-                          {
-                            kind: 'Assignment',
-                            key: ['code'],
-                            value: {
-                              kind: 'JessieExpression',
-                              expression: 'response.code',
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
-            {
-              kind: 'CallStatement',
-              condition: {
-                kind: 'StatementCondition',
-                expression: {
-                  kind: 'JessieExpression',
-                  expression: 'map.error',
-                },
-              },
-              operationName: 'Bar',
-              arguments: [
-                {
-                  kind: 'Assignment',
-                  key: ['text'],
-                  value: {
-                    kind: 'PrimitiveLiteral',
-                    value: 'error',
-                  },
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    });
+describe('map extended', () => {
+  it('should parse the strict example', () => {
+    const input = STRICT_MAP;
+    const source = new Source(input);
+    const map = parseMapExtended(source);
+    expect(map).toMatchObject(STRICT_MAP_AST);
   });
 });

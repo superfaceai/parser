@@ -478,7 +478,7 @@ describe('syntax rule factory', () => {
       ];
       const stream = new ArrayLexerStream(tokens);
 
-      const rule = SyntaxRule.lookahead(SyntaxRule.literal(), true);
+      const rule = SyntaxRule.lookahead(SyntaxRule.literal(), 'invert');
 
       expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',

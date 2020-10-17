@@ -1,0 +1,435 @@
+{
+	"kind": "MapDocument",
+	"map": {
+		"kind": "Map",
+		"profileId": {
+			"kind": "ProfileId",
+			"profileId": "http://example.com/profile"
+		},
+		"provider": {
+			"kind": "Provider",
+			"providerId": "http://example.com/provider"
+		}
+	},
+	"definitions": [
+		{
+			"kind": "MapDefinition",
+			"name": "Foo",
+			"usecaseName": "Foo",
+			"statements": [
+				{
+					"kind": "SetStatement",
+					"condition": {
+						"kind": "StatementCondition",
+						"expression": {
+							"kind": "JessieExpression",
+							"expression": "!cond"
+						}
+					},
+					"assignments": [
+						{
+							"kind": "Assignment",
+							"key": ["foo"],
+							"value": {
+								"kind": "PrimitiveLiteral",
+								"value": 1
+							}
+						},
+						{
+							"kind": "Assignment",
+							"key": ["foo"],
+							"value": {
+								"kind": "JessieExpression",
+								"expression": "1 + 1"
+							}
+						},
+						{
+							"kind": "Assignment",
+							"key": ["foo.bar", "bar"],
+							"value": {
+								"kind": "InlineCall",
+								"operationName": "Op",
+								"arguments": []
+							}
+						}
+					]
+				},
+				{
+					"kind": "SetStatement",
+					"assignments": [
+						{
+							"kind": "Assignment",
+							"key": ["foo"],
+							"value": {
+								"kind": "PrimitiveLiteral",
+								"value": 1
+							}
+						}
+					]
+				},
+				{
+					"kind": "SetStatement",
+					"assignments": [
+						{
+							"kind": "Assignment",
+							"key": ["foo"],
+							"value": {
+								"kind": "PrimitiveLiteral",
+								"value": 1
+							}
+						}
+					]
+				},
+				{
+					"kind": "SetStatement",
+					"assignments": [
+						{
+							"kind": "Assignment",
+							"key": ["foo.bar", "bar"],
+							"value": {
+								"kind": "InlineCall",
+								"operationName": "Op",
+								"arguments": []
+							}
+						}
+					]
+				},
+				{
+					"kind": "CallStatement",
+					"operationName": "Op",
+					"arguments": [
+						{
+							"kind": "Assignment",
+							"key": ["foo"],
+							"value": {
+								"kind": "PrimitiveLiteral",
+								"value": 1
+							}
+						},
+						{
+							"kind": "Assignment",
+							"key": ["bar"],
+							"value": {
+								"kind": "JessieExpression",
+								"expression": "1 + 1"
+							}
+						}
+					],
+					"condition": {
+						"kind": "StatementCondition",
+						"expression": {
+							"kind": "JessieExpression",
+							"expression": "cond"
+						}
+					},
+					"statements": [
+						{
+							"kind": "OutcomeStatement",
+							"condition": {
+								"kind": "StatementCondition",
+								"expression": {
+									"kind": "JessieExpression",
+									"expression": "cond"
+								}
+							},
+							"isError": false,
+							"terminateFlow": false,
+							"value": {
+								"kind": "ObjectLiteral",
+								"fields": [
+									{
+										"kind": "Assignment",
+										"key": ["foo"],
+										"value": {
+											"kind": "PrimitiveLiteral",
+											"value": 1
+										}
+									}
+								]
+							}
+						},
+						{
+							"kind": "OutcomeStatement",
+							"condition": {
+								"kind": "StatementCondition",
+								"expression": {
+									"kind": "JessieExpression",
+									"expression": "cond"
+								}
+							},
+							"isError": false,
+							"terminateFlow": true,
+							"value": {
+								"kind": "ObjectLiteral",
+								"fields": [
+									{
+										"kind": "Assignment",
+										"key": ["foo"],
+										"value": {
+											"kind": "PrimitiveLiteral",
+											"value": 1
+										}
+									}
+								]
+							}
+						},
+						{
+							"kind": "OutcomeStatement",
+							"condition": {
+								"kind": "StatementCondition",
+								"expression": {
+									"kind": "JessieExpression",
+									"expression": "cond"
+								}
+							},
+							"isError": true,
+							"terminateFlow": false,
+							"value": {
+								"kind": "ObjectLiteral",
+								"fields": [
+									{
+										"kind": "Assignment",
+										"key": ["foo.bar"],
+										"value": {
+											"kind": "PrimitiveLiteral",
+											"value": 1
+										}
+									}
+								]
+							}
+						},
+						{
+							"kind": "OutcomeStatement",
+							"condition": {
+								"kind": "StatementCondition",
+								"expression": {
+									"kind": "JessieExpression",
+									"expression": "cond"
+								}
+							},
+							"isError": true,
+							"terminateFlow": true,
+							"value": {
+								"kind": "ObjectLiteral",
+								"fields": [
+									{
+										"kind": "Assignment",
+										"key": ["foo", "bar"],
+										"value": {
+											"kind": "PrimitiveLiteral",
+											"value": 1
+										}
+									}
+								]
+							}
+						}
+					]
+				},
+				{
+					"kind": "HttpCallStatement",
+					"method": "GET",
+					"url": "/api/{foo}/bar",
+					"request": {
+						"kind": "HttpRequest",
+						"contentType": "application/json",
+						"query": {
+							"kind": "ObjectLiteral",
+							"fields": [
+								{
+									"kind": "Assignment",
+									"key": ["foo"],
+									"value": {
+										"kind": "PrimitiveLiteral",
+										"value": "hello"
+									}
+								},
+								{
+									"kind": "Assignment",
+									"key": ["bar"],
+									"value": {
+										"kind": "PrimitiveLiteral",
+										"value": "world"
+									}
+								}
+							]
+						},
+						"headers": {
+							"kind": "ObjectLiteral",
+							"fields": [
+								{
+									"kind": "Assignment",
+									"key": ["User-Agent"],
+									"value": {
+										"kind": "PrimitiveLiteral",
+										"value": "superface v1"
+									}
+								}
+							]
+						},
+						"body": {
+							"kind": "ObjectLiteral",
+							"fields": [
+								{
+									"kind": "Assignment",
+									"key": ["foo"],
+									"value": {
+										"kind": "PrimitiveLiteral",
+										"value": 1
+									}
+								},
+								{
+									"kind": "Assignment",
+									"key": ["bar"],
+									"value": {
+										"kind": "JessieExpression",
+										"expression": "1 + 1"
+									}
+								},
+								{
+									"kind": "Assignment",
+									"key": ["foo.bar", "bar"],
+									"value": {
+										"kind": "PrimitiveLiteral",
+										"value": "3"
+									}
+								}
+							]
+						}
+					},
+					"responseHandlers": [
+						{
+							"kind": "HttpResponseHandler",
+							"statusCode": 300,
+							"statements": [
+								{
+									"kind": "OutcomeStatement",
+									"isError": false,
+									"terminateFlow": false,
+									"value": {
+										"kind": "ObjectLiteral",
+										"fields": [
+											{
+												"kind": "Assignment",
+												"key": ["foo"],
+												"value": {
+													"kind": "PrimitiveLiteral",
+													"value": 1
+												}
+											}
+										]
+									}
+								}
+							]
+						},
+						{
+							"kind": "HttpResponseHandler",
+							"contentType": "application/json",
+							"statements": [
+								{
+									"kind": "OutcomeStatement",
+									"isError": true,
+									"terminateFlow": false,
+									"value": {
+										"kind": "ObjectLiteral",
+										"fields": [
+											{
+												"kind": "Assignment",
+												"key": ["foo"],
+												"value": {
+													"kind": "PrimitiveLiteral",
+													"value": 1
+												}
+											}
+										]
+									}
+								}
+							]
+						},
+						{
+							"kind": "HttpResponseHandler",
+							"contentLanguage": "en-US",
+							"statements": [
+								{
+									"kind": "OutcomeStatement",
+									"isError": false,
+									"terminateFlow": true,
+									"value": {
+										"kind": "ObjectLiteral",
+										"fields": [
+											{
+												"kind": "Assignment",
+												"key": ["foo"],
+												"value": {
+													"kind": "PrimitiveLiteral",
+													"value": 1
+												}
+											}
+										]
+									}
+								}
+							]
+						},
+						{
+							"kind": "HttpResponseHandler",
+							"statements": [
+								{
+									"kind": "OutcomeStatement",
+									"isError": true,
+									"terminateFlow": true,
+									"value": {
+										"kind": "ObjectLiteral",
+										"fields": [
+											{
+												"kind": "Assignment",
+												"key": ["foo"],
+												"value": {
+													"kind": "PrimitiveLiteral",
+													"value": 1
+												}
+											}
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"kind": "HttpCallStatement",
+					"method": "POST",
+					"url": "/",
+					"request": {
+						"kind": "HttpRequest",
+						"body": {
+							"kind": "JessieExpression",
+							"expression": "[1, 2, 3]"
+						}
+					},
+					"responseHandlers": [
+						{
+							"kind": "HttpResponseHandler",
+							"statusCode": 404,
+							"contentType": "text/html",
+							"contentLanguage": "en-US",
+							"statements": [
+								{
+									"kind": "SetStatement",
+									"assignments": [
+										{
+											"kind": "Assignment",
+											"key": ["foo"],
+											"value": {
+												"kind": "PrimitiveLiteral",
+												"value": 1
+											}
+										}
+									]
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	]
+}
