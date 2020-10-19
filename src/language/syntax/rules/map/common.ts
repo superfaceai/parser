@@ -12,10 +12,10 @@ import {
   StatementConditionNode,
 } from '@superindustries/language';
 
-import { LexerTokenMatch, SyntaxRule, SyntaxRuleOr } from '../../rule';
 import { LexerTokenKind } from '../../../index';
 import { JessieExpressionTerminationToken } from '../../../lexer/sublexer/jessie/expression';
 import { IdentifierTokenData, StringTokenData } from '../../../lexer/token';
+import { LexerTokenMatch, SyntaxRule, SyntaxRuleOr } from '../../rule';
 import { documentedNode, SrcNode, SyntaxRuleSrc } from '../common';
 
 export function terminatorLookahead<R>(

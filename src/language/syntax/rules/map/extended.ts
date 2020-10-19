@@ -81,22 +81,24 @@ export const INLINE_CALL: SyntaxRuleSrc<InlineCallNode> = CALL_STATEMENT_HEAD.ma
 
 const OBJECT_LITERAL_MUT = new SyntaxRuleMutable<SrcNode<ObjectLiteralNode>>();
 export const SET_BLOCK_ASSIGNMENT = ASSIGNMENT_FACTORY(
-  (...terminators) => OBJECT_LITERAL_MUT.or(
-    SyntaxRule.operator('=')
-      .followedBy(INLINE_CALL.or(RHS_EXPRESSION_FACTORY(...terminators)))
-      .map(([_op, value]) => value)
-  ),
+  (...terminators) =>
+    OBJECT_LITERAL_MUT.or(
+      SyntaxRule.operator('=')
+        .followedBy(INLINE_CALL.or(RHS_EXPRESSION_FACTORY(...terminators)))
+        .map(([_op, value]) => value)
+    ),
   '\n',
   ';',
   '}'
 );
 
 export const OBJECT_LITERAL_ASSIGNMENT = ASSIGNMENT_FACTORY(
-  (...terminators) => OBJECT_LITERAL_MUT.or(
-    SyntaxRule.operator('=')
-      .followedBy(INLINE_CALL.or(RHS_EXPRESSION_FACTORY(...terminators)))
-      .map(([_op, value]) => value)
-  ),
+  (...terminators) =>
+    OBJECT_LITERAL_MUT.or(
+      SyntaxRule.operator('=')
+        .followedBy(INLINE_CALL.or(RHS_EXPRESSION_FACTORY(...terminators)))
+        .map(([_op, value]) => value)
+    ),
   '\n',
   ',',
   '}'
