@@ -15,7 +15,7 @@ import {
 } from '@superindustries/language';
 
 import { JessieExpressionTerminationToken } from '../../../lexer/sublexer/jessie/expression';
-import { SyntaxRule, SyntaxRuleOr } from '../../rule';
+import { SyntaxRule, SyntaxRuleMutable, SyntaxRuleOr } from '../../rule';
 import {
   documentedNode,
   SLOT_DEFINITION_FACTORY,
@@ -79,21 +79,24 @@ export const INLINE_CALL: SyntaxRuleSrc<InlineCallNode> = CALL_STATEMENT_HEAD.ma
   }
 );
 
+const OBJECT_LITERAL_MUT = new SyntaxRuleMutable<SrcNode<ObjectLiteralNode>>();
 export const SET_BLOCK_ASSIGNMENT = ASSIGNMENT_FACTORY(
-  (...terminators) =>
+  (...terminators) => OBJECT_LITERAL_MUT.or(
     SyntaxRule.operator('=')
       .followedBy(INLINE_CALL.or(RHS_EXPRESSION_FACTORY(...terminators)))
-      .map(([_op, value]) => value),
+      .map(([_op, value]) => value)
+  ),
   '\n',
   ';',
   '}'
 );
 
 export const OBJECT_LITERAL_ASSIGNMENT = ASSIGNMENT_FACTORY(
-  (...terminators) =>
+  (...terminators) => OBJECT_LITERAL_MUT.or(
     SyntaxRule.operator('=')
       .followedBy(INLINE_CALL.or(RHS_EXPRESSION_FACTORY(...terminators)))
-      .map(([_op, value]) => value),
+      .map(([_op, value]) => value)
+  ),
   '\n',
   ',',
   '}'
@@ -119,6 +122,7 @@ export const OBJECT_LITERAL: SyntaxRuleSrc<ObjectLiteralNode> = SyntaxRule.separ
       };
     }
   );
+OBJECT_LITERAL_MUT.rule = OBJECT_LITERAL;
 
 export const STATEMENT_RHS_VALUE: SyntaxRuleSrc<LiteralNode> = OBJECT_LITERAL.peekUnknown().or(
   consumeLocalTerminators(

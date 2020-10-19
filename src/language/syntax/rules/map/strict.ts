@@ -243,7 +243,6 @@ export const HTTP_REQUEST_VARIABLES_BLOCK = SyntaxRule.separator('{')
   .andFollowedBy(SyntaxRule.separator('}'))
   .map(([sepStart, maybeQuery, maybeHeaders, maybeBody, sepEnd]) => {
     return {
-      kind: 'HttpRequest',
       query: maybeQuery?.[1],
       headers: maybeHeaders?.[1],
       body: maybeBody?.[1],

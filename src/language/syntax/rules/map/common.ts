@@ -12,7 +12,7 @@ import {
   StatementConditionNode,
 } from '@superindustries/language';
 
-import { LexerTokenMatch, SyntaxRule, SyntaxRuleOr } from '../../index';
+import { LexerTokenMatch, SyntaxRule, SyntaxRuleOr } from '../../rule';
 import { LexerTokenKind } from '../../../index';
 import { JessieExpressionTerminationToken } from '../../../lexer/sublexer/jessie/expression';
 import { IdentifierTokenData, StringTokenData } from '../../../lexer/token';
