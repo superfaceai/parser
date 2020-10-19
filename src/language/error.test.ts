@@ -9,7 +9,7 @@ import {
   RuleResultNoMatch,
   SyntaxRule,
 } from './syntax/rule';
-import * as profile from './syntax/rules/profile';
+import { profile } from './syntax/rules/profile';
 
 // Declare custom matcher for sake of Typescript
 declare global {

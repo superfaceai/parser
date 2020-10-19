@@ -12,8 +12,8 @@ import {
   StatementConditionNode,
 } from '@superindustries/language';
 
-import { LexerTokenMatch, SyntaxRule, SyntaxRuleOr } from '../..';
-import { LexerTokenKind } from '../../..';
+import { LexerTokenMatch, SyntaxRule, SyntaxRuleOr } from '../../index';
+import { LexerTokenKind } from '../../../index';
 import { JessieExpressionTerminationToken } from '../../../lexer/sublexer/jessie/expression';
 import { IdentifierTokenData, StringTokenData } from '../../../lexer/token';
 import { documentedNode, SrcNode, SyntaxRuleSrc } from '../common';

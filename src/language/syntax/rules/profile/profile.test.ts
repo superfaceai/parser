@@ -1,4 +1,4 @@
-import { SyntaxError } from '../../error';
+import { SyntaxError } from '../../../error';
 import {
   IdentifierTokenData,
   LexerToken,
@@ -6,10 +6,10 @@ import {
   LexerTokenKind,
   LiteralTokenData,
   StringTokenData,
-} from '../../lexer/token';
-import { Location, Source, Span } from '../../source';
-import { RuleResult } from '../rule';
-import { ArrayLexerStream } from '../util';
+} from '../../../lexer/token';
+import { Location, Source, Span } from '../../../source';
+import { RuleResult } from '../../rule';
+import { ArrayLexerStream } from '../../util';
 import * as rules from './profile';
 
 // Declare custom matcher for sake of Typescript

@@ -18,19 +18,19 @@ import {
   UseCaseSlotDefinitionNode,
 } from '@superindustries/language';
 
-import { IdentifierTokenData, LexerTokenKind } from '../../lexer/token';
+import { IdentifierTokenData, LexerTokenKind } from '../../../lexer/token';
 import {
   LexerTokenMatch,
   SyntaxRule,
   SyntaxRuleMutable,
   SyntaxRuleSeparator,
-} from '../rule';
+} from '../../rule';
 import {
   documentedNode,
   SLOT_DEFINITION_FACTORY,
   SrcNode,
   SyntaxRuleSrc,
-} from './common';
+} from '../common';
 
 // MUTABLE RULES //
 

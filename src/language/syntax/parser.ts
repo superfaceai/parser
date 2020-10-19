@@ -8,7 +8,7 @@ import { Lexer } from '../lexer/lexer';
 import { Source } from '../source';
 import { SyntaxRule } from './rule';
 import { mapExtended, mapStrict } from './rules/map';
-import { PROFILE_DOCUMENT } from './rules/profile';
+import { profile } from './rules/profile';
 
 /**
  * Attempts to match `rule` onto `source`.
@@ -42,7 +42,7 @@ export function parseRule<N>(
 }
 
 export function parseProfile(source: Source): ProfileDocumentNode {
-  return parseRule(PROFILE_DOCUMENT, source);
+  return parseRule(profile.PROFILE_DOCUMENT, source);
 }
 
 /**

@@ -7,7 +7,7 @@ import {
 } from './syntax/parser';
 import { SyntaxRule } from './syntax/rule';
 import { mapCommon, mapStrict } from './syntax/rules/map';
-import * as profileRules from './syntax/rules/profile';
+import { profile as profileRules } from './syntax/rules/profile';
 
 describe('profile', () => {
   it('should parse constructs.profile', () => {
