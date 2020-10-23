@@ -52,6 +52,11 @@ map Foo {
 
 	# https://sfspec.surge.sh/map#HTTPCall
 	http GET "/api/{foo}/bar" {
+		# https://sfspec.surge.sh/map#HTTPSecurity
+		security apikey header {
+			name = "apikey-header"
+		}
+
 		# https://sfspec.surge.sh/map#HTTPRequest
 		request "application/json" {
 			# https://sfspec.surge.sh/map#URLQuery

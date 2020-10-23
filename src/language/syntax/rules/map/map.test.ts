@@ -10,9 +10,10 @@ import {
   StringTokenData,
 } from '../../../lexer/token';
 import { Location, Source, Span } from '../../../source';
+import { allFeatures, ParserFeature, PARSER_FEATURES } from '../../features';
 import { RuleResult, SyntaxRule } from '../../rule';
 import { ArrayLexerStream } from '../../util';
-import { mapCommon, mapExtended, mapStrict } from './index';
+import * as map from './index';
 
 // Declare custom matcher for sake of Typescript
 declare global {
@@ -119,14 +120,29 @@ function tesMatchJessie(token: LexerToken) {
 function expectAllToBeAMatch<T>(
   expected: unknown,
   stream: LexerTokenStream,
-  ...rules: SyntaxRule<T>[]
+  rule: SyntaxRule<T> | SyntaxRule<T>[],
+  ...features: ParserFeature[]
 ): asserts expected is T {
+  const rules = Array.isArray(rule) ? rule : [rule];
+  
   const save = stream.save();
-
   for (const rule of rules) {
     expect(rule.tryMatch(stream)).toBeAMatch(expected);
     stream.rollback(save);
   }
+
+  const featuresSave = PARSER_FEATURES;
+  for (const feature of features) {
+    PARSER_FEATURES[feature] = true;
+  }
+  for (const rule of rules) {
+    expect(rule.tryMatch(stream)).toBeAMatch(expected);
+    stream.rollback(save);
+  }
+
+  for (const feature of features) {
+    PARSER_FEATURES[feature] = featuresSave[feature];
+  } 
 }
 
 /* eslint jest/expect-expect: ['error', { 'assertFunctionNames': ['expect', 'expectAllToBeAMatch'] }] */
@@ -188,8 +204,8 @@ describe('strict map syntax rules', () => {
           tokens[7]
         ),
         stream,
-        mapStrict.OBJECT_LITERAL,
-        mapExtended.OBJECT_LITERAL
+        map.OBJECT_LITERAL,
+        ...allFeatures()
       );
     });
 
@@ -207,7 +223,7 @@ describe('strict map syntax rules', () => {
       ];
       const stream = new ArrayLexerStream(tokens);
 
-      const rule = mapCommon.STATEMENT_CONDITION;
+      const rule = map.common.STATEMENT_CONDITION;
 
       expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
@@ -266,8 +282,8 @@ describe('strict map syntax rules', () => {
           tokens[5]
         ),
         stream,
-        mapStrict.OPERATION_OUTCOME_STATEMENT,
-        mapExtended.OPERATION_OUTCOME_STATEMENT
+        map.OPERATION_OUTCOME_STATEMENT,
+        ...allFeatures()
       );
     });
 
@@ -314,8 +330,8 @@ describe('strict map syntax rules', () => {
           tokens[5]
         ),
         stream,
-        mapStrict.OPERATION_OUTCOME_STATEMENT,
-        mapExtended.OPERATION_OUTCOME_STATEMENT
+        map.OPERATION_OUTCOME_STATEMENT,
+        ...allFeatures()
       );
     });
 
@@ -363,8 +379,8 @@ describe('strict map syntax rules', () => {
           tokens[6]
         ),
         stream,
-        mapStrict.MAP_OUTCOME_STATEMENT,
-        mapExtended.MAP_OUTCOME_STATEMENT
+        map.MAP_OUTCOME_STATEMENT,
+        ...allFeatures()
       );
     });
 
@@ -412,8 +428,8 @@ describe('strict map syntax rules', () => {
           tokens[6]
         ),
         stream,
-        mapStrict.MAP_OUTCOME_STATEMENT,
-        mapExtended.MAP_OUTCOME_STATEMENT
+        map.MAP_OUTCOME_STATEMENT,
+        ...allFeatures()
       );
     });
   });
@@ -454,8 +470,8 @@ describe('strict map syntax rules', () => {
           tokens[6]
         ),
         stream,
-        mapStrict.SET_BLOCK_ASSIGNMENT,
-        mapExtended.SET_BLOCK_ASSIGNMENT
+        map.SET_BLOCK_ASSIGNMENT,
+        ...allFeatures()
       );
     });
 
@@ -491,8 +507,8 @@ describe('strict map syntax rules', () => {
           tokens[4]
         ),
         stream,
-        mapStrict.ARGUMENT_LIST_ASSIGNMENT,
-        mapExtended.ARGUMENT_LIST_ASSIGNMENT
+        map.ARGUMENT_LIST_ASSIGNMENT,
+        ...allFeatures()
       );
     });
 
@@ -531,8 +547,8 @@ describe('strict map syntax rules', () => {
           tokens[6]
         ),
         stream,
-        mapStrict.OBJECT_LITERAL_ASSIGNMENT,
-        mapExtended.OBJECT_LITERAL_ASSIGNMENT
+        map.OBJECT_LITERAL_ASSIGNMENT,
+        ...allFeatures()
       );
     });
   });
@@ -573,8 +589,8 @@ describe('strict map syntax rules', () => {
           tokens[2]
         ),
         stream,
-        mapStrict.SET_STATEMENT,
-        mapExtended.SET_STATEMENT
+        map.SET_STATEMENT,
+        ...allFeatures()
       );
     });
 
@@ -635,8 +651,8 @@ describe('strict map syntax rules', () => {
           tokens[9]
         ),
         stream,
-        mapStrict.SET_STATEMENT,
-        mapExtended.SET_STATEMENT
+        map.SET_STATEMENT,
+        ...allFeatures()
       );
     });
 
@@ -663,8 +679,8 @@ describe('strict map syntax rules', () => {
           tokens[4]
         ),
         stream,
-        mapStrict.MAP_SUBSTATEMENT,
-        mapExtended.MAP_SUBSTATEMENT
+        map.MAP_SUBSTATEMENT,
+        ...allFeatures()
       );
     });
 
@@ -841,10 +857,8 @@ describe('strict map syntax rules', () => {
       expectAllToBeAMatch(
         expected,
         stream,
-        mapStrict.MAP_SUBSTATEMENT,
-        mapStrict.OPERATION_SUBSTATEMENT,
-        mapExtended.MAP_SUBSTATEMENT,
-        mapExtended.OPERATION_SUBSTATEMENT
+        [map.MAP_SUBSTATEMENT, map.OPERATION_SUBSTATEMENT],
+        ...allFeatures()
       );
     });
 
@@ -892,10 +906,8 @@ describe('strict map syntax rules', () => {
       expectAllToBeAMatch(
         expected,
         stream,
-        mapStrict.MAP_SUBSTATEMENT,
-        mapStrict.OPERATION_SUBSTATEMENT,
-        mapExtended.MAP_SUBSTATEMENT,
-        mapExtended.OPERATION_SUBSTATEMENT
+        [map.MAP_SUBSTATEMENT, map.OPERATION_SUBSTATEMENT],
+        ...allFeatures()
       );
     });
 
@@ -939,8 +951,8 @@ describe('strict map syntax rules', () => {
           tokens[5]
         ),
         stream,
-        mapStrict.SET_STATEMENT,
-        mapExtended.SET_STATEMENT
+        map.SET_STATEMENT,
+        ...allFeatures()
       );
     });
   });
@@ -957,7 +969,7 @@ describe('strict map syntax rules', () => {
       ];
       const stream = new ArrayLexerStream(tokens);
 
-      const rule = mapCommon.PROFILE_ID;
+      const rule = map.common.PROFILE_ID;
 
       expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
@@ -992,7 +1004,8 @@ describe('strict map syntax rules', () => {
           tokens[2]
         ),
         stream,
-        mapCommon.PROVIDER_ID
+        map.common.PROVIDER_ID,
+        ...allFeatures()
       );
     });
 
@@ -1039,7 +1052,8 @@ describe('strict map syntax rules', () => {
           tokens[5]
         ),
         stream,
-        mapCommon.MAP
+        map.common.MAP,
+        ...allFeatures()
       );
     });
 
@@ -1129,8 +1143,8 @@ describe('strict map syntax rules', () => {
           tokens[14]
         ),
         stream,
-        mapStrict.MAP_DOCUMENT,
-        mapExtended.MAP_DOCUMENT
+        map.MAP_DOCUMENT,
+        ...allFeatures()
       );
     });
   });

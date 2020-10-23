@@ -1,5 +1,4 @@
-import * as mapCommon from './common';
-import * as mapExtended from './extended';
-import * as mapStrict from './strict';
+import * as common from './common';
+export * from './map';
 
-export { mapCommon, mapStrict, mapExtended };
+export { common };

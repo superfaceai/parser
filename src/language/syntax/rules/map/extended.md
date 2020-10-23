@@ -1,4 +1,4 @@
-# Superface Parses X
+# Superface Parser X
 
 ## Nested object literals
 

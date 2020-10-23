@@ -27,7 +27,6 @@ import {
 } from '../../rule';
 import {
   documentedNode,
-  SLOT_DEFINITION_FACTORY,
   SrcNode,
   SyntaxRuleSrc,
 } from '../common';
@@ -91,9 +90,7 @@ export const ENUM_VALUE: SyntaxRuleSrc<EnumValueNode> = documentedNode(
         .or(SyntaxRule.lookahead(SyntaxRule.newline()))
     )
     .map(
-      (matches): SrcNode<EnumValueNode> => {
-        const [name, maybeAssignment /* maybeComma */] = matches;
-
+      ([name, maybeAssignment, _maybeComma]): SrcNode<EnumValueNode> => {
         let enumValue: string | number | boolean;
         if (maybeAssignment === undefined) {
           enumValue = name.data.identifier;
@@ -265,7 +262,7 @@ export const FIELD_DEFINITION: SyntaxRuleSrc<FieldDefinitionNode> = documentedNo
     .followedBy(SyntaxRule.optional(SyntaxRule.operator('!')))
     .andFollowedBy(
       SyntaxRule.optional(
-        SyntaxRule.lookahead(SyntaxRule.newline(), 'invert').followedBy(TYPE)
+        SyntaxRule.sameLine(TYPE)
       )
     )
     .andFollowedBy(
@@ -274,15 +271,12 @@ export const FIELD_DEFINITION: SyntaxRuleSrc<FieldDefinitionNode> = documentedNo
         .or(SyntaxRule.lookahead(SyntaxRule.newline()))
     )
     .map(
-      (matches): SrcNode<FieldDefinitionNode> => {
-        const [
-          name,
-          maybeRequired,
-          maybeTypeWithLookahead /* maybeComma */,
-        ] = matches;
-
-        const maybeType = maybeTypeWithLookahead?.[1];
-
+      ([
+        name,
+        maybeRequired,
+        maybeType,
+        _maybeEnd
+      ]): SrcNode<FieldDefinitionNode> => {
         return {
           kind: 'FieldDefinition',
           fieldName: name.data.identifier,
@@ -304,7 +298,9 @@ FIELD_DEFINITION_MUT.rule = FIELD_DEFINITION;
 export const NAMED_FIELD_DEFINITION: SyntaxRuleSrc<NamedFieldDefinitionNode> = documentedNode(
   SyntaxRule.identifier('field')
     .followedBy(SyntaxRule.identifier())
-    .andFollowedBy(SyntaxRule.optional(TYPE))
+    .andFollowedBy(SyntaxRule.optional(
+      SyntaxRule.sameLine(TYPE)
+    ))
     .map(
       (matches): SrcNode<NamedFieldDefinitionNode> => {
         const [keyword, fieldName, type] = matches;
@@ -329,7 +325,11 @@ export const NAMED_FIELD_DEFINITION: SyntaxRuleSrc<NamedFieldDefinitionNode> = d
 export const NAMED_MODEL_DEFINITION: SyntaxRuleSrc<NamedModelDefinitionNode> = documentedNode(
   SyntaxRule.identifier('model')
     .followedBy(SyntaxRule.identifier())
-    .andFollowedBy(SyntaxRule.optional(TYPE))
+    .andFollowedBy(
+      SyntaxRule.optional(
+        SyntaxRule.sameLine(TYPE)
+      )
+    )
     .map(
       (matches): SrcNode<NamedModelDefinitionNode> => {
         const [keyword, modelName, type] = matches;
@@ -355,7 +355,9 @@ function USECASE_SLOT_DEFINITION_FACTORY<T extends Type>(
   rule: SyntaxRuleSrc<T>
 ): SyntaxRule<UseCaseSlotDefinitionNode<T>> {
   return documentedNode(
-    SLOT_DEFINITION_FACTORY(name, rule).map(
+    SyntaxRule.identifier(name).followedBy(
+      SyntaxRule.sameLine(rule)
+    ).map(
       ([name, maybeType]): SrcNode<UseCaseSlotDefinitionNode<T>> => {
         return {
           kind: 'UseCaseSlotDefinition',
@@ -402,8 +404,11 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
     )
     .andFollowedBy(
       SyntaxRule.optional(
-        SyntaxRule.identifier('async').followedBy(
-          USECASE_SLOT_DEFINITION_FACTORY('result', TYPE)
+        USECASE_SLOT_DEFINITION_FACTORY(
+          'async',
+          SyntaxRule.identifier('result').followedBy(
+            SyntaxRule.sameLine(TYPE)
+          ).map(([_name, type]) => type)
         )
       )
     )
@@ -412,18 +417,17 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
     )
     .andFollowedBy(SyntaxRule.separator('}'))
     .map(
-      (matches): SrcNode<UseCaseDefinitionNode> => {
-        const [
-          usecaseKey,
-          name,
-          maybeSafety,
-          ,
-          /* sepStart */ maybeInput,
-          maybeResult,
-          maybeAsyncResult,
-          maybeError,
-          sepEnd,
-        ] = matches;
+      ([
+        key,
+        name,
+        maybeSafety,
+        _sepStart,
+        maybeInput,
+        maybeResult,
+        maybeAsyncResult,
+        maybeError,
+        sepEnd
+      ]): SrcNode<UseCaseDefinitionNode> => {
 
         let safety: UseCaseDefinitionNode['safety'] = undefined;
         switch (maybeSafety?.data.identifier) {
@@ -452,10 +456,10 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
           safety,
           input: maybeInput,
           result: maybeResult,
-          asyncResult: maybeAsyncResult?.[1],
+          asyncResult: maybeAsyncResult,
           error: maybeError,
-          location: usecaseKey.location,
-          span: { start: usecaseKey.span.start, end: sepEnd.span.end },
+          location: key.location,
+          span: { start: key.span.start, end: sepEnd.span.end },
         };
       }
     )

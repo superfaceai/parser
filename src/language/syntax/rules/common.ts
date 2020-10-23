@@ -4,8 +4,7 @@ import {
   ProfileASTNodeBase,
 } from '@superindustries/language';
 
-import { IdentifierTokenData } from '../../lexer/token';
-import { LexerTokenMatch, SyntaxRule } from '../rule';
+import { SyntaxRule } from '../rule';
 import { extractDocumentation } from '../util';
 
 // HELPER RULES //
@@ -29,8 +28,7 @@ export function documentedNode<N extends SrcNode<DocumentedNode & ASTNodeBase>>(
   return SyntaxRule.optional(SyntaxRule.string())
     .followedBy(rule)
     .map(
-      (matches): N => {
-        const [maybeDoc, result] = matches;
+      ([maybeDoc, result]): N => {
         if (maybeDoc !== undefined) {
           const doc = extractDocumentation(maybeDoc.data.string);
           result.title = doc.title;
@@ -42,14 +40,4 @@ export function documentedNode<N extends SrcNode<DocumentedNode & ASTNodeBase>>(
         return result;
       }
     );
-}
-
-export function SLOT_DEFINITION_FACTORY<T>(
-  name: string,
-  rule: SyntaxRule<T>
-): SyntaxRule<[LexerTokenMatch<IdentifierTokenData>, T]> {
-  return SyntaxRule.identifier(name)
-    .followedBy(SyntaxRule.lookahead(SyntaxRule.newline(), 'invert'))
-    .andFollowedBy(rule)
-    .map(([name /* _lookahead */, , value]) => [name, value]);
 }

@@ -15,10 +15,10 @@ import {
 } from '@superindustries/language';
 
 import { JessieExpressionTerminationToken } from '../../../lexer/sublexer/jessie/expression';
-import { SyntaxRule } from '../../rule';
+import { SyntaxRuleFeatureOr } from '../../features';
+import { SyntaxRule, SyntaxRuleMutable, SyntaxRuleOr } from '../../rule';
 import {
   documentedNode,
-  SLOT_DEFINITION_FACTORY,
   SrcNode,
   SyntaxRuleSrc,
 } from '../common';
@@ -40,7 +40,7 @@ import {
  */
 export function RHS_EXPRESSION_FACTORY(
   ...terminators: ReadonlyArray<JessieExpressionTerminationToken>
-): SyntaxRuleSrc<PrimitiveLiteralNode | InlineCallNode | JessieExpressionNode> {
+): SyntaxRuleSrc<PrimitiveLiteralNode | JessieExpressionNode> {
   return terminatorLookahead(PRIMITIVE_LITERAL, ...terminators).or(
     JESSIE_EXPRESSION_FACTORY(...terminators)
   );
@@ -79,11 +79,16 @@ export const INLINE_CALL: SyntaxRuleSrc<InlineCallNode> = CALL_STATEMENT_HEAD.ma
   }
 );
 
+const OBJECT_LITERAL_MUT = new SyntaxRuleMutable<SrcNode<ObjectLiteralNode>>();
 export const SET_BLOCK_ASSIGNMENT = ASSIGNMENT_FACTORY(
   (...terminators) =>
-    SyntaxRule.operator('=')
-      .followedBy(INLINE_CALL.or(RHS_EXPRESSION_FACTORY(...terminators)))
-      .map(([_op, value]) => value),
+    new SyntaxRuleFeatureOr(
+      'nested_object_literals',
+      OBJECT_LITERAL_MUT,
+      SyntaxRule.operator('=')
+        .followedBy(INLINE_CALL.or(RHS_EXPRESSION_FACTORY(...terminators)))
+        .map(([_op, value]) => value)
+    ),
   '\n',
   ';',
   '}'
@@ -91,9 +96,13 @@ export const SET_BLOCK_ASSIGNMENT = ASSIGNMENT_FACTORY(
 
 export const OBJECT_LITERAL_ASSIGNMENT = ASSIGNMENT_FACTORY(
   (...terminators) =>
-    SyntaxRule.operator('=')
-      .followedBy(INLINE_CALL.or(RHS_EXPRESSION_FACTORY(...terminators)))
-      .map(([_op, value]) => value),
+    new SyntaxRuleFeatureOr(
+      'nested_object_literals',
+      OBJECT_LITERAL_MUT,
+      SyntaxRule.operator('=')
+        .followedBy(INLINE_CALL.or(RHS_EXPRESSION_FACTORY(...terminators)))
+        .map(([_op, value]) => value)
+    ),
   '\n',
   ',',
   '}'
@@ -119,6 +128,7 @@ export const OBJECT_LITERAL: SyntaxRuleSrc<ObjectLiteralNode> = SyntaxRule.separ
       };
     }
   );
+OBJECT_LITERAL_MUT.rule = OBJECT_LITERAL;
 
 export const STATEMENT_RHS_VALUE: SyntaxRuleSrc<LiteralNode> = OBJECT_LITERAL.peekUnknown().or(
   consumeLocalTerminators(
@@ -219,17 +229,112 @@ export function CALL_STATEMENT_FACTORY(
 
 // HTTP STATEMENT //
 
-const HTTP_CALL_STATEMENT_REQUEST_QUERY_SLOT = SLOT_DEFINITION_FACTORY(
-  'query',
-  OBJECT_LITERAL
+const HTTP_CALL_STATEMENT_SECURITY_APIKEY = SyntaxRule.identifier('apikey').followedBy(
+  SyntaxRule.sameLine(
+    SyntaxRule.identifier('header').or(SyntaxRule.identifier('query'))
+  )
+).andFollowedBy(
+  SyntaxRule.sameLine(SyntaxRule.separator('{'))
+)
+  .andFollowedBy(
+    SyntaxRule.identifier('name').followedBy(
+      SyntaxRule.operator('=')
+    ).andFollowedBy(
+      SyntaxRule.string()
+    )
+  ).andFollowedBy(
+    SyntaxRule.separator('}')
+  ).map(
+    ([
+      key,
+      placement,
+      _sepStart,
+      [_keyName, _op, name],
+      sepEnd
+    ]) => {
+      let placementValue: 'query' | 'header'
+      switch (placement.data.identifier) {
+        case 'query':
+          placementValue = 'query';
+          break;
+
+        case 'header':
+          placementValue = 'header';
+          break;
+
+        default:
+          throw 'Unexpected apikey placement. This is an error in the syntax rule definition';
+      }
+
+      return {
+        security: {
+          scheme: 'apikey',
+          placement: placementValue,
+          name: name.data.string,
+        },
+        location: key.location,
+        span: {
+          start: key.span.start,
+          end: sepEnd.span.end
+        }
+      } as const
+    }
+  );
+
+const HTTP_CALL_STATEMENT_SECURITY_BASIC = SyntaxRule.identifier('basic').map(
+  (match) => {
+    return {
+      security: {
+        scheme: 'basic'
+      },
+      location: match.location,
+      span: match.span
+    } as const
+  }
 );
-const HTTP_CALL_STATEMENT_REQUEST_HEADERS_SLOT = SLOT_DEFINITION_FACTORY(
-  'headers',
-  OBJECT_LITERAL
+
+const HTTP_CALL_STATEMENT_SECURITY_BEARER = SyntaxRule.identifier('bearer').map(
+  (match) => {
+    return {
+      security: {
+        scheme: 'bearer'
+      },
+      location: match.location,
+      span: match.span
+    } as const
+  }
 );
-const HTTP_CALL_STATEMENT_REQUEST_BODY_SLOT = SLOT_DEFINITION_FACTORY(
-  'body',
-  OBJECT_LITERAL.or(
+
+
+const HTTP_CALL_STATEMENT_SECURITY = SyntaxRule.identifier('security').followedBy(
+  SyntaxRule.sameLine(
+    HTTP_CALL_STATEMENT_SECURITY_APIKEY.or(
+      HTTP_CALL_STATEMENT_SECURITY_BASIC
+    ).or(
+      HTTP_CALL_STATEMENT_SECURITY_BEARER
+    )
+  )
+).map(
+  ([key, security]) => {
+    return {
+      security: security.security,
+      location: key.location,
+      span: {
+        start: key.span.start,
+        end: security.span.end
+      }
+    } as const
+  }
+)
+
+const HTTP_CALL_STATEMENT_REQUEST_QUERY_SLOT = SyntaxRule.identifier('query').followedBy(
+  SyntaxRule.sameLine(OBJECT_LITERAL)
+);
+const HTTP_CALL_STATEMENT_REQUEST_HEADERS_SLOT = SyntaxRule.identifier('headers').followedBy(
+  SyntaxRule.sameLine(OBJECT_LITERAL)
+);
+const HTTP_CALL_STATEMENT_REQUEST_BODY_SLOT = SyntaxRule.identifier('body').followedBy(
+  SyntaxRule.sameLine(OBJECT_LITERAL).or(
     SyntaxRule.operator('=')
       .followedBy(RHS_EXPRESSION_FACTORY('\n', '}'))
       .map(([_op, value]) => value)
@@ -253,16 +358,47 @@ export const HTTP_REQUEST_VARIABLES_BLOCK = SyntaxRule.separator('{')
     };
   });
 
-export const HTTP_REQUEST: SyntaxRuleSrc<HttpRequestNode> = SyntaxRule.identifier(
-  'request'
-)
-  .followedBy(MAYBE_CONTENT_TYPE)
+  export const HTTP_REQUEST_VARIABLES_SHORTHAND = SyntaxRuleOr.chainOr<{
+    query?: HttpRequestNode['query'];
+    headers?: HttpRequestNode['headers'];
+    body?: HttpRequestNode['body'];
+    span: SrcNode<HttpRequestNode>['span'];
+  }>(
+    HTTP_CALL_STATEMENT_REQUEST_QUERY_SLOT.map(([_, value]) => {
+      return {
+        query: value,
+        span: value.span,
+      };
+    }),
+    HTTP_CALL_STATEMENT_REQUEST_HEADERS_SLOT.map(([_, value]) => {
+      return {
+        headers: value,
+        span: value.span,
+      };
+    }),
+    HTTP_CALL_STATEMENT_REQUEST_BODY_SLOT.map(([_, value]) => {
+      return {
+        body: value,
+        span: value.span,
+      };
+    })
+  );
+
+export const HTTP_REQUEST: SyntaxRuleSrc<HttpRequestNode> = SyntaxRule.optional(HTTP_CALL_STATEMENT_SECURITY)
+  .followedBy(SyntaxRule.identifier('request'))
+  .andFollowedBy(MAYBE_CONTENT_TYPE)
   .andFollowedBy(
     SyntaxRule.optional(SyntaxRule.string()) // content language
   )
-  .andFollowedBy(HTTP_REQUEST_VARIABLES_BLOCK)
+  .andFollowedBy(
+    new SyntaxRuleFeatureOr(
+      'shorthand_http_request_slots',
+      HTTP_REQUEST_VARIABLES_SHORTHAND,
+      HTTP_REQUEST_VARIABLES_BLOCK
+    )
+  )
   .map(
-    ([key, maybeContentType, maybeContentLanguage, variablesBlock]): SrcNode<
+    ([maybeSecurity, key, maybeContentType, maybeContentLanguage, variablesBlock]): SrcNode<
       HttpRequestNode
     > => {
       return {
@@ -272,9 +408,10 @@ export const HTTP_REQUEST: SyntaxRuleSrc<HttpRequestNode> = SyntaxRule.identifie
         query: variablesBlock.query,
         headers: variablesBlock.headers,
         body: variablesBlock.body,
-        location: key.location,
+        security: maybeSecurity?.security,
+        location: (maybeSecurity ?? key).location,
         span: {
-          start: key.span.start,
+          start: (maybeSecurity ?? key).span.start,
           end: variablesBlock.span.end,
         },
       };

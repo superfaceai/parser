@@ -1193,7 +1193,7 @@ describe('profile syntax rules', () => {
                   tokens[15]
                 ),
               },
-              tokens[10],
+              tokens[9],
               tokens[15]
             ),
             error: tesMatch(

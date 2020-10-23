@@ -294,6 +294,11 @@
 									}
 								}
 							]
+						},
+						"security": {
+							"scheme": "apikey",
+							"placement": "header",
+							"name": "apikey-header"
 						}
 					},
 					"responseHandlers": [

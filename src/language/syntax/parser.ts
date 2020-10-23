@@ -7,7 +7,7 @@ import { SyntaxError } from '../error';
 import { Lexer } from '../lexer/lexer';
 import { Source } from '../source';
 import { SyntaxRule } from './rule';
-import { mapExtended, mapStrict } from './rules/map';
+import * as map from './rules/map';
 import { profile } from './rules/profile';
 
 /**
@@ -49,12 +49,5 @@ export function parseProfile(source: Source): ProfileDocumentNode {
  * Attempts to parse the source using rules that strictly adhere to the specification.
  */
 export function parseMap(source: Source): MapDocumentNode {
-  return parseRule(mapStrict.MAP_DOCUMENT, source);
-}
-
-/**
- * Attempts to parse the source using rules that may have parser-specific extensions.
- */
-export function parseMapExtended(source: Source): MapDocumentNode {
-  return parseRule(mapExtended.MAP_DOCUMENT, source);
+  return parseRule(map.MAP_DOCUMENT, source);
 }
