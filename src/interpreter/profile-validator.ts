@@ -46,13 +46,16 @@ export interface Structure {
  */
 export interface PrimitiveStructure extends Structure {
   kind: 'PrimitiveStructure';
+  type: 'string' | 'number' | 'boolean';
   required?: true;
 }
 /**
  * @interface EnumStructure represent structure of enum type
+ *  map have to return those two types
  */
 export interface EnumStructure extends Structure {
   kind: 'EnumStructure';
+  // enums: { [enumValue: string]: string | number | boolean }
   required?: true;
 }
 /**
@@ -60,15 +63,15 @@ export interface EnumStructure extends Structure {
  */
 export interface NonNullStructure extends Structure {
   kind: 'NonNullStructure';
-  required: true;
-  value?: Exclude<StructureType, UnionStructure>;
+  value: Exclude<StructureType, UnionStructure>;
+  required?: true;
 }
 /**
  * @interface ListStructure represent structure of []list type
  */
 export interface ListStructure extends Structure {
   kind: 'ListStructure';
-  value?: Exclude<StructureType, EnumStructure>;
+  value: Exclude<StructureType, EnumStructure>;
   required?: true;
 }
 /**
@@ -117,6 +120,13 @@ export interface ProfileOutput {
   usecase?: UseCaseStructure;
 }
 
+export type ObjectCollection = {
+  [P in string]?: StructureType;
+};
+export type ArrayCollection = {
+  [P in number]?: Exclude<StructureType, UnionStructure>;
+};
+
 export class ProfileValidator implements ProfileVisitor {
   private fields: Record<string, StructureType | undefined> = {};
   private models: Record<string, StructureType | undefined> = {};
@@ -130,6 +140,7 @@ export class ProfileValidator implements ProfileVisitor {
       | NamedFieldDefinitionNode
       | ModelTypeNameNode
       | FieldDefinitionNode
+      | NonNullDefinitionNode
   ): StructureType | undefined;
   visit(node: ObjectDefinitionNode): ObjectStructure;
   visit(node: Type): StructureType;
@@ -190,11 +201,22 @@ export class ProfileValidator implements ProfileVisitor {
   visitFieldDefinitionNode(
     node: FieldDefinitionNode
   ): StructureType | undefined {
+    const required = node.required;
     if (node.type === undefined) {
-      return this.fields[node.fieldName];
+      return this.fields[node.fieldName]
+        ? ({
+            required,
+            ...this.fields[node.fieldName],
+          } as StructureType)
+        : undefined;
     }
 
-    return this.visit(node.type);
+    return this.visit(node.type)
+      ? ({
+          required,
+          ...this.visit(node.type),
+        } as StructureType)
+      : undefined;
   }
 
   visitListDefinitionNode(node: ListDefinitionNode): StructureType {
@@ -242,18 +264,21 @@ export class ProfileValidator implements ProfileVisitor {
     return undefined;
   }
 
-  visitNonNullDefinitionNode(node: NonNullDefinitionNode): StructureType {
+  visitNonNullDefinitionNode(
+    node: NonNullDefinitionNode
+  ): StructureType | undefined {
     const value = this.visit(node.type);
 
     if (value?.kind === 'UnionStructure') {
       throw new Error('Something went very wrong, this should not happen!');
     }
 
-    return {
-      kind: 'NonNullStructure',
-      required: true,
-      value,
-    };
+    return value
+      ? {
+          kind: 'NonNullStructure',
+          value,
+        }
+      : undefined;
   }
 
   visitObjectDefinitionNode(node: ObjectDefinitionNode): StructureType {
@@ -269,9 +294,10 @@ export class ProfileValidator implements ProfileVisitor {
     return obj;
   }
 
-  visitPrimitiveTypeNameNode(_node: PrimitiveTypeNameNode): StructureType {
+  visitPrimitiveTypeNameNode(node: PrimitiveTypeNameNode): StructureType {
     return {
       kind: 'PrimitiveStructure',
+      type: node.name,
     };
   }
 

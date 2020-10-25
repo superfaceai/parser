@@ -45,6 +45,7 @@ describe('ProfileValidator', () => {
           },
           result: {
             kind: 'PrimitiveStructure',
+            type: 'string',
           },
         },
       };
@@ -170,7 +171,6 @@ describe('ProfileValidator', () => {
           },
           result: {
             kind: 'NonNullStructure',
-            required: true,
             value: {
               kind: 'EnumStructure',
             },
@@ -234,6 +234,7 @@ describe('ProfileValidator', () => {
           },
           result: {
             kind: 'PrimitiveStructure',
+            type: 'boolean',
           },
         },
       };
@@ -294,6 +295,7 @@ describe('ProfileValidator', () => {
           },
           result: {
             kind: 'PrimitiveStructure',
+            type: 'boolean',
           },
         },
       };
@@ -401,6 +403,7 @@ describe('ProfileValidator', () => {
             kind: 'ListStructure',
             value: {
               kind: 'PrimitiveStructure',
+              type: 'string',
             },
           },
         },
@@ -471,9 +474,11 @@ describe('ProfileValidator', () => {
               types: [
                 {
                   kind: 'PrimitiveStructure',
+                  type: 'string',
                 },
                 {
                   kind: 'PrimitiveStructure',
+                  type: 'boolean',
                 },
               ],
             },
@@ -641,6 +646,7 @@ describe('ProfileValidator', () => {
             fields: {
               f1: {
                 kind: 'PrimitiveStructure',
+                type: 'boolean',
               },
               f2: {
                 kind: 'ListStructure',
@@ -649,9 +655,11 @@ describe('ProfileValidator', () => {
                   types: [
                     {
                       kind: 'PrimitiveStructure',
+                      type: 'string',
                     },
                     {
                       kind: 'PrimitiveStructure',
+                      type: 'boolean',
                     },
                   ],
                 },
@@ -750,6 +758,7 @@ describe('ProfileValidator', () => {
                     fields: {
                       goodbye: {
                         kind: 'PrimitiveStructure',
+                        type: 'boolean',
                       },
                     },
                   },
@@ -853,6 +862,7 @@ describe('ProfileValidator', () => {
             types: [
               {
                 kind: 'PrimitiveStructure',
+                type: 'boolean',
               },
               {
                 kind: 'ListStructure',
@@ -861,9 +871,11 @@ describe('ProfileValidator', () => {
                   types: [
                     {
                       kind: 'PrimitiveStructure',
+                      type: 'string',
                     },
                     {
                       kind: 'PrimitiveStructure',
+                      type: 'boolean',
                     },
                   ],
                 },
