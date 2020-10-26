@@ -335,9 +335,9 @@ describe('lexer', () => {
     test('comments', () => {
       const lexer = new Lexer(
         new Source(`
-        # line comment
-        #
-        asdf #  hi
+        // line comment
+        //
+        asdf //  hi
         asdf
       `),
         {
@@ -407,9 +407,9 @@ ng2"
         
         profile = "https://superface.ai/profiles/superface/Map"
         
-        #
-        # Use cases
-        #
+        //
+        // Use cases
+        //
         
         '''
         Get Map
@@ -467,9 +467,9 @@ ng2"
           }
         }
         
-        #
-        # Reusable Models
-        #
+        //
+        // Reusable Models
+        //
         
         model Map {
           mapId
@@ -477,9 +477,9 @@ ng2"
           sourceUrl
         }
         
-        #
-        # Reusable Fields
-        #
+        //
+        // Reusable Fields
+        //
         
         'Id of the map in the store'
         field mapId String

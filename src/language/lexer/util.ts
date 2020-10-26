@@ -154,11 +154,6 @@ export function isDecoratorChar(char: number): boolean {
   return char === 64;
 }
 
-export function isCommentChar(char: number): boolean {
-  // #
-  return char === 35;
-}
-
 // Keyword scanner checks
 export function isAny(_: number): boolean {
   return true;

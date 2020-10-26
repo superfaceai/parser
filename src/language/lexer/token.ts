@@ -12,7 +12,7 @@ export const enum LexerTokenKind {
   LITERAL, // number or boolean
   STRING, // string literals
   IDENTIFIER, // a-z A-Z _ 0-9
-  COMMENT, // line comments (# foo)
+  COMMENT, // line comments (// foo)
   NEWLINE, // newline
   JESSIE_SCRIPT, // Jessie script
 }

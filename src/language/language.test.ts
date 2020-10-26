@@ -305,11 +305,11 @@ describe('profile', () => {
         f3a
         f3b
       }
-      f4 { f4a, f4b boolean }     # Ok with comma; however without comma -> error
-      # f5 f6 f7                    # -> error
-      f8, f9, f10                 # -> OK
-      # f11 string f12              # -> error
-      f13 string, f14             # -> OK
+      f4 { f4a, f4b boolean }     // Ok with comma; however without comma -> error
+      // f5 f6 f7                 // -> error
+      f8, f9, f10                 // -> OK
+      // f11 string f12           // -> error, missing comma
+      f13 string, f14             // -> OK
     }`;
 
     const source = new Source(input);
