@@ -1,11 +1,7 @@
 import fs from 'fs';
 
 import { Source } from './source';
-import {
-  parseMap,
-  parseProfile,
-  parseRule,
-} from './syntax/parser';
+import { parseMap, parseProfile, parseRule } from './syntax/parser';
 import { SyntaxRule } from './syntax/rule';
 import * as map from './syntax/rules/map';
 import { profile as profileRules } from './syntax/rules/profile';
@@ -426,8 +422,13 @@ describe('profile', () => {
   });
 });
 
-const STRICT_MAP = fs.readFileSync("examples/strict.map.slang").toString("utf-8");
-const STRICT_MAP_AST = JSON.parse(fs.readFileSync("examples/strict.map.json").toString("utf-8"));
+const STRICT_MAP = fs
+  .readFileSync('examples/strict.map.slang')
+  .toString('utf-8');
+// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+const STRICT_MAP_AST: Record<string, unknown> = JSON.parse(
+  fs.readFileSync('examples/strict.map.json').toString('utf-8')
+);
 
 describe('map strict', () => {
   describe('jessie contexts', () => {

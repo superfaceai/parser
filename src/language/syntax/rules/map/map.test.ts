@@ -10,7 +10,7 @@ import {
   StringTokenData,
 } from '../../../lexer/token';
 import { Location, Source, Span } from '../../../source';
-import { allFeatures, ParserFeature, PARSER_FEATURES } from '../../features';
+import { allFeatures, PARSER_FEATURES, ParserFeature } from '../../features';
 import { RuleResult, SyntaxRule } from '../../rule';
 import { ArrayLexerStream } from '../../util';
 import * as map from './index';
@@ -117,21 +117,33 @@ function tesMatchJessie(token: LexerToken) {
   );
 }
 
-function expectAllToBeAMatch<T>(
+/**
+ * Expects rules to match with features enabled and depending on `baseMatch` either match or fail without features.
+ */
+function expectXToBeAMatchBase<T>(
   expected: unknown,
   stream: LexerTokenStream,
+  baseMatch: boolean,
   rule: SyntaxRule<T> | SyntaxRule<T>[],
   ...features: ParserFeature[]
 ): asserts expected is T {
   const rules = Array.isArray(rule) ? rule : [rule];
-  
+  const featuresSave = PARSER_FEATURES;
   const save = stream.save();
+
+  for (const feature of features) {
+    PARSER_FEATURES[feature] = false;
+  }
   for (const rule of rules) {
-    expect(rule.tryMatch(stream)).toBeAMatch(expected);
+    const m = rule.tryMatch(stream);
+    if (baseMatch) {
+      expect(m).toBeAMatch(expected);
+    } else {
+      expect(m).not.toBeAMatch(expected);
+    }
     stream.rollback(save);
   }
 
-  const featuresSave = PARSER_FEATURES;
   for (const feature of features) {
     PARSER_FEATURES[feature] = true;
   }
@@ -142,7 +154,29 @@ function expectAllToBeAMatch<T>(
 
   for (const feature of features) {
     PARSER_FEATURES[feature] = featuresSave[feature];
-  } 
+  }
+}
+/**
+ * Expects all rules to match with and without enabled features.
+ */
+function expectAllToBeAMatch<T>(
+  expected: unknown,
+  stream: LexerTokenStream,
+  rule: SyntaxRule<T> | SyntaxRule<T>[],
+  ...features: ParserFeature[]
+): asserts expected is T {
+  return expectXToBeAMatchBase(expected, stream, true, rule, ...features);
+}
+/**
+ * Expects rules to match only with enabled features.
+ */
+function expectFeaturesToBeAMatch<T>(
+  expected: unknown,
+  stream: LexerTokenStream,
+  rule: SyntaxRule<T> | SyntaxRule<T>[],
+  ...features: ParserFeature[]
+): asserts expected is T {
+  return expectXToBeAMatchBase(expected, stream, false, rule, ...features);
 }
 
 /* eslint jest/expect-expect: ['error', { 'assertFunctionNames': ['expect', 'expectAllToBeAMatch'] }] */
@@ -691,14 +725,23 @@ describe('strict map syntax rules', () => {
         tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'request' }), // 4
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'security' }), // 4
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'apikey' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'header' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'name' }), // 8
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'apikey-header' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'request' }), // 12
         tesTok({ kind: LexerTokenKind.STRING, string: '*' }),
         tesTok({ kind: LexerTokenKind.STRING, string: 'en-US' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'query' }), // 8
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'query' }), // 16
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'q' }), // 10
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'q' }), // 18
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({
           kind: LexerTokenKind.JESSIE_SCRIPT,
@@ -708,9 +751,9 @@ describe('strict map syntax rules', () => {
         }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'headers' }), // 14
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'headers' }), // 22
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
-        tesTok({ kind: LexerTokenKind.STRING, string: 'content-type' }), // 16
+        tesTok({ kind: LexerTokenKind.STRING, string: 'content-type' }), // 24
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({
           kind: LexerTokenKind.JESSIE_SCRIPT,
@@ -720,7 +763,7 @@ describe('strict map syntax rules', () => {
         }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'body' }), // 20
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'body' }), // 28
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({
           kind: LexerTokenKind.JESSIE_SCRIPT,
@@ -731,14 +774,14 @@ describe('strict map syntax rules', () => {
 
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }), // end request
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'response' }), // 24
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'response' }), // 32
         tesTok({ kind: LexerTokenKind.LITERAL, literal: 200 }),
         tesTok({ kind: LexerTokenKind.STRING, string: 'application/json' }),
         tesTok({ kind: LexerTokenKind.STRING, string: 'en-US' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'response' }), // 30
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'response' }), // 38
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'value' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
@@ -771,17 +814,17 @@ describe('strict map syntax rules', () => {
                       {
                         kind: 'Assignment',
                         key: [
-                          (tokens[10].data as IdentifierTokenData).identifier,
+                          (tokens[18].data as IdentifierTokenData).identifier,
                         ],
-                        value: tesMatchJessie(tokens[12]),
+                        value: tesMatchJessie(tokens[20]),
                       },
-                      tokens[10],
-                      tokens[12]
+                      tokens[18],
+                      tokens[20]
                     ),
                   ],
                 },
-                tokens[9],
-                tokens[13]
+                tokens[17],
+                tokens[21]
               ),
               headers: tesMatch(
                 {
@@ -790,33 +833,38 @@ describe('strict map syntax rules', () => {
                     tesMatch(
                       {
                         kind: 'Assignment',
-                        key: [(tokens[16].data as StringTokenData).string],
-                        value: tesMatchJessie(tokens[18]),
+                        key: [(tokens[24].data as StringTokenData).string],
+                        value: tesMatchJessie(tokens[26]),
                       },
-                      tokens[16],
-                      tokens[18]
+                      tokens[24],
+                      tokens[26]
                     ),
                   ],
                 },
-                tokens[15],
-                tokens[19]
+                tokens[23],
+                tokens[27]
               ),
-              body: tesMatchJessie(tokens[22]),
+              body: tesMatchJessie(tokens[30]),
+              security: {
+                scheme: 'apikey',
+                placement: 'header',
+                name: 'apikey-header',
+              },
             },
             tokens[4],
-            tokens[23]
+            tokens[31]
           ),
           responseHandlers: [
             tesMatch(
               {
                 kind: 'HttpResponseHandler',
-                statusCode: (tokens[25].data as LiteralTokenData).literal,
-                contentType: (tokens[26].data as StringTokenData).string,
-                contentLanguage: (tokens[27].data as StringTokenData).string,
+                statusCode: (tokens[33].data as LiteralTokenData).literal,
+                contentType: (tokens[34].data as StringTokenData).string,
+                contentLanguage: (tokens[35].data as StringTokenData).string,
                 statements: [],
               },
-              tokens[24],
-              tokens[29]
+              tokens[32],
+              tokens[37]
             ),
             tesMatch(
               {
@@ -830,28 +878,28 @@ describe('strict map syntax rules', () => {
                           {
                             kind: 'Assignment',
                             key: [
-                              (tokens[32].data as IdentifierTokenData)
+                              (tokens[40].data as IdentifierTokenData)
                                 .identifier,
                             ],
-                            value: tesMatchJessie(tokens[34]),
+                            value: tesMatchJessie(tokens[42]),
                           },
-                          tokens[32],
-                          tokens[34]
+                          tokens[40],
+                          tokens[42]
                         ),
                       ],
                     },
-                    tokens[32],
-                    tokens[34]
+                    tokens[40],
+                    tokens[42]
                   ),
                 ],
               },
-              tokens[30],
-              tokens[35]
+              tokens[38],
+              tokens[43]
             ),
           ],
         },
         tokens[0],
-        tokens[36]
+        tokens[44]
       );
 
       expectAllToBeAMatch(
@@ -1147,5 +1195,201 @@ describe('strict map syntax rules', () => {
         ...allFeatures()
       );
     });
+  });
+});
+
+describe('extended map syntax rules', () => {
+  describe('feature nested_object_literals', () => {
+    const tokens = [
+      tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'set' }),
+      tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+
+      tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'foo' }),
+      tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+      tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'bar' }),
+      tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+      tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'baz' }),
+      tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+      tesTok({ kind: LexerTokenKind.LITERAL, literal: 1 }),
+      tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+      tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+
+      tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+    ];
+    const stream = new ArrayLexerStream(tokens);
+
+    expectFeaturesToBeAMatch(
+      tesMatch(
+        {
+          kind: 'SetStatement',
+          assignments: [
+            tesMatch(
+              {
+                kind: 'Assignment',
+                key: [(tokens[2].data as IdentifierTokenData).identifier],
+                value: tesMatch(
+                  {
+                    kind: 'ObjectLiteral',
+                    fields: [
+                      tesMatch(
+                        {
+                          kind: 'Assignment',
+                          key: [
+                            (tokens[4].data as IdentifierTokenData).identifier,
+                          ],
+                          value: tesMatch(
+                            {
+                              kind: 'ObjectLiteral',
+                              fields: [
+                                tesMatch(
+                                  {
+                                    kind: 'Assignment',
+                                    key: [
+                                      (tokens[6].data as IdentifierTokenData)
+                                        .identifier,
+                                    ],
+                                    value: tesMatch(
+                                      {
+                                        kind: 'PrimitiveLiteral',
+                                        value: (tokens[8]
+                                          .data as LiteralTokenData).literal,
+                                      },
+                                      tokens[8]
+                                    ),
+                                  },
+                                  tokens[6],
+                                  tokens[8]
+                                ),
+                              ],
+                            },
+                            tokens[5],
+                            tokens[9]
+                          ),
+                        },
+                        tokens[4],
+                        tokens[9]
+                      ),
+                    ],
+                  },
+                  tokens[3],
+                  tokens[10]
+                ),
+              },
+              tokens[2],
+              tokens[10]
+            ),
+          ],
+        },
+        tokens[0],
+        tokens[11]
+      ),
+      stream,
+      map.SET_STATEMENT,
+      'nested_object_literals'
+    );
+  });
+
+  describe('feature shorthand_http_request_slots', () => {
+    const tokensA = [
+      tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'request' }),
+      tesTok({ kind: LexerTokenKind.STRING, string: 'application/json' }),
+      tesTok({ kind: LexerTokenKind.STRING, string: 'en-US' }),
+
+      tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'query' }),
+      tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+      tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+    ];
+
+    const tokensB = [
+      tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'request' }),
+      tesTok({ kind: LexerTokenKind.STRING, string: 'application/json' }),
+      tesTok({ kind: LexerTokenKind.STRING, string: 'en-US' }),
+
+      tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'headers' }),
+      tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+      tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+    ];
+
+    const tokensC = [
+      tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'request' }),
+      tesTok({ kind: LexerTokenKind.STRING, string: 'application/json' }),
+      tesTok({ kind: LexerTokenKind.STRING, string: 'en-US' }),
+
+      tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'body' }),
+      tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+      tesTok({ kind: LexerTokenKind.LITERAL, literal: 1 }),
+      tesTok({ kind: LexerTokenKind.NEWLINE }),
+    ];
+
+    const streamA = new ArrayLexerStream(tokensA);
+    expectFeaturesToBeAMatch(
+      tesMatch(
+        {
+          kind: 'HttpRequest',
+          contentType: 'application/json',
+          contentLanguage: 'en-US',
+          query: tesMatch(
+            {
+              kind: 'ObjectLiteral',
+              fields: [],
+            },
+            tokensA[4],
+            tokensA[5]
+          ),
+        },
+        tokensA[0],
+        tokensA[5]
+      ),
+      streamA,
+      map.HTTP_REQUEST,
+      'shorthand_http_request_slots'
+    );
+
+    const streamB = new ArrayLexerStream(tokensB);
+    expectFeaturesToBeAMatch(
+      tesMatch(
+        {
+          kind: 'HttpRequest',
+          contentType: 'application/json',
+          contentLanguage: 'en-US',
+          headers: tesMatch(
+            {
+              kind: 'ObjectLiteral',
+              fields: [],
+            },
+            tokensB[4],
+            tokensB[5]
+          ),
+        },
+        tokensB[0],
+        tokensB[5]
+      ),
+      streamB,
+      map.HTTP_REQUEST,
+      'shorthand_http_request_slots'
+    );
+
+    const streamC = new ArrayLexerStream(tokensC);
+    expectFeaturesToBeAMatch(
+      tesMatch(
+        {
+          kind: 'HttpRequest',
+          contentType: 'application/json',
+          contentLanguage: 'en-US',
+          body: tesMatch(
+            {
+              kind: 'PrimitiveLiteral',
+              value: (tokensC[5].data as LiteralTokenData).literal,
+            },
+            tokensC[5]
+          ),
+        },
+        tokensC[0],
+        tokensC[5]
+      ),
+      streamC,
+      map.HTTP_REQUEST,
+      'shorthand_http_request_slots'
+    );
   });
 });

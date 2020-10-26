@@ -25,11 +25,7 @@ import {
   SyntaxRuleMutable,
   SyntaxRuleSeparator,
 } from '../../rule';
-import {
-  documentedNode,
-  SrcNode,
-  SyntaxRuleSrc,
-} from '../common';
+import { documentedNode, SrcNode, SyntaxRuleSrc } from '../common';
 
 // MUTABLE RULES //
 
@@ -260,23 +256,16 @@ TYPE_MUT.rule = TYPE;
 export const FIELD_DEFINITION: SyntaxRuleSrc<FieldDefinitionNode> = documentedNode(
   SyntaxRule.identifier()
     .followedBy(SyntaxRule.optional(SyntaxRule.operator('!')))
-    .andFollowedBy(
-      SyntaxRule.optional(
-        SyntaxRule.sameLine(TYPE)
-      )
-    )
+    .andFollowedBy(SyntaxRule.optional(SyntaxRule.sameLine(TYPE)))
     .andFollowedBy(
       SyntaxRule.operator(',')
         .or(SyntaxRule.lookahead(SyntaxRule.separator('}')))
         .or(SyntaxRule.lookahead(SyntaxRule.newline()))
     )
     .map(
-      ([
-        name,
-        maybeRequired,
-        maybeType,
-        _maybeEnd
-      ]): SrcNode<FieldDefinitionNode> => {
+      ([name, maybeRequired, maybeType, _maybeEnd]): SrcNode<
+        FieldDefinitionNode
+      > => {
         return {
           kind: 'FieldDefinition',
           fieldName: name.data.identifier,
@@ -298,9 +287,7 @@ FIELD_DEFINITION_MUT.rule = FIELD_DEFINITION;
 export const NAMED_FIELD_DEFINITION: SyntaxRuleSrc<NamedFieldDefinitionNode> = documentedNode(
   SyntaxRule.identifier('field')
     .followedBy(SyntaxRule.identifier())
-    .andFollowedBy(SyntaxRule.optional(
-      SyntaxRule.sameLine(TYPE)
-    ))
+    .andFollowedBy(SyntaxRule.optional(SyntaxRule.sameLine(TYPE)))
     .map(
       (matches): SrcNode<NamedFieldDefinitionNode> => {
         const [keyword, fieldName, type] = matches;
@@ -325,11 +312,7 @@ export const NAMED_FIELD_DEFINITION: SyntaxRuleSrc<NamedFieldDefinitionNode> = d
 export const NAMED_MODEL_DEFINITION: SyntaxRuleSrc<NamedModelDefinitionNode> = documentedNode(
   SyntaxRule.identifier('model')
     .followedBy(SyntaxRule.identifier())
-    .andFollowedBy(
-      SyntaxRule.optional(
-        SyntaxRule.sameLine(TYPE)
-      )
-    )
+    .andFollowedBy(SyntaxRule.optional(SyntaxRule.sameLine(TYPE)))
     .map(
       (matches): SrcNode<NamedModelDefinitionNode> => {
         const [keyword, modelName, type] = matches;
@@ -355,21 +338,21 @@ function USECASE_SLOT_DEFINITION_FACTORY<T extends Type>(
   rule: SyntaxRuleSrc<T>
 ): SyntaxRule<UseCaseSlotDefinitionNode<T>> {
   return documentedNode(
-    SyntaxRule.identifier(name).followedBy(
-      SyntaxRule.sameLine(rule)
-    ).map(
-      ([name, maybeType]): SrcNode<UseCaseSlotDefinitionNode<T>> => {
-        return {
-          kind: 'UseCaseSlotDefinition',
-          type: maybeType,
-          location: name.location,
-          span: {
-            start: name.span.start,
-            end: (maybeType ?? name).span.end,
-          },
-        };
-      }
-    )
+    SyntaxRule.identifier(name)
+      .followedBy(SyntaxRule.sameLine(rule))
+      .map(
+        ([name, maybeType]): SrcNode<UseCaseSlotDefinitionNode<T>> => {
+          return {
+            kind: 'UseCaseSlotDefinition',
+            type: maybeType,
+            location: name.location,
+            span: {
+              start: name.span.start,
+              end: (maybeType ?? name).span.end,
+            },
+          };
+        }
+      )
   );
 }
 
@@ -406,9 +389,9 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
       SyntaxRule.optional(
         USECASE_SLOT_DEFINITION_FACTORY(
           'async',
-          SyntaxRule.identifier('result').followedBy(
-            SyntaxRule.sameLine(TYPE)
-          ).map(([_name, type]) => type)
+          SyntaxRule.identifier('result')
+            .followedBy(SyntaxRule.sameLine(TYPE))
+            .map(([_name, type]) => type)
         )
       )
     )
@@ -426,9 +409,8 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
         maybeResult,
         maybeAsyncResult,
         maybeError,
-        sepEnd
+        sepEnd,
       ]): SrcNode<UseCaseDefinitionNode> => {
-
         let safety: UseCaseDefinitionNode['safety'] = undefined;
         switch (maybeSafety?.data.identifier) {
           case undefined:

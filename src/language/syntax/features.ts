@@ -1,69 +1,65 @@
-import { LexerTokenStream } from "../lexer";
-import { RuleResult, SyntaxRule } from "./rule";
+import { LexerTokenStream } from '../lexer';
+import { RuleResult, SyntaxRule, SyntaxRuleOr } from './rule';
 
-export type ParserFeature = 
+export type ParserFeature =
   | 'nested_object_literals'
-  | 'shorthand_http_request_slots'
-;
+  | 'shorthand_http_request_slots';
 export const PARSER_FEATURES: {
-  [P in ParserFeature]: boolean
+  [P in ParserFeature]: boolean;
 } = {
-  'nested_object_literals': false,
-  'shorthand_http_request_slots': false
+  nested_object_literals: false,
+  shorthand_http_request_slots: false,
 };
 
 /**
  * Returns an array of all features.
  */
 export function allFeatures(): ParserFeature[] {
-  return Object.keys(PARSER_FEATURES) as ParserFeature[]
+  return Object.keys(PARSER_FEATURES) as ParserFeature[];
 }
 
 function isFeature(input: string): input is ParserFeature {
   return input in PARSER_FEATURES;
 }
-export function parseEnvFeatures() {
-  process.env['SLANG_FEATURES']?.split(',').forEach(
-    (ft) => {
-      let feature = ft.trim();
-      const disable = feature.startsWith('!');
-      if (disable) {
-        feature = feature.slice(1);
-      }
-
-      if (isFeature(feature)) {
-        PARSER_FEATURES[feature] = !disable;
-      }
+export function parseEnvFeatures(): void {
+  process.env['SLANG_FEATURES']?.split(',').forEach(ft => {
+    let feature = ft.trim();
+    const disable = feature.startsWith('!');
+    if (disable) {
+      feature = feature.slice(1);
     }
-  )
+
+    if (isFeature(feature)) {
+      PARSER_FEATURES[feature] = !disable;
+    }
+  });
 }
 
-export class SyntaxRuleFeatureSubstitute<E, D> extends SyntaxRule<E | D> {
+export class SyntaxRuleFeatureSubstitute<B, E> extends SyntaxRule<B | E> {
+  /** Remember the last execution feature state so we can correctly report it in errors even after features are toggled off. */
   private lastExecutionFeatureState: boolean;
-  
+
   /**
    * If at runtime feature `feature` is enabled, acts as `enabled`, otherwise
    * acts as `disabled`.
    */
   constructor(
+    readonly base: SyntaxRule<B>,
     readonly feature: ParserFeature,
-    readonly enabled: SyntaxRule<E>,
-    readonly disabled: SyntaxRule<D>
+    readonly enabled: SyntaxRule<E>
   ) {
-    super()
+    super();
 
     this.lastExecutionFeatureState = PARSER_FEATURES[this.feature];
   }
 
-  tryMatch(
-    tokens: LexerTokenStream
-  ): RuleResult<E | D> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<B | E> {
     this.lastExecutionFeatureState = PARSER_FEATURES[this.feature];
 
     if (this.lastExecutionFeatureState) {
       return this.enabled.tryMatch(tokens);
     } else {
-      return this.disabled.tryMatch(tokens);
+      return this.base.tryMatch(tokens);
     }
   }
 
@@ -71,7 +67,7 @@ export class SyntaxRuleFeatureSubstitute<E, D> extends SyntaxRule<E | D> {
     if (this.lastExecutionFeatureState) {
       return this.enabled.toString();
     } else {
-      return this.disabled.toString();
+      return this.base.toString();
     }
   }
 }
@@ -79,28 +75,28 @@ export class SyntaxRuleFeatureSubstitute<E, D> extends SyntaxRule<E | D> {
 /**
  * Combined two rules using `or` if feature is enabled.
  */
-export class SyntaxRuleFeatureOr<E, B> extends SyntaxRule<E | B> {
+export class SyntaxRuleFeatureOr<B, E> extends SyntaxRule<B | E> {
+  /** Remember the last execution feature state so we can correctly report it in errors even after features are toggled off. */
   private lastExecutionFeatureState: boolean;
-  private readonly orRule: SyntaxRule<E | B>;
-  
+  /** Precache the or rule so we don't construct it on each `tryMatch` and `toString` */
+  private readonly orRule: SyntaxRule<B | E>;
+
   /**
    * If at runtime feature `feature` is enabled, acts as `base.or(enabled)`, otherwise
    * acts as `base`.
    */
   constructor(
+    readonly base: SyntaxRule<B>,
     readonly feature: ParserFeature,
-    readonly enabled: SyntaxRule<E>,
-    readonly base: SyntaxRule<B>
+    ...enabled: SyntaxRule<E>[]
   ) {
-    super()
+    super();
 
+    this.orRule = SyntaxRuleOr.chainOr<B | E>(base, ...enabled);
     this.lastExecutionFeatureState = PARSER_FEATURES[this.feature];
-    this.orRule = base.or(enabled);
   }
 
-  tryMatch(
-    tokens: LexerTokenStream
-  ): RuleResult<E | B> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<E | B> {
     this.lastExecutionFeatureState = PARSER_FEATURES[this.feature];
 
     if (this.lastExecutionFeatureState) {

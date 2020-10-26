@@ -208,10 +208,10 @@ export abstract class SyntaxRule<T> {
    * Returns `rule` that cannot be preceded by a newline.
    * Example usage: `SyntaxRule.identifier('slot').followedBy(SyntaxRule.sameLine(SyntaxRule.string()))`
    */
-  static sameLine<R>(
-    rule: SyntaxRule<R>
-  ): SyntaxRule<R> {
-    return SyntaxRule.lookahead(SyntaxRule.newline(), 'invert').followedBy(rule).map(([_, r]) => r);
+  static sameLine<R>(rule: SyntaxRule<R>): SyntaxRule<R> {
+    return SyntaxRule.lookahead(SyntaxRule.newline(), 'invert')
+      .followedBy(rule)
+      .map(([_, r]) => r);
   }
 
   peekUnknown(): SyntaxRulePeekUnknown<T> {
