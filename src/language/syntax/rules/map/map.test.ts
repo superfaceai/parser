@@ -128,7 +128,7 @@ function expectXToBeAMatchBase<T>(
   ...features: ParserFeature[]
 ): asserts expected is T {
   const rules = Array.isArray(rule) ? rule : [rule];
-  const featuresSave = PARSER_FEATURES;
+  const featuresSave = { ...PARSER_FEATURES };
   const save = stream.save();
 
   for (const feature of features) {
