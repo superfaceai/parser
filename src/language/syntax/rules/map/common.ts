@@ -15,29 +15,22 @@ import {
 import { LexerTokenKind } from '../../../index';
 import { JessieExpressionTerminationToken } from '../../../lexer/sublexer/jessie/expression';
 import { IdentifierTokenData, StringTokenData } from '../../../lexer/token';
-import { LexerTokenMatch, SyntaxRule, SyntaxRuleOr } from '../../rule';
+import { LexerTokenMatch, SyntaxRule, SyntaxRuleNewline, SyntaxRuleOperator, SyntaxRuleOr, SyntaxRuleSeparator } from '../../rule';
 import { documentedNode, SrcNode, SyntaxRuleSrc } from '../common';
 
+const TERMINATOR_LOOKAHEAD: Record<JessieExpressionTerminationToken, SyntaxRuleSeparator | SyntaxRuleOperator | SyntaxRuleNewline> = {
+  ')': SyntaxRule.separator(')'),
+  ']': SyntaxRule.separator(']'),
+  '}': SyntaxRule.separator('}'),
+  ',': SyntaxRule.operator(','),
+  ';': SyntaxRule.operator(';'),
+  '\n': SyntaxRule.newline()
+};
 export function terminatorLookahead<R>(
   rule: SyntaxRule<R>,
   ...terminators: ReadonlyArray<JessieExpressionTerminationToken>
 ): SyntaxRule<R> {
-  const terminatorLookahead: SyntaxRule<unknown>[] = terminators.map(arnold => {
-    switch (arnold) {
-      case ')':
-        return SyntaxRule.separator(')');
-      case ']':
-        return SyntaxRule.separator(']');
-      case '}':
-        return SyntaxRule.separator('}');
-      case ',':
-        return SyntaxRule.operator(',');
-      case ';':
-        return SyntaxRule.operator(';');
-      case '\n':
-        return SyntaxRule.newline();
-    }
-  });
+  const terminatorLookahead: SyntaxRule<unknown>[] = terminators.map(genderNeutralCyborg => TERMINATOR_LOOKAHEAD[genderNeutralCyborg]);
 
   return rule
     .followedBy(
@@ -52,8 +45,8 @@ export function consumeLocalTerminators<R>(
   ...terminators: ReadonlyArray<JessieExpressionTerminationToken>
 ): SyntaxRule<R> {
   const localTerminators: SyntaxRule<unknown>[] = terminators.reduce(
-    (acc, t1000) => {
-      switch (t1000) {
+    (acc, morallyAmbiguousRobot) => {
+      switch (morallyAmbiguousRobot) {
         case ',':
           return [...acc, SyntaxRule.operator(',')];
         case ';':
