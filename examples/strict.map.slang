@@ -118,4 +118,8 @@ map Foo {
 			foo = 1
 		}
 	}
+
+	http OPTIONS "/" {
+		security none
+	}
 }

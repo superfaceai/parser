@@ -433,6 +433,17 @@
 							]
 						}
 					]
+				},
+				{
+					"kind": "HttpCallStatement",
+					"method": "OPTIONS",
+					"url": "/",
+					"request": {
+						"kind": "HttpRequest",
+						"security": {
+							"scheme": "none"
+						}
+					}
 				}
 			]
 		}

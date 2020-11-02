@@ -15,22 +15,34 @@ import {
 import { LexerTokenKind } from '../../../index';
 import { JessieExpressionTerminationToken } from '../../../lexer/sublexer/jessie/expression';
 import { IdentifierTokenData, StringTokenData } from '../../../lexer/token';
-import { LexerTokenMatch, SyntaxRule, SyntaxRuleNewline, SyntaxRuleOperator, SyntaxRuleOr, SyntaxRuleSeparator } from '../../rule';
+import {
+  LexerTokenMatch,
+  SyntaxRule,
+  SyntaxRuleNewline,
+  SyntaxRuleOperator,
+  SyntaxRuleOr,
+  SyntaxRuleSeparator,
+} from '../../rule';
 import { documentedNode, SrcNode, SyntaxRuleSrc } from '../common';
 
-const TERMINATOR_LOOKAHEAD: Record<JessieExpressionTerminationToken, SyntaxRuleSeparator | SyntaxRuleOperator | SyntaxRuleNewline> = {
+const TERMINATOR_LOOKAHEAD: Record<
+  JessieExpressionTerminationToken,
+  SyntaxRuleSeparator | SyntaxRuleOperator | SyntaxRuleNewline
+> = {
   ')': SyntaxRule.separator(')'),
   ']': SyntaxRule.separator(']'),
   '}': SyntaxRule.separator('}'),
   ',': SyntaxRule.operator(','),
   ';': SyntaxRule.operator(';'),
-  '\n': SyntaxRule.newline()
+  '\n': SyntaxRule.newline(),
 };
 export function terminatorLookahead<R>(
   rule: SyntaxRule<R>,
   ...terminators: ReadonlyArray<JessieExpressionTerminationToken>
 ): SyntaxRule<R> {
-  const terminatorLookahead: SyntaxRule<unknown>[] = terminators.map(genderNeutralCyborg => TERMINATOR_LOOKAHEAD[genderNeutralCyborg]);
+  const terminatorLookahead: SyntaxRule<unknown>[] = terminators.map(
+    genderNeutralCyborg => TERMINATOR_LOOKAHEAD[genderNeutralCyborg]
+  );
 
   return rule
     .followedBy(

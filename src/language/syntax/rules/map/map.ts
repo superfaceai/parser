@@ -291,12 +291,24 @@ const HTTP_CALL_STATEMENT_SECURITY_BEARER = SyntaxRule.identifier('bearer').map(
   }
 );
 
+const HTTP_CALL_STATEMENT_SECURITY_NONE = SyntaxRule.identifier('none').map(
+  match => {
+    return {
+      security: {
+        scheme: 'none',
+      },
+      location: match.location,
+      span: match.span,
+    } as const;
+  }
+);
+
 const HTTP_CALL_STATEMENT_SECURITY = SyntaxRule.identifier('security')
   .followedBy(
     SyntaxRule.sameLine(
-      HTTP_CALL_STATEMENT_SECURITY_APIKEY.or(
-        HTTP_CALL_STATEMENT_SECURITY_BASIC
-      ).or(HTTP_CALL_STATEMENT_SECURITY_BEARER)
+      HTTP_CALL_STATEMENT_SECURITY_APIKEY.or(HTTP_CALL_STATEMENT_SECURITY_BASIC)
+        .or(HTTP_CALL_STATEMENT_SECURITY_BEARER)
+        .or(HTTP_CALL_STATEMENT_SECURITY_NONE)
     )
   )
   .map(([key, security]) => {
@@ -369,11 +381,8 @@ export const HTTP_REQUEST_VARIABLES_SHORTHAND = SyntaxRuleOr.chainOr<{
   })
 );
 
-export const HTTP_REQUEST: SyntaxRuleSrc<HttpRequestNode> = SyntaxRule.optional(
-  HTTP_CALL_STATEMENT_SECURITY
-)
-  .followedBy(SyntaxRule.identifier('request'))
-  .andFollowedBy(MAYBE_CONTENT_TYPE)
+export const HTTP_CALL_STATEMENT_REQUEST = SyntaxRule.identifier('request')
+  .followedBy(MAYBE_CONTENT_TYPE)
   .andFollowedBy(
     SyntaxRule.optional(SyntaxRule.string()) // content language
   )
@@ -384,30 +393,57 @@ export const HTTP_REQUEST: SyntaxRuleSrc<HttpRequestNode> = SyntaxRule.optional(
       HTTP_REQUEST_VARIABLES_SHORTHAND
     )
   )
-  .map(
-    ([
-      maybeSecurity,
-      key,
-      maybeContentType,
-      maybeContentLanguage,
-      variablesBlock,
-    ]): SrcNode<HttpRequestNode> => {
+  .map(([key, maybeContentType, maybeContentLanguage, variablesBlock]) => {
+    return {
+      contentType: maybeContentType,
+      contentLanguage: maybeContentLanguage?.data.string,
+      query: variablesBlock.query,
+      headers: variablesBlock.headers,
+      body: variablesBlock.body,
+      location: key.location,
+      span: {
+        start: key.span.start,
+        end: variablesBlock.span.end,
+      },
+    } as const;
+  });
+
+const HTTP_REQUEST_OPTIONAL: SyntaxRule<
+  SrcNode<HttpRequestNode> | undefined
+> = SyntaxRule.optional(HTTP_CALL_STATEMENT_SECURITY)
+  .followedBy(SyntaxRule.optional(HTTP_CALL_STATEMENT_REQUEST))
+  .map(([maybeSecurity, maybeRequest]):
+    | SrcNode<HttpRequestNode>
+    | undefined => {
+    if (maybeSecurity !== undefined && maybeRequest !== undefined) {
       return {
         kind: 'HttpRequest',
-        contentType: maybeContentType,
-        contentLanguage: maybeContentLanguage?.data.string,
-        query: variablesBlock.query,
-        headers: variablesBlock.headers,
-        body: variablesBlock.body,
-        security: maybeSecurity?.security,
-        location: (maybeSecurity ?? key).location,
+        ...maybeRequest,
+        ...maybeSecurity,
+        location: maybeSecurity.location,
         span: {
-          start: (maybeSecurity ?? key).span.start,
-          end: variablesBlock.span.end,
+          start: maybeSecurity.span.start,
+          end: maybeRequest.span.end,
         },
       };
     }
-  );
+
+    if (maybeSecurity !== undefined) {
+      return {
+        kind: 'HttpRequest',
+        ...maybeSecurity,
+      };
+    }
+
+    if (maybeRequest !== undefined) {
+      return {
+        kind: 'HttpRequest',
+        ...maybeRequest,
+      };
+    }
+
+    return undefined;
+  });
 
 function HTTP_CALL_STATEMENT_RESPONSE_HANDLER(
   substatementRule: SyntaxRuleSrc<OutcomeStatementNode>
@@ -470,7 +506,7 @@ export function HTTP_CALL_STATEMENT_FACTORY(
       SyntaxRule.string() // url
     )
     .andFollowedBy(SyntaxRule.separator('{'))
-    .andFollowedBy(SyntaxRule.optional(HTTP_REQUEST))
+    .andFollowedBy(HTTP_REQUEST_OPTIONAL)
     .andFollowedBy(
       SyntaxRule.optional(
         SyntaxRule.repeat(

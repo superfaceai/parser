@@ -1325,7 +1325,6 @@ describe('extended map syntax rules', () => {
     expectFeaturesToBeAMatch(
       tesMatch(
         {
-          kind: 'HttpRequest',
           contentType: 'application/json',
           contentLanguage: 'en-US',
           query: tesMatch(
@@ -1341,7 +1340,7 @@ describe('extended map syntax rules', () => {
         tokensA[5]
       ),
       streamA,
-      map.HTTP_REQUEST,
+      map.HTTP_CALL_STATEMENT_REQUEST,
       'shorthand_http_request_slots'
     );
 
@@ -1349,7 +1348,6 @@ describe('extended map syntax rules', () => {
     expectFeaturesToBeAMatch(
       tesMatch(
         {
-          kind: 'HttpRequest',
           contentType: 'application/json',
           contentLanguage: 'en-US',
           headers: tesMatch(
@@ -1365,7 +1363,7 @@ describe('extended map syntax rules', () => {
         tokensB[5]
       ),
       streamB,
-      map.HTTP_REQUEST,
+      map.HTTP_CALL_STATEMENT_REQUEST,
       'shorthand_http_request_slots'
     );
 
@@ -1373,7 +1371,6 @@ describe('extended map syntax rules', () => {
     expectFeaturesToBeAMatch(
       tesMatch(
         {
-          kind: 'HttpRequest',
           contentType: 'application/json',
           contentLanguage: 'en-US',
           body: tesMatch(
@@ -1388,7 +1385,7 @@ describe('extended map syntax rules', () => {
         tokensC[5]
       ),
       streamC,
-      map.HTTP_REQUEST,
+      map.HTTP_CALL_STATEMENT_REQUEST,
       'shorthand_http_request_slots'
     );
   });
