@@ -10,7 +10,7 @@ import {
   PrimitiveLiteralNode,
   ProviderNode,
   StatementConditionNode,
-} from '@superindustries/language';
+} from '@superfaceai/language';
 
 import { LexerTokenKind } from '../../../index';
 import { JessieExpressionTerminationToken } from '../../../lexer/sublexer/jessie/expression';

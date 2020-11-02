@@ -1,8 +1,8 @@
 {
-  "name": "@superindustries/superface-parser",
+  "name": "@superfaceai/superface-parser",
   "version": "0.0.0",
   "description": "Level 5 autonomous, self-driving API client, https://superface.ai",
-  "repository": "https://github.com/superindustries/superface-parser.git",
+  "repository": "https://github.com/superfaceai/superface-parser.git",
   "source": "lib/index.js",
   "main": "dist/index.js",
   "module": "dist/index.es.js",
@@ -50,7 +50,7 @@
     "ts-jest": "^26.3.0"
   },
   "dependencies": {
-    "@superindustries/language": "^0.0.14-alpha3",
+    "@superfaceai/language": "^0.0.16-alpha",
     "typescript": "^4.0.2"
   },
   "targets": {

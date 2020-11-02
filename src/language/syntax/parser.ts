@@ -1,7 +1,4 @@
-import {
-  MapDocumentNode,
-  ProfileDocumentNode,
-} from '@superindustries/language';
+import { MapDocumentNode, ProfileDocumentNode } from '@superfaceai/language';
 
 import { SyntaxError } from '../error';
 import { Lexer } from '../lexer/lexer';

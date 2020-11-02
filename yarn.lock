@@ -1983,10 +1983,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@superindustries/language@^0.0.14-alpha3":
-  version "0.0.14-alpha3"
-  resolved "https://npm.pkg.github.com/download/@superindustries/language/0.0.14-alpha3/3b274df9836b1c277ebefaef08dc70a56894e06e0efc5c6447dffc0db1c77ffe#81c4b8a8ac25505323da99d14c8f9a9f5950c9b7"
-  integrity sha512-41Ex1coBX9m9nE95pmtV41rJhe4ia60ZvYbhnYfZDNqUEbHajVJAlMV2Mq0AlF1OszyPVIRcZHmncajFFBjTjg==
+"@superfaceai/language@^0.0.16-alpha":
+  version "0.0.16-alpha"
+  resolved "https://npm.pkg.github.com/download/@superfaceai/language/0.0.16-alpha/913892b29cabd146df4b5a9e30bb14274ccc2c700fe24bfcc732026a3b7fa29f#4a98d573d72fa70bab690d3bd1134044183caa6d"
+  integrity sha512-0QUfQ5b1F7q2bTYSyUkXtgoZIgzrRuKQd1LEbs++fLpGTp4GKhLwiUtQkmxZmgZpNkN2mig308NoBms1WIUMcA==
 
 "@types/babel__core@^7.0.0", "@types/babel__core@^7.1.7":
   version "7.1.9"

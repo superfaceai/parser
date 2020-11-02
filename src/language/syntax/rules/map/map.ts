@@ -12,7 +12,7 @@ import {
   OutcomeStatementNode,
   PrimitiveLiteralNode,
   SetStatementNode,
-} from '@superindustries/language';
+} from '@superfaceai/language';
 
 import { JessieExpressionTerminationToken } from '../../../lexer/sublexer/jessie/expression';
 import { SyntaxRuleFeatureOr } from '../../features';
