@@ -5,7 +5,7 @@ import {
   MapProfileIdNode,
   OperationDefinitionNode,
   ProviderNode,
-} from '@superindustries/language';
+} from '@superfaceai/language';
 
 import { SyntaxRule, SyntaxRuleSeparator } from '../rule';
 import { documentedNode, SrcNode, SyntaxRuleSrc } from './common';

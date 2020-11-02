@@ -16,7 +16,7 @@ import {
   UnionDefinitionNode,
   UseCaseDefinitionNode,
   UseCaseSlotDefinitionNode,
-} from '@superindustries/language';
+} from '@superfaceai/language';
 
 import { IdentifierTokenData, LexerTokenKind } from '../../lexer/token';
 import {

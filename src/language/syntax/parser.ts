@@ -1,4 +1,4 @@
-import { ProfileDocumentNode } from '@superindustries/language';
+import { ProfileDocumentNode } from '@superfaceai/language';
 
 import { SyntaxError } from '../error';
 import { Lexer } from '../lexer/lexer';
