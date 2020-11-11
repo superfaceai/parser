@@ -1983,10 +1983,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@superfaceai/language@^0.0.16-alpha":
-  version "0.0.16-alpha"
-  resolved "https://npm.pkg.github.com/download/@superfaceai/language/0.0.16-alpha/913892b29cabd146df4b5a9e30bb14274ccc2c700fe24bfcc732026a3b7fa29f#4a98d573d72fa70bab690d3bd1134044183caa6d"
-  integrity sha512-0QUfQ5b1F7q2bTYSyUkXtgoZIgzrRuKQd1LEbs++fLpGTp4GKhLwiUtQkmxZmgZpNkN2mig308NoBms1WIUMcA==
+"@superfaceai/language@^0.0.16":
+  version "0.0.16"
+  resolved "https://npm.pkg.github.com/download/@superfaceai/language/0.0.16/d028b3bcf2e4cb05b8e54e9cc4edf49aa15446b847cbc0dbad6574a03bb48eea#55446cfbfe38933ee3db55da727462e89c03e48c"
+  integrity sha512-szSh1cfGHbVqLphdU2OmxRhGYv5apKkubfTsmWp2PUKx4JCsppUGuIpWKJTXrcxSw8EIaCv/G79iyulur50+jA==
 
 "@types/babel__core@^7.0.0", "@types/babel__core@^7.1.7":
   version "7.1.9"
