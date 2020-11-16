@@ -1,5 +1,5 @@
 import { SyntaxError, SyntaxErrorCategory } from '../error';
-import { Location, Source } from '../source';
+import { computeEndLocation, Location, Source } from '../source';
 import { LexerContext, LexerContextType, Sublexer } from './context';
 import { tryParseDefault } from './sublexer/default';
 import { tryParseJessieScriptExpression } from './sublexer/jessie';
@@ -203,48 +203,24 @@ export class Lexer implements LexerTokenStream {
     start: number;
     location: Location;
   } {
-    // Count number of newlines inside the last token to correctly compute the position
-    const lastTokenBody = Array.from(
-      this.source.body.slice(lastToken.span.start, lastToken.span.end)
-    );
-    const [newlinesInToken, lastNewlineOffset] = lastTokenBody.reduce(
-      (acc: [newlines: number, offset: number | undefined], char, index) => {
-        if (char === '\n') {
-          acc[0] += 1;
-          acc[1] = index;
-        }
-
-        return acc;
-      },
-      [0, undefined]
-    );
-
     // Count number of non-newline whitespace tokens after the last token.
     const whitespaceAfterToken = util.countStarting(
       ch => !util.isNewline(ch) && util.isWhitespace(ch),
       this.source.body.slice(lastToken.span.end)
     );
 
-    // Compute the start of the next token by ignoring whitespace after the last token.
+    // Compute the start of the **next** token by ignoring whitespace after the last token.
     const start = lastToken.span.end + whitespaceAfterToken;
 
-    // Line is just offset by the number of newlines counted.
-    const line = lastToken.location.line + newlinesInToken;
-
-    // When no newlines are encountered, column is simply an offset from the last token `column` by the length of the last token plus number of whitespaces skipped.
-    let column = lastToken.location.column + (start - lastToken.span.start);
-    if (lastNewlineOffset !== undefined) {
-      // When some newlines were encountered, the offset of the last newline from the slice start is stored in `lastNewlineOffset`
-      // `column` is then the distance between the position *after* the last newline and `start` plus 1 because it is 1-based
-      column = start - (lastToken.span.start + lastNewlineOffset + 1) + 1; // the ones cancel out but they are left here for clarity
-    }
+    // Compute the end location of the last token + whitespace which equals the start location of the next token.
+    const location = computeEndLocation(
+      this.source.body.slice(lastToken.span.start, start),
+      lastToken.location
+    );
 
     return {
       start,
-      location: {
-        line,
-        column,
-      },
+      location,
     };
   }
 
