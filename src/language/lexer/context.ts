@@ -1,4 +1,3 @@
-import { LexerTokenKindFilter } from './lexer';
 import { JessieExpressionTerminationToken } from './sublexer/jessie/expression';
 import { ParseResult } from './sublexer/result';
 import { DefaultSublexerTokenData, JessieSublexerTokenData } from './token';
@@ -38,6 +37,4 @@ type LexerJessieContext = {
   type: LexerContextType.JESSIE_SCRIPT_EXPRESSION;
   terminationTokens?: ReadonlyArray<JessieExpressionTerminationToken>;
 };
-export type LexerContext = {
-  filter?: LexerTokenKindFilter;
-} & (LexerDefaultContext | LexerJessieContext);
+export type LexerContext = LexerDefaultContext | LexerJessieContext;

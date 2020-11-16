@@ -4,7 +4,11 @@ import {
   LexerTokenKind,
   LexerTokenStream,
 } from '../lexer';
-import { DEFAULT_TOKEN_KIND_FILER, LexerSavedState } from '../lexer/lexer';
+import {
+  DEFAULT_TOKEN_KIND_FILTER,
+  LexerSavedState,
+  LexerTokenKindFilter,
+} from '../lexer/lexer';
 
 /**
  * LexerTokenStream implementation that takes tokens from an array instead of a Lexer.
@@ -14,8 +18,13 @@ import { DEFAULT_TOKEN_KIND_FILER, LexerSavedState } from '../lexer/lexer';
 export class ArrayLexerStream implements LexerTokenStream {
   private index: number;
 
+  tokenKindFilter: LexerTokenKindFilter;
+  emitUnknown: boolean;
+
   constructor(private readonly array: ReadonlyArray<LexerToken>) {
     this.index = 0;
+    this.tokenKindFilter = DEFAULT_TOKEN_KIND_FILTER;
+    this.emitUnknown = false;
   }
 
   next(context?: LexerContext): IteratorResult<LexerToken, undefined> {
@@ -26,8 +35,6 @@ export class ArrayLexerStream implements LexerTokenStream {
       };
     }
 
-    const filter = context?.filter ?? DEFAULT_TOKEN_KIND_FILER;
-
     const token = this.array[this.index];
     let result: IteratorResult<LexerToken, undefined> = {
       done: false,
@@ -35,7 +42,7 @@ export class ArrayLexerStream implements LexerTokenStream {
     };
 
     this.index += 1;
-    if (filter[token.data.kind]) {
+    if (this.tokenKindFilter[token.data.kind]) {
       // Recurse
       result = this.next(context);
     }
@@ -60,8 +67,8 @@ export class ArrayLexerStream implements LexerTokenStream {
             kind: LexerTokenKind.SEPARATOR,
             separator: 'SOF',
           },
-          { start: -1, end: -1 },
-          { line: 0, column: 0 }
+          { line: 0, column: 0 },
+          { start: -1, end: -1 }
         ),
         false,
       ];

@@ -18,18 +18,18 @@ export function tryParseNumberLiteral(
     } else if (slice.startsWith('+')) {
       prefixLength = 1;
     }
-    slice = slice.slice(prefixLength); // strip the + or -
   }
+  const prefixSlice = slice.slice(prefixLength); // strip the + or -
 
   // Parse the base prefix
   const keywordLiteralBase = util.checkKeywordLiteral(
-    slice,
+    prefixSlice,
     '0x',
     16,
     util.isAny
   ) ??
-    util.checkKeywordLiteral(slice, '0b', 2, util.isAny) ??
-    util.checkKeywordLiteral(slice, '0o', 8, util.isAny) ?? {
+    util.checkKeywordLiteral(prefixSlice, '0b', 2, util.isAny) ??
+    util.checkKeywordLiteral(prefixSlice, '0o', 8, util.isAny) ?? {
       value: 10,
       length: 0,
     };
@@ -44,11 +44,11 @@ export function tryParseNumberLiteral(
 
   // Exit if there aren't any numbers
   if (startingNumbers === 0) {
-    if (keywordLiteralBase.value !== 10) {
+    if (prefixLength !== 0) {
       return {
         isError: true,
         kind: LexerTokenKind.LITERAL,
-        detail: 'Expected a number following integer base prefix',
+        detail: 'Expected a number following a sign or an integer base prefix',
         category: SyntaxErrorCategory.LEXER,
         relativeSpan: { start: 0, end: prefixLength + 1 },
       };

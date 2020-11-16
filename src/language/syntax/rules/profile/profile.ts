@@ -18,14 +18,14 @@ import {
   UseCaseSlotDefinitionNode,
 } from '@superfaceai/language';
 
-import { IdentifierTokenData, LexerTokenKind } from '../../lexer/token';
+import { IdentifierTokenData, LexerTokenKind } from '../../../lexer/token';
 import {
   LexerTokenMatch,
   SyntaxRule,
   SyntaxRuleMutable,
   SyntaxRuleSeparator,
-} from '../rule';
-import { documentedNode, SrcNode, SyntaxRuleSrc } from './common';
+} from '../../rule';
+import { documentedNode, SrcNode, SyntaxRuleSrc } from '../common';
 
 // MUTABLE RULES //
 
@@ -86,9 +86,7 @@ export const ENUM_VALUE: SyntaxRuleSrc<EnumValueNode> = documentedNode(
         .or(SyntaxRule.lookahead(SyntaxRule.newline()))
     )
     .map(
-      (matches): SrcNode<EnumValueNode> => {
-        const [name, maybeAssignment /* maybeComma */] = matches;
-
+      ([name, maybeAssignment, _maybeComma]): SrcNode<EnumValueNode> => {
         let enumValue: string | number | boolean;
         if (maybeAssignment === undefined) {
           enumValue = name.data.identifier;
@@ -258,26 +256,16 @@ TYPE_MUT.rule = TYPE;
 export const FIELD_DEFINITION: SyntaxRuleSrc<FieldDefinitionNode> = documentedNode(
   SyntaxRule.identifier()
     .followedBy(SyntaxRule.optional(SyntaxRule.operator('!')))
-    .andFollowedBy(
-      SyntaxRule.optional(
-        SyntaxRule.lookahead(SyntaxRule.newline(), true).followedBy(TYPE)
-      )
-    )
+    .andFollowedBy(SyntaxRule.optional(SyntaxRule.sameLine(TYPE)))
     .andFollowedBy(
       SyntaxRule.operator(',')
         .or(SyntaxRule.lookahead(SyntaxRule.separator('}')))
         .or(SyntaxRule.lookahead(SyntaxRule.newline()))
     )
     .map(
-      (matches): SrcNode<FieldDefinitionNode> => {
-        const [
-          name,
-          maybeRequired,
-          maybeTypeWithLookahead /* maybeComma */,
-        ] = matches;
-
-        const maybeType = maybeTypeWithLookahead?.[1];
-
+      ([name, maybeRequired, maybeType, _maybeEnd]): SrcNode<
+        FieldDefinitionNode
+      > => {
         return {
           kind: 'FieldDefinition',
           fieldName: name.data.identifier,
@@ -299,7 +287,7 @@ FIELD_DEFINITION_MUT.rule = FIELD_DEFINITION;
 export const NAMED_FIELD_DEFINITION: SyntaxRuleSrc<NamedFieldDefinitionNode> = documentedNode(
   SyntaxRule.identifier('field')
     .followedBy(SyntaxRule.identifier())
-    .andFollowedBy(SyntaxRule.optional(TYPE))
+    .andFollowedBy(SyntaxRule.optional(SyntaxRule.sameLine(TYPE)))
     .map(
       (matches): SrcNode<NamedFieldDefinitionNode> => {
         const [keyword, fieldName, type] = matches;
@@ -324,7 +312,7 @@ export const NAMED_FIELD_DEFINITION: SyntaxRuleSrc<NamedFieldDefinitionNode> = d
 export const NAMED_MODEL_DEFINITION: SyntaxRuleSrc<NamedModelDefinitionNode> = documentedNode(
   SyntaxRule.identifier('model')
     .followedBy(SyntaxRule.identifier())
-    .andFollowedBy(SyntaxRule.optional(TYPE))
+    .andFollowedBy(SyntaxRule.optional(SyntaxRule.sameLine(TYPE)))
     .map(
       (matches): SrcNode<NamedModelDefinitionNode> => {
         const [keyword, modelName, type] = matches;
@@ -345,23 +333,15 @@ export const NAMED_MODEL_DEFINITION: SyntaxRuleSrc<NamedModelDefinitionNode> = d
 
 // USECASE //
 
-const USECASE_SLOT_DEFINITION_FACTORY: <T extends Type>(
-  slotName: string,
-  typeRule: SyntaxRuleSrc<T>
-) => SyntaxRuleSrc<UseCaseSlotDefinitionNode<T>> = <T extends Type>(
-  slotName: string,
-  typeRule: SyntaxRuleSrc<T>
-) =>
-  documentedNode<
-    SrcNode<UseCaseSlotDefinitionNode<T>>,
-    SyntaxRule<SrcNode<UseCaseSlotDefinitionNode<T>>>
-  >(
-    SyntaxRule.identifier(slotName)
-      .followedBy(SyntaxRule.optional(typeRule))
+function USECASE_SLOT_DEFINITION_FACTORY<T extends Type>(
+  name: string,
+  rule: SyntaxRuleSrc<T>
+): SyntaxRule<UseCaseSlotDefinitionNode<T>> {
+  return documentedNode(
+    SyntaxRule.identifier(name)
+      .followedBy(SyntaxRule.sameLine(rule))
       .map(
-        (matches): SrcNode<UseCaseSlotDefinitionNode<T>> => {
-          const [name, maybeType] = matches;
-
+        ([name, maybeType]): SrcNode<UseCaseSlotDefinitionNode<T>> => {
           return {
             kind: 'UseCaseSlotDefinition',
             type: maybeType,
@@ -374,6 +354,7 @@ const USECASE_SLOT_DEFINITION_FACTORY: <T extends Type>(
         }
       )
   );
+}
 
 const USECASE_SAFETY: SyntaxRule<LexerTokenMatch<
   IdentifierTokenData
@@ -406,8 +387,11 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
     )
     .andFollowedBy(
       SyntaxRule.optional(
-        SyntaxRule.identifier('async').followedBy(
-          USECASE_SLOT_DEFINITION_FACTORY('result', TYPE)
+        USECASE_SLOT_DEFINITION_FACTORY(
+          'async',
+          SyntaxRule.identifier('result')
+            .followedBy(SyntaxRule.sameLine(TYPE))
+            .map(([_name, type]) => type)
         )
       )
     )
@@ -416,19 +400,17 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
     )
     .andFollowedBy(SyntaxRule.separator('}'))
     .map(
-      (matches): SrcNode<UseCaseDefinitionNode> => {
-        const [
-          usecaseKey,
-          name,
-          maybeSafety,
-          ,
-          /* sepStart */ maybeInput,
-          maybeResult,
-          maybeAsyncResult,
-          maybeError,
-          sepEnd,
-        ] = matches;
-
+      ([
+        key,
+        name,
+        maybeSafety,
+        _sepStart,
+        maybeInput,
+        maybeResult,
+        maybeAsyncResult,
+        maybeError,
+        sepEnd,
+      ]): SrcNode<UseCaseDefinitionNode> => {
         let safety: UseCaseDefinitionNode['safety'] = undefined;
         switch (maybeSafety?.data.identifier) {
           case undefined:
@@ -456,10 +438,10 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
           safety,
           input: maybeInput,
           result: maybeResult,
-          asyncResult: maybeAsyncResult?.[1],
+          asyncResult: maybeAsyncResult,
           error: maybeError,
-          location: usecaseKey.location,
-          span: { start: usecaseKey.span.start, end: sepEnd.span.end },
+          location: key.location,
+          span: { start: key.span.start, end: sepEnd.span.end },
         };
       }
     )
@@ -502,14 +484,16 @@ export const PROFILE: SyntaxRuleSrc<ProfileNode> = documentedNode(
   )
 );
 
-export const DOCUMENT_DEFINITION: SyntaxRuleSrc<DocumentDefinition> = USECASE_DEFINITION.or(
+export const PROFILE_DOCUMENT_DEFINITION: SyntaxRuleSrc<DocumentDefinition> = USECASE_DEFINITION.or(
   NAMED_FIELD_DEFINITION
 ).or(NAMED_MODEL_DEFINITION);
 export const PROFILE_DOCUMENT: SyntaxRuleSrc<ProfileDocumentNode> = SyntaxRule.separator(
   'SOF'
 )
   .followedBy(PROFILE)
-  .andFollowedBy(SyntaxRule.optional(SyntaxRule.repeat(DOCUMENT_DEFINITION)))
+  .andFollowedBy(
+    SyntaxRule.optional(SyntaxRule.repeat(PROFILE_DOCUMENT_DEFINITION))
+  )
   .andFollowedBy(SyntaxRule.separator('EOF'))
   .map(
     (matches): SrcNode<ProfileDocumentNode> => {

@@ -80,7 +80,7 @@ export function transpileScript(
       category: SyntaxErrorCategory.JESSIE_SYNTAX,
       relativeSpan: {
         start: diag.start ?? 0,
-        end: (diag.start ?? 0) + (diag.length ?? 1),
+        end: (diag.start ?? 0) + Math.max(1, diag.length ?? 0),
       },
       detail,
     };

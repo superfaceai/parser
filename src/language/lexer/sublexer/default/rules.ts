@@ -112,7 +112,7 @@ export function tryParseBooleanLiteral(
 export function tryParseIdentifier(
   slice: string
 ): ParseResult<IdentifierTokenData> {
-  if (!util.isValidIdentififerStartChar(slice.charCodeAt(0))) {
+  if (!util.isValidIdentifierStartChar(slice.charCodeAt(0))) {
     return undefined;
   }
 
@@ -137,22 +137,23 @@ export function tryParseIdentifier(
  * Returns `undefined` if the current position cannot contain a comment.
  */
 export function tryParseComment(slice: string): ParseResult<CommentTokenData> {
-  if (util.isCommentChar(slice.charCodeAt(0))) {
-    const commentSlice = slice.slice(1);
-    const length = util.countStarting(
-      char => !util.isNewline(char),
-      commentSlice
-    );
-
-    return {
-      isError: false,
-      data: {
-        kind: LexerTokenKind.COMMENT,
-        comment: commentSlice.slice(0, length),
-      },
-      relativeSpan: { start: 0, end: length + 1 },
-    };
-  } else {
+  const prefix = tryParseScannerRules(slice, { '//': ['//', util.isAny] });
+  if (prefix === undefined) {
     return undefined;
   }
+
+  const commentSlice = slice.slice(prefix.length);
+  const bodyLength = util.countStarting(
+    char => !util.isNewline(char),
+    commentSlice
+  );
+
+  return {
+    isError: false,
+    data: {
+      kind: LexerTokenKind.COMMENT,
+      comment: commentSlice.slice(0, bodyLength),
+    },
+    relativeSpan: { start: 0, end: prefix.length + bodyLength },
+  };
 }

@@ -1,4 +1,4 @@
-import { SyntaxError } from '../../error';
+import { SyntaxError } from '../../../error';
 import {
   IdentifierTokenData,
   LexerToken,
@@ -6,10 +6,10 @@ import {
   LexerTokenKind,
   LiteralTokenData,
   StringTokenData,
-} from '../../lexer/token';
-import { Location, Source, Span } from '../../source';
-import { RuleResult } from '../rule';
-import { ArrayLexerStream } from '../util';
+} from '../../../lexer/token';
+import { Location, Source, Span } from '../../../source';
+import { RuleResult } from '../../rule';
+import { ArrayLexerStream } from '../../util';
 import * as rules from './profile';
 
 // Declare custom matcher for sake of Typescript
@@ -60,8 +60,6 @@ expect.extend({
 });
 
 // Ensures that token spans are correctly ordered in delcaration order
-// while also making sure that their spans and locations are random enough so that
-// equality checks find when a wrong span or location is calculated.
 let TES_TOK_STATE = 1;
 beforeEach(() => {
   TES_TOK_STATE = 1;
@@ -75,7 +73,7 @@ function tesTok(data: LexerTokenData): LexerToken {
 
   TES_TOK_STATE += 1;
 
-  return new LexerToken(data, { start, end }, { line, column });
+  return new LexerToken(data, { line, column }, { start, end });
 }
 
 function tesMatch<I extends Record<string, unknown>>(
@@ -1195,7 +1193,7 @@ describe('profile syntax rules', () => {
                   tokens[15]
                 ),
               },
-              tokens[10],
+              tokens[9],
               tokens[15]
             ),
             error: tesMatch(

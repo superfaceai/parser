@@ -255,7 +255,15 @@ export class SyntaxError {
       sourceLocation,
     } = generateErrorVisualization(this.source, this.span, this.location);
 
-    const errorLine = `SyntaxError: ${this.detail}`;
+    let categoryInfo = '';
+    switch (this.category) {
+      case SyntaxErrorCategory.JESSIE_SYNTAX:
+      case SyntaxErrorCategory.JESSIE_FORBIDDEN_CONSTRUCT:
+        categoryInfo = 'Error in script syntax: ';
+        break;
+    }
+
+    const errorLine = `SyntaxError: ${categoryInfo}${this.detail}`;
     const locationLinePrefix = ' '.repeat(maxLineNumberLog) + '--> ';
     const locationLine = `${locationLinePrefix}${this.source.fileName}:${sourceLocation.line}:${sourceLocation.column}`;
 

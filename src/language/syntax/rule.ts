@@ -1,5 +1,4 @@
 import { LexerContext, LexerContextType, LexerTokenStream } from '../lexer';
-import { DEFAULT_TOKEN_KIND_FILER } from '../lexer/lexer';
 import { JessieExpressionTerminationToken } from '../lexer/sublexer/jessie/expression';
 import {
   formatTokenKind,
@@ -38,13 +37,6 @@ export class MatchAttempts {
     return first.merge(second);
   }
 
-  static mergePreserveOrder(
-    first: MatchAttempts | undefined,
-    second: MatchAttempts
-  ): MatchAttempts {
-    return first?.merge(second) ?? second;
-  }
-
   /** Merges two rule attempts according to the furthest token heuristic. */
   merge(other: MatchAttempts | undefined): MatchAttempts {
     if (other === undefined) {
@@ -57,7 +49,7 @@ export class MatchAttempts {
       return new MatchAttempts(this.token, [...this.rules, ...other.rules]);
     }
 
-    // undefined is treated as grater than defined
+    // undefined is treated as greater than defined
     if (this.token === undefined) {
       return this;
     } else if (
@@ -190,6 +182,13 @@ export abstract class SyntaxRule<T> {
     return new SyntaxRuleMap(this, mapper);
   }
 
+  andThen<M>(
+    then: (_: T) => AndThenResult<M>,
+    description?: string
+  ): SyntaxRule<M> {
+    return new SyntaxRuleAndThen(this, then, description);
+  }
+
   static repeat<R>(rule: SyntaxRule<R>): SyntaxRuleRepeat<R> {
     return new SyntaxRuleRepeat(rule);
   }
@@ -200,13 +199,31 @@ export abstract class SyntaxRule<T> {
 
   static lookahead<R>(
     rule: SyntaxRule<R>,
-    invert?: boolean
+    invert?: 'invert'
   ): SyntaxRuleLookahead<R> {
-    return new SyntaxRuleLookahead(rule, invert);
+    return new SyntaxRuleLookahead(rule, invert === 'invert' ? true : false);
+  }
+
+  /**
+   * Returns `rule` that cannot be preceded by a newline.
+   * Example usage: `SyntaxRule.identifier('slot').followedBy(SyntaxRule.sameLine(SyntaxRule.string()))`
+   */
+  static sameLine<R>(rule: SyntaxRule<R>): SyntaxRule<R> {
+    return SyntaxRule.lookahead(SyntaxRule.newline(), 'invert')
+      .followedBy(rule)
+      .map(([_, r]) => r);
+  }
+
+  peekUnknown(): SyntaxRulePeekUnknown<T> {
+    return new SyntaxRulePeekUnknown(this);
+  }
+
+  debug(): SyntaxRule<T> {
+    return new SyntaxRuleDebugLog(this);
   }
 }
 
-// Basic nodes //
+// BASIC //
 
 export class SyntaxRuleSeparator extends SyntaxRule<
   LexerTokenMatch<SeparatorTokenData>
@@ -367,7 +384,7 @@ export class SyntaxRuleString extends SyntaxRule<
   }
 }
 
-// Specific nodes //
+// SPECIFIC //
 
 export class SyntaxRuleNewline extends SyntaxRule<
   LexerTokenMatch<NewlineTokenData>
@@ -375,27 +392,24 @@ export class SyntaxRuleNewline extends SyntaxRule<
   tryMatch(
     tokens: LexerTokenStream
   ): RuleResult<LexerTokenMatch<NewlineTokenData>> {
-    return this.simpleTryMatchBoilerplate(
-      tokens,
-      token => {
-        if (token.data.kind === LexerTokenKind.NEWLINE) {
-          return {
-            data: token.data,
-            span: token.span,
-            location: token.location,
-          };
-        }
+    const originalFilter = tokens.tokenKindFilter[LexerTokenKind.NEWLINE];
+    tokens.tokenKindFilter[LexerTokenKind.NEWLINE] = false;
 
-        return undefined;
-      },
-      {
-        type: LexerContextType.DEFAULT,
-        filter: {
-          ...DEFAULT_TOKEN_KIND_FILER,
-          [LexerTokenKind.NEWLINE]: false,
-        },
+    const result = this.simpleTryMatchBoilerplate(tokens, token => {
+      if (token.data.kind === LexerTokenKind.NEWLINE) {
+        return {
+          data: token.data,
+          span: token.span,
+          location: token.location,
+        };
       }
-    );
+
+      return undefined;
+    });
+
+    tokens.tokenKindFilter[LexerTokenKind.NEWLINE] = originalFilter;
+
+    return result;
   }
 
   [Symbol.toStringTag](): string {
@@ -440,11 +454,21 @@ export class SyntaxRuleJessie extends SyntaxRule<
   }
 }
 
-// Combinators //
+// COMBINATORS //
 
 export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
   constructor(readonly first: SyntaxRule<F>, readonly second: SyntaxRule<S>) {
     super();
+  }
+
+  static chainOr<R>(...rest: []): undefined;
+  static chainOr<R>(...rest: SyntaxRule<R>[]): SyntaxRule<R>;
+  static chainOr<R>(...rest: SyntaxRule<R>[]): SyntaxRule<R> | undefined {
+    if (rest.length === 0) {
+      return undefined;
+    }
+
+    return rest.reduce((acc, curr) => acc.or(curr));
   }
 
   tryMatch(tokens: LexerTokenStream): RuleResult<F | S> {
@@ -507,10 +531,7 @@ export class SyntaxRuleFollowedBy<
 
       return {
         ...secondMatch,
-        attempts: MatchAttempts.mergePreserveOrder(
-          firstMatch.optionalAttempts,
-          secondMatch.attempts
-        ),
+        attempts: secondMatch.attempts.merge(firstMatch.optionalAttempts),
       };
     }
 
@@ -556,9 +577,8 @@ export class SyntaxRuleRepeat<R> extends SyntaxRule<R[]> {
       return {
         kind: 'match',
         match: matches,
-        optionalAttempts: MatchAttempts.mergePreserveOrder(
-          lastMatch?.optionalAttempts,
-          lastResult.attempts
+        optionalAttempts: lastResult.attempts.merge(
+          lastMatch?.optionalAttempts
         ),
       };
     }
@@ -579,6 +599,7 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
 
   tryMatch(tokens: LexerTokenStream): RuleResultMatch<R | undefined> {
     const match = this.rule.tryMatch(tokens);
+
     if (match.kind === 'match') {
       return match;
     }
@@ -595,7 +616,12 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
   }
 }
 
-/** Matches rule and then restores `tokens` state. */
+// META //
+
+/** Matches rule and then restores `tokens` state.
+ *
+ * This rule automatically uses the `emitUnknown` flag.
+ */
 export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
   /**
    * Invert the lookahead, matching if the inner rule fails.
@@ -609,9 +635,14 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
   }
 
   tryMatch(tokens: LexerTokenStream): RuleResult<undefined> {
+    const originalEmitUnknown = tokens.emitUnknown;
+    tokens.emitUnknown = true;
     const save = tokens.save();
+
     const result = this.rule.tryMatch(tokens);
+
     tokens.rollback(save);
+    tokens.emitUnknown = originalEmitUnknown;
 
     // Handle inversion
     if (this.invert) {
@@ -643,43 +674,40 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
   }
 }
 
-// CUSTOM LOGIC //
-
-/** Allows inserting custom code into the matching process by giving access to the result of the wrapper rule to a custom closure. */
-export class SyntaxRuleCondition<R> extends SyntaxRule<R> {
-  constructor(
-    readonly rule: SyntaxRule<R>,
-    readonly fn: (result: R) => boolean
-  ) {
+/** Peeks the first token with the `emitUnknown` flag enabled and returns nomatch in case it is unknown.
+ *
+ * This rule is used in optional rules where the candidates use different lexer contexts and might fail on unknown
+ * tokens even though the following candidate would match.
+ */
+export class SyntaxRulePeekUnknown<R> extends SyntaxRule<R> {
+  constructor(readonly rule: SyntaxRule<R>) {
     super();
   }
 
   tryMatch(tokens: LexerTokenStream): RuleResult<R> {
-    const save = tokens.save();
+    const originalEmitUnknown = tokens.emitUnknown;
+    tokens.emitUnknown = true;
 
-    const result = this.rule.tryMatch(tokens);
-    if (result.kind === 'match') {
-      // If the new result is a failure, roll back the tokens state.
-      if (!this.fn(result.match)) {
-        tokens.rollback(save);
+    const peekedToken = tokens.peek().value;
 
-        return {
-          kind: 'nomatch',
-          attempts: MatchAttempts.mergePreserveOrder(
-            result.optionalAttempts,
-            new MatchAttempts(tokens.peek().value, [this])
-          ),
-        };
-      }
+    tokens.emitUnknown = originalEmitUnknown;
+
+    if (peekedToken?.data.kind === LexerTokenKind.UNKNOWN) {
+      return {
+        kind: 'nomatch',
+        attempts: new MatchAttempts(peekedToken, [this.rule]),
+      };
     }
 
-    return result;
+    return this.rule.tryMatch(tokens);
   }
 
   [Symbol.toStringTag](): string {
     return this.rule.toString();
   }
 }
+
+// CUSTOM LOGIC //
 
 /** Maps `match` value on success. */
 export class SyntaxRuleMap<R, M> extends SyntaxRule<M> {
@@ -704,6 +732,48 @@ export class SyntaxRuleMap<R, M> extends SyntaxRule<M> {
   }
 }
 
+type AndThenResult<T> = { kind: 'match'; value: T } | { kind: 'nomatch' };
+export class SyntaxRuleAndThen<R, M> extends SyntaxRule<M> {
+  constructor(
+    readonly rule: SyntaxRule<R>,
+    readonly then: (_: R) => AndThenResult<M>,
+    readonly description?: string
+  ) {
+    super();
+  }
+
+  tryMatch(tokens: LexerTokenStream): RuleResult<M> {
+    const peek = tokens.peek().value;
+
+    const match = this.rule.tryMatch(tokens);
+
+    if (match.kind === 'match') {
+      const then = this.then(match.match);
+
+      if (then.kind == 'match') {
+        return {
+          kind: 'match',
+          match: then.value,
+          optionalAttempts: match.optionalAttempts,
+        };
+      } else {
+        return {
+          kind: 'nomatch',
+          attempts: new MatchAttempts(peek, [this]).merge(
+            match.optionalAttempts
+          ),
+        };
+      }
+    }
+
+    return match;
+  }
+
+  [Symbol.toStringTag](): string {
+    return this.description ?? this.rule.toString();
+  }
+}
+
 // OTHER //
 
 /**
@@ -725,7 +795,7 @@ export class SyntaxRuleMutable<R> extends SyntaxRule<R> {
 
   tryMatch(tokens: LexerTokenStream): RuleResult<R> {
     if (this.rule === undefined) {
-      throw 'This method should never be called. This is an error in syntax rules definition.';
+      throw 'This method should never be called before the mutable rule is initialized. This is an error in syntax rules definition.';
     }
 
     return this.rule.tryMatch(tokens);
@@ -733,9 +803,69 @@ export class SyntaxRuleMutable<R> extends SyntaxRule<R> {
 
   [Symbol.toStringTag](): string {
     if (this.rule === undefined) {
-      throw 'This method should never be called. This is an error in syntax rules definition.';
+      throw 'This method should never be called before the mutable rule is initialized. This is an error in syntax rules definition.';
     }
 
     return '[Mutable Rule]';
+  }
+}
+
+export class SyntaxRuleDebugLog<R> extends SyntaxRule<R> {
+  constructor(readonly rule: SyntaxRule<R>) {
+    super();
+  }
+
+  tryMatch(tokens: LexerTokenStream): RuleResult<R> {
+    const emitUnknown = tokens.emitUnknown;
+    tokens.emitUnknown = true;
+    const nextToken = tokens.peek();
+    tokens.emitUnknown = emitUnknown;
+
+    let result;
+    try {
+      result = this.rule.tryMatch(tokens);
+    } catch (err) {
+      console.debug(
+        'With unknown:',
+        emitUnknown,
+        '\nRule:',
+        this.rule,
+        '\nException:',
+        err,
+        '\nToken:',
+        nextToken
+      );
+      throw err;
+    }
+
+    if (result.kind === 'nomatch') {
+      console.debug(
+        'With unknown:',
+        emitUnknown,
+        '\nRule:',
+        this.rule,
+        '\nAttempts:',
+        result.attempts,
+        '\nFirst token:',
+        nextToken
+      );
+    } else {
+      console.debug(
+        'With unknown:',
+        emitUnknown,
+        '\nRule:',
+        this.rule,
+        '\nMatch:',
+        result.match,
+        '\nFirst token:',
+        nextToken
+      );
+    }
+
+    return result;
+  }
+
+  [Symbol.toStringTag](): string {
+    return this.rule.toString();
   }
 }

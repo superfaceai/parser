@@ -9,7 +9,11 @@ import { extractDocumentation } from '../util';
 
 // HELPER RULES //
 
-type ASTNodeBase = ProfileASTNodeBase | MapASTNodeBase;
+export type ASTNodeBase = ProfileASTNodeBase | MapASTNodeBase;
+export type SrcNodeLocationInfo = {
+  span: NonNullable<ASTNodeBase['span']>;
+  location: NonNullable<ASTNodeBase['location']>;
+};
 
 // Node that has `span` and `location` non-optional.
 export type SrcNode<N extends ASTNodeBase> = N & {
@@ -18,15 +22,13 @@ export type SrcNode<N extends ASTNodeBase> = N & {
 };
 export type SyntaxRuleSrc<N extends ASTNodeBase> = SyntaxRule<SrcNode<N>>;
 
-export function documentedNode<
-  N extends SrcNode<DocumentedNode & ASTNodeBase>,
-  R extends SyntaxRule<N>
->(rule: R): SyntaxRule<N> {
+export function documentedNode<N extends SrcNode<DocumentedNode & ASTNodeBase>>(
+  rule: SyntaxRule<N>
+): SyntaxRule<N> {
   return SyntaxRule.optional(SyntaxRule.string())
     .followedBy(rule)
     .map(
-      (matches): N => {
-        const [maybeDoc, result] = matches;
+      ([maybeDoc, result]): N => {
         if (maybeDoc !== undefined) {
           const doc = extractDocumentation(maybeDoc.data.string);
           result.title = doc.title;
