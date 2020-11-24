@@ -333,7 +333,7 @@ const HTTP_CALL_STATEMENT_REQUEST_BODY_SLOT = SyntaxRule.identifier(
 ).followedBy(
   SyntaxRule.sameLine(OBJECT_LITERAL).or(
     SyntaxRule.operator('=')
-      .followedBy(RHS_EXPRESSION_FACTORY('\n', '}'))
+      .followedBy(INLINE_CALL.or(RHS_EXPRESSION_FACTORY('\n', '}')))
       .map(([_op, value]) => value)
   )
 );
