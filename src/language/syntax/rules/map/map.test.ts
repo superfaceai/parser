@@ -910,6 +910,76 @@ describe('strict map syntax rules', () => {
       );
     });
 
+    it('should parse http call request variables with body as inline call', () => {
+      const tokens = [
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'body' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+
+        tesTok({
+          kind: LexerTokenKind.IDENTIFIER,
+          identifier: 'call',
+        }),
+        tesTok({
+          kind: LexerTokenKind.IDENTIFIER,
+          identifier: 'Op',
+        }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '(' }),
+        tesTok({
+          kind: LexerTokenKind.IDENTIFIER,
+          identifier: 'arg',
+        }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({
+          kind: LexerTokenKind.LITERAL,
+          literal: 3,
+        }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: ')' }),
+
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const expected = {
+        body: tesMatch(
+          {
+            kind: 'InlineCall',
+            operationName: 'Op',
+            arguments: [
+              tesMatch(
+                {
+                  kind: 'Assignment',
+                  key: [(tokens[6].data as IdentifierTokenData).identifier],
+                  value: tesMatch(
+                    {
+                      kind: 'PrimitiveLiteral',
+                      value: 3,
+                    },
+                    tokens[8]
+                  ),
+                },
+                tokens[6],
+                tokens[8]
+              ),
+            ],
+          },
+          tokens[3],
+          tokens[9]
+        ),
+        span: {
+          start: tokens[0].span.start,
+          end: tokens[10].span.end,
+        },
+      };
+
+      expectAllToBeAMatch(
+        expected,
+        stream,
+        [map.HTTP_REQUEST_VARIABLES_BLOCK],
+        ...allFeatures()
+      );
+    });
+
     it('should parse call statement', () => {
       const tokens = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'call' }),
