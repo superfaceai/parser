@@ -2,7 +2,7 @@ import {
   DocumentedNode,
   MapASTNodeBase,
   ProfileASTNodeBase,
-} from '@superfaceai/language';
+} from '@superfaceai/ast';
 
 import { SyntaxRule } from '../rule';
 import { extractDocumentation } from '../util';
