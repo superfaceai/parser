@@ -1,4 +1,4 @@
-import { MapDocumentNode, ProfileDocumentNode } from '@superfaceai/language';
+import { MapDocumentNode, ProfileDocumentNode } from '@superfaceai/ast';
 
 import { SyntaxError } from '../error';
 import { Lexer } from '../lexer/lexer';
