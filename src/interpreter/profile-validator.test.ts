@@ -1,4 +1,4 @@
-import { ProfileDocumentNode } from '@superindustries/language';
+import { ProfileDocumentNode } from '@superfaceai/language';
 
 import { ProfileOutput, ProfileValidator } from './profile-validator';
 
@@ -38,16 +38,16 @@ describe('ProfileValidator', () => {
       const profileValidator = new ProfileValidator();
       const expected: ProfileOutput = {
         profileId: 'test',
-        usecase: {
-          useCaseName: 'Test',
-          input: {
-            kind: 'ObjectStructure',
+        usecases: [
+          {
+            useCaseName: 'Test',
+
+            result: {
+              kind: 'PrimitiveStructure',
+              type: 'string',
+            },
           },
-          result: {
-            kind: 'PrimitiveStructure',
-            type: 'string',
-          },
-        },
+        ],
       };
 
       test('then result contain PrimitiveStructure', () => {
@@ -100,15 +100,16 @@ describe('ProfileValidator', () => {
       const profileValidator = new ProfileValidator();
       const expected: ProfileOutput = {
         profileId: 'test',
-        usecase: {
-          useCaseName: 'Test',
-          input: {
-            kind: 'ObjectStructure',
+        usecases: [
+          {
+            useCaseName: 'Test',
+
+            result: {
+              kind: 'EnumStructure',
+              enums: ['a', 'b'],
+            },
           },
-          result: {
-            kind: 'EnumStructure',
-          },
-        },
+        ],
       };
 
       test('then result contain EnumStructure', () => {
@@ -164,18 +165,19 @@ describe('ProfileValidator', () => {
       const profileValidator = new ProfileValidator();
       const expected: ProfileOutput = {
         profileId: 'test',
-        usecase: {
-          useCaseName: 'Test',
-          input: {
-            kind: 'ObjectStructure',
-          },
-          result: {
-            kind: 'NonNullStructure',
-            value: {
-              kind: 'EnumStructure',
+        usecases: [
+          {
+            useCaseName: 'Test',
+
+            result: {
+              kind: 'NonNullStructure',
+              value: {
+                kind: 'EnumStructure',
+                enums: ['a', 'b'],
+              },
             },
           },
-        },
+        ],
       };
 
       test('then result contain NonNullStructure with EnumStructure', () => {
@@ -227,16 +229,16 @@ describe('ProfileValidator', () => {
       const profileValidator = new ProfileValidator();
       const expected: ProfileOutput = {
         profileId: 'test',
-        usecase: {
-          useCaseName: 'Test',
-          input: {
-            kind: 'ObjectStructure',
+        usecases: [
+          {
+            useCaseName: 'Test',
+
+            result: {
+              kind: 'PrimitiveStructure',
+              type: 'boolean',
+            },
           },
-          result: {
-            kind: 'PrimitiveStructure',
-            type: 'boolean',
-          },
-        },
+        ],
       };
 
       test('then result contain PrimitiveStructure', () => {
@@ -288,16 +290,16 @@ describe('ProfileValidator', () => {
       const profileValidator = new ProfileValidator();
       const expected: ProfileOutput = {
         profileId: 'test',
-        usecase: {
-          useCaseName: 'Test',
-          input: {
-            kind: 'ObjectStructure',
+        usecases: [
+          {
+            useCaseName: 'Test',
+
+            result: {
+              kind: 'PrimitiveStructure',
+              type: 'boolean',
+            },
           },
-          result: {
-            kind: 'PrimitiveStructure',
-            type: 'boolean',
-          },
-        },
+        ],
       };
 
       test('then model definition is evaluated before useCase definition and result contain PrimitiveStructure', () => {
@@ -341,13 +343,13 @@ describe('ProfileValidator', () => {
       const profileValidator = new ProfileValidator();
       const expected: ProfileOutput = {
         profileId: 'test',
-        usecase: {
-          useCaseName: 'Test',
-          input: {
-            kind: 'ObjectStructure',
+        usecases: [
+          {
+            useCaseName: 'Test',
+
+            result: undefined,
           },
-          result: undefined,
-        },
+        ],
       };
 
       test('then model definition is not evaluated and therefore result modelType is undefined', () => {
@@ -394,19 +396,19 @@ describe('ProfileValidator', () => {
       const profileValidator = new ProfileValidator();
       const expected: ProfileOutput = {
         profileId: 'test',
-        usecase: {
-          useCaseName: 'Test',
-          input: {
-            kind: 'ObjectStructure',
-          },
-          result: {
-            kind: 'ListStructure',
-            value: {
-              kind: 'PrimitiveStructure',
-              type: 'string',
+        usecases: [
+          {
+            useCaseName: 'Test',
+
+            result: {
+              kind: 'ListStructure',
+              value: {
+                kind: 'PrimitiveStructure',
+                type: 'string',
+              },
             },
           },
-        },
+        ],
       };
 
       test('then result contain PrimitiveStructure', () => {
@@ -462,28 +464,28 @@ describe('ProfileValidator', () => {
       const profileValidator = new ProfileValidator();
       const expected: ProfileOutput = {
         profileId: 'test',
-        usecase: {
-          useCaseName: 'Test',
-          input: {
-            kind: 'ObjectStructure',
-          },
-          result: {
-            kind: 'ListStructure',
-            value: {
-              kind: 'UnionStructure',
-              types: [
-                {
-                  kind: 'PrimitiveStructure',
-                  type: 'string',
-                },
-                {
-                  kind: 'PrimitiveStructure',
-                  type: 'boolean',
-                },
-              ],
+        usecases: [
+          {
+            useCaseName: 'Test',
+
+            result: {
+              kind: 'ListStructure',
+              value: {
+                kind: 'UnionStructure',
+                types: [
+                  {
+                    kind: 'PrimitiveStructure',
+                    type: 'string',
+                  },
+                  {
+                    kind: 'PrimitiveStructure',
+                    type: 'boolean',
+                  },
+                ],
+              },
             },
           },
-        },
+        ],
       };
 
       test('then result contain UnionStructure', () => {
@@ -527,15 +529,15 @@ describe('ProfileValidator', () => {
       const profileValidator = new ProfileValidator();
       const expected: ProfileOutput = {
         profileId: 'test',
-        usecase: {
-          useCaseName: 'Test',
-          input: {
-            kind: 'ObjectStructure',
+        usecases: [
+          {
+            useCaseName: 'Test',
+
+            result: {
+              kind: 'ObjectStructure',
+            },
           },
-          result: {
-            kind: 'ObjectStructure',
-          },
-        },
+        ],
       };
 
       test('then result is empty ObjectStructure as well', () => {
@@ -636,40 +638,41 @@ describe('ProfileValidator', () => {
       const profileValidator = new ProfileValidator();
       const expected: ProfileOutput = {
         profileId: 'test',
-        usecase: {
-          useCaseName: 'Test',
-          input: {
-            kind: 'ObjectStructure',
-          },
-          result: {
-            kind: 'ObjectStructure',
-            fields: {
-              f1: {
-                kind: 'PrimitiveStructure',
-                type: 'boolean',
-              },
-              f2: {
-                kind: 'ListStructure',
-                value: {
-                  kind: 'UnionStructure',
-                  types: [
-                    {
-                      kind: 'PrimitiveStructure',
-                      type: 'string',
-                    },
-                    {
-                      kind: 'PrimitiveStructure',
-                      type: 'boolean',
-                    },
-                  ],
+        usecases: [
+          {
+            useCaseName: 'Test',
+
+            result: {
+              kind: 'ObjectStructure',
+              fields: {
+                f1: {
+                  kind: 'PrimitiveStructure',
+                  type: 'boolean',
                 },
-              },
-              f3: {
-                kind: 'EnumStructure',
+                f2: {
+                  kind: 'ListStructure',
+                  value: {
+                    kind: 'UnionStructure',
+                    types: [
+                      {
+                        kind: 'PrimitiveStructure',
+                        type: 'string',
+                      },
+                      {
+                        kind: 'PrimitiveStructure',
+                        type: 'boolean',
+                      },
+                    ],
+                  },
+                },
+                f3: {
+                  kind: 'EnumStructure',
+                  enums: ['A', 'B'],
+                },
               },
             },
           },
-        },
+        ],
       };
 
       test('then result contains ObjectStructure', () => {
@@ -742,23 +745,23 @@ describe('ProfileValidator', () => {
       const profileValidator = new ProfileValidator();
       const expected: ProfileOutput = {
         profileId: 'test',
-        usecase: {
-          useCaseName: 'Test',
-          input: {
-            kind: 'ObjectStructure',
-          },
-          result: {
-            kind: 'ObjectStructure',
-            fields: {
-              test: {
-                kind: 'ObjectStructure',
-                fields: {
-                  hello: {
-                    kind: 'ObjectStructure',
-                    fields: {
-                      goodbye: {
-                        kind: 'PrimitiveStructure',
-                        type: 'boolean',
+        usecases: [
+          {
+            useCaseName: 'Test',
+
+            result: {
+              kind: 'ObjectStructure',
+              fields: {
+                test: {
+                  kind: 'ObjectStructure',
+                  fields: {
+                    hello: {
+                      kind: 'ObjectStructure',
+                      fields: {
+                        goodbye: {
+                          kind: 'PrimitiveStructure',
+                          type: 'boolean',
+                        },
                       },
                     },
                   },
@@ -766,7 +769,7 @@ describe('ProfileValidator', () => {
               },
             },
           },
-        },
+        ],
       };
 
       test('then Result contain ObjectStructure', () => {
@@ -852,40 +855,41 @@ describe('ProfileValidator', () => {
       const profileValidator = new ProfileValidator();
       const expected: ProfileOutput = {
         profileId: 'test',
-        usecase: {
-          useCaseName: 'Test',
-          input: {
-            kind: 'ObjectStructure',
-          },
-          result: {
-            kind: 'UnionStructure',
-            types: [
-              {
-                kind: 'PrimitiveStructure',
-                type: 'boolean',
-              },
-              {
-                kind: 'ListStructure',
-                value: {
-                  kind: 'UnionStructure',
-                  types: [
-                    {
-                      kind: 'PrimitiveStructure',
-                      type: 'string',
-                    },
-                    {
-                      kind: 'PrimitiveStructure',
-                      type: 'boolean',
-                    },
-                  ],
+        usecases: [
+          {
+            useCaseName: 'Test',
+
+            result: {
+              kind: 'UnionStructure',
+              types: [
+                {
+                  kind: 'PrimitiveStructure',
+                  type: 'boolean',
                 },
-              },
-              {
-                kind: 'EnumStructure',
-              },
-            ],
+                {
+                  kind: 'ListStructure',
+                  value: {
+                    kind: 'UnionStructure',
+                    types: [
+                      {
+                        kind: 'PrimitiveStructure',
+                        type: 'string',
+                      },
+                      {
+                        kind: 'PrimitiveStructure',
+                        type: 'boolean',
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: 'EnumStructure',
+                  enums: ['A', 'B'],
+                },
+              ],
+            },
           },
-        },
+        ],
       };
 
       test('then result contains UnionStructure', () => {
@@ -925,10 +929,12 @@ describe('ProfileValidator', () => {
       const profileValidator = new ProfileValidator();
       const expected: ProfileOutput = {
         profileId: 'test',
-        usecase: {
-          useCaseName: 'Test',
-          result: undefined,
-        },
+        usecases: [
+          {
+            useCaseName: 'Test',
+            result: undefined,
+          },
+        ],
       };
 
       test('then result is not defined', () => {
@@ -983,16 +989,18 @@ describe('ProfileValidator', () => {
       const profileValidator = new ProfileValidator();
       const expected: ProfileOutput = {
         profileId: 'test',
-        usecase: {
-          useCaseName: 'Test',
-          result: {
-            kind: 'ObjectStructure',
-            fields: {
-              f1: undefined,
-              f2: undefined,
+        usecases: [
+          {
+            useCaseName: 'Test',
+            result: {
+              kind: 'ObjectStructure',
+              fields: {
+                f1: undefined,
+                f2: undefined,
+              },
             },
           },
-        },
+        ],
       };
 
       test('then result is an object with two undefined fields', () => {
@@ -1045,13 +1053,15 @@ describe('ProfileValidator', () => {
       const profileValidator = new ProfileValidator();
       const expected: ProfileOutput = {
         profileId: 'test',
-        usecase: {
-          useCaseName: 'Test',
-          result: {
-            kind: 'UnionStructure',
-            types: [undefined, undefined],
+        usecases: [
+          {
+            useCaseName: 'Test',
+            result: {
+              kind: 'UnionStructure',
+              types: [undefined, undefined],
+            },
           },
-        },
+        ],
       };
 
       test('then result is an Union of two undefined types', () => {

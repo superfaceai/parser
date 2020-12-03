@@ -1,4 +1,4 @@
-import { ProfileDocumentNode } from '@superindustries/language';
+import { ProfileDocumentNode } from '@superfaceai/language';
 
 import {
   ObjectStructure,
@@ -179,87 +179,96 @@ describe('ProfileValidator Advanced', () => {
       const profileValidator = new ProfileValidator();
       const expected: ProfileOutput = {
         profileId: 'test',
-        usecase: {
-          useCaseName: 'Test',
-          input: {
-            kind: 'ObjectStructure',
-          },
-          result: {
-            kind: 'UnionStructure',
-            types: [
-              { kind: 'ObjectStructure' },
-              {
-                kind: 'NonNullStructure',
-                value: {
+        usecases: [
+          {
+            useCaseName: 'Test',
+            input: {
+              kind: 'ObjectStructure',
+            },
+            result: {
+              kind: 'UnionStructure',
+              types: [
+                { kind: 'ObjectStructure' },
+                {
                   kind: 'NonNullStructure',
                   value: {
-                    kind: 'PrimitiveStructure',
-                    type: 'boolean',
-                  },
-                },
-              },
-              {
-                kind: 'NonNullStructure',
-                value: {
-                  kind: 'ListStructure',
-                  value: {
-                    kind: 'UnionStructure',
-                    types: [
-                      {
-                        kind: 'NonNullStructure',
-                        value: { kind: 'PrimitiveStructure', type: 'string' },
-                      },
-                      {
-                        kind: 'NonNullStructure',
-                        value: { kind: 'PrimitiveStructure', type: 'boolean' },
-                      },
-                    ],
-                  },
-                },
-              },
-              {
-                kind: 'NonNullStructure',
-                value: {
-                  kind: 'EnumStructure',
-                },
-              },
-              {
-                kind: 'ObjectStructure',
-                fields: {
-                  f1: {
-                    kind: 'PrimitiveStructure',
-                    type: 'string',
-                  },
-                },
-              },
-              {
-                kind: 'ObjectStructure',
-                fields: {
-                  f1: {
                     kind: 'NonNullStructure',
                     value: {
                       kind: 'PrimitiveStructure',
                       type: 'boolean',
                     },
                   },
-                  f2: {
-                    kind: 'UnionStructure',
-                    types: [
-                      {
-                        kind: 'NonNullStructure',
-                        value: { kind: 'PrimitiveStructure', type: 'string' },
-                      },
-                      {
-                        kind: 'NonNullStructure',
-                        value: { kind: 'PrimitiveStructure', type: 'boolean' },
-                      },
-                    ],
+                },
+                {
+                  kind: 'NonNullStructure',
+                  value: {
+                    kind: 'ListStructure',
+                    value: {
+                      kind: 'UnionStructure',
+                      types: [
+                        {
+                          kind: 'NonNullStructure',
+                          value: { kind: 'PrimitiveStructure', type: 'string' },
+                        },
+                        {
+                          kind: 'NonNullStructure',
+                          value: {
+                            kind: 'PrimitiveStructure',
+                            type: 'boolean',
+                          },
+                        },
+                      ],
+                    },
                   },
                 },
-              },
-            ],
+                {
+                  kind: 'NonNullStructure',
+                  value: {
+                    kind: 'EnumStructure',
+                    enums: ['S', 'B'],
+                  },
+                },
+                {
+                  kind: 'ObjectStructure',
+                  fields: {
+                    f1: {
+                      kind: 'PrimitiveStructure',
+                      type: 'string',
+                    },
+                  },
+                },
+                {
+                  kind: 'ObjectStructure',
+                  fields: {
+                    f1: {
+                      kind: 'NonNullStructure',
+                      value: {
+                        kind: 'PrimitiveStructure',
+                        type: 'boolean',
+                      },
+                    },
+                    f2: {
+                      kind: 'UnionStructure',
+                      types: [
+                        {
+                          kind: 'NonNullStructure',
+                          value: { kind: 'PrimitiveStructure', type: 'string' },
+                        },
+                        {
+                          kind: 'NonNullStructure',
+                          value: {
+                            kind: 'PrimitiveStructure',
+                            type: 'boolean',
+                          },
+                        },
+                      ],
+                    },
+                  },
+                },
+              ],
+            },
           },
-        },
+        ],
       };
 
       test('then result contains UnionStructure', () => {
@@ -439,21 +448,23 @@ describe('ProfileValidator Advanced', () => {
       };
       const expected: ProfileOutput = {
         profileId: 'test',
-        usecase: {
-          useCaseName: 'Test',
-          input: {
-            kind: 'ObjectStructure',
+        usecases: [
+          {
+            useCaseName: 'Test',
+            input: {
+              kind: 'ObjectStructure',
+            },
+            result: {
+              kind: 'UnionStructure',
+              types: [
+                expectedObjectStructure,
+                expectedObjectStructure,
+                expectedObjectStructure,
+                expectedObjectStructure,
+              ],
+            },
           },
-          result: {
-            kind: 'UnionStructure',
-            types: [
-              expectedObjectStructure,
-              expectedObjectStructure,
-              expectedObjectStructure,
-              expectedObjectStructure,
-            ],
-          },
-        },
+        ],
       };
 
       test('then result contains UnionStructure', () => {
@@ -743,113 +754,117 @@ describe('ProfileValidator Advanced', () => {
       const profileValidator = new ProfileValidator();
       const expected: ProfileOutput = {
         profileId: 'test',
-        usecase: {
-          useCaseName: 'Test',
-          input: {
-            kind: 'ObjectStructure',
-          },
-          result: {
-            kind: 'UnionStructure',
-            types: [
-              {
-                kind: 'ObjectStructure',
-                fields: {
-                  f1: {
-                    kind: 'UnionStructure',
-                    types: [
-                      {
-                        kind: 'NonNullStructure',
+        usecases: [
+          {
+            useCaseName: 'Test',
+            input: {
+              kind: 'ObjectStructure',
+            },
+            result: {
+              kind: 'UnionStructure',
+              types: [
+                {
+                  kind: 'ObjectStructure',
+                  fields: {
+                    f1: {
+                      kind: 'UnionStructure',
+                      types: [
+                        {
+                          kind: 'NonNullStructure',
+                          value: {
+                            kind: 'ObjectStructure',
+                            fields: {
+                              if1: {
+                                kind: 'PrimitiveStructure',
+                                type: 'string',
+                              },
+                              if2: {
+                                kind: 'PrimitiveStructure',
+                                type: 'boolean',
+                              },
+                            },
+                          },
+                        },
+                        undefined,
+                      ],
+                    },
+                    f2: {
+                      kind: 'NonNullStructure',
+                      value: {
+                        kind: 'ListStructure',
                         value: {
-                          kind: 'ObjectStructure',
-                          fields: {
-                            if1: {
+                          kind: 'UnionStructure',
+                          types: [
+                            {
                               kind: 'PrimitiveStructure',
                               type: 'string',
                             },
-                            if2: {
+                            {
                               kind: 'PrimitiveStructure',
                               type: 'boolean',
                             },
-                          },
+                          ],
                         },
-                      },
-                      undefined,
-                    ],
-                  },
-                  f2: {
-                    kind: 'NonNullStructure',
-                    value: {
-                      kind: 'ListStructure',
-                      value: {
-                        kind: 'UnionStructure',
-                        types: [
-                          {
-                            kind: 'PrimitiveStructure',
-                            type: 'string',
-                          },
-                          {
-                            kind: 'PrimitiveStructure',
-                            type: 'boolean',
-                          },
-                        ],
                       },
                     },
                   },
                 },
-              },
-              {
-                kind: 'ObjectStructure',
-                fields: {
-                  f3: {
-                    kind: 'NonNullStructure',
-                    value: {
-                      kind: 'EnumStructure',
+                {
+                  kind: 'ObjectStructure',
+                  fields: {
+                    f3: {
+                      kind: 'NonNullStructure',
+                      value: {
+                        kind: 'EnumStructure',
+                        enums: ['STRING', 'BOOLEAN'],
+                      },
                     },
-                  },
-                  f4: {
-                    kind: 'ObjectStructure',
-                    fields: {
-                      inner: {
-                        kind: 'NonNullStructure',
-                        value: {
-                          kind: 'ObjectStructure',
-                          fields: {
-                            value: {
-                              kind: 'UnionStructure',
-                              types: [
-                                {
-                                  kind: 'EnumStructure',
-                                },
-                                {
-                                  kind: 'ListStructure',
-                                  value: {
-                                    kind: 'UnionStructure',
-                                    types: [
-                                      {
+                    f4: {
+                      kind: 'ObjectStructure',
+                      fields: {
+                        inner: {
+                          kind: 'NonNullStructure',
+                          value: {
+                            kind: 'ObjectStructure',
+                            fields: {
+                              value: {
+                                kind: 'UnionStructure',
+                                types: [
+                                  {
+                                    kind: 'EnumStructure',
+                                    enums: ['STRING', 'BOOLEAN'],
+                                  },
+                                  {
+                                    kind: 'ListStructure',
+                                    value: {
+                                      kind: 'UnionStructure',
+                                      types: [
+                                        {
+                                          kind: 'PrimitiveStructure',
+                                          type: 'string',
+                                        },
+                                        {
+                                          kind: 'PrimitiveStructure',
+                                          type: 'boolean',
+                                        },
+                                      ],
+                                    },
+                                  },
+                                  {
+                                    kind: 'ObjectStructure',
+                                    fields: {
+                                      if1: {
                                         kind: 'PrimitiveStructure',
                                         type: 'string',
                                       },
-                                      {
+                                      if2: {
                                         kind: 'PrimitiveStructure',
                                         type: 'boolean',
                                       },
-                                    ],
-                                  },
-                                },
-                                {
-                                  kind: 'ObjectStructure',
-                                  fields: {
-                                    if1: {
-                                      kind: 'PrimitiveStructure',
-                                      type: 'string',
-                                    },
-                                    if2: {
-                                      kind: 'PrimitiveStructure',
-                                      type: 'boolean',
                                     },
                                   },
-                                },
-                              ],
+                                ],
+                              },
                             },
                           },
                         },
@@ -857,10 +872,10 @@ describe('ProfileValidator Advanced', () => {
                     },
                   },
                 },
-              },
-            ],
+              ],
+            },
           },
-        },
+        ],
       };
 
       test('then result contains UnionStructure', () => {
