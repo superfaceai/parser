@@ -16,7 +16,8 @@ import {
   Type,
   UnionDefinitionNode,
   UseCaseDefinitionNode,
-} from '@superindustries/language';
+  UseCaseSlotDefinitionNode,
+} from '@superfaceai/language';
 import { ProfileVisitor } from '@superindustries/superface';
 
 function assertUnreachable(node: never): never;
@@ -55,7 +56,7 @@ export interface PrimitiveStructure extends Structure {
  */
 export interface EnumStructure extends Structure {
   kind: 'EnumStructure';
-  // enums: { [enumValue: string]: string | number | boolean }
+  enums: (string | number | boolean)[];
   required?: true;
 }
 /**
@@ -113,16 +114,16 @@ export interface UseCaseStructure {
 }
 
 /**
- * @interface ProfileOutput - represent profile output for next validation
+ * @interface ProfileOutput - represent profile structure
+ * @property profileId - profile id
+ * @property usecase (opt.) - contains structure of input, result, error and other components
  */
 export interface ProfileOutput {
   profileId: string;
-  usecase?: UseCaseStructure;
+  usecases: UseCaseStructure[];
 }
 
-export type ObjectCollection = {
-  [P in string]?: StructureType;
-};
+export type ObjectCollection = Record<string, StructureType | undefined>;
 export type ArrayCollection = {
   [P in number]?: Exclude<StructureType, UnionStructure>;
 };
@@ -134,6 +135,7 @@ export class ProfileValidator implements ProfileVisitor {
   visit(node: ProfileDocumentNode): ProfileOutput;
   visit(node: ProfileNode | ProfileIdNode): string;
   visit(node: UseCaseDefinitionNode): UseCaseStructure;
+  visit(node: EnumValueNode): string | number | boolean;
   visit(
     node:
       | NamedModelDefinitionNode
@@ -147,7 +149,15 @@ export class ProfileValidator implements ProfileVisitor {
   visit(node: ProfileASTNode | undefined): undefined;
   visit(
     node: ProfileASTNode
-  ): undefined | StructureType | UseCaseStructure | ProfileOutput | string {
+  ):
+    | undefined
+    | StructureType
+    | UseCaseStructure
+    | UseCaseStructure[]
+    | ProfileOutput
+    | string
+    | number
+    | boolean {
     if (!node) {
       return undefined;
     }
@@ -182,20 +192,29 @@ export class ProfileValidator implements ProfileVisitor {
         return this.visitUnionDefinitionNode(node);
       case 'UseCaseDefinition':
         return this.visitUseCaseDefinitionNode(node);
-
+      case 'UseCaseSlotDefinition':
+        return this.visitUseCaseSlotDefinition(node);
       default:
         assertUnreachable(node);
     }
   }
 
-  visitEnumDefinitionNode(_node: EnumDefinitionNode): StructureType {
+  visitUseCaseSlotDefinition(node: UseCaseSlotDefinitionNode): StructureType {
+    if (!node.type) {
+      throw new Error('This should not happen!');
+    }
+
+    return this.visit(node.type);
+  }
+  visitEnumDefinitionNode(node: EnumDefinitionNode): StructureType {
     return {
       kind: 'EnumStructure',
+      enums: node.values.map(value => this.visit(value)),
     };
   }
 
-  visitEnumValueNode(_node: EnumValueNode): never {
-    throw new Error('Method not implemented.');
+  visitEnumValueNode(node: EnumValueNode): string | number | boolean {
+    return node.value;
   }
 
   visitFieldDefinitionNode(
@@ -323,16 +342,16 @@ export class ProfileValidator implements ProfileVisitor {
       });
 
     const profileId = this.visit(node.profile);
-    const usecase = this.visit(
-      node.definitions.find(
+    const usecases = node.definitions
+      .filter(
         (definition): definition is UseCaseDefinitionNode =>
           definition.kind === 'UseCaseDefinition'
       )
-    );
+      .map(definition => this.visit(definition));
 
     return {
       profileId,
-      usecase,
+      usecases,
     };
   }
 
@@ -364,8 +383,9 @@ export class ProfileValidator implements ProfileVisitor {
   visitUseCaseDefinitionNode(node: UseCaseDefinitionNode): UseCaseStructure {
     return {
       useCaseName: node.useCaseName,
-      input: this.visit(node.input?.type),
-      result: this.visit(node.result?.type),
+      input: this.visit(node.input),
+      result: this.visit(node.result),
+      error: this.visit(node.error),
     };
   }
 }

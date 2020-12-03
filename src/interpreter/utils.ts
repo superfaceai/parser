@@ -1,25 +1,16 @@
 import {
+  isCallStatementNode,
+  isHttpCallStatementNode,
+  isOutcomeStatementNode,
   LiteralNode,
+  MapASTNode,
   MapDefinitionNode,
+  OperationDefinitionNode,
   OutcomeStatementNode,
-} from '@superindustries/language';
-import * as ts from 'typescript';
+} from '@superfaceai/language';
 
-import { RETURN_CONSTRUCTS } from './constructs';
-import {
-  ValidationError,
-  ValidationResult,
-  ValidationWarning,
-} from './map-validator';
-import {
-  ArrayCollection,
-  ObjectCollection,
-  StructureType,
-} from './profile-validator';
-
-export function formatWarnings(_warnings?: ValidationWarning[]): string {
-  return '';
-}
+import { ValidationError, ValidationWarning } from './map-validator';
+import { ObjectCollection, StructureType } from './profile-validator';
 
 export function formatErrors(errors?: ValidationError[]): string {
   if (!errors) {
@@ -28,87 +19,240 @@ export function formatErrors(errors?: ValidationError[]): string {
 
   return errors
     .map(err => {
-      const prefix = err.context?.path
-        ? `[${err.context.path.join('.')}] `
+      const location = err.context
+        ? err.context.path
+          ? err.context.path.join(' ')
+          : ''
         : '';
+
+      let expected;
+      let actual;
 
       switch (err.kind) {
         case 'wrongProfileID':
-          return `${prefix}Wrong Profile ID: expected ${err.context.expected}, but got ${err.context.actual}`;
+          return `${location} - Wrong Profile ID: expected ${err.context.expected}, but got ${err.context.actual}`;
 
         case 'wrongUsecaseName':
-          return `${prefix}Wrong Usecase Name: expected ${err.context.expected}, but got ${err.context.actual}`;
+          return `${location} - Wrong Usecase Name: expected ${err.context.expected}, but got ${err.context.actual}`;
 
         case 'usecaseNotFound':
-          return `${prefix}Usecase Not Found: expected ${err.context.expectedUseCase}, but got undefined`;
-
-        case 'resultNotFound':
-          return `${prefix}Result Not Found: expected ${err.context.actualResult}, but got undefined`;
-
-        case 'inputNotFound':
-          return `${prefix}Input Not Found: expected ${err.context.actualInput}, but got undefined`;
+          return `${location} - Usecase Not Found: expected ${err.context.expectedUseCase}, but got undefined`;
 
         case 'wrongObjectStructure':
-          return `${prefix}Wrong Object Structure: expected ${Object.keys(
-            err.context.expected
-          ).join(', ')}, but got ${err.context.actual
-            .map(val => val.key.join('.'))
-            .join(', ')}`;
+          expected = Object.keys(err.context.expected).join(', ');
+          actual = err.context.actual.map(val => val.key.join('.')).join(', ');
+
+          return `${location} - Wrong Object Structure: expected ${expected}, but got ${actual}`;
 
         case 'wrongArrayStructure':
-          return `${prefix}Wrong Array Structure: expected ${Object.values(
-            err.context.expected
-          )
-            .map(val =>
-              val?.kind === 'PrimitiveStructure'
-                ? val?.type
-                : val?.kind === 'NonNullStructure'
-                ? val.value.kind === 'PrimitiveStructure'
-                  ? val.value.type
-                  : val.value.kind
-                : val?.kind
-            )
-            .join(' or ')}, but got "${err.context.actual
-            .map(val =>
-              val.kind === 'JessieExpression'
-                ? val.expression
-                : val.kind === 'PrimitiveLiteral'
-                ? val.value
-                : val.kind
-            )
-            .join(', ')}"`;
+          expected = Object.values(err.context.expected).join(', ');
+          actual = err.context.actual.map(val => val.kind).join(', ');
+
+          return `${location} - Wrong Array Structure: expected ${expected}, but gor ${actual}`;
 
         case 'wrongStructure':
-          return `${prefix}Wrong Structure: expected ${
-            err.context.expected.kind === 'PrimitiveStructure'
-              ? err.context.expected.type
-              : err.context.expected.kind === 'NonNullStructure'
-              ? err.context.expected.value.kind === 'PrimitiveStructure'
-                ? err.context.expected.value.type
-                : err.context.expected.value.kind
-              : err.context.expected.kind
-          }, but got "${
-            typeof err.context.actual === 'string'
-              ? err.context.actual
-              : err.context.actual.kind === 'PrimitiveLiteral'
-              ? err.context.actual.value
-              : err.context.actual.kind
-          }"`;
+          if (err.context.expected.kind === 'PrimitiveStructure') {
+            expected = err.context.expected.type;
+          } else if (err.context.expected.kind === 'NonNullStructure') {
+            if (err.context.expected.value.kind === 'PrimitiveStructure') {
+              expected = err.context.expected.value.type;
+            } else {
+              expected = err.context.expected.value.kind;
+            }
+          } else if (err.context.expected.kind === 'EnumStructure') {
+            expected = err.context.expected.enums.join(' or ');
+          } else {
+            expected = err.context.expected.kind;
+          }
+
+          if (typeof err.context.actual !== 'string') {
+            if (err.context.actual.kind === 'PrimitiveLiteral') {
+              actual = err.context.actual.value;
+            } else {
+              actual = err.context.actual.kind;
+            }
+          } else {
+            actual = err.context.actual;
+          }
+
+          return `${location} - Wrong Structure: expected ${expected}, but got "${actual}"`;
 
         case 'variableNotDefined':
-          return `${prefix}Missing Variable definition: ${err.context.actualVariableName} not defined`;
-
-        case 'conditionNotFulfilled':
-          return `${prefix}Condition Not fulfilled: ${err.context.conditionExpression} failed`;
+          return `${location} - Missing Variable definition: ${err.context.name} is not defined`;
 
         case 'missingRequired':
-          return `${prefix}Missing required field`;
+          return `${location} - Missing required field`;
 
         case 'resultNotDefined':
-          return `${prefix}Result not defined`;
+          return `${location} - Result not defined`;
+
+        case 'errorNotDefined':
+          return `${location} - Error not defined`;
+
+        case 'operationNotFound':
+          return `${location} - Operation not found: ${err.context.expected}`;
+
+        case 'mapNotFound':
+          return `${location} - Map not found: ${err.context.expected}`;
+
+        case 'wrongInput':
+          if (!err.context.expected.fields) {
+            throw new Error('This should not happen!');
+          }
+          expected = Object.keys(err.context.expected.fields).join(', ');
+
+          return `${location} - Wrong Input Structure: expected ${expected}, but got ${err.context.actual}`;
+
+        case 'wrongVariableStructure':
+          if (err.context.expected.kind === 'PrimitiveStructure') {
+            expected = err.context.expected.type;
+          } else if (err.context.expected.kind === 'NonNullStructure') {
+            if (err.context.expected.value.kind === 'PrimitiveStructure') {
+              expected = err.context.expected.value.type;
+            } else {
+              expected = err.context.expected.value.kind;
+            }
+          } else if (err.context.expected.kind === 'EnumStructure') {
+            expected = err.context.expected.enums.join(' or ');
+          } else {
+            expected = err.context.expected.kind;
+          }
+
+          if (typeof err.context.actual !== 'string') {
+            if (err.context.actual.kind === 'PrimitiveLiteral') {
+              actual = err.context.actual.value;
+            } else {
+              actual = err.context.actual.kind;
+            }
+          } else {
+            actual = err.context.actual;
+          }
+
+          return `${location} - Wrong Variable Structure: variable ${err.context.name} expected ${expected}, but got ${actual}`;
 
         default:
-          throw new Error('Invalid error!');
+          throw new Error(`${err.kind} Invalid error!`);
+      }
+    })
+    .join('\n');
+}
+
+export function formatWarnings(warnings?: ValidationWarning[]): string {
+  if (!warnings) {
+    return 'Unknown warning';
+  }
+
+  return warnings
+    .map(warn => {
+      const location = warn.context
+        ? warn.context.path
+          ? warn.context.path.join(' ')
+          : ''
+        : '';
+
+      let expected;
+      let actual;
+
+      switch (warn.kind) {
+        case 'wrongObjectStructure':
+          expected = Object.keys(warn.context.expected).join(', ');
+          actual = warn.context.actual.map(val => val.key.join('.')).join(', ');
+
+          return `${location} - Wrong Object Structure: expected ${expected}, but got ${actual}`;
+
+        case 'wrongStructure':
+          if (warn.context.expected.kind === 'PrimitiveStructure') {
+            expected = warn.context.expected.type;
+          } else if (warn.context.expected.kind === 'NonNullStructure') {
+            if (warn.context.expected.value.kind === 'PrimitiveStructure') {
+              expected = warn.context.expected.value.type;
+            } else {
+              expected = warn.context.expected.value.kind;
+            }
+          } else if (warn.context.expected.kind === 'EnumStructure') {
+            expected = warn.context.expected.enums.join(' or ');
+          } else {
+            expected = warn.context.expected.kind;
+          }
+
+          if (typeof warn.context.actual !== 'string') {
+            if (warn.context.actual.kind === 'PrimitiveLiteral') {
+              actual = warn.context.actual.value;
+            } else {
+              actual = warn.context.actual.kind;
+            }
+          } else {
+            actual = warn.context.actual;
+          }
+
+          return `${location} - Wrong Structure: expected ${expected}, but got "${actual}"`;
+
+        case 'wrongVariableStructure':
+          if (warn.context.expected.kind === 'PrimitiveStructure') {
+            expected = warn.context.expected.type;
+          } else if (warn.context.expected.kind === 'NonNullStructure') {
+            if (warn.context.expected.value.kind === 'PrimitiveStructure') {
+              expected = warn.context.expected.value.type;
+            } else {
+              expected = warn.context.expected.value.kind;
+            }
+          } else if (warn.context.expected.kind === 'EnumStructure') {
+            expected = warn.context.expected.enums.join(' or ');
+          } else {
+            expected = warn.context.expected.kind;
+          }
+
+          if (typeof warn.context.actual !== 'string') {
+            if (warn.context.actual.kind === 'PrimitiveLiteral') {
+              actual = warn.context.actual.value;
+            } else {
+              actual = warn.context.actual.kind;
+            }
+          } else {
+            actual = warn.context.actual;
+          }
+
+          return `${location} - Wrong Variable Structure: variable ${warn.context.name} expected ${expected}, but got ${actual}`;
+
+        case 'variableNotDefined':
+          return `${location} - Missing Variable definition: ${warn.context.name} is not defined`;
+
+        case 'resultNotFound':
+          if (warn.context.actualResult.kind === 'PrimitiveLiteral') {
+            actual = warn.context.actualResult.value;
+          } else {
+            actual = warn.context.actualResult.kind;
+          }
+
+          return `${location} - Result Not Found: returning "${actual}", but result is undefined`;
+
+        case 'errorNotFound':
+          if (warn.context.actualError.kind === 'PrimitiveLiteral') {
+            actual = warn.context.actualError.value;
+          } else {
+            actual = warn.context.actualError.kind;
+          }
+
+          return `${location} - Error Not Found: returning "${actual}", but error is undefined`;
+
+        case 'extraMapsFound':
+          return `${location} - Extra Maps Found: ${warn.context.expected.join(
+            ', '
+          )}, but got ${warn.context.actual.join(', ')}`;
+
+        case 'missingRequired':
+          return `${location} - Missing required field`;
+
+        case 'wrongInput':
+          if (!warn.context.expected.fields) {
+            throw new Error('This should not happen!');
+          }
+          expected = Object.keys(warn.context.expected.fields).join(', ');
+
+          return `${location} - Wrong Input Structure: expected ${expected}, but got ${warn.context.actual}`;
+
+        default:
+          throw new Error(`${warn.kind} Invalid warning!`);
       }
     })
     .join('\n');
@@ -121,137 +265,96 @@ export function formatErrors(errors?: ValidationError[]): string {
  */
 export function compareStructure(
   node: LiteralNode,
-  input: StructureType
+  structure: StructureType
 ): {
   isValid: boolean;
-  newObjectCollection?: ObjectCollection;
-  newArrayCollection?: ArrayCollection;
-  newStructure?: StructureType;
+  structureOfFields?: ObjectCollection;
   nonNull?: boolean;
 } {
-  switch (input.kind) {
+  switch (structure.kind) {
     case 'NonNullStructure':
-      if (input.value)
+      if (structure.value)
         return {
           nonNull: true,
-          ...compareStructure(node, input.value),
+          ...compareStructure(node, structure.value),
         };
       break;
 
     case 'PrimitiveStructure':
       if (
         node.kind === 'PrimitiveLiteral' &&
-        typeof node.value === input.type
+        typeof node.value === structure.type
       ) {
         return { isValid: true };
-      }
-      if (
-        node.kind === 'JessieExpression' &&
-        typeof eval(node.expression) === input.type
-      ) {
-        return { isValid: true };
-      }
-      break;
-
-    case 'ListStructure':
-      // TODO: no ArrayLiteral anymore
-      if (node.kind === 'InlineCall') {
-        if (input.value.kind === 'UnionStructure') {
-          return {
-            isValid: true,
-            newArrayCollection: input.value.types,
-          };
-        }
-
-        return { isValid: true, newStructure: input.value };
-      }
-      if (
-        node.kind === 'JessieExpression' &&
-        Array.isArray(eval(node.expression))
-      ) {
-        return { isValid: true, newArrayCollection: eval(node.expression) };
       }
       break;
 
     case 'ObjectStructure':
       if (node.kind === 'ObjectLiteral') {
-        return { isValid: true, newObjectCollection: input.fields };
-      }
-      if (
-        node.kind === 'JessieExpression' &&
-        typeof eval(node.expression) === 'object'
-      ) {
-        return { isValid: true, newObjectCollection: eval(node.expression) };
+        return { isValid: true, structureOfFields: structure.fields };
       }
       break;
+
+    case 'EnumStructure':
+      if (
+        node.kind === 'PrimitiveLiteral' &&
+        structure.enums.includes(node.value)
+      ) {
+        return { isValid: true };
+      }
   }
 
   return { isValid: false };
 }
 
-/**
- * Walker function that predicates return structure.
- * @param expression string expression from JessieExpressionNode
- * @returns ValidationResult
- */
-export const validateJessie = (
-  expression: string,
-  input: StructureType
-): ValidationResult => {
-  const errors: ValidationError[] = [];
-
-  const rootNode = ts.createSourceFile(
-    'scripts.js',
-    expression,
-    ts.ScriptTarget.ES2015,
-    true,
-    ts.ScriptKind.JS
-  );
-
-  function nodeVisitor<T extends ts.Node>(node: T): void {
-    let isValid = false;
-    const rule = RETURN_CONSTRUCTS[node.kind];
-
-    if (!rule) {
-      return node.forEachChild(nodeVisitor);
-    }
-
-    if (rule.predicate(node, input)) {
-      isValid = true;
-    }
-
-    if (!isValid) {
-      errors.push({
-        kind: 'wrongStructure',
-        context: { expected: input, actual: node.getText() },
-      });
-    }
-  }
-
-  nodeVisitor(rootNode);
-
-  if (errors.length > 0) {
-    return { pass: false, errors };
-  }
-
-  return { pass: true };
-};
-
-/**
- * TODO: refactor this
- * NOTE: will this function be needed?
- *
- * Since profile result can be mapped in multiple statements in multiple levels of tree,
- * we can check whether it contains any maping result or map does not contain any.
- */
-export function findResult(
-  _node: MapDefinitionNode | OutcomeStatementNode,
-  _input: StructureType
-): ValidationResult | undefined {
-  // const error = {
-  //   kind: 'resultNotDefined',
-  //   context: { expectedResult: input },
-  // };
-
-  return undefined;
+function isErrorOutcome(node: MapASTNode): node is OutcomeStatementNode {
+  return node.kind === 'OutcomeStatement' && node.isError;
 }
+
+function isResultOutcome(node: MapASTNode): node is OutcomeStatementNode {
+  return node.kind === 'OutcomeStatement' && !node.isError;
+}
+
+export function getOutcomes(
+  node: MapDefinitionNode | OperationDefinitionNode,
+  isError?: boolean
+): OutcomeStatementNode[] {
+  let filterFunction = isOutcomeStatementNode;
+  if (isError !== undefined) {
+    filterFunction = isError ? isErrorOutcome : isResultOutcome;
+  }
+
+  const outcomes = node.statements.filter(filterFunction);
+
+  node.statements
+    .filter(isCallStatementNode)
+    .forEach(callStatement =>
+      outcomes.concat(callStatement.statements.filter(filterFunction))
+    );
+
+  node.statements
+    .filter(isHttpCallStatementNode)
+    .forEach(httpCall =>
+      httpCall.responseHandlers.forEach(responseHandler =>
+        outcomes.concat(responseHandler.statements.filter(filterFunction))
+      )
+    );
+
+  return outcomes;
+}
+
+export const mergeVariables = (
+  left: Record<string, LiteralNode>,
+  right: Record<string, LiteralNode>
+): Record<string, LiteralNode> => {
+  const result: Record<string, LiteralNode> = {};
+
+  for (const key of Object.keys(left)) {
+    result[key] = left[key];
+  }
+  for (const key of Object.keys(right)) {
+    result[key] = right[key];
+  }
+
+  return result;
+};

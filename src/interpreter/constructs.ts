@@ -1,164 +1,1200 @@
 import * as ts from 'typescript';
 
-// import { ALLOWED_SYNTAX } from '../language/jessie/validator/constructs';
-import { StructureType } from './profile-validator';
+import { ValidationIssue, ValidationResult } from './map-validator';
+import {
+  ArrayCollection,
+  ObjectStructure,
+  StructureType,
+} from './profile-validator';
+
+export type ID =
+  | ts.Identifier
+  | ts.PropertyAccessExpression
+  | ts.ElementAccessExpression;
+
+export interface ReferencedVariables {
+  [variableName: string]: (StructureType | undefined)[];
+}
+
+export type ConstructResult = ValidationResult & {
+  variables?: ReferencedVariables;
+  invalidInput: boolean;
+  invalidOutput: boolean;
+};
 
 export interface VisitConstruct<T extends ts.Node = ts.Node> {
-  predicate(node: T, input: StructureType): boolean;
+  visit(
+    node: T,
+    outputStructure?: StructureType,
+    inputStructure?: ObjectStructure,
+    isOutcomeWithCondition?: boolean
+  ): ConstructResult;
+  visitInput?(
+    node: ts.PropertyAccessExpression,
+    structure: ObjectStructure
+  ): StructureType | undefined;
+}
+
+function mergeResults(...results: ConstructResult[]): ConstructResult {
+  return results.reduce(
+    (acc: ConstructResult, val: ConstructResult) => {
+      const pass = acc.pass && val.pass;
+      const errors = [
+        ...(!acc.pass ? acc.errors : []),
+        ...(!val.pass ? val.errors : []),
+      ];
+      const warnings = [...(acc.warnings ?? []), ...(val.warnings ?? [])];
+      const variables = {
+        ...(acc.variables ?? {}),
+        ...(val.variables ?? {}),
+      };
+      const invalidInput = acc.invalidInput || val.invalidInput;
+      const invalidOutput = acc.invalidOutput || val.invalidOutput;
+
+      return pass
+        ? {
+            pass,
+            warnings,
+            variables,
+            invalidInput,
+            invalidOutput,
+          }
+        : {
+            pass,
+            errors,
+            warnings,
+            variables,
+            invalidInput,
+            invalidOutput,
+          };
+    },
+    { pass: true, invalidInput: false, invalidOutput: false }
+  );
+}
+
+function getPath(node: ts.Node): string[] {
+  return [`${node.getStart()}:${node.getEnd()}`, ts.SyntaxKind[node.kind]];
+}
+
+function assertID(node: ts.Node): node is ID {
+  return (
+    (ts.isIdentifier(node) || ts.isPropertyAccessExpression(node)) &&
+    node.getText() !== 'undefined'
+  );
+}
+
+function compareStructures(
+  node: ts.Node,
+  inputStructure: StructureType,
+  outputStructure: StructureType
+): ConstructResult {
+  if (outputStructure.kind === 'NonNullStructure') {
+    outputStructure = outputStructure.value;
+  }
+  if (inputStructure.kind === 'NonNullStructure') {
+    inputStructure = inputStructure.value;
+  }
+
+  switch (outputStructure.kind) {
+    case 'EnumStructure':
+      if (
+        inputStructure.kind === 'EnumStructure' &&
+        outputStructure.enums === inputStructure.enums
+      ) {
+        return { pass: true, invalidInput: false, invalidOutput: false };
+      }
+      break;
+    case 'ListStructure':
+      if (
+        inputStructure.kind === 'ListStructure' &&
+        outputStructure.value === inputStructure.value
+      ) {
+        return { pass: true, invalidInput: false, invalidOutput: false };
+      }
+      break;
+    case 'ObjectStructure':
+      if (
+        inputStructure.kind === 'ObjectStructure' &&
+        outputStructure.fields === inputStructure.fields
+      ) {
+        return { pass: true, invalidInput: false, invalidOutput: false };
+      }
+      break;
+    case 'PrimitiveStructure':
+      if (
+        inputStructure.kind === 'PrimitiveStructure' &&
+        outputStructure.type === inputStructure.type
+      ) {
+        return { pass: true, invalidInput: false, invalidOutput: false };
+      }
+      break;
+    case 'UnionStructure':
+      if (
+        inputStructure.kind === 'UnionStructure' &&
+        outputStructure.types === inputStructure.types
+      ) {
+        return { pass: true, invalidInput: false, invalidOutput: false };
+      }
+      break;
+  }
+
+  return {
+    pass: false,
+    errors: [
+      {
+        kind: 'wrongStructure',
+        context: {
+          path: getPath(node),
+          expected: outputStructure,
+          actual: inputStructure,
+        },
+      },
+    ],
+    invalidInput: false,
+    invalidOutput: true,
+  };
+}
+
+function visitConstruct(
+  node: ts.Node,
+  outputStructure?: StructureType,
+  inputStructure?: ObjectStructure,
+  isOutcomeWithCondition?: boolean,
+  construct?: VisitConstruct
+): ConstructResult {
+  return construct
+    ? construct.visit(
+        node,
+        outputStructure,
+        inputStructure,
+        isOutcomeWithCondition
+      )
+    : { pass: true, invalidInput: false, invalidOutput: false };
+}
+
+function returnIssue(
+  issue: ValidationIssue,
+  isOutcomeWithCondition?: boolean
+): ConstructResult {
+  return isOutcomeWithCondition
+    ? {
+        pass: true,
+        warnings: [issue],
+        invalidInput: false,
+        invalidOutput: true,
+      }
+    : {
+        pass: false,
+        errors: [issue],
+        invalidInput: false,
+        invalidOutput: true,
+      };
 }
 
 export const RETURN_CONSTRUCTS: {
   [kind in ts.SyntaxKind]?: VisitConstruct;
 } = {
   [ts.SyntaxKind.StringLiteral]: {
-    predicate: (_node: ts.StringLiteral, input: StructureType): boolean => {
-      if (input.kind === 'PrimitiveStructure') {
-        return input.type === 'string';
+    visit: (
+      node: ts.StringLiteral,
+      outputStructure?: StructureType,
+      _inputStructure?: ObjectStructure,
+      isOutcomeWithCondition?: boolean
+    ): ConstructResult => {
+      if (!outputStructure) {
+        return { pass: true, invalidInput: false, invalidOutput: false };
+      }
+      if (outputStructure.kind === 'NonNullStructure') {
+        outputStructure = outputStructure.value;
+      }
+      if (
+        outputStructure.kind === 'PrimitiveStructure' &&
+        outputStructure.type === 'string'
+      ) {
+        return { pass: true, invalidInput: false, invalidOutput: false };
       }
 
-      return false;
+      return returnIssue(
+        {
+          kind: 'wrongStructure',
+          context: {
+            path: getPath(node),
+            actual: node.getText(),
+            expected: outputStructure,
+          },
+        },
+        isOutcomeWithCondition
+      );
     },
   },
+
   [ts.SyntaxKind.NumericLiteral]: {
-    predicate: (_node: ts.NumericLiteral, input: StructureType): boolean => {
-      if (input.kind === 'PrimitiveStructure') {
-        return input.type === 'number';
+    visit: (
+      node: ts.NumericLiteral,
+      outputStructure?: StructureType,
+      _inputStructure?: ObjectStructure,
+      isOutcomeWithCondition?: boolean
+    ): ConstructResult => {
+      if (!outputStructure) {
+        return { pass: true, invalidInput: false, invalidOutput: false };
+      }
+      if (outputStructure.kind === 'NonNullStructure') {
+        outputStructure = outputStructure.value;
+      }
+      if (
+        outputStructure.kind === 'PrimitiveStructure' &&
+        outputStructure.type === 'number'
+      ) {
+        return { pass: true, invalidInput: false, invalidOutput: false };
       }
 
-      return false;
+      return returnIssue(
+        {
+          kind: 'wrongStructure',
+          context: {
+            path: getPath(node),
+            actual: node.getText(),
+            expected: outputStructure,
+          },
+        },
+        isOutcomeWithCondition
+      );
     },
   },
-  [ts.SyntaxKind.TrueKeyword | ts.SyntaxKind.FalseKeyword]: {
-    predicate: (_node: ts.BooleanLiteral, input: StructureType): boolean => {
-      if (input.kind === 'PrimitiveStructure') {
-        return input.type === 'boolean' || input.type === 'number';
+
+  [ts.SyntaxKind.FalseKeyword]: {
+    visit: (
+      node: ts.BooleanLiteral,
+      outputStructure?: StructureType,
+      _inputStructure?: ObjectStructure,
+      isOutcomeWithCondition?: boolean
+    ): ConstructResult => {
+      if (!outputStructure) {
+        return { pass: true, invalidInput: false, invalidOutput: false };
+      }
+      if (outputStructure.kind === 'NonNullStructure') {
+        outputStructure = outputStructure.value;
+      }
+      if (
+        outputStructure.kind === 'PrimitiveStructure' &&
+        outputStructure.type === 'boolean'
+      ) {
+        return { pass: true, invalidInput: false, invalidOutput: false };
       }
 
-      return false;
+      return returnIssue(
+        {
+          kind: 'wrongStructure',
+          context: {
+            path: getPath(node),
+            actual: node.getText(),
+            expected: outputStructure,
+          },
+        },
+        isOutcomeWithCondition
+      );
     },
   },
+
+  [ts.SyntaxKind.TrueKeyword]: {
+    visit: (
+      node: ts.BooleanLiteral,
+      outputStructure?: StructureType,
+      _inputStructure?: ObjectStructure,
+      isOutcomeWithCondition?: boolean
+    ): ConstructResult => {
+      if (!outputStructure) {
+        return { pass: true, invalidInput: false, invalidOutput: false };
+      }
+      if (outputStructure.kind === 'NonNullStructure') {
+        outputStructure = outputStructure.value;
+      }
+      if (
+        outputStructure.kind === 'PrimitiveStructure' &&
+        outputStructure.type === 'boolean'
+      ) {
+        return { pass: true, invalidInput: false, invalidOutput: false };
+      }
+
+      return returnIssue(
+        {
+          kind: 'wrongStructure',
+          context: {
+            path: getPath(node),
+            actual: node.getText(),
+            expected: outputStructure,
+          },
+        },
+        isOutcomeWithCondition
+      );
+    },
+  },
+
+  [ts.SyntaxKind.NullKeyword]: {
+    visit: (
+      node: ts.NullLiteral,
+      outputStructure?: StructureType,
+      _inputStructure?: ObjectStructure,
+      isOutcomeWithCondition?: boolean
+    ): ConstructResult => {
+      if (!outputStructure) {
+        return { pass: true, invalidInput: false, invalidOutput: false };
+      }
+      if (outputStructure.kind === 'NonNullStructure') {
+        return returnIssue(
+          {
+            kind: 'wrongStructure',
+            context: {
+              path: getPath(node),
+              actual: node.getText(),
+              expected: outputStructure,
+            },
+          },
+          isOutcomeWithCondition
+        );
+      }
+
+      return { pass: true, invalidInput: false, invalidOutput: false };
+    },
+  },
+
   [ts.SyntaxKind.BinaryExpression]: {
-    predicate: (node: ts.BinaryExpression, input: StructureType): boolean => {
-      if (input.kind === 'PrimitiveStructure' && input.type === 'boolean') {
-        return false;
-      }
+    visit: (
+      node: ts.BinaryExpression,
+      outputStructure?: StructureType,
+      inputStructure?: ObjectStructure,
+      isOutcomeWithCondition?: boolean
+    ): ConstructResult => {
+      const results: ConstructResult[] = [];
 
-      // in case NaN could be returned (TODO: booleans only can't use %)
-      if (node.operatorToken.getText() !== '+') {
-        if (
-          node.left.kind !== ts.SyntaxKind.NumericLiteral ||
-          node.right.kind !== ts.SyntaxKind.NumericLiteral
-        ) {
-          return false;
+      // if Input is defined - check ids in children nodes
+      if (inputStructure) {
+        if (assertID(node.left)) {
+          results.push(
+            visitConstruct(
+              node.left,
+              undefined,
+              inputStructure,
+              isOutcomeWithCondition,
+              RETURN_CONSTRUCTS[node.left.kind]
+            )
+          );
         }
-      }
-
-      const left = RETURN_CONSTRUCTS[node.left.kind]?.predicate(
-        node.left,
-        input
-      );
-      const right = RETURN_CONSTRUCTS[node.right.kind]?.predicate(
-        node.right,
-        input
-      );
-
-      if (!left && !right) {
-        return false;
-      }
-
-      return true;
-    },
-  },
-  [ts.SyntaxKind.PrefixUnaryExpression]: {
-    predicate: (_node: ts.UnaryExpression, _input: StructureType): boolean => {
-      return true;
-    },
-  },
-  [ts.SyntaxKind.Identifier]: {
-    predicate: (node: ts.Identifier, input: StructureType): boolean => {
-      if (node.parent.kind === ts.SyntaxKind.CallExpression) {
-        // in case jessie expression consists of call statements such as
-        // String(42) or Boolean(1) or Number(24)
-        if (
-          input.kind === 'PrimitiveStructure' &&
-          node.text.toLowerCase() === input.type
-        ) {
-          return true;
+        if (assertID(node.right)) {
+          results.push(
+            visitConstruct(
+              node,
+              undefined,
+              inputStructure,
+              isOutcomeWithCondition,
+              RETURN_CONSTRUCTS[node.right.kind]
+            )
+          );
         }
       }
 
-      return false;
-    },
-  },
-  [ts.SyntaxKind.PropertyAccessExpression]: {
-    predicate: (
-      node: ts.PropertyAccessExpression,
-      input: StructureType
-    ): boolean => {
-      if (node.parent.kind === ts.SyntaxKind.CallExpression) {
-        if (
-          input.kind === 'PrimitiveStructure' &&
-          input.type === 'string' &&
-          (node.name.getText() === 'toString' ||
-            node.name.getText() === 'join' ||
-            node.name.getText() === 'toLocaleString')
-        ) {
-          return true;
-        }
-        if (
-          input.kind === 'PrimitiveStructure' &&
-          input.type === 'boolean' &&
-          (node.name.getText() === 'isArray' ||
-            node.name.getText() === 'every' ||
-            node.name.getText() === 'some')
-        ) {
-          return true;
-        }
-        if (
-          input.kind === 'PrimitiveStructure' &&
-          input.type === 'number' &&
-          (node.name.getText() === 'findIndex' ||
-            node.name.getText() === 'indexOf' ||
-            node.name.getText() === 'lastIndexOf')
-        ) {
-          return true;
-        }
-        if (
-          input.kind === 'ListStructure' &&
-          (node.name.getText() === 'map' ||
-            node.name.getText() === 'entries' ||
-            node.name.getText() === 'keys' ||
-            node.name.getText() === 'values' ||
-            node.name.getText() === 'concat' ||
-            node.name.getText() === 'filter' ||
-            node.name.getText() === 'slice' ||
-            node.name.getText() === 'splice' ||
-            node.name.getText() === 'getOwnPropertyNames' ||
-            node.name.getText() === 'getOwnPropertySymbols')
-        ) {
-          return true;
-        }
+      // if Output is not defined - do not check validation of result or error
+      if (!outputStructure) {
+        return mergeResults(...results);
+      }
+
+      // if Output is defined - do check
+      if (outputStructure.kind === 'NonNullStructure') {
+        outputStructure = outputStructure.value;
+      }
+
+      const issue: ValidationIssue = {
+        kind: 'wrongStructure',
+        context: {
+          path: getPath(node),
+          actual: node.getText(),
+          expected: outputStructure,
+        },
+      };
+
+      if (
+        outputStructure.kind === 'PrimitiveStructure' &&
+        outputStructure.type === 'boolean'
+      ) {
+        return isOutcomeWithCondition
+          ? mergeResults(...results, {
+              pass: true,
+              warnings: [issue],
+              invalidInput: false,
+              invalidOutput: true,
+            })
+          : mergeResults(...results, {
+              pass: false,
+              errors: [issue],
+              invalidInput: false,
+              invalidOutput: true,
+            });
+      }
+
+      const nodeContainsString =
+        ts.isStringLiteral(node.left) || ts.isStringLiteral(node.right);
+
+      const nodeContainsID = assertID(node.left) || assertID(node.right);
+
+      if (assertID(node.left)) {
+        results.push(
+          visitConstruct(
+            node.left,
+            outputStructure,
+            undefined,
+            isOutcomeWithCondition,
+            RETURN_CONSTRUCTS[node.left.kind]
+          )
+        );
+      }
+
+      if (assertID(node.right)) {
+        results.push(
+          visitConstruct(
+            node.right,
+            outputStructure,
+            undefined,
+            isOutcomeWithCondition,
+            RETURN_CONSTRUCTS[node.left.kind]
+          )
+        );
       }
 
       if (
-        input.kind === 'PrimitiveStructure' &&
-        input.type === 'number' &&
-        node.name.getText() === 'length'
+        outputStructure.kind === 'PrimitiveStructure' &&
+        outputStructure.type === 'string' &&
+        (nodeContainsString || nodeContainsID) &&
+        node.operatorToken.getText() === '+'
       ) {
-        return true;
+        return mergeResults(...results, {
+          pass: true,
+          invalidInput: false,
+          invalidOutput: false,
+        });
       }
 
-      return false;
+      if (
+        outputStructure.kind === 'PrimitiveStructure' &&
+        outputStructure.type === 'number' &&
+        !nodeContainsString
+      ) {
+        return mergeResults(...results, {
+          pass: true,
+          invalidInput: false,
+          invalidOutput: false,
+        });
+      }
+
+      return isOutcomeWithCondition
+        ? mergeResults(...results, {
+            pass: true,
+            warnings: [issue],
+            invalidInput: false,
+            invalidOutput: true,
+          })
+        : mergeResults(...results, {
+            pass: false,
+            errors: [issue],
+            invalidInput: false,
+            invalidOutput: true,
+          });
     },
   },
-  [ts.SyntaxKind.CallExpression]: {
-    predicate: (node: ts.CallExpression, input: StructureType): boolean => {
-      const method = RETURN_CONSTRUCTS[node.expression.kind]?.predicate(
-        node.expression,
-        input
-      );
 
-      return method ?? false;
+  [ts.SyntaxKind.Identifier]: {
+    visit: (
+      node: ts.Identifier,
+      outputStructure?: StructureType,
+      inputStructure?: ObjectStructure,
+      isOutcomeWithCondition?: boolean
+    ): ConstructResult => {
+      if (node.text === 'input') {
+        if (!inputStructure) {
+          throw new Error('Input not found');
+        }
+
+        if (!inputStructure.fields) {
+          throw new Error('Input not found');
+        }
+
+        if (outputStructure) {
+          return compareStructures(node, inputStructure, outputStructure);
+        }
+
+        return { pass: true, invalidInput: false, invalidOutput: false };
+      }
+
+      if (outputStructure) {
+        if (
+          outputStructure.kind === 'NonNullStructure' &&
+          node.text === 'undefined'
+        ) {
+          return returnIssue(
+            {
+              kind: 'nonNullStructure',
+              context: {
+                path: getPath(node),
+                actual: node.getText(),
+                expected: outputStructure.value,
+              },
+            },
+            isOutcomeWithCondition
+          );
+        }
+
+        const variables: ReferencedVariables = {};
+        if (outputStructure.kind === 'UnionStructure') {
+          variables[node.text] = Object.values(outputStructure.types);
+        } else {
+          variables[node.text] = [outputStructure];
+        }
+
+        return {
+          pass: true,
+          invalidInput: false,
+          invalidOutput: false,
+          variables,
+        };
+      }
+
+      return { pass: true, invalidInput: false, invalidOutput: false };
+    },
+  },
+
+  [ts.SyntaxKind.PropertyAccessExpression]: {
+    visit(
+      node: ts.PropertyAccessExpression,
+      outputStructure?: StructureType,
+      inputStructure?: ObjectStructure,
+      isOutcomeWithCondition?: boolean
+    ): ConstructResult {
+      if (node.expression.getText().split('.')[0] === 'input') {
+        if (!inputStructure) {
+          throw new Error('Input not found');
+        }
+
+        const issue: ValidationIssue = {
+          kind: 'wrongInput',
+          context: {
+            path: getPath(node),
+            expected: inputStructure,
+            actual: node.getText(),
+          },
+        };
+
+        if (!inputStructure.fields) {
+          return returnIssue(issue, isOutcomeWithCondition);
+        }
+
+        const property = node.name.getText();
+        let fieldValue: StructureType | undefined;
+
+        // input.to or input.from or input.person
+        if (ts.isIdentifier(node.expression)) {
+          fieldValue = inputStructure.fields[property];
+
+          if (!fieldValue) {
+            return returnIssue(issue, isOutcomeWithCondition);
+          }
+        } else if (ts.isPropertyAccessExpression(node.expression)) {
+          // input.person.to or input.person.from or input.person.text.length
+          let structure: StructureType | undefined;
+          if (this.visitInput) {
+            structure = this.visitInput(node.expression, inputStructure);
+          }
+
+          if (!structure) {
+            return returnIssue(issue, isOutcomeWithCondition);
+          }
+
+          if (structure.kind !== 'ObjectStructure' || !structure.fields) {
+            return returnIssue(issue, isOutcomeWithCondition);
+          }
+
+          fieldValue = structure.fields[property];
+
+          if (!fieldValue) {
+            return returnIssue(issue, isOutcomeWithCondition);
+          }
+        }
+
+        if (outputStructure) {
+          if (!fieldValue) {
+            throw new Error('This should not happen!');
+          }
+
+          return compareStructures(node, fieldValue, outputStructure);
+        }
+
+        return { pass: true, invalidInput: false, invalidOutput: false };
+      }
+
+      if (outputStructure) {
+        const variables: ReferencedVariables = {};
+        let variableName = node.getText();
+
+        const trimVariableName = (text: string, quote: '"' | "'"): string =>
+          text.slice(1, text.lastIndexOf(quote)) +
+          text.slice(text.lastIndexOf(quote) + 1, text.length);
+
+        if (variableName.startsWith("'")) {
+          variableName = trimVariableName(variableName, "'");
+        } else if (variableName.startsWith('"')) {
+          variableName = trimVariableName(variableName, '"');
+        }
+
+        if (outputStructure.kind === 'UnionStructure') {
+          variables[variableName] = Object.values(outputStructure.types);
+        } else {
+          variables[variableName] = [outputStructure];
+        }
+
+        return {
+          pass: true,
+          invalidInput: false,
+          invalidOutput: false,
+          variables,
+        };
+      }
+
+      return { pass: true, invalidInput: false, invalidOutput: false };
+    },
+
+    visitInput(
+      node: ts.PropertyAccessExpression,
+      structure: ObjectStructure
+    ): StructureType | undefined {
+      const { expression, name } = node;
+      let outputStructure: StructureType | undefined;
+
+      if (ts.isPropertyAccessExpression(expression)) {
+        if (this.visitInput) {
+          outputStructure = this.visitInput(expression, structure);
+        }
+      } else if (ts.isIdentifier(expression)) {
+        if (!structure.fields) {
+          return undefined;
+        }
+
+        return structure.fields[name.getText()];
+      }
+
+      if (
+        !outputStructure ||
+        outputStructure.kind !== 'ObjectStructure' ||
+        !outputStructure.fields
+      ) {
+        return undefined;
+      }
+
+      return outputStructure.fields[name.getText()];
+    },
+  },
+
+  [ts.SyntaxKind.ElementAccessExpression]: {
+    visit(
+      node: ts.ElementAccessExpression,
+      outputStructure?: StructureType,
+      inputStructure?: ObjectStructure,
+      isOutcomeWithCondition?: boolean
+    ): ConstructResult {
+      if (node.expression.getText().split('.')[0] === 'input') {
+        if (!inputStructure) {
+          throw new Error('Input not found');
+        }
+
+        const issue: ValidationIssue = {
+          kind: 'wrongInput',
+          context: {
+            path: getPath(node),
+            expected: inputStructure,
+            actual: node.getText(),
+          },
+        };
+
+        if (!inputStructure.fields) {
+          return returnIssue(issue, isOutcomeWithCondition);
+        }
+
+        const property = node.argumentExpression.getText();
+        let fieldValue: StructureType | undefined;
+
+        // input['to'] or input['from'] or input['person']
+        if (ts.isIdentifier(node.expression)) {
+          fieldValue = inputStructure.fields[property];
+
+          if (!fieldValue) {
+            return returnIssue(issue, isOutcomeWithCondition);
+          }
+        } else if (ts.isPropertyAccessExpression(node.expression)) {
+          // input.person['to'] or input.person['from'] or input.person.text['length']
+          let structure: StructureType | undefined;
+          if (this.visitInput) {
+            structure = this.visitInput(node.expression, inputStructure);
+          }
+
+          if (!structure) {
+            return returnIssue(issue, isOutcomeWithCondition);
+          }
+
+          if (structure.kind !== 'ObjectStructure' || !structure.fields) {
+            return returnIssue(issue, isOutcomeWithCondition);
+          }
+
+          fieldValue = structure.fields[property];
+
+          if (!fieldValue) {
+            return returnIssue(issue, isOutcomeWithCondition);
+          }
+        }
+
+        if (outputStructure) {
+          if (!fieldValue) {
+            throw new Error('This should not happen!');
+          }
+
+          return compareStructures(node, fieldValue, outputStructure);
+        }
+
+        return { pass: true, invalidInput: false, invalidOutput: false };
+      }
+
+      if (outputStructure) {
+        const variables: ReferencedVariables = {};
+        let expressionName = node.expression.getText();
+        let argumentName = node.argumentExpression.getText();
+
+        const trimVariableName = (text: string, quote: '"' | "'"): string =>
+          text.slice(1, text.lastIndexOf(quote)) +
+          text.slice(text.lastIndexOf(quote) + 1, text.length);
+
+        if (expressionName.startsWith("'")) {
+          expressionName = trimVariableName(expressionName, "'");
+        } else if (expressionName.startsWith('"')) {
+          expressionName = trimVariableName(expressionName, '"');
+        }
+
+        if (argumentName.startsWith("'")) {
+          argumentName = trimVariableName(argumentName, "'");
+        } else if (argumentName.startsWith('"')) {
+          argumentName = trimVariableName(argumentName, '"');
+        }
+
+        const variableName = expressionName + '.' + argumentName;
+        if (outputStructure.kind === 'UnionStructure') {
+          variables[variableName] = Object.values(outputStructure.types);
+        } else {
+          variables[variableName] = [outputStructure];
+        }
+
+        return {
+          pass: true,
+          invalidInput: false,
+          invalidOutput: false,
+          variables,
+        };
+      }
+
+      return { pass: true, invalidInput: false, invalidOutput: false };
+    },
+
+    visitInput(
+      node: ts.PropertyAccessExpression,
+      structure: ObjectStructure
+    ): StructureType | undefined {
+      const { expression, name } = node;
+      let outputStructure: StructureType | undefined;
+
+      if (ts.isPropertyAccessExpression(expression)) {
+        if (this.visitInput) {
+          outputStructure = this.visitInput(expression, structure);
+        }
+      } else if (ts.isIdentifier(expression)) {
+        if (!structure.fields) {
+          return undefined;
+        }
+
+        return structure.fields[name.getText()];
+      }
+
+      if (
+        !outputStructure ||
+        outputStructure.kind !== 'ObjectStructure' ||
+        !outputStructure.fields
+      ) {
+        return undefined;
+      }
+
+      return outputStructure.fields[name.getText()];
+    },
+  },
+
+  [ts.SyntaxKind.ObjectLiteralExpression]: {
+    visit(
+      node: ts.ObjectLiteralExpression,
+      outputStructure?: StructureType,
+      inputStructure?: ObjectStructure,
+      isOutcomeWithCondition?: boolean
+    ): ConstructResult {
+      const results: ConstructResult[] = [];
+
+      if (inputStructure) {
+        node.properties.slice(0, node.properties.length).forEach(property => {
+          if (
+            ts.isPropertyAssignment(property) &&
+            assertID(property.initializer)
+          ) {
+            results.push(
+              visitConstruct(
+                property.initializer,
+                undefined,
+                inputStructure,
+                isOutcomeWithCondition,
+                RETURN_CONSTRUCTS[property.initializer.kind]
+              )
+            );
+          }
+        });
+      }
+
+      if (!outputStructure) {
+        return mergeResults(...results);
+      }
+
+      if (outputStructure.kind === 'NonNullStructure') {
+        outputStructure = outputStructure.value;
+      }
+
+      if (outputStructure.kind !== 'ObjectStructure') {
+        const issue: ValidationIssue = {
+          kind: 'wrongStructure',
+          context: {
+            path: getPath(node),
+            actual: node.getText(),
+            expected: outputStructure,
+          },
+        };
+
+        isOutcomeWithCondition
+          ? results.push({
+              pass: true,
+              warnings: [issue],
+              invalidInput: false,
+              invalidOutput: true,
+            })
+          : results.push(...results, {
+              pass: false,
+              errors: [issue],
+              invalidInput: false,
+              invalidOutput: true,
+            });
+
+        return mergeResults(...results);
+      }
+
+      const properties = node.properties.slice(0, node.properties.length);
+      const structureOfFields = outputStructure.fields;
+
+      if (properties.length === 0 && !structureOfFields) {
+        return { pass: true, invalidInput: false, invalidOutput: false };
+      }
+
+      if (!structureOfFields) {
+        throw new Error('This should not happen!');
+      }
+
+      const propertyValues = Object.values(properties);
+      const fieldNames = Object.keys(structureOfFields);
+      let index = fieldNames.length;
+
+      while (index--) {
+        const key = fieldNames[index];
+        const value = structureOfFields[key];
+
+        if (!value) {
+          throw new Error(`Value with key: ${key} does not exist!`);
+        }
+
+        let isFound = false;
+        let nodeIndex = propertyValues.length;
+
+        while (nodeIndex--) {
+          const property = propertyValues[nodeIndex];
+          const nodeKey = property.name;
+
+          if (!nodeKey) {
+            throw new Error(`Property key: ${nodeKey} does not exist!`);
+          }
+
+          if (nodeKey.getText() === key) {
+            if (ts.isPropertyAssignment(property)) {
+              results.push(
+                visitConstruct(
+                  property.initializer,
+                  value,
+                  undefined,
+                  isOutcomeWithCondition,
+                  RETURN_CONSTRUCTS[property.initializer.kind]
+                )
+              );
+
+              isFound = true;
+              fieldNames.splice(index, 1);
+              propertyValues.splice(nodeIndex, 1);
+            }
+          }
+        }
+
+        if (value.required && !isFound) {
+          const issue: ValidationIssue = {
+            kind: 'missingRequired',
+            context: {
+              path: getPath(node),
+              field: key,
+            },
+          };
+
+          isOutcomeWithCondition
+            ? results.push({
+                pass: true,
+                warnings: [issue],
+                invalidInput: false,
+                invalidOutput: true,
+              })
+            : results.push({
+                pass: false,
+                errors: [issue],
+                invalidInput: false,
+                invalidOutput: true,
+              });
+        }
+      }
+
+      if (propertyValues.length > 0) {
+        results.push({
+          pass: true,
+          warnings: [
+            {
+              kind: 'wrongStructure',
+              context: {
+                path: getPath(node),
+                actual: node.getText(),
+                expected: outputStructure,
+              },
+            },
+          ],
+          invalidInput: false,
+          invalidOutput: false,
+        });
+      }
+
+      return mergeResults(...results);
+    },
+  },
+
+  [ts.SyntaxKind.ArrayLiteralExpression]: {
+    visit(
+      node: ts.ArrayLiteralExpression,
+      outputStructure?: StructureType,
+      inputStructure?: ObjectStructure,
+      isOutcomeWithCondition?: boolean
+    ): ConstructResult {
+      const results: ConstructResult[] = [];
+
+      if (inputStructure) {
+        node.elements.slice(0, node.elements.length).forEach(element => {
+          if (assertID(element))
+            results.push(
+              visitConstruct(
+                element,
+                undefined,
+                inputStructure,
+                isOutcomeWithCondition,
+                RETURN_CONSTRUCTS[element.kind]
+              )
+            );
+        });
+      }
+
+      if (!outputStructure) {
+        return mergeResults(...results);
+      }
+
+      if (outputStructure.kind === 'NonNullStructure') {
+        outputStructure = outputStructure.value;
+      }
+      if (outputStructure.kind !== 'ListStructure') {
+        const issue: ValidationIssue = {
+          kind: 'wrongStructure',
+          context: {
+            path: getPath(node),
+            actual: node.getText(),
+            expected: outputStructure,
+          },
+        };
+
+        return isOutcomeWithCondition
+          ? mergeResults(...results, {
+              pass: true,
+              warnings: [issue],
+              invalidInput: false,
+              invalidOutput: true,
+            })
+          : mergeResults(...results, {
+              pass: false,
+              errors: [issue],
+              invalidInput: false,
+              invalidOutput: true,
+            });
+      }
+
+      let structureOfTypes: ArrayCollection | undefined;
+      let structureOfType: StructureType | undefined;
+
+      if (outputStructure.value.kind === 'UnionStructure') {
+        structureOfTypes = outputStructure.value.types;
+      } else {
+        structureOfType = outputStructure.value;
+      }
+
+      const elements = node.elements.slice(0, node.elements.length);
+
+      if (structureOfType) {
+        elements.forEach(element => {
+          results.push(
+            visitConstruct(
+              element,
+              structureOfType,
+              undefined,
+              isOutcomeWithCondition,
+              RETURN_CONSTRUCTS[element.kind]
+            )
+          );
+        });
+
+        return mergeResults(...results);
+      }
+
+      if (!structureOfTypes) {
+        throw new Error('This should not happen!');
+      }
+
+      const typeValues = Object.values(structureOfTypes);
+      let nodeIndex = elements.length;
+
+      while (nodeIndex--) {
+        const element = elements[nodeIndex];
+
+        if (assertID(element)) {
+          results.push(
+            visitConstruct(
+              element,
+              outputStructure.value,
+              undefined,
+              isOutcomeWithCondition,
+              RETURN_CONSTRUCTS[element.kind]
+            )
+          );
+          continue;
+        }
+
+        let diff = 0;
+
+        typeValues.forEach(value => {
+          if (!value) {
+            throw new Error('This should not happen!');
+          }
+
+          const result = visitConstruct(
+            element,
+            value,
+            undefined,
+            isOutcomeWithCondition,
+            RETURN_CONSTRUCTS[element.kind]
+          );
+
+          if (!result.pass) {
+            diff++;
+          }
+        });
+
+        if (diff === typeValues.length) {
+          results.push({
+            pass: false,
+            errors: [
+              {
+                kind: 'wrongStructure',
+                context: {
+                  path: getPath(node),
+                  actual: node.getText(),
+                  expected: outputStructure,
+                },
+              },
+            ],
+            invalidInput: false,
+            invalidOutput: true,
+          });
+        }
+      }
+
+      return mergeResults(...results, {
+        pass: true,
+        invalidInput: false,
+        invalidOutput: false,
+      });
+    },
+  },
+
+  [ts.SyntaxKind.ParenthesizedExpression]: {
+    visit(
+      node: ts.ParenthesizedExpression,
+      outputStructure?: StructureType,
+      inputStructure?: ObjectStructure,
+      isOutcomeWithCondition?: boolean
+    ): ConstructResult {
+      return visitConstruct(
+        node.expression,
+        outputStructure,
+        inputStructure,
+        isOutcomeWithCondition,
+        RETURN_CONSTRUCTS[node.expression.kind]
+      );
+    },
+  },
+
+  [ts.SyntaxKind.ExpressionStatement]: {
+    visit(
+      node: ts.ExpressionStatement,
+      outputStructure?: StructureType,
+      inputStructure?: ObjectStructure,
+      isOutcomeWithCondition?: boolean
+    ): ConstructResult {
+      return visitConstruct(
+        node.expression,
+        outputStructure,
+        inputStructure,
+        isOutcomeWithCondition,
+        RETURN_CONSTRUCTS[node.expression.kind]
+      );
+    },
+  },
+
+  [ts.SyntaxKind.SourceFile]: {
+    visit(
+      node: ts.SourceFile,
+      outputStructure?: StructureType,
+      inputStructure?: ObjectStructure,
+      isOutcomeWithCondition?: boolean
+    ): ConstructResult {
+      const statement = node.statements[node.statements.length - 1];
+
+      return visitConstruct(
+        statement,
+        outputStructure,
+        inputStructure,
+        isOutcomeWithCondition,
+        RETURN_CONSTRUCTS[statement.kind]
+      );
     },
   },
 };

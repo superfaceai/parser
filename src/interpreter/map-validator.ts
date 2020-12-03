@@ -5,6 +5,8 @@ import {
   HttpRequestNode,
   HttpResponseHandlerNode,
   InlineCallNode,
+  isMapDefinitionNode,
+  isOperationDefinitionNode,
   JessieExpressionNode,
   LiteralNode,
   MapASTNode,
@@ -19,28 +21,26 @@ import {
   ProviderNode,
   SetStatementNode,
   StatementConditionNode,
-} from '@superindustries/language';
+} from '@superfaceai/language';
 import { MapVisitor } from '@superindustries/superface';
+import * as ts from 'typescript';
 
+import { RETURN_CONSTRUCTS } from './constructs';
 import {
   ArrayCollection,
   ObjectCollection,
+  ObjectStructure,
   ProfileOutput,
   StructureType,
+  UnionStructure,
+  UseCaseStructure,
 } from './profile-validator';
-import {
-  compareStructure,
-  formatErrors,
-  formatWarnings,
-  validateJessie,
-} from './utils';
+import { compareStructure, getOutcomes, mergeVariables } from './utils';
 
 function assertUnreachable(node: never): never;
 function assertUnreachable(node: MapASTNode): never {
   throw new Error(`Invalid Node kind: ${node.kind}`);
 }
-
-type ResponseHandler = HttpResponseHandlerNode[];
 
 export type ErrorContext = { path?: string[] };
 export type ValidationError =
@@ -57,16 +57,23 @@ export type ValidationError =
       context: ErrorContext & { expectedUseCase: string };
     }
   | {
-      kind: 'resultNotFound';
-      context: ErrorContext & { actualResult: LiteralNode };
+      kind: 'operationNotFound';
+      context: ErrorContext & { expected: string };
+    }
+  | {
+      kind: 'nonNullStructure';
+      context: ErrorContext & {
+        expected: Exclude<StructureType, UnionStructure>;
+        actual: string;
+      };
     }
   | {
       kind: 'resultNotDefined';
-      context: ErrorContext & { expectedResult: StructureType };
+      context: ErrorContext & { expectedResult: StructureType | undefined };
     }
   | {
-      kind: 'inputNotFound';
-      context: ErrorContext & { actualInput: LiteralNode };
+      kind: 'errorNotDefined';
+      context: ErrorContext & { expectedError: StructureType | undefined };
     }
   | {
       kind: 'wrongObjectStructure';
@@ -86,23 +93,77 @@ export type ValidationError =
       kind: 'wrongStructure';
       context: ErrorContext & {
         expected: StructureType;
+        actual: LiteralNode | StructureType | string;
+      };
+    }
+  | {
+      kind: 'resultNotFound';
+      context: ErrorContext & { actualResult: LiteralNode };
+    }
+  | {
+      kind: 'errorNotFound';
+      context: ErrorContext & { actualError: LiteralNode };
+    }
+  | {
+      kind: 'wrongInput';
+      context: ErrorContext & {
+        expected: ObjectStructure;
+        actual: string;
+      };
+    }
+  | {
+      kind: 'wrongVariableStructure';
+      context: ErrorContext & {
+        name: string;
+        expected: StructureType;
         actual: LiteralNode | string;
       };
     }
   | {
       kind: 'variableNotDefined';
-      context: ErrorContext & { actualVariableName: string };
-    }
-  | {
-      kind: 'conditionNotFulfilled';
-      context: ErrorContext & { conditionExpression: string };
+      context: ErrorContext & { name: string };
     }
   | {
       kind: 'missingRequired';
-      context?: ErrorContext & { field: string };
+      context: ErrorContext & { field: string };
+    }
+  | {
+      kind: 'mapNotFound';
+      context: ErrorContext & { expected: string };
+    }
+  | {
+      kind: 'extraMapsFound';
+      context: ErrorContext & {
+        expected: string[];
+        actual: string[];
+      };
     };
 
 export type ValidationWarning =
+  | {
+      kind: 'wrongProfileID';
+      context: ErrorContext & { expected: string; actual: string };
+    }
+  | {
+      kind: 'wrongUsecaseName';
+      context: ErrorContext & { expected: string; actual: string };
+    }
+  | {
+      kind: 'usecaseNotFound';
+      context: ErrorContext & { expectedUseCase: string };
+    }
+  | {
+      kind: 'operationNotFound';
+      context: ErrorContext & { expected: string };
+    }
+  | {
+      kind: 'resultNotDefined';
+      context: ErrorContext & { expectedResult: StructureType | undefined };
+    }
+  | {
+      kind: 'errorNotDefined';
+      context: ErrorContext & { expectedError: StructureType | undefined };
+    }
   | {
       kind: 'wrongObjectStructure';
       context: ErrorContext & {
@@ -111,58 +172,123 @@ export type ValidationWarning =
       };
     }
   | {
+      kind: 'wrongArrayStructure';
+      context: ErrorContext & {
+        expected: ArrayCollection;
+        actual: LiteralNode[];
+      };
+    }
+  | {
       kind: 'wrongStructure';
       context: ErrorContext & {
         expected: StructureType;
+        actual: LiteralNode | StructureType | string;
+      };
+    }
+  | {
+      kind: 'wrongInput';
+      context: ErrorContext & {
+        expected: ObjectStructure;
+        actual: string;
+      };
+    }
+  | {
+      kind: 'resultNotFound';
+      context: ErrorContext & { actualResult: LiteralNode };
+    }
+  | {
+      kind: 'errorNotFound';
+      context: ErrorContext & { actualError: LiteralNode };
+    }
+  | {
+      kind: 'wrongVariableStructure';
+      context: ErrorContext & {
+        name: string;
+        expected: StructureType;
         actual: LiteralNode | string;
       };
+    }
+  | {
+      kind: 'variableNotDefined';
+      context: ErrorContext & { name: string };
+    }
+  | {
+      kind: 'resultNotFound';
+      context: ErrorContext & { actualResult: LiteralNode };
+    }
+  | {
+      kind: 'extraMapsFound';
+      context: ErrorContext & {
+        expected: string[];
+        actual: string[];
+      };
+    }
+  | {
+      kind: 'nonNullStructure';
+      context: ErrorContext & {
+        expected: Exclude<StructureType, UnionStructure>;
+        actual: string;
+      };
+    }
+  | {
+      kind: 'missingRequired';
+      context: ErrorContext & { field: string };
+    }
+  | {
+      kind: 'mapNotFound';
+      context: ErrorContext & { expected: string };
     };
 
 export type ValidationResult =
   | { pass: true; warnings?: ValidationWarning[] }
   | { pass: false; errors: ValidationError[]; warnings?: ValidationWarning[] };
 
-export type ScopeInfo = 'map' | 'operation';
+export type ValidationIssue = ValidationError | ValidationWarning;
 
-export type ValidationFunction = (
-  input?: StructureType,
-  scope?: ScopeInfo
-) => ValidationResult;
+export type ScopeInfo = 'map' | 'operation' | 'call' | 'httpResponse';
 
-export type ScopeInfoFunction = (scope: ScopeInfo) => void;
+interface Stack {
+  type: ScopeInfo;
+  variables: Record<string, LiteralNode>;
+}
 
 export class MapValidator implements MapVisitor {
-  private mapScopedVariables: Record<string, LiteralNode> = {};
-  private operationScopedVariables: Record<
+  private stack: Stack[] = [];
+  private argumentScopedVariables: Record<
     string,
     Record<string, LiteralNode>
   > = {};
-  private operationScope: string | undefined;
-  private operations: Record<string, OperationDefinitionNode> = {};
+
   private errors: ValidationError[] = [];
   private warnings: ValidationWarning[] = [];
+  private operations: Record<string, OperationDefinitionNode> = {};
+
+  private currentUseCase: UseCaseStructure | undefined;
+  private currentStructure: StructureType | undefined;
+  private inputStructure: ObjectStructure | undefined;
+
+  private callOperationScope: string | undefined;
+  private isOutcomeWithCondition = false;
+
+  private dataVariable: Record<string, OutcomeStatementNode[]> = {};
+  private errorVariable: Record<string, OutcomeStatementNode[]> = {};
 
   constructor(
     private readonly mapAst: MapASTNode,
     private readonly profileOutput: ProfileOutput
   ) {}
 
-  validate(): void {
-    const validator = this.visit(this.mapAst);
-    const result = validator(this.profileOutput.usecase?.result);
-    // const error = validator(this.profileOutput.usecase?.error);
+  validate(): ValidationResult {
+    this.visit(this.mapAst);
 
-    if (result.pass !== true) {
-      throw new Error(formatErrors(result.errors));
-    }
-
-    if (result.warnings) {
-      throw new Error(formatWarnings(result.warnings));
-    }
+    return this.errors.length > 0
+      ? { pass: false, errors: this.errors, warnings: this.warnings }
+      : { pass: true, warnings: this.warnings };
   }
-  visit(node: SetStatementNode): ScopeInfoFunction;
-  visit(node: MapASTNode): ValidationFunction;
-  visit(node: MapASTNode): ValidationFunction | ScopeInfoFunction {
+
+  visit(node: LiteralNode | AssignmentNode): boolean;
+  visit(node: MapASTNode): void;
+  visit(node: MapASTNode): boolean | void {
     switch (node.kind) {
       case 'MapDocument':
         return this.visitMapDocumentNode(node);
@@ -205,569 +331,682 @@ export class MapValidator implements MapVisitor {
         assertUnreachable(node);
     }
   }
-  visitMapDocumentNode(node: MapDocumentNode): ValidationFunction {
-    // check the valid ProfileID
-    const { pass } = this.visit(node.map)();
-    if (!pass) {
-      return this.visit(node.map);
-    }
 
-    // add operations to the state
+  visitMapDocumentNode(node: MapDocumentNode): void {
+    // check the valid ProfileID
+    this.visit(node.map);
+
+    // save operations and their outcomes
     node.definitions.forEach(definition => {
-      if (definition.kind === 'OperationDefinition') {
+      if (isOperationDefinitionNode(definition)) {
         this.operations[definition.name] = definition;
+        this.dataVariable[definition.name] = getOutcomes(definition, false);
+        this.errorVariable[definition.name] = getOutcomes(definition, true);
       }
     });
 
-    // check if there is MapDefinitionNode
-    const mapDefinitionNode = node.definitions.find(
-      (definition): definition is MapDefinitionNode =>
-        definition.kind === 'MapDefinition'
-    );
+    // check usecase - map compatibility
+    const maps = node.definitions.filter(isMapDefinitionNode);
+    const usecases = Array.from(this.profileOutput.usecases);
 
-    // if MapDefinition and profileOutput usecase are not defined
-    if (!mapDefinitionNode && !this.profileOutput.usecase) {
-      throw new Error('This should not happen!');
-    }
-
-    // if MapDefinition is not defined and profileOutput usecase is
-    if (!mapDefinitionNode) {
-      throw new Error('Map not found!');
-    }
-
-    // if profileOutput usecase is not defined and MapDefinition is
-    if (!this.profileOutput.usecase) {
-      throw new Error('UseCase not found!');
-    }
-
-    return this.visit(mapDefinitionNode);
-  }
-  visitMapNode(node: MapNode): ValidationFunction {
-    return this.visit(node.profileId);
-  }
-  visitProviderNode(_node: ProviderNode): ValidationFunction {
-    throw new Error('Method not implemented.');
-  }
-  visitMapProfileIdNode(node: MapProfileIdNode): ValidationFunction {
-    return (): ValidationResult => {
-      if (node.profileId === this.profileOutput.profileId) {
-        return { pass: true };
+    for (let i = 0; i < usecases.length; i++) {
+      const usecase = usecases.pop();
+      if (!usecase) {
+        throw new Error('This should not happen!');
       }
 
-      this.errors.unshift({
-        kind: 'wrongProfileID',
+      let isFound = false;
+
+      for (let j = maps.length - 1; j >= 0; j--) {
+        const map = maps[j];
+
+        if (
+          map.kind === 'MapDefinition' &&
+          map.usecaseName === usecase.useCaseName
+        ) {
+          isFound = true;
+          this.currentUseCase = usecase;
+          this.visit(map);
+          maps.splice(j, 1);
+          break;
+        }
+      }
+
+      if (!isFound) {
+        this.errors.push({
+          kind: 'mapNotFound',
+          context: {
+            path: this.getPath(node),
+            expected: usecase.useCaseName,
+          },
+        });
+      }
+    }
+
+    if (maps.length > 0) {
+      this.warnings.push({
+        kind: 'extraMapsFound',
         context: {
-          expected: node.profileId,
-          actual: this.profileOutput.profileId,
+          path: this.getPath(node),
+          expected: this.profileOutput.usecases.map(
+            usecase => usecase.useCaseName
+          ),
+          actual: node.definitions
+            .filter(isMapDefinitionNode)
+            .map(def => def.usecaseName),
         },
       });
-
-      return { pass: false, errors: this.errors };
-    };
+    }
   }
-  visitOperationDefinitionNode(
-    node: OperationDefinitionNode
-  ): ValidationFunction {
-    return (input): ValidationResult => {
-      const validationResults = node.statements.map(
-        (statement): ValidationResult => {
-          if (statement.kind === 'SetStatement') {
-            this.visit(statement)('operation');
 
-            return { pass: true };
-          }
-
-          return this.visit(statement)(input, 'operation');
-        }
-      );
-      this.operationScope = undefined;
-
-      const result = validationResults.find(result => result.pass === false);
-
-      return result ?? { pass: true };
-    };
+  visitMapNode(node: MapNode): void {
+    this.visit(node.profileId);
   }
-  visitMapDefinitionNode(node: MapDefinitionNode): ValidationFunction {
-    const usecase = this.profileOutput.usecase;
+
+  visitProviderNode(_node: ProviderNode): void {
+    throw new Error('Method not implemented.');
+  }
+
+  visitMapProfileIdNode(node: MapProfileIdNode): void {
+    if (!(node.profileId === this.profileOutput.profileId)) {
+      this.errors.push({
+        kind: 'wrongProfileID',
+        context: {
+          path: this.getPath(node),
+          expected: this.profileOutput.profileId,
+          actual: node.profileId,
+        },
+      });
+    }
+  }
+
+  visitOperationDefinitionNode(node: OperationDefinitionNode): void {
+    this.newStack('operation');
+
+    node.statements.forEach(statement => this.visit(statement));
+
+    this.stack.pop();
+  }
+
+  visitMapDefinitionNode(node: MapDefinitionNode): void {
+    const usecase = this.currentUseCase;
 
     if (!usecase) {
       throw new Error('Usecase should be defined!');
     }
 
-    return (input): ValidationResult => {
-      if (!input) {
-        throw new Error('This should not happen!');
-      }
-
-      // check the valid Usecase Name
-      // is `profileUseCaseName === node.usecaseName` necessary?
-      const profileUseCaseName = usecase.useCaseName;
-      if (profileUseCaseName !== node.name) {
-        this.errors.unshift({
-          kind: 'wrongUsecaseName',
-          context: {
-            expected: node.usecaseName,
-            actual: profileUseCaseName,
-          },
-        });
-
-        return { pass: false, errors: this.errors };
-      }
-
-      if (!usecase.result) {
-        throw new Error('Result not found!');
-      }
-      // if (!usecase.input) {
-      //   throw new Error('Input not found!');
-      // }
-
-      const validationResults = node.statements.map(
-        (statement): ValidationResult => {
-          if (statement.kind === 'SetStatement') {
-            this.visit(statement)('map');
-
-            return { pass: true };
-          }
-
-          return this.visit(statement)(input, 'map');
-        }
-      );
-
-      const result = validationResults.find(result => result.pass === false);
-
-      return result ?? { pass: true };
-    };
-  }
-  visitHttpCallStatementNode(node: HttpCallStatementNode): ValidationFunction {
-    return (input, scope): ValidationResult => {
-      const responseHandlers: ResponseHandler = node.responseHandlers;
-      const validationResults = responseHandlers.map(response =>
-        this.visit(response)(input, scope)
-      );
-
-      const result = validationResults.find(result => result.pass === false);
-
-      return result ?? { pass: true };
-    };
-  }
-  visitHttpResponseHandlerNode(
-    node: HttpResponseHandlerNode
-  ): ValidationFunction {
-    return (input, scope): ValidationResult => {
-      if (!scope) {
-        throw new Error('This should not happen!');
-      }
-
-      const validationResults = node.statements.map(
-        (statement): ValidationResult => {
-          if (statement.kind === 'SetStatement') {
-            this.visit(statement)(scope);
-
-            return { pass: true };
-          }
-
-          return this.visit(statement)(input, scope);
-        }
-      );
-
-      const result = validationResults.find(result => result.pass === false);
-
-      return result ?? { pass: true };
-    };
-  }
-  visitHttpRequestNode(_node: HttpRequestNode): ValidationFunction {
-    throw new Error('Method not implemented.');
-  }
-  visitCallStatementNode(node: CallStatementNode): ValidationFunction {
-    return (input, scope): ValidationResult => {
-      if (!input || !scope) {
-        throw new Error('This should not happen!');
-      }
-
-      if (!this.operations[node.operationName]) {
-        if (input.kind === 'NonNullStructure') {
-          this.errors.unshift({
-            kind: 'wrongStructure',
-            context: {
-              expected: input,
-              actual: node.operationName,
-            },
-          });
-
-          return { pass: false, errors: this.errors };
-        }
-
-        return { pass: true };
-      }
-
-      // create SetStatement with arguments and save them into given operation scope
-      this.operationScope = node.operationName;
-      node.arguments.forEach(argument => argument.key.unshift('args'));
-      this.visit({
-        kind: 'SetStatement',
-        assignments: node.arguments,
-      })('operation');
-
-      const operationValidator = this.visit(
-        this.operations[node.operationName]
-      );
-      if (!operationValidator(input).pass) {
-        return operationValidator(input);
-      }
-
-      // if operation validator passed, we can validate callback statements
-      const validationResults = node.statements.map(
-        (statement): ValidationResult => {
-          if (statement.kind === 'SetStatement') {
-            this.visit(statement)(scope);
-
-            return { pass: true };
-          }
-
-          return this.visit(statement)(input, scope);
-        }
-      );
-
-      const result = validationResults.find(result => result.pass === false);
-
-      return result ?? { pass: true };
-    };
-  }
-  visitOutcomeStatementNode(node: OutcomeStatementNode): ValidationFunction {
-    return this.visit(node.value);
-  }
-  visitSetStatementNode(node: SetStatementNode): ScopeInfoFunction {
-    return (scope): void => {
-      node.assignments.forEach(assignment => {
-        let literal = assignment.value;
-        const baseKey = assignment.key[0];
-
-        if (assignment.key.length > 1) {
-          const objectNode: ObjectLiteralNode = {
-            kind: 'ObjectLiteral',
-            fields: [],
-          };
-
-          for (let i = assignment.key.length - 1; i >= 0; i--) {
-            const assignmentNode: AssignmentNode = {
-              kind: 'Assignment',
-              key: [assignment.key[i]],
-              value: {
-                kind: 'ObjectLiteral',
-                fields: objectNode.fields,
-              },
-            };
-
-            if (i === assignment.key.length - 1) {
-              assignmentNode.value = literal;
-            }
-
-            objectNode.fields[0] = assignmentNode;
-          }
-
-          literal = objectNode;
-        }
-
-        if (scope === 'map') {
-          this.mapScopedVariables[baseKey] = literal;
-        } else if (this.operationScope) {
-          this.operationScopedVariables[this.operationScope][baseKey] = literal;
-        }
+    if (
+      usecase.result?.kind === 'NonNullStructure' &&
+      getOutcomes(node, false).length === 0
+    ) {
+      this.errors.push({
+        kind: 'resultNotDefined',
+        context: {
+          path: this.getPath(node),
+          expectedResult: usecase.result,
+        },
       });
-    };
-  }
-  visitStatementConditionNode(
-    _node: StatementConditionNode
-  ): ValidationFunction {
-    throw new Error('Method not implemented.');
-  }
-  visitAssignmentNode(node: AssignmentNode): ValidationFunction {
-    return this.visit(node.value);
-  }
-  visitInlineCallNode(node: InlineCallNode): ValidationFunction {
-    return (input): ValidationResult => {
-      if (!input) {
-        throw new Error('Should not happen!');
-      }
-
-      const nonNull = input.kind === 'NonNullStructure';
-
-      if (!this.operations[node.operationName]) {
-        if (nonNull) {
-          this.errors.unshift({
-            kind: 'wrongStructure',
-            context: {
-              expected: input,
-              actual: node,
-            },
-          });
-
-          return { pass: false, errors: this.errors };
-        }
-
-        return { pass: true };
-      }
-
-      // create SetStatement with arguments and save them into given operation scope
-      this.operationScope = node.operationName;
-      node.arguments.forEach(argument => argument.key.unshift('args'));
-      this.visit({
-        kind: 'SetStatement',
-        assignments: node.arguments,
-      })('operation');
-
-      return this.visit(this.operations[node.operationName])(input);
-    };
-  }
-  visitJessieExpressionNode(node: JessieExpressionNode): ValidationFunction {
-    const literal = this.tryFindLiteral(
-      this.operationScope ? 'operation' : 'map',
-      node.expression
-    );
-
-    if (literal) {
-      return this.visit(literal);
     }
 
-    return (input): ValidationResult => {
-      if (!input) {
+    if (
+      usecase.error?.kind === 'NonNullStructure' &&
+      getOutcomes(node, true).length === 0
+    ) {
+      this.errors.push({
+        kind: 'errorNotDefined',
+        context: {
+          path: this.getPath(node),
+          expectedError: usecase.error,
+        },
+      });
+    }
+
+    this.newStack('map');
+    this.inputStructure = usecase.input;
+
+    node.statements.forEach(statement => this.visit(statement));
+
+    this.inputStructure = undefined;
+    this.stack.pop();
+  }
+
+  visitHttpCallStatementNode(node: HttpCallStatementNode): void {
+    if (node.request) {
+      this.visit(node.request);
+    }
+
+    node.responseHandlers.forEach(response => this.visit(response));
+  }
+
+  visitHttpResponseHandlerNode(node: HttpResponseHandlerNode): void {
+    this.newStack('httpResponse');
+    node.statements.forEach(statement => this.visit(statement));
+    this.stack.pop();
+  }
+
+  visitHttpRequestNode(node: HttpRequestNode): void {
+    if (node.query) {
+      this.visit(node.query);
+    }
+    if (node.headers) {
+      this.visit(node.headers);
+    }
+    if (node.body) {
+      this.visit(node.body);
+    }
+  }
+
+  visitCallStatementNode(node: CallStatementNode): void {
+    if (!this.operations[node.operationName]) {
+      this.errors.push({
+        kind: 'operationNotFound',
+        context: {
+          path: this.getPath(node),
+          expected: node.operationName,
+        },
+      });
+    }
+
+    // argument handling
+    if (node.arguments.length > 0) {
+      this.argumentScopedVariables[node.operationName] = {};
+      node.arguments.forEach(argument => {
+        if (this.inputStructure) {
+          this.visit(argument);
+        }
+        this.argumentScopedVariables[node.operationName][
+          argument.key.join('.')
+        ] = argument.value;
+      });
+    }
+
+    // visit the operation
+    this.visit(this.operations[node.operationName]);
+
+    // call statements
+    this.newStack('call');
+    this.callOperationScope = node.operationName;
+
+    node.statements.forEach(statement => this.visit(statement));
+
+    this.callOperationScope = undefined;
+    this.stack.pop();
+  }
+
+  visitOutcomeStatementNode(node: OutcomeStatementNode): void {
+    if (node.condition) {
+      this.isOutcomeWithCondition = true;
+      this.visit(node.condition);
+    }
+
+    if (node.isError) {
+      if (!this.currentUseCase?.error) {
+        this.warnings.push({
+          kind: 'errorNotFound',
+          context: {
+            path: this.getPath(node),
+            actualError: node.value,
+          },
+        });
+      }
+      this.currentStructure = this.currentUseCase?.error;
+    } else {
+      if (!this.currentUseCase?.result) {
+        this.warnings.push({
+          kind: 'resultNotFound',
+          context: {
+            path: this.getPath(node),
+            actualResult: node.value,
+          },
+        });
+      }
+      this.currentStructure = this.currentUseCase?.result;
+    }
+
+    this.visit(node.value);
+
+    this.isOutcomeWithCondition = false;
+    this.currentStructure = undefined;
+  }
+
+  private constructObject(key: string, field: AssignmentNode): void {
+    const object: ObjectLiteralNode = {
+      kind: 'ObjectLiteral',
+      fields: [],
+    };
+    let isReassigned = false;
+
+    const variable = this.variables[key];
+    if (variable && variable.kind === 'ObjectLiteral') {
+      const fieldKey = field.key.join('.');
+
+      variable.fields.forEach(variableField => {
+        if (variableField.key.join('.') === fieldKey) {
+          isReassigned = true;
+          variableField.value = field.value;
+        }
+      });
+
+      object.fields.push(...variable.fields);
+    }
+
+    if (!isReassigned) {
+      object.fields.push(field);
+    }
+
+    this.addVariableToStack(key, object);
+  }
+
+  private cleanUpVariables(key: string): void {
+    Object.keys(this.variables).forEach(variableKey => {
+      if (
+        variableKey.length > key.length &&
+        variableKey[key.length] === '.' &&
+        variableKey.includes(key)
+      ) {
+        delete this.stackTop.variables[variableKey];
+      }
+    });
+  }
+
+  visitSetStatementNode(node: SetStatementNode): void {
+    node.assignments.forEach(assignment => {
+      const value = assignment.value;
+      if (this.inputStructure) {
+        this.visit(value);
+      }
+
+      const variableKey = assignment.key.join('.');
+      this.addVariableToStack(variableKey, value);
+
+      if (assignment.key.length > 1) {
+        const keys: string[] = [];
+        const field: AssignmentNode = {
+          kind: 'Assignment',
+          key: Array.from(assignment.key),
+          value,
+        };
+
+        assignment.key.forEach(key => {
+          keys.push(key);
+          field.key.shift();
+
+          if (field.key.length === 0) {
+            return;
+          }
+
+          this.constructObject(keys.join('.'), field);
+        });
+      }
+
+      this.cleanUpVariables(variableKey);
+    });
+  }
+
+  visitStatementConditionNode(node: StatementConditionNode): void {
+    if (this.inputStructure) {
+      this.visit(node.expression);
+    }
+  }
+
+  visitAssignmentNode(node: AssignmentNode): boolean {
+    return this.visit(node.value);
+  }
+
+  visitInlineCallNode(node: InlineCallNode): boolean {
+    if (!this.operations[node.operationName]) {
+      this.errors.push({
+        kind: 'operationNotFound',
+        context: {
+          path: this.getPath(node),
+          expected: node.operationName,
+        },
+      });
+    }
+
+    if (node.arguments.length > 0) {
+      this.argumentScopedVariables[node.operationName] = {};
+      node.arguments.forEach(argument => {
+        if (this.inputStructure) {
+          this.visit(argument);
+        }
+        this.argumentScopedVariables[node.operationName][
+          argument.key.join('.')
+        ] = argument.value;
+      });
+    }
+
+    if (!this.currentStructure) {
+      return true;
+    }
+
+    const outcomeValues = this.dataVariable[node.operationName];
+
+    if (outcomeValues.length === 0) {
+      this.errors.push({
+        kind: 'resultNotDefined',
+        context: {
+          path: this.getPath(node),
+          expectedResult: this.currentStructure,
+        },
+      });
+
+      return false;
+    }
+
+    return outcomeValues.every(value => this.visit(value.value));
+  }
+
+  private validateJessieIDs(
+    types: (StructureType | undefined)[],
+    variable: LiteralNode
+  ): boolean {
+    let isValid = false;
+
+    // multiple types such as in UnionStructure
+    for (const type of types) {
+      if (!type) {
+        throw new Error('This should not happen!');
+      }
+      const previousEndIndex = this.errors.length;
+      this.currentStructure = type;
+
+      isValid = isValid || this.visit(variable);
+
+      if (this.errors.length - previousEndIndex > 0) {
+        this.errors = this.errors.slice(0, previousEndIndex);
+      }
+
+      if (!this.currentStructure) {
         throw new Error('This should not happen!');
       }
 
-      const result = validateJessie(node.source ?? node.expression, input);
+      if (!isValid) {
+        return false;
+      }
+    }
 
-      if (!result.pass) {
-        result.errors.forEach(error => this.errors.unshift(error));
+    return true;
+  }
 
-        return { pass: false, errors: this.errors };
+  visitJessieExpressionNode(node: JessieExpressionNode): boolean {
+    const rootNode = ts.createSourceFile(
+      'scripts.js',
+      `(${node.source ?? node.expression})`,
+      ts.ScriptTarget.ES2015,
+      true,
+      ts.ScriptKind.JS
+    );
+
+    const construct = RETURN_CONSTRUCTS[rootNode.kind];
+
+    if (!construct) {
+      throw new Error('Rule construct not found!');
+    }
+
+    if (
+      this.stackTop.type === 'map' &&
+      !this.currentStructure &&
+      !this.inputStructure
+    ) {
+      throw new Error('Profile capability structure not found!');
+    }
+
+    const constructResult = construct.visit(
+      rootNode,
+      this.currentStructure,
+      this.inputStructure,
+      this.isOutcomeWithCondition
+    );
+
+    let result = constructResult.pass;
+
+    if (this.currentStructure && constructResult.invalidOutput) {
+      this.addIssue({
+        kind: 'wrongStructure',
+        context: {
+          path: this.getPath(node),
+          expected: this.currentStructure,
+          actual: node.source ?? node.expression,
+        },
+      });
+    }
+
+    if (this.inputStructure && constructResult.invalidInput) {
+      this.addIssue({
+        kind: 'wrongInput',
+        context: {
+          path: this.getPath(node),
+          expected: this.inputStructure,
+          actual: node.source ?? node.expression,
+        },
+      });
+    }
+
+    if (!constructResult.pass) {
+      this.errors.push(...constructResult.errors);
+    }
+    this.warnings.push(...(constructResult.warnings ?? []));
+
+    // validate variables from jessie
+    for (const variableName in constructResult.variables) {
+      const types = constructResult.variables[variableName];
+
+      if (!this.currentStructure) {
+        throw new Error('This should not happen!');
+      }
+
+      // if validator is in call scope and jessie contains 'data' variable
+      if (this.callOperationScope) {
+        let outcomes: OutcomeStatementNode[];
+        if (variableName.split('.')[0] === 'data') {
+          outcomes = this.dataVariable[this.callOperationScope];
+        } else if (variableName.split('.')[0] === 'error') {
+          outcomes = this.errorVariable[this.callOperationScope];
+        } else {
+          continue;
+        }
+
+        for (const outcome of outcomes) {
+          this.isOutcomeWithCondition = outcome.condition ? true : false;
+          result = this.validateJessieIDs(types, outcome.value);
+
+          if (!result) {
+            this.addIssue({
+              kind: 'wrongVariableStructure',
+              context: {
+                path: this.getPath(node),
+                name: variableName,
+                expected: this.currentStructure,
+                actual: outcome.value,
+              },
+            });
+          }
+        }
+      } else {
+        const variable = this.variables[variableName];
+
+        if (!variable) {
+          result = false;
+          this.addIssue({
+            kind: 'variableNotDefined',
+            context: {
+              path: this.getPath(node),
+              name: variableName,
+            },
+          });
+
+          continue;
+        }
+
+        result = this.validateJessieIDs(types, variable);
+
+        if (!result) {
+          this.addIssue({
+            kind: 'wrongVariableStructure',
+            context: {
+              path: this.getPath(node),
+              name: variableName,
+              expected: this.currentStructure,
+              actual: variable,
+            },
+          });
+        }
+      }
+    }
+
+    return this.isOutcomeWithCondition ? true : result;
+  }
+
+  visitObjectLiteralNode(node: ObjectLiteralNode): boolean {
+    if (!this.currentStructure) {
+      let result = true;
+      if (this.inputStructure) {
+        node.fields.forEach(field => {
+          const fieldResult = this.visit(field);
+          result = result && fieldResult;
+        });
       }
 
       return result;
-    };
-  }
-  visitObjectLiteralNode(node: ObjectLiteralNode): ValidationFunction {
-    return (input): ValidationResult => {
-      if (!input) {
-        throw new Error('This should not happen!');
-      }
+    }
 
-      const { isValid, newObjectCollection } = compareStructure(node, input);
+    const { isValid, structureOfFields } = compareStructure(
+      node,
+      this.currentStructure
+    );
 
-      if (!isValid) {
-        this.errors.unshift({
-          kind: 'wrongStructure',
-          context: { expected: input, actual: node },
-        });
-
-        return { pass: false, errors: this.errors };
-      }
-
-      const nodeCollection = Object.values(node.fields);
-      const objectLiteralIsEmpty = nodeCollection.length < 1;
-      if (!newObjectCollection && objectLiteralIsEmpty) {
-        return { pass: true };
-      }
-
-      if (!newObjectCollection) {
-        throw new Error('This should not happen!');
-      }
-
-      const objectValuesCollection = Object.values(newObjectCollection);
-      const structureHasRequiredFields = objectValuesCollection.some(
-        field => field?.required === true
-      );
-
-      if (!structureHasRequiredFields && objectLiteralIsEmpty) {
-        return { pass: true };
-      }
-
-      const objectKeysCollection = Object.keys(newObjectCollection);
-      const structureResults: ValidationResult[] = [];
-      let index = 0;
-
-      Object.keys(newObjectCollection).forEach(key => {
-        const value = newObjectCollection[key];
-        if (!value) {
-          throw new Error('This should not happen.');
-        }
-
-        let isFound = false;
-        let nodeIndex = nodeCollection.length;
-        while (nodeIndex--) {
-          const field = nodeCollection[nodeIndex];
-          const nodeKey = field.key.join('');
-
-          if (nodeKey === key) {
-            isFound = true;
-
-            structureResults.push(this.visit(field)(value));
-            nodeCollection.splice(nodeIndex, 1);
-            objectKeysCollection.splice(index, 1);
-
-            index--;
-          }
-        }
-
-        if (value.required && !isFound) {
-          this.errors.unshift({
-            kind: 'missingRequired',
-            context: {
-              field: value ? value.kind : 'undefined',
-            },
-          });
-          structureResults.push({ pass: false, errors: this.errors });
-        }
-
-        index++;
+    if (!isValid) {
+      this.addIssue({
+        kind: 'wrongStructure',
+        context: {
+          path: this.getPath(node),
+          expected: this.currentStructure,
+          actual: node,
+        },
       });
 
-      if (nodeCollection.length > 0) {
-        this.warnings.unshift({
-          kind: 'wrongObjectStructure',
+      return this.isOutcomeWithCondition ? true : false;
+    }
+
+    if (!structureOfFields) {
+      throw new Error('This should not happen!');
+    }
+
+    const fieldValues = Object.values(node.fields);
+    const fieldNames = Object.keys(structureOfFields);
+    let result = true;
+    let index = fieldNames.length;
+
+    while (index--) {
+      const key = fieldNames[index];
+      const value = structureOfFields[key];
+      if (!value) {
+        throw new Error(`Value with key: ${key} does not exist!`);
+      }
+
+      let isFound = false;
+      let nodeIndex = fieldValues.length;
+
+      while (nodeIndex--) {
+        const field = fieldValues[nodeIndex];
+        const nodeKey = field.key.join('');
+
+        if (nodeKey === key) {
+          this.currentStructure = value;
+          this.visit(field);
+
+          isFound = true;
+          fieldNames.splice(index, 1);
+          fieldValues.splice(nodeIndex, 1);
+        }
+      }
+
+      if (value.required && !isFound) {
+        result = false;
+        this.addIssue({
+          kind: 'missingRequired',
           context: {
-            expected: newObjectCollection,
-            actual: node.fields,
+            path: this.getPath(node),
+            field: value ? value.kind : 'undefined',
           },
         });
       }
+    }
 
-      const error = structureResults.find(result => result.pass === false);
+    if (fieldValues.length > 0) {
+      this.warnings.push({
+        kind: 'wrongObjectStructure',
+        context: {
+          path: this.getPath(node),
+          expected: structureOfFields,
+          actual: node.fields,
+        },
+      });
+    }
 
-      return error ?? { pass: true, warnings: this.warnings };
-    };
-  }
-  // visitArrayLiteralNode(node: ArrayLiteralNode): ValidationFunction {
-  //   return (input): ValidationResult => {
-  //     if (!input) {
-  //       throw new Error('This should not happen!');
-  //     }
-
-  //     const { isValid, newStructure, newArrayCollection } = compareStructure(
-  //       node,
-  //       input
-  //     );
-
-  //     if (!isValid) {
-  //       this.errors.unshift({
-  //         kind: 'wrongStructure',
-  //         context: { expected: input, actual: node },
-  //       });
-
-  //       return { pass: false, errors: this.errors };
-  //     }
-
-  //     if (newStructure) {
-  //       const structureResults = node.elements.map(element =>
-  //         this.visit(element)(newStructure)
-  //       );
-
-  //       const error = structureResults.find(result => result.pass === false);
-
-  //       return error ?? { pass: true };
-  //     }
-
-  //     if (!newArrayCollection) {
-  //       throw new Error('This should not happen!');
-  //     }
-
-  //     const nodeCollection = Object.values(node.elements);
-  //     const structureResults: ValidationResult[] = [];
-
-  //     Object.values(newArrayCollection).forEach(value => {
-  //       if (!value) {
-  //         throw new Error('This should not happen!');
-  //       }
-
-  //       let nodeIndex = nodeCollection.length;
-  //       while (nodeIndex--) {
-  //         const element = nodeCollection[nodeIndex];
-  //         const { isValid } = compareStructure(element, value);
-
-  //         if (isValid) {
-  //           structureResults.push(this.visit(element)(value));
-  //           nodeCollection.splice(nodeIndex, 1);
-  //         }
-  //       }
-  //     });
-
-  //     if (nodeCollection.length > 0) {
-  //       this.errors.unshift({
-  //         kind: 'wrongArrayStructure',
-  //         context: {
-  //           expected: newArrayCollection,
-  //           actual: node.elements,
-  //         },
-  //       });
-
-  //       return { pass: false, errors: this.errors };
-  //     }
-
-  //     const error = structureResults.find(result => result.pass === false);
-
-  //     return error ?? { pass: true };
-  //   };
-  // }
-  visitPrimitiveLiteralNode(node: PrimitiveLiteralNode): ValidationFunction {
-    return (input): ValidationResult => {
-      if (!input) {
-        throw new Error('This should not happen!');
-      }
-
-      const { isValid, newStructure } = compareStructure(node, input);
-
-      if (!isValid || newStructure) {
-        this.errors.unshift({
-          kind: 'wrongStructure',
-          context: { expected: input, actual: node },
-        });
-
-        return { pass: false, errors: this.errors };
-      }
-
-      return { pass: true };
-    };
+    return this.isOutcomeWithCondition ? true : result;
   }
 
-  /**
-   * This function assume that expression consists of some variable that was set
-   * before somewhere in SetStatement.
-   * @param scope
-   * @param expression
-   */
-  tryFindLiteral(
-    scope: ScopeInfo,
-    expression: string
-  ): LiteralNode | undefined {
-    const keys = expression.split('.');
-    const [head, ...tail] = keys;
-    let variables: Record<string, LiteralNode>;
-
-    if (scope === 'operation' && this.operationScope) {
-      variables = this.operationScopedVariables[this.operationScope];
-    } else {
-      variables = this.mapScopedVariables;
+  visitPrimitiveLiteralNode(node: PrimitiveLiteralNode): boolean {
+    if (!this.currentStructure) {
+      return true;
     }
 
-    let literal: LiteralNode | undefined = variables[head];
+    const { isValid } = compareStructure(node, this.currentStructure);
 
-    if (!literal) {
-      return undefined;
+    if (!isValid) {
+      this.addIssue({
+        kind: 'wrongStructure',
+        context: {
+          path: this.getPath(node),
+          expected: this.currentStructure,
+          actual: node,
+        },
+      });
     }
 
-    if (!tail) {
-      return literal;
+    return this.isOutcomeWithCondition ? true : isValid;
+  }
+
+  private getPath(node: MapASTNode): string[] {
+    return node.location
+      ? [`${node.location.line + ':' + node.location.column}`, node.kind]
+      : [node.kind];
+  }
+
+  private addVariableToStack(key: string, value: LiteralNode): void {
+    const variable: Record<string, LiteralNode> = {};
+    variable[key] = value;
+
+    this.stackTop.variables = mergeVariables(this.stackTop.variables, variable);
+  }
+
+  private newStack(type: Stack['type']): void {
+    this.stack.push({ type: type, variables: {} });
+  }
+
+  private get variables(): Record<string, LiteralNode> {
+    let variables: Record<string, LiteralNode> = {};
+
+    for (const stackTop of this.stack) {
+      variables = mergeVariables(stackTop.variables, variables);
     }
 
-    for (const key of tail) {
-      if (!literal) {
-        return undefined;
-      }
+    return variables;
+  }
 
-      if (literal.kind === 'ObjectLiteral') {
-        literal = literal.fields.find(field => field.key[0] === key)?.value;
-      }
+  private get stackTop(): Stack {
+    if (this.stack.length === 0) {
+      throw new Error('Trying to get variables out of scope!');
     }
 
-    return literal;
+    return this.stack[this.stack.length - 1];
+  }
+
+  private addIssue(issue: ValidationIssue): void {
+    this.isOutcomeWithCondition
+      ? this.warnings.push(issue)
+      : this.errors.push(issue);
   }
 }
