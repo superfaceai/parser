@@ -174,20 +174,22 @@ function visitConstruct(
 
 function returnIssue(
   issue: ValidationIssue,
+  invalidInput: boolean,
+  invalidOutput: boolean,
   isOutcomeWithCondition?: boolean
 ): ConstructResult {
   return isOutcomeWithCondition
     ? {
         pass: true,
         warnings: [issue],
-        invalidInput: false,
-        invalidOutput: true,
+        invalidInput,
+        invalidOutput,
       }
     : {
         pass: false,
         errors: [issue],
-        invalidInput: false,
-        invalidOutput: true,
+        invalidInput,
+        invalidOutput,
       };
 }
 
@@ -223,6 +225,8 @@ export const RETURN_CONSTRUCTS: {
             expected: outputStructure,
           },
         },
+        false,
+        true,
         isOutcomeWithCondition
       );
     },
@@ -257,6 +261,8 @@ export const RETURN_CONSTRUCTS: {
             expected: outputStructure,
           },
         },
+        false,
+        true,
         isOutcomeWithCondition
       );
     },
@@ -291,6 +297,8 @@ export const RETURN_CONSTRUCTS: {
             expected: outputStructure,
           },
         },
+        false,
+        true,
         isOutcomeWithCondition
       );
     },
@@ -325,6 +333,8 @@ export const RETURN_CONSTRUCTS: {
             expected: outputStructure,
           },
         },
+        false,
+        true,
         isOutcomeWithCondition
       );
     },
@@ -350,6 +360,8 @@ export const RETURN_CONSTRUCTS: {
               expected: outputStructure,
             },
           },
+          false,
+          true,
           isOutcomeWithCondition
         );
       }
@@ -538,6 +550,8 @@ export const RETURN_CONSTRUCTS: {
                 expected: outputStructure.value,
               },
             },
+            false,
+            true,
             isOutcomeWithCondition
           );
         }
@@ -583,7 +597,7 @@ export const RETURN_CONSTRUCTS: {
         };
 
         if (!inputStructure.fields) {
-          return returnIssue(issue, isOutcomeWithCondition);
+          return returnIssue(issue, true, false, isOutcomeWithCondition);
         }
 
         const property = node.name.getText();
@@ -594,7 +608,7 @@ export const RETURN_CONSTRUCTS: {
           fieldValue = inputStructure.fields[property];
 
           if (!fieldValue) {
-            return returnIssue(issue, isOutcomeWithCondition);
+            return returnIssue(issue, true, false, isOutcomeWithCondition);
           }
         } else if (ts.isPropertyAccessExpression(node.expression)) {
           // input.person.to or input.person.from or input.person.text.length
@@ -604,17 +618,17 @@ export const RETURN_CONSTRUCTS: {
           }
 
           if (!structure) {
-            return returnIssue(issue, isOutcomeWithCondition);
+            return returnIssue(issue, true, false, isOutcomeWithCondition);
           }
 
           if (structure.kind !== 'ObjectStructure' || !structure.fields) {
-            return returnIssue(issue, isOutcomeWithCondition);
+            return returnIssue(issue, true, false, isOutcomeWithCondition);
           }
 
           fieldValue = structure.fields[property];
 
           if (!fieldValue) {
-            return returnIssue(issue, isOutcomeWithCondition);
+            return returnIssue(issue, true, false, isOutcomeWithCondition);
           }
         }
 
@@ -713,7 +727,7 @@ export const RETURN_CONSTRUCTS: {
         };
 
         if (!inputStructure.fields) {
-          return returnIssue(issue, isOutcomeWithCondition);
+          return returnIssue(issue, true, false, isOutcomeWithCondition);
         }
 
         const property = node.argumentExpression.getText();
@@ -724,7 +738,7 @@ export const RETURN_CONSTRUCTS: {
           fieldValue = inputStructure.fields[property];
 
           if (!fieldValue) {
-            return returnIssue(issue, isOutcomeWithCondition);
+            return returnIssue(issue, true, false, isOutcomeWithCondition);
           }
         } else if (ts.isPropertyAccessExpression(node.expression)) {
           // input.person['to'] or input.person['from'] or input.person.text['length']
@@ -734,17 +748,17 @@ export const RETURN_CONSTRUCTS: {
           }
 
           if (!structure) {
-            return returnIssue(issue, isOutcomeWithCondition);
+            return returnIssue(issue, true, false, isOutcomeWithCondition);
           }
 
           if (structure.kind !== 'ObjectStructure' || !structure.fields) {
-            return returnIssue(issue, isOutcomeWithCondition);
+            return returnIssue(issue, true, false, isOutcomeWithCondition);
           }
 
           fieldValue = structure.fields[property];
 
           if (!fieldValue) {
-            return returnIssue(issue, isOutcomeWithCondition);
+            return returnIssue(issue, true, false, isOutcomeWithCondition);
           }
         }
 
@@ -923,7 +937,7 @@ export const RETURN_CONSTRUCTS: {
           const nodeKey = property.name;
 
           if (!nodeKey) {
-            throw new Error(`Property key: ${nodeKey} does not exist!`);
+            throw new Error(`Property key: ${key} does not exist!`);
           }
 
           if (nodeKey.getText() === key) {

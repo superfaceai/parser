@@ -75,7 +75,7 @@ export function formatErrors(errors?: ValidationError[]): string {
             actual = err.context.actual;
           }
 
-          return `${location} - Wrong Structure: expected ${expected}, but got "${actual}"`;
+          return `${location} - Wrong Structure: expected ${expected}, but got "${actual.toString()}"`;
 
         case 'variableNotDefined':
           return `${location} - Missing Variable definition: ${err.context.name} is not defined`;
@@ -128,7 +128,9 @@ export function formatErrors(errors?: ValidationError[]): string {
             actual = err.context.actual;
           }
 
-          return `${location} - Wrong Variable Structure: variable ${err.context.name} expected ${expected}, but got ${actual}`;
+          return `${location} - Wrong Variable Structure: variable ${
+            err.context.name
+          } expected ${expected}, but got ${actual.toString()}`;
 
         default:
           throw new Error(`${err.kind} Invalid error!`);
@@ -185,7 +187,7 @@ export function formatWarnings(warnings?: ValidationWarning[]): string {
             actual = warn.context.actual;
           }
 
-          return `${location} - Wrong Structure: expected ${expected}, but got "${actual}"`;
+          return `${location} - Wrong Structure: expected ${expected}, but got "${actual.toString()}"`;
 
         case 'wrongVariableStructure':
           if (warn.context.expected.kind === 'PrimitiveStructure') {
@@ -212,7 +214,9 @@ export function formatWarnings(warnings?: ValidationWarning[]): string {
             actual = warn.context.actual;
           }
 
-          return `${location} - Wrong Variable Structure: variable ${warn.context.name} expected ${expected}, but got ${actual}`;
+          return `${location} - Wrong Variable Structure: variable ${
+            warn.context.name
+          } expected ${expected}, but got ${actual.toString()}`;
 
         case 'variableNotDefined':
           return `${location} - Missing Variable definition: ${warn.context.name} is not defined`;
@@ -224,7 +228,7 @@ export function formatWarnings(warnings?: ValidationWarning[]): string {
             actual = warn.context.actualResult.kind;
           }
 
-          return `${location} - Result Not Found: returning "${actual}", but result is undefined`;
+          return `${location} - Result Not Found: returning "${actual.toString()}", but result is undefined`;
 
         case 'errorNotFound':
           if (warn.context.actualError.kind === 'PrimitiveLiteral') {
@@ -233,7 +237,7 @@ export function formatWarnings(warnings?: ValidationWarning[]): string {
             actual = warn.context.actualError.kind;
           }
 
-          return `${location} - Error Not Found: returning "${actual}", but error is undefined`;
+          return `${location} - Error Not Found: returning "${actual.toString()}", but error is undefined`;
 
         case 'extraMapsFound':
           return `${location} - Extra Maps Found: ${warn.context.expected.join(

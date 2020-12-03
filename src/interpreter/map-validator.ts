@@ -971,7 +971,7 @@ export class MapValidator implements MapVisitor {
 
   private getPath(node: MapASTNode): string[] {
     return node.location
-      ? [`${node.location.line + ':' + node.location.column}`, node.kind]
+      ? [`${node.location.line}:${node.location.column}`, node.kind]
       : [node.kind];
   }
 
