@@ -21,8 +21,8 @@ import {
   ProviderNode,
   SetStatementNode,
   StatementConditionNode,
-} from '@superfaceai/language';
-import { MapVisitor } from '@superindustries/superface';
+} from '@superfaceai/ast';
+import { MapVisitor } from '@superfaceai/sdk';
 import * as ts from 'typescript';
 
 import { RETURN_CONSTRUCTS } from './constructs';

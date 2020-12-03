@@ -1,22 +1,27 @@
-import { LexerToken, LexerTokenData, LexerTokenKind } from '../../lexer/token';
-import { BufferedIterator } from '../util';
+import {
+  LexerToken,
+  LexerTokenData,
+  LexerTokenKind,
+  StringTokenData,
+} from '../lexer/token';
 import { LexerTokenMatch, MatchAttempts, SyntaxRule } from './rule';
+import { ArrayLexerStream } from './util';
 
-// Ensures that token spans are correctly ordered
-let TES_TOK_STATE = 0;
+// Ensures that token spans are correctly ordered in delcaration order
+let TES_TOK_STATE = 1;
 beforeEach(() => {
-  TES_TOK_STATE = 0;
+  TES_TOK_STATE = 1;
 });
 function tesTok(data: LexerTokenData): LexerToken {
-  const start = Math.floor(Math.random() * 1000) + TES_TOK_STATE * 10000;
-  const end = start + Math.floor(Math.random() * 100);
+  const start = Math.floor(Math.random() * 100) + TES_TOK_STATE * 10000;
+  const end = start;
 
-  const line = Math.floor(Math.random() * 500);
-  const column = Math.floor(Math.random() * 80);
+  const line = start;
+  const column = start;
 
   TES_TOK_STATE += 1;
 
-  return new LexerToken(data, { start, end }, { line, column });
+  return new LexerToken(data, { line, column }, { start, end });
 }
 function tokMatch(token: LexerToken): LexerTokenMatch {
   return {
@@ -32,11 +37,11 @@ describe('syntax rule factory', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '[' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = SyntaxRule.separator();
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
         match: tokMatch(tokens[0]),
       });
@@ -46,11 +51,11 @@ describe('syntax rule factory', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '[' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = SyntaxRule.separator('[');
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
         match: tokMatch(tokens[0]),
       });
@@ -60,11 +65,11 @@ describe('syntax rule factory', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '[' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = SyntaxRule.separator(']');
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'nomatch',
         attempts: new MatchAttempts(tokens[0], [rule]),
       });
@@ -74,13 +79,13 @@ describe('syntax rule factory', () => {
   describe('operator', () => {
     it('should match operator rule', () => {
       const tokens: ReadonlyArray<LexerToken> = [
-        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '+' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '|' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = SyntaxRule.operator();
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
         match: tokMatch(tokens[0]),
       });
@@ -88,13 +93,13 @@ describe('syntax rule factory', () => {
 
     it('should match operator rule with filter', () => {
       const tokens: ReadonlyArray<LexerToken> = [
-        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '+' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '|' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
-      const rule = SyntaxRule.operator('+');
+      const rule = SyntaxRule.operator('|');
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
         match: tokMatch(tokens[0]),
       });
@@ -102,13 +107,13 @@ describe('syntax rule factory', () => {
 
     it("shouldn't match operator rule", () => {
       const tokens: ReadonlyArray<LexerToken> = [
-        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '+' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
-      const rule = SyntaxRule.operator('-');
+      const rule = SyntaxRule.operator(',');
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'nomatch',
         attempts: new MatchAttempts(tokens[0], [rule]),
       });
@@ -120,11 +125,11 @@ describe('syntax rule factory', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'identifier' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = SyntaxRule.identifier();
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
         match: tokMatch(tokens[0]),
       });
@@ -134,11 +139,11 @@ describe('syntax rule factory', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'usecase' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = SyntaxRule.identifier('usecase');
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
         match: tokMatch(tokens[0]),
       });
@@ -148,11 +153,11 @@ describe('syntax rule factory', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'usecase' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = SyntaxRule.identifier('field');
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'nomatch',
         attempts: new MatchAttempts(tokens[0], [rule]),
       });
@@ -162,11 +167,11 @@ describe('syntax rule factory', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '@' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = SyntaxRule.identifier();
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'nomatch',
         attempts: new MatchAttempts(tokens[0], [rule]),
       });
@@ -178,11 +183,11 @@ describe('syntax rule factory', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.LITERAL, literal: 12 }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = SyntaxRule.literal();
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
         match: tokMatch(tokens[0]),
       });
@@ -194,11 +199,27 @@ describe('syntax rule factory', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.STRING, string: 'asfg I am a string' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = SyntaxRule.string();
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
+        kind: 'match',
+        match: tokMatch(tokens[0]),
+      });
+    });
+  });
+
+  describe('newline', () => {
+    it('should match newline rule', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = SyntaxRule.newline();
+
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
         match: tokMatch(tokens[0]),
       });
@@ -210,11 +231,11 @@ describe('syntax rule factory', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'identifier' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = SyntaxRule.identifier().or(SyntaxRule.literal());
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
         match: tokMatch(tokens[0]),
       });
@@ -224,12 +245,12 @@ describe('syntax rule factory', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.LITERAL, literal: 1 }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const firstRule = SyntaxRule.identifier();
       const rule = firstRule.or(SyntaxRule.literal());
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
         match: tokMatch(tokens[0]),
         optionalAttempts: new MatchAttempts(tokens[0], [firstRule]),
@@ -240,13 +261,13 @@ describe('syntax rule factory', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '@' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const firstRule = SyntaxRule.identifier();
       const secondRule = SyntaxRule.literal();
       const rule = firstRule.or(secondRule).or(SyntaxRule.operator('@'));
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
         match: tokMatch(tokens[0]),
         optionalAttempts: new MatchAttempts(tokens[0], [firstRule, secondRule]),
@@ -257,13 +278,13 @@ describe('syntax rule factory', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.STRING, string: 'string' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const firstRule = SyntaxRule.identifier();
       const secondRule = SyntaxRule.literal();
       const rule = firstRule.or(secondRule);
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'nomatch',
         attempts: new MatchAttempts(tokens[0], [firstRule, secondRule]),
       });
@@ -277,13 +298,13 @@ describe('syntax rule factory', () => {
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
         tesTok({ kind: LexerTokenKind.LITERAL, literal: 1 }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = SyntaxRule.identifier('result')
         .followedBy(SyntaxRule.operator(':'))
-        .andBy(SyntaxRule.literal());
+        .andFollowedBy(SyntaxRule.literal());
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
         match: [tokMatch(tokens[0]), tokMatch(tokens[1]), tokMatch(tokens[2])],
         optionalAttempts: undefined,
@@ -296,14 +317,14 @@ describe('syntax rule factory', () => {
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
         tesTok({ kind: LexerTokenKind.LITERAL, literal: 1 }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const firstRule = SyntaxRule.identifier('field');
       const rule = firstRule
         .followedBy(SyntaxRule.operator(':'))
-        .andBy(SyntaxRule.literal());
+        .andFollowedBy(SyntaxRule.literal());
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'nomatch',
         attempts: new MatchAttempts(tokens[0], [firstRule]),
       });
@@ -315,14 +336,14 @@ describe('syntax rule factory', () => {
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
         tesTok({ kind: LexerTokenKind.LITERAL, literal: 1 }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
-      const secondRule = SyntaxRule.operator('+');
+      const secondRule = SyntaxRule.operator('!');
       const rule = SyntaxRule.identifier('result')
         .followedBy(secondRule)
-        .andBy(SyntaxRule.literal());
+        .andFollowedBy(SyntaxRule.literal());
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'nomatch',
         attempts: new MatchAttempts(tokens[1], [secondRule]),
       });
@@ -334,14 +355,14 @@ describe('syntax rule factory', () => {
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: ':' }),
         tesTok({ kind: LexerTokenKind.LITERAL, literal: 1 }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const thirdRule = SyntaxRule.identifier();
       const rule = SyntaxRule.identifier('result')
         .followedBy(SyntaxRule.operator(':'))
-        .andBy(thirdRule);
+        .andFollowedBy(thirdRule);
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'nomatch',
         attempts: new MatchAttempts(tokens[2], [thirdRule]),
       });
@@ -354,14 +375,14 @@ describe('syntax rule factory', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'identifier' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const firstRule = SyntaxRule.identifier('field');
       const rule = SyntaxRule.repeat(
         firstRule.followedBy(SyntaxRule.identifier())
       );
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
         match: [[tokMatch(tokens[0]), tokMatch(tokens[1])]],
         optionalAttempts: new MatchAttempts(undefined, [firstRule]),
@@ -377,14 +398,14 @@ describe('syntax rule factory', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'identifier' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const firstRule = SyntaxRule.identifier('field');
       const rule = SyntaxRule.repeat(
         firstRule.followedBy(SyntaxRule.identifier())
       );
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
         match: [
           [tokMatch(tokens[0]), tokMatch(tokens[1])],
@@ -397,12 +418,12 @@ describe('syntax rule factory', () => {
 
     it("shouldn't match 0 repetitions", () => {
       const tokens: ReadonlyArray<LexerToken> = [];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const innerRule = SyntaxRule.identifier();
       const rule = SyntaxRule.repeat(innerRule);
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'nomatch',
         attempts: new MatchAttempts(undefined, [innerRule]),
       });
@@ -416,20 +437,100 @@ describe('syntax rule factory', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const innerRule = SyntaxRule.identifier('field');
       const rule = SyntaxRule.optional(SyntaxRule.repeat(innerRule));
 
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
         match: [tokMatch(tokens[0]), tokMatch(tokens[1]), tokMatch(tokens[2])],
         optionalAttempts: new MatchAttempts(undefined, [innerRule]),
       });
-      expect(rule.tryMatch(buf)).toStrictEqual({
+      expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
         match: undefined,
         optionalAttempts: new MatchAttempts(undefined, [innerRule]),
+      });
+    });
+  });
+
+  describe('lookahead', () => {
+    it('should match but not consume', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.STRING, string: 'I am a string' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = SyntaxRule.lookahead(SyntaxRule.string());
+
+      expect(rule.tryMatch(stream)).toStrictEqual({
+        kind: 'match',
+        match: undefined,
+      });
+
+      expect(stream.next().value).toStrictEqual(tokens[0]);
+    });
+
+    it('should match inverted', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.STRING, string: 'I am a string' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = SyntaxRule.lookahead(SyntaxRule.literal(), 'invert');
+
+      expect(rule.tryMatch(stream)).toStrictEqual({
+        kind: 'match',
+        match: undefined,
+      });
+
+      expect(stream.next().value).toStrictEqual(tokens[0]);
+    });
+  });
+
+  describe('andThen', () => {
+    it('should pass through optionalAttempts on match', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.STRING, string: 'I am a string' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const innerRule = SyntaxRule.literal();
+      const rule = innerRule.or(SyntaxRule.string()).andThen(match => {
+        return {
+          kind: 'match',
+          value: (match.data as StringTokenData).string.length,
+        };
+      }, 'description here');
+
+      expect(rule.toString()).toBe('description here');
+
+      expect(rule.tryMatch(stream)).toStrictEqual({
+        kind: 'match',
+        match: (tokens[0].data as StringTokenData).string.length,
+        optionalAttempts: new MatchAttempts(tokens[0], [innerRule]),
+      });
+    });
+
+    it('should merge attempts on nomatch', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.STRING, string: 'I am a string' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const innerRule = SyntaxRule.string();
+      const rule = innerRule.andThen(_match => {
+        return {
+          kind: 'nomatch',
+        };
+      });
+
+      expect(rule.toString()).toBe(innerRule.toString());
+
+      expect(rule.tryMatch(stream)).toStrictEqual({
+        kind: 'nomatch',
+        attempts: new MatchAttempts(tokens[0], [rule]),
       });
     });
   });

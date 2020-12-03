@@ -238,7 +238,6 @@ export function tryParseStringLiteral(
     }
   }
 
-  // TODO: transform in case it's a block string
   if (startingQuoteChars === 3) {
     resultString = transformBlockStringValue(resultString);
   }

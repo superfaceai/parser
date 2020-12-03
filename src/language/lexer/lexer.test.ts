@@ -1,5 +1,6 @@
 import { Source } from '../source';
-import { DEFAULT_TOKEN_KIND_FILER, Lexer, LexerContext } from './lexer';
+import { LexerContext, LexerContextType } from './context';
+import { DEFAULT_TOKEN_KIND_FILTER, Lexer } from './lexer';
 import {
   CommentTokenData,
   formatTokenData,
@@ -45,7 +46,7 @@ expect.extend({
     };
 
     let pass = true;
-    let message = `Expected something else than ${formatTokenData(data)}`;
+    let message: string;
 
     if (actual.data.kind !== data.kind) {
       pass = false;
@@ -115,7 +116,7 @@ expect.extend({
 
 describe('lexer', () => {
   describe('valid', () => {
-    it('separators', () => {
+    test('separators', () => {
       const lexer = new Lexer(new Source('[( {  )\n}(\t \t(	[ ]]))'));
       const expectedTokens: ReadonlyArray<SeparatorValue> = [
         'SOF',
@@ -144,30 +145,29 @@ describe('lexer', () => {
       }
     });
 
-    it('operators', () => {
-      const lexer = new Lexer(new Source(': ! + : | = - : ++ :: -- !! || =='));
+    test('operators', () => {
+      const lexer = new Lexer(new Source(': ! : | = : :: !! || == , @,@@'));
       const expectedTokens: (LexerTokenData | OperatorValue)[] = [
         { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
         ':',
         '!',
-        '+',
         ':',
         '|',
         '=',
-        '-',
-        ':',
-        '+',
-        '+',
         ':',
         ':',
-        '-',
-        '-',
+        ':',
         '!',
         '!',
         '|',
         '|',
         '=',
         '=',
+        ',',
+        '@',
+        ',',
+        '@',
+        '@',
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
 
@@ -185,7 +185,7 @@ describe('lexer', () => {
       }
     });
 
-    it('literals', () => {
+    test('literals', () => {
       const lexer = new Lexer(
         new Source('true false\n1 0x10 0xFa 0b10 0o10 10 10.1 1234 false')
       );
@@ -219,7 +219,7 @@ describe('lexer', () => {
       }
     });
 
-    it('strings', () => {
+    test('strings', () => {
       const lexer = new Lexer(
         new Source(
           `
@@ -262,7 +262,7 @@ describe('lexer', () => {
       }
     });
 
-    it('soft keywords', () => {
+    test('soft keywords', () => {
       const lexer = new Lexer(
         new Source(
           'usecase field model input result async errors Number String \n\tBoolean Enum'
@@ -298,7 +298,7 @@ describe('lexer', () => {
       }
     });
 
-    it('identifiers', () => {
+    test('identifiers', () => {
       const lexer = new Lexer(
         new Source(
           'ident my fier pls usecaseNOT modelout boolean b00lean a123456789_0'
@@ -332,16 +332,16 @@ describe('lexer', () => {
       }
     });
 
-    it('comments', () => {
+    test('comments', () => {
       const lexer = new Lexer(
         new Source(`
-        # line comment
-        #
-        asdf #  hi
+        // line comment
+        //
+        asdf //  hi
         asdf
       `),
         {
-          ...DEFAULT_TOKEN_KIND_FILER,
+          ...DEFAULT_TOKEN_KIND_FILTER,
           [LexerTokenKind.COMMENT]: false,
         }
       );
@@ -362,7 +362,40 @@ describe('lexer', () => {
       }
     });
 
-    it('is valid complex', () => {
+    test('newlines', () => {
+      const lexer = new Lexer(
+        new Source(`ident1
+        ident2 ident3
+        "string1" "stri
+ng2"
+        "string3"`),
+        {
+          ...DEFAULT_TOKEN_KIND_FILTER,
+          [LexerTokenKind.NEWLINE]: false,
+        }
+      );
+      const expectedTokens: LexerTokenData[] = [
+        { kind: LexerTokenKind.SEPARATOR, separator: 'SOF' },
+        { kind: LexerTokenKind.IDENTIFIER, identifier: 'ident1' },
+        { kind: LexerTokenKind.NEWLINE },
+        { kind: LexerTokenKind.IDENTIFIER, identifier: 'ident2' },
+        { kind: LexerTokenKind.IDENTIFIER, identifier: 'ident3' },
+        { kind: LexerTokenKind.NEWLINE },
+        { kind: LexerTokenKind.STRING, string: 'string1' },
+        { kind: LexerTokenKind.STRING, string: 'stri\nng2' },
+        { kind: LexerTokenKind.NEWLINE },
+        { kind: LexerTokenKind.STRING, string: 'string3' },
+        { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
+      ];
+
+      for (const expected of expectedTokens) {
+        const actual = lexer.advance();
+
+        expect(actual).toHaveTokenData(expected);
+      }
+    });
+
+    test('complex', () => {
       const lexer = new Lexer(
         new Source(
           `'''
@@ -374,9 +407,9 @@ describe('lexer', () => {
         
         profile = "https://superface.ai/profiles/superface/Map"
         
-        #
-        # Use cases
-        #
+        //
+        // Use cases
+        //
         
         '''
         Get Map
@@ -434,9 +467,9 @@ describe('lexer', () => {
           }
         }
         
-        #
-        # Reusable Models
-        #
+        //
+        // Reusable Models
+        //
         
         model Map {
           mapId
@@ -444,9 +477,9 @@ describe('lexer', () => {
           sourceUrl
         }
         
-        #
-        # Reusable Fields
-        #
+        //
+        // Reusable Fields
+        //
         
         'Id of the map in the store'
         field mapId String
@@ -466,7 +499,7 @@ describe('lexer', () => {
       }
     });
 
-    it('is valid map with scripts', () => {
+    test('map with scripts', () => {
       const lexer = new Lexer(
         new Source(
           `map test {
@@ -489,6 +522,7 @@ describe('lexer', () => {
           kind: LexerTokenKind.JESSIE_SCRIPT,
           script:
             '(function () { var foo = 1; return { foo: foo + 2, bar: Math.min(3, 4) }; })()',
+          sourceScript: 'not checked',
           sourceMap: 'not checked',
         },
         { kind: LexerTokenKind.OPERATOR, operator: ';' },
@@ -498,6 +532,7 @@ describe('lexer', () => {
         {
           kind: LexerTokenKind.JESSIE_SCRIPT,
           script: '{ x: 1, y: 2 }',
+          sourceScript: 'not checked',
           sourceMap: 'not checked',
         },
         { kind: LexerTokenKind.OPERATOR, operator: ';' },
@@ -507,6 +542,7 @@ describe('lexer', () => {
         {
           kind: LexerTokenKind.JESSIE_SCRIPT,
           script: 'true',
+          sourceScript: 'not checked',
           sourceMap: 'not checked',
         },
         { kind: LexerTokenKind.OPERATOR, operator: ';' },
@@ -515,9 +551,18 @@ describe('lexer', () => {
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
       const contexts: { [N in number]: LexerContext | undefined } = {
-        6: LexerContext.JESSIE_SCRIPT_EXPRESSION,
-        10: LexerContext.JESSIE_SCRIPT_EXPRESSION,
-        14: LexerContext.JESSIE_SCRIPT_EXPRESSION,
+        6: {
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+          terminationTokens: [';'],
+        },
+        10: {
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+          terminationTokens: [';'],
+        },
+        14: {
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+          terminationTokens: [';'],
+        },
       };
 
       for (let i = 0; i < expectedTokens.length; i++) {
@@ -528,6 +573,40 @@ describe('lexer', () => {
         expect(actual).toHaveTokenData(expected);
       }
     });
+
+    test('complex jessie expression', () => {
+      const lexer = new Lexer(
+        new Source(
+          '`Template ${string} with ${more + `${nested} and ${complex}`} expressions ${here}` ;'
+        )
+      );
+
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.SEPARATOR,
+        separator: 'SOF',
+      });
+
+      expect(
+        lexer.advance({
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+        })
+      ).toHaveTokenData({
+        kind: LexerTokenKind.JESSIE_SCRIPT,
+        sourceMap: 'not checked',
+        sourceScript: 'not checked',
+        script:
+          '"Template " + string + " with " + (more + (nested + " and " + complex)) + " expressions " + here',
+      });
+
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.OPERATOR,
+        operator: ';',
+      });
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.SEPARATOR,
+        separator: 'EOF',
+      });
+    });
   });
 
   describe('invalid', () => {
@@ -536,7 +615,23 @@ describe('lexer', () => {
       lexer.advance(); // skip SOF
 
       expect(() => lexer.advance()).toThrow(
-        'Expected a number following integer base prefix'
+        'Expected a number following a sign or an integer base prefix'
+      );
+    });
+
+    test('just a number sign', () => {
+      const lexerMinus = new Lexer(new Source('-'));
+      lexerMinus.advance(); // skip SOF
+
+      expect(() => lexerMinus.advance()).toThrow(
+        'Expected a number following a sign or an integer base prefix'
+      );
+
+      const lexerPlus = new Lexer(new Source('+'));
+      lexerPlus.advance(); // skip SOF
+
+      expect(() => lexerPlus.advance()).toThrow(
+        'Expected a number following a sign or an integer base prefix'
       );
     });
 
@@ -580,7 +675,10 @@ describe('lexer', () => {
       lexer.advance(); // SOF
 
       expect(() =>
-        lexer.advance(LexerContext.JESSIE_SCRIPT_EXPRESSION)
+        lexer.advance({
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+          terminationTokens: [';'],
+        })
       ).toThrowError('Expression expected.');
     });
 
@@ -590,8 +688,104 @@ describe('lexer', () => {
       lexer.advance(); // SOF
 
       expect(() =>
-        lexer.advance(LexerContext.JESSIE_SCRIPT_EXPRESSION)
+        lexer.advance({
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+          terminationTokens: ['}'],
+        })
       ).toThrowError('FunctionExpression construct is not supported');
+    });
+  });
+
+  describe('stream', () => {
+    it('handles multiple saves', () => {
+      const lexer = new Lexer(new Source('1 2 3 4 5'));
+      lexer.next(); // SOF
+
+      expect(lexer.next().value).toMatchObject({ data: { literal: 1 } });
+
+      const saveA = lexer.save();
+      expect(lexer.next().value).toMatchObject({ data: { literal: 2 } });
+      expect(lexer.next().value).toMatchObject({ data: { literal: 3 } });
+
+      const saveB = lexer.save();
+      expect(lexer.next().value).toMatchObject({ data: { literal: 4 } });
+
+      lexer.rollback(saveA);
+      expect(lexer.next().value).toMatchObject({ data: { literal: 2 } });
+      expect(lexer.next().value).toMatchObject({ data: { literal: 3 } });
+      expect(lexer.next().value).toMatchObject({ data: { literal: 4 } });
+      expect(lexer.next().value).toMatchObject({ data: { literal: 5 } });
+
+      lexer.rollback(saveB);
+      expect(lexer.next().value).toMatchObject({ data: { literal: 4 } });
+      expect(lexer.next().value).toMatchObject({ data: { literal: 5 } });
+    });
+
+    it('yields EOF once', () => {
+      const lexer = new Lexer(new Source('1'));
+      lexer.next(); // SOF
+
+      expect(lexer.next().value).toMatchObject({ data: { literal: 1 } });
+      expect(lexer.next().value).toMatchObject({ data: { separator: 'EOF' } });
+      expect(lexer.next()).toStrictEqual({ done: true, value: undefined });
+    });
+  });
+
+  it('should overwrite the filter', () => {
+    const lexer = new Lexer(new Source('1\n3 4\n5'));
+    lexer.next(); // SOF
+
+    const save = lexer.save();
+
+    expect(lexer.next().value).toMatchObject({ data: { literal: 1 } });
+    expect(lexer.next().value).toMatchObject({ data: { literal: 3 } });
+    expect(lexer.next().value).toMatchObject({ data: { literal: 4 } });
+    expect(lexer.next().value).toMatchObject({ data: { literal: 5 } });
+
+    lexer.rollback(save);
+    expect(lexer.next().value).toMatchObject({ data: { literal: 1 } });
+
+    lexer.tokenKindFilter = {
+      ...lexer.tokenKindFilter,
+      [LexerTokenKind.NEWLINE]: false,
+    };
+    expect(lexer.next().value).toMatchObject({
+      data: { kind: LexerTokenKind.NEWLINE },
+    });
+
+    lexer.tokenKindFilter = {
+      ...lexer.tokenKindFilter,
+      [LexerTokenKind.NEWLINE]: true,
+    };
+    expect(lexer.next().value).toMatchObject({ data: { literal: 3 } });
+
+    lexer.tokenKindFilter = {
+      ...lexer.tokenKindFilter,
+      [LexerTokenKind.NEWLINE]: false,
+    };
+    expect(lexer.next().value).toMatchObject({ data: { literal: 4 } });
+    expect(lexer.next().value).toMatchObject({
+      data: { kind: LexerTokenKind.NEWLINE },
+    });
+
+    lexer.tokenKindFilter = {
+      ...lexer.tokenKindFilter,
+      [LexerTokenKind.NEWLINE]: true,
+    };
+    expect(lexer.next().value).toMatchObject({ data: { literal: 5 } });
+  });
+
+  it('should respect the allowUnknown flag', () => {
+    let lexer = new Lexer(new Source('+'));
+    lexer.next(); // SOF
+
+    expect(() => lexer.next()).toThrow();
+
+    lexer = new Lexer(new Source('+'), undefined, true);
+    lexer.next(); // SOF
+
+    expect(lexer.next().value).toMatchObject({
+      data: { kind: LexerTokenKind.UNKNOWN },
     });
   });
 });

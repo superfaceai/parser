@@ -17,8 +17,8 @@ import {
   UnionDefinitionNode,
   UseCaseDefinitionNode,
   UseCaseSlotDefinitionNode,
-} from '@superfaceai/language';
-import { ProfileVisitor } from '@superindustries/superface';
+} from '@superfaceai/ast';
+import { ProfileVisitor } from '@superfaceai/sdk';
 
 function assertUnreachable(node: never): never;
 function assertUnreachable(node: ProfileASTNode): never {

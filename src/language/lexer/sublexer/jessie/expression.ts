@@ -5,33 +5,84 @@ import { validateAndTranspile } from '../../../jessie';
 import { JessieSublexerTokenData, LexerTokenKind } from '../../token';
 import { ParseResult } from '../result';
 
-// Static SCANNER to avoid reinitializing it, same thing is done inside TS library
+// Static SCANNER to avoid reinitializing it, same thing is done inside TS codebase.
 const SCANNER = ts.createScanner(
   ts.ScriptTarget.Latest,
-  true,
+  false,
   ts.LanguageVariant.Standard
 );
 
+export type JessieExpressionTerminationToken =
+  | ';'
+  | ')'
+  | '}'
+  | ']'
+  | ','
+  | '\n';
+const TERMINATION_TOKEN_TO_TS_TOKEN: {
+  [T in JessieExpressionTerminationToken]: ts.SyntaxKind;
+} = {
+  ';': ts.SyntaxKind.SemicolonToken,
+  ')': ts.SyntaxKind.CloseParenToken,
+  '}': ts.SyntaxKind.CloseBraceToken,
+  ']': ts.SyntaxKind.CloseBracketToken,
+  ',': ts.SyntaxKind.CommaToken,
+  '\n': ts.SyntaxKind.NewLineTrivia,
+};
+const FALLBACK_TERMINATOR_TOKENS: ReadonlyArray<JessieExpressionTerminationToken> = [
+  ';',
+];
+
 export function tryParseJessieScriptExpression(
-  slice: string
+  slice: string,
+  terminationTokens?: ReadonlyArray<JessieExpressionTerminationToken>
 ): ParseResult<JessieSublexerTokenData> {
+  const termTokens = (terminationTokens === undefined ||
+  terminationTokens.length === 0
+    ? FALLBACK_TERMINATOR_TOKENS
+    : terminationTokens
+  ).map(tok => TERMINATION_TOKEN_TO_TS_TOKEN[tok]);
+  // slang comments start with #
+  termTokens.push(ts.SyntaxKind.PrivateIdentifier);
+
   // Set the scanner text thus reusing the old scanner instance
   SCANNER.setText(slice);
 
-  // Counts the number of open (, [ and { pairs
+  // Counts the number of open (), [] and {} pairs.
   let depthCounter = 0;
-  // Stores position after last valid token
+  // Keeps track of whether we are inside a (nested) template string.
+  // The Typescript scanner produces a `}` token for the closing part of the template expression (the `${expr}`).
+  // We need to manually detect this case and ask the scanner to rescan it with this in mind.
+  let templateStringDepthCounter = 0;
+
+  // Stores position after last valid token.
   let lastTokenEnd = 0;
   for (;;) {
     // Termination checks
-    const token = SCANNER.scan();
+    let token = SCANNER.scan();
 
-    // Look ahead for a semicolon, } or (
+    if (templateStringDepthCounter > 0) {
+      // When `}` is found and we are inside a template string, issue a rescan.
+      // This will either produce the TemplateMiddle token or a TemplateTail token.
+      if (token === ts.SyntaxKind.CloseBraceToken) {
+        SCANNER.reScanTemplateToken(false);
+        token = SCANNER.getToken();
+      }
+
+      // End the template token context if tail is found
+      if (token === ts.SyntaxKind.TemplateTail) {
+        templateStringDepthCounter -= 1;
+      }
+    }
+    if (token === ts.SyntaxKind.TemplateHead) {
+      templateStringDepthCounter += 1;
+    }
+
+    // Look ahead for a termination token
     if (
       depthCounter === 0 &&
-      (token === ts.SyntaxKind.SemicolonToken ||
-        token === ts.SyntaxKind.CloseBraceToken ||
-        token === ts.SyntaxKind.CloseParenToken)
+      templateStringDepthCounter === 0 &&
+      termTokens.includes(token)
     ) {
       break;
     }
@@ -89,6 +140,7 @@ export function tryParseJessieScriptExpression(
           SCRIPT_WRAP.transpiled.start.length,
           transRes.output.length - SCRIPT_WRAP.transpiled.end.length
         ),
+        sourceScript: scriptText,
         sourceMap: transRes.sourceMap,
       },
       relativeSpan: { start: 0, end: scriptText.length },

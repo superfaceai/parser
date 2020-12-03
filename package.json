@@ -1,8 +1,8 @@
 {
-  "name": "@superindustries/superface-parser",
+  "name": "@superfaceai/parser",
   "version": "0.0.0",
   "description": "Level 5 autonomous, self-driving API client, https://superface.ai",
-  "repository": "https://github.com/superindustries/superface-parser.git",
+  "repository": "https://github.com/superfaceai/parser.git",
   "source": "lib/index.js",
   "main": "dist/index.js",
   "module": "dist/index.es.js",
@@ -18,37 +18,41 @@
     "registry": "https://npm.pkg.github.com/"
   },
   "scripts": {
-    "watch": "yarn build_tsc && parcel serve lib/index.js --detailed-report",
-    "build": "yarn build_tsc && parcel build lib/index.js --detailed-report",
-    "build_tsc": "tsc -p tsconfig.release.json",
+    "watch": "yarn build:tsc && parcel serve lib/index.js --detailed-report",
+    "build:parcel": "yarn build:tsc && parcel build lib/index.js --detailed-report",
+    "build:tsc": "tsc -p tsconfig.release.json",
+    "build:simple": "tsc -p tsconfig.simplebuild.json",
+    "build": "yarn build:simple",
     "prebuild": "yarn clean",
     "clean": "rimraf dist/ && rimraf lib/",
     "test": "jest",
+    "test:clean": "jest --clear-cache && jest",
     "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
     "format": "prettier -c src/",
     "format:fix": "prettier --write src/",
-    "prepush": "yarn test --clear-cache && yarn test && yarn lint && yarn format"
+    "prepush": "yarn test:clean && yarn lint && yarn format"
   },
   "devDependencies": {
-    "@types/jest": "^25.2.1",
-    "@typescript-eslint/eslint-plugin": "^2.33.0",
-    "@typescript-eslint/parser": "^2.33.0",
-    "eslint": "^7.2.0",
+    "@types/jest": "^26.0.10",
+    "@typescript-eslint/eslint-plugin": "^3.10.1",
+    "@typescript-eslint/parser": "^3.10.1",
+    "eslint": "^7.7.0",
     "eslint-config-prettier": "^6.11.0",
-    "eslint-import-resolver-typescript": "^2.0.0",
-    "eslint-plugin-import": "^2.21.2",
-    "eslint-plugin-jest": "^23.13.2",
+    "eslint-import-resolver-typescript": "^2.2.1",
+    "eslint-plugin-import": "^2.22.0",
+    "eslint-plugin-jest": "^23.20.0",
     "eslint-plugin-simple-import-sort": "^5.0.3",
-    "jest": "^26.0.1",
+    "jest": "^26.4.1",
     "parcel": "^2.0.0-beta.1",
-    "prettier": "^2.0.5",
+    "prettier": "^2.1.1",
     "rimraf": "^3.0.2",
-    "ts-jest": "^26.1.0"
+    "ts-jest": "^26.3.0"
   },
   "dependencies": {
-    "@superindustries/language": "^0.0.12",
-    "@superindustries/superface": "^0.0.1-alpha.0",
-    "typescript": "^3.9.5"
+    "@superfaceai/ast": "^0.0.18",
+    "@superfaceai/sdk": "^0.0.3",
+    "typescript": "^4.0.2"
   },
   "targets": {
     "types": false,

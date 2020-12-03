@@ -1,4 +1,5 @@
-export { parseProfile, parseRule } from './parser';
+export { parseProfile, parseMap, parseRule } from './parser';
+export * from './rule';
 export * from './rules/profile';
-export * from './rules/rule';
-export { BufferedIterator } from './util';
+export * from './rules/map';
+export { PARSER_FEATURES } from './features';

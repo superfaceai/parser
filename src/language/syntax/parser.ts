@@ -1,11 +1,11 @@
-import { ProfileDocumentNode } from '@superindustries/language';
+import { MapDocumentNode, ProfileDocumentNode } from '@superfaceai/ast';
 
 import { SyntaxError } from '../error';
 import { Lexer } from '../lexer/lexer';
 import { Source } from '../source';
-import { PROFILE_DOCUMENT } from './rules/profile';
-import { SyntaxRule } from './rules/rule';
-import { BufferedIterator } from './util';
+import { SyntaxRule } from './rule';
+import * as map from './rules/map';
+import { profile } from './rules/profile';
 
 /**
  * Attempts to match `rule` onto `source`.
@@ -19,20 +19,32 @@ export function parseRule<N>(
   skipSOF?: boolean
 ): N {
   const lexer = new Lexer(source);
-  const buf = new BufferedIterator(lexer[Symbol.iterator]());
   if (skipSOF === true) {
-    buf.next();
+    lexer.next();
   }
 
-  const result = rule.tryMatch(buf);
+  const result = rule.tryMatch(lexer);
 
   if (result.kind === 'nomatch') {
-    throw SyntaxError.fromSyntaxRuleNoMatch(source, result);
+    const error = SyntaxError.fromSyntaxRuleNoMatch(source, result);
+
+    if (process.env.LOG_LEVEL === 'debug') {
+      console.debug(error.format());
+    }
+
+    throw error;
   }
 
   return result.match;
 }
 
 export function parseProfile(source: Source): ProfileDocumentNode {
-  return parseRule(PROFILE_DOCUMENT, source);
+  return parseRule(profile.PROFILE_DOCUMENT, source);
+}
+
+/**
+ * Attempts to parse the source using rules that strictly adhere to the specification.
+ */
+export function parseMap(source: Source): MapDocumentNode {
+  return parseRule(map.MAP_DOCUMENT, source);
 }

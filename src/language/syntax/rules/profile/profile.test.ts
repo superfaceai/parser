@@ -1,3 +1,4 @@
+import { SyntaxError } from '../../../error';
 import {
   IdentifierTokenData,
   LexerToken,
@@ -5,11 +6,11 @@ import {
   LexerTokenKind,
   LiteralTokenData,
   StringTokenData,
-} from '../../lexer/token';
-import { Location, Span } from '../../source';
-import { BufferedIterator } from '../util';
+} from '../../../lexer/token';
+import { Location, Source, Span } from '../../../source';
+import { RuleResult } from '../../rule';
+import { ArrayLexerStream } from '../../util';
 import * as rules from './profile';
-import { RuleResult } from './rule';
 
 // Declare custom matcher for sake of Typescript
 declare global {
@@ -27,7 +28,8 @@ expect.extend({
 
     if (result.kind !== 'match') {
       pass = false;
-      message = "Rule didn't match";
+      message = SyntaxError.fromSyntaxRuleNoMatch(new Source(''), result)
+        .message;
     } else if (match !== undefined) {
       if (!this.equals(result.match, match)) {
         pass = false;
@@ -58,28 +60,23 @@ expect.extend({
 });
 
 // Ensures that token spans are correctly ordered in delcaration order
-// while also making sure that their spans and locations are random enough so that
-// equality checks find when a wrong span or location is calculated.
-let TES_TOK_STATE: { start: number; line: number } = { start: 0, line: 1 };
+let TES_TOK_STATE = 1;
 beforeEach(() => {
-  TES_TOK_STATE = { start: 0, line: 1 };
+  TES_TOK_STATE = 1;
 });
-function tesTok(data: LexerTokenData, bumpLine?: boolean): LexerToken {
-  const start = Math.floor(Math.random() * 1000) + TES_TOK_STATE.start * 10000;
-  const end = start + Math.floor(Math.random() * 100);
+function tesTok(data: LexerTokenData): LexerToken {
+  const start = Math.floor(Math.random() * 100) + TES_TOK_STATE * 10000;
+  const end = start;
 
-  if (bumpLine === true) {
-    TES_TOK_STATE.line += 1;
-  }
-  const line = TES_TOK_STATE.line;
+  const line = start;
   const column = start;
 
-  TES_TOK_STATE.start += 1;
+  TES_TOK_STATE += 1;
 
-  return new LexerToken(data, { start, end }, { line, column });
+  return new LexerToken(data, { line, column }, { start, end });
 }
 
-function tesMatch<I extends {}>(
+function tesMatch<I extends Record<string, unknown>>(
   input: I,
   first: LexerToken,
   last?: LexerToken
@@ -94,7 +91,7 @@ function tesMatch<I extends {}>(
   };
 }
 
-describe('syntax rules', () => {
+describe('profile syntax rules', () => {
   describe('types', () => {
     it('should parse scalar type', () => {
       const tokens: ReadonlyArray<LexerToken> = [
@@ -102,11 +99,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'number' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'string' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.PRIMITIVE_TYPE_NAME;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'PrimitiveTypeName',
@@ -116,7 +113,7 @@ describe('syntax rules', () => {
         )
       );
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'PrimitiveTypeName',
@@ -126,7 +123,7 @@ describe('syntax rules', () => {
         )
       );
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'PrimitiveTypeName',
@@ -142,27 +139,31 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'enum' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'one' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'one' }), // 2
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({ kind: LexerTokenKind.LITERAL, literal: 1 }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'true' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'true' }), // 6
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({ kind: LexerTokenKind.LITERAL, literal: true }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: ',' }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'hello' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'hello' }), // 10
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({ kind: LexerTokenKind.STRING, string: 'hello' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: ',' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'hi' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'hi' }), // 15
 
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.ENUM_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'EnumDefinition',
@@ -178,30 +179,30 @@ describe('syntax rules', () => {
               tesMatch(
                 {
                   kind: 'EnumValue',
-                  value: (tokens[7].data as LiteralTokenData).literal,
+                  value: (tokens[8].data as LiteralTokenData).literal,
                 },
-                tokens[5],
-                tokens[7]
+                tokens[6],
+                tokens[8]
               ),
               tesMatch(
                 {
                   kind: 'EnumValue',
-                  value: (tokens[10].data as StringTokenData).string,
+                  value: (tokens[12].data as StringTokenData).string,
                 },
-                tokens[8],
-                tokens[10]
+                tokens[10],
+                tokens[12]
               ),
               tesMatch(
                 {
                   kind: 'EnumValue',
-                  value: (tokens[11].data as IdentifierTokenData).identifier,
+                  value: (tokens[15].data as IdentifierTokenData).identifier,
                 },
-                tokens[11]
+                tokens[15]
               ),
             ],
           },
           tokens[0],
-          tokens[12]
+          tokens[16]
         )
       );
     });
@@ -210,11 +211,11 @@ describe('syntax rules', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.MODEL_TYPE_NAME;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'ModelTypeName',
@@ -230,17 +231,18 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
 
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field1' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field2' }, true),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field2' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
 
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.OBJECT_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'ObjectDefinition',
@@ -249,6 +251,7 @@ describe('syntax rules', () => {
                 {
                   kind: 'FieldDefinition',
                   fieldName: (tokens[1].data as IdentifierTokenData).identifier,
+                  required: false,
                   type: undefined,
                 },
                 tokens[1]
@@ -256,22 +259,23 @@ describe('syntax rules', () => {
               tesMatch(
                 {
                   kind: 'FieldDefinition',
-                  fieldName: (tokens[2].data as IdentifierTokenData).identifier,
+                  fieldName: (tokens[3].data as IdentifierTokenData).identifier,
+                  required: false,
                   type: tesMatch(
                     {
                       kind: 'ModelTypeName',
                       name: 'MyType',
                     },
-                    tokens[3]
+                    tokens[4]
                   ),
                 },
-                tokens[2],
-                tokens[3]
+                tokens[3],
+                tokens[4]
               ),
             ],
           },
           tokens[0],
-          tokens[4]
+          tokens[5]
         )
       );
     });
@@ -298,11 +302,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: ']' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.LIST_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'ListDefinition',
@@ -315,6 +319,7 @@ describe('syntax rules', () => {
                       kind: 'FieldDefinition',
                       fieldName: (tokens[2].data as IdentifierTokenData)
                         .identifier,
+                      required: false,
                       type: tesMatch(
                         {
                           kind: 'PrimitiveTypeName',
@@ -337,7 +342,7 @@ describe('syntax rules', () => {
         )
       );
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'ListDefinition',
@@ -354,7 +359,7 @@ describe('syntax rules', () => {
         )
       );
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'ListDefinition',
@@ -384,6 +389,7 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'enum' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'value1' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: ',' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'value2' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
@@ -394,11 +400,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.TYPE;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NonNullDefinition',
@@ -416,22 +422,22 @@ describe('syntax rules', () => {
                   tesMatch(
                     {
                       kind: 'EnumValue',
-                      value: (tokens[3].data as IdentifierTokenData).identifier,
+                      value: (tokens[4].data as IdentifierTokenData).identifier,
                     },
-                    tokens[3]
+                    tokens[4]
                   ),
                 ],
               },
               tokens[0],
-              tokens[4]
+              tokens[5]
             ),
           },
           tokens[0],
-          tokens[5]
+          tokens[6]
         )
       );
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NonNullDefinition',
@@ -440,15 +446,15 @@ describe('syntax rules', () => {
                 kind: 'PrimitiveTypeName',
                 name: 'boolean',
               },
-              tokens[6]
+              tokens[7]
             ),
           },
-          tokens[6],
-          tokens[7]
+          tokens[7],
+          tokens[8]
         )
       );
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NonNullDefinition',
@@ -457,11 +463,11 @@ describe('syntax rules', () => {
                 kind: 'ModelTypeName',
                 name: 'MyType',
               },
-              tokens[8]
+              tokens[9]
             ),
           },
-          tokens[8],
-          tokens[9]
+          tokens[9],
+          tokens[10]
         )
       );
     });
@@ -471,6 +477,7 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'enum' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'value1' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'value2' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
 
@@ -481,11 +488,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.TYPE;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'UnionDefinition',
@@ -505,22 +512,22 @@ describe('syntax rules', () => {
                     tesMatch(
                       {
                         kind: 'EnumValue',
-                        value: (tokens[3].data as IdentifierTokenData)
+                        value: (tokens[4].data as IdentifierTokenData)
                           .identifier,
                       },
-                      tokens[3]
+                      tokens[4]
                     ),
                   ],
                 },
                 tokens[0],
-                tokens[4]
+                tokens[5]
               ),
               tesMatch(
                 {
                   kind: 'PrimitiveTypeName',
                   name: 'boolean',
                 },
-                tokens[6]
+                tokens[7]
               ),
               tesMatch(
                 {
@@ -528,18 +535,18 @@ describe('syntax rules', () => {
                   type: tesMatch(
                     {
                       kind: 'ModelTypeName',
-                      name: (tokens[8].data as IdentifierTokenData).identifier,
+                      name: (tokens[9].data as IdentifierTokenData).identifier,
                     },
-                    tokens[8]
+                    tokens[9]
                   ),
                 },
-                tokens[8],
-                tokens[9]
+                tokens[9],
+                tokens[10]
               ),
             ],
           },
           tokens[0],
-          tokens[9]
+          tokens[10]
         )
       );
     });
@@ -549,16 +556,18 @@ describe('syntax rules', () => {
     it('should parse field without type', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'FieldDefinition',
             fieldName: (tokens[0].data as IdentifierTokenData).identifier,
+            required: false,
             type: undefined,
           },
           tokens[0]
@@ -570,16 +579,18 @@ describe('syntax rules', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'boolean' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'FieldDefinition',
             fieldName: (tokens[0].data as IdentifierTokenData).identifier,
+            required: false,
             type: tesMatch(
               {
                 kind: 'PrimitiveTypeName',
@@ -594,22 +605,24 @@ describe('syntax rules', () => {
       );
     });
 
-    it('should parse field with object type sugar', () => {
+    it('should parse field with object type', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'FieldDefinition',
             fieldName: (tokens[0].data as IdentifierTokenData).identifier,
+            required: false,
             type: tesMatch(
               {
                 kind: 'ObjectDefinition',
@@ -619,6 +632,7 @@ describe('syntax rules', () => {
                       kind: 'FieldDefinition',
                       fieldName: (tokens[2].data as IdentifierTokenData)
                         .identifier,
+                      required: false,
                       type: undefined,
                     },
                     tokens[2]
@@ -635,20 +649,132 @@ describe('syntax rules', () => {
       );
     });
 
+    it('should parse required field with type and trailing comma', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'string' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: ',' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = rules.FIELD_DEFINITION;
+
+      expect(rule.tryMatch(stream)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'FieldDefinition',
+            fieldName: (tokens[0].data as IdentifierTokenData).identifier,
+            required: true,
+            type: tesMatch(
+              {
+                kind: 'PrimitiveTypeName',
+                name: 'string',
+              },
+              tokens[2]
+            ),
+          },
+          tokens[0],
+          tokens[2]
+        )
+      );
+    });
+
+    it('should parse required field with type', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'string' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = rules.FIELD_DEFINITION;
+
+      expect(rule.tryMatch(stream)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'FieldDefinition',
+            fieldName: (tokens[0].data as IdentifierTokenData).identifier,
+            required: true,
+            type: tesMatch(
+              {
+                kind: 'PrimitiveTypeName',
+                name: 'string',
+              },
+              tokens[2]
+            ),
+          },
+          tokens[0],
+          tokens[2]
+        )
+      );
+    });
+
+    it('should parse required field with trailing comma', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: ',' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = rules.FIELD_DEFINITION;
+
+      expect(rule.tryMatch(stream)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'FieldDefinition',
+            fieldName: (tokens[0].data as IdentifierTokenData).identifier,
+            required: true,
+            type: undefined,
+          },
+          tokens[0],
+          tokens[1]
+        )
+      );
+    });
+
+    it('should parse required field', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '!' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = rules.FIELD_DEFINITION;
+
+      expect(rule.tryMatch(stream)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'FieldDefinition',
+            fieldName: (tokens[0].data as IdentifierTokenData).identifier,
+            required: true,
+            type: undefined,
+          },
+          tokens[0],
+          tokens[1]
+        )
+      );
+    });
+
     it('should parse field with documentation', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.STRING, string: 'Title\n\nDescription' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'FieldDefinition',
             fieldName: (tokens[1].data as IdentifierTokenData).identifier,
+            required: false,
             type: undefined,
             title: 'Title',
             description: 'Description',
@@ -663,12 +789,13 @@ describe('syntax rules', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.NAMED_FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NamedFieldDefinition',
@@ -689,11 +816,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.NAMED_FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NamedFieldDefinition',
@@ -707,6 +834,7 @@ describe('syntax rules', () => {
                       kind: 'FieldDefinition',
                       fieldName: (tokens[3].data as IdentifierTokenData)
                         .identifier,
+                      required: false,
                       type: undefined,
                     },
                     tokens[3]
@@ -729,11 +857,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.NAMED_FIELD_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NamedFieldDefinition',
@@ -755,11 +883,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.NAMED_MODEL_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NamedModelDefinition',
@@ -781,11 +909,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.NAMED_MODEL_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NamedModelDefinition',
@@ -813,7 +941,7 @@ describe('syntax rules', () => {
       );
     });
 
-    it('should parse named model with object type sugar', () => {
+    it('should parse named model with object type', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
@@ -821,11 +949,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.NAMED_MODEL_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NamedModelDefinition',
@@ -839,6 +967,7 @@ describe('syntax rules', () => {
                       kind: 'FieldDefinition',
                       fieldName: (tokens[3].data as IdentifierTokenData)
                         .identifier,
+                      required: false,
                       type: undefined,
                     },
                     tokens[3]
@@ -861,11 +990,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.NAMED_MODEL_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'NamedModelDefinition',
@@ -889,11 +1018,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.USECASE_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'UseCaseDefinition',
@@ -919,11 +1048,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.USECASE_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'UseCaseDefinition',
@@ -932,9 +1061,16 @@ describe('syntax rules', () => {
             input: undefined,
             result: tesMatch(
               {
-                kind: 'ModelTypeName',
-                name: (tokens[4].data as IdentifierTokenData).identifier,
+                kind: 'UseCaseSlotDefinition',
+                type: tesMatch(
+                  {
+                    kind: 'ModelTypeName',
+                    name: (tokens[4].data as IdentifierTokenData).identifier,
+                  },
+                  tokens[4]
+                ),
               },
+              tokens[3],
               tokens[4]
             ),
             asyncResult: undefined,
@@ -981,11 +1117,11 @@ describe('syntax rules', () => {
 
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }), // 24
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.USECASE_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'UseCaseDefinition',
@@ -993,89 +1129,118 @@ describe('syntax rules', () => {
             safety: 'safe',
             input: tesMatch(
               {
-                kind: 'ObjectDefinition',
-                fields: [],
+                kind: 'UseCaseSlotDefinition',
+                type: tesMatch(
+                  {
+                    kind: 'ObjectDefinition',
+                    fields: [],
+                  },
+                  tokens[5],
+                  tokens[6]
+                ),
               },
-              tokens[5],
+              tokens[4],
               tokens[6]
             ),
             result: tesMatch(
               {
-                kind: 'ModelTypeName',
-                name: (tokens[8].data as IdentifierTokenData).identifier,
+                kind: 'UseCaseSlotDefinition',
+                type: tesMatch(
+                  {
+                    kind: 'ModelTypeName',
+                    name: (tokens[8].data as IdentifierTokenData).identifier,
+                  },
+                  tokens[8]
+                ),
               },
+              tokens[7],
               tokens[8]
             ),
             asyncResult: tesMatch(
               {
-                kind: 'NonNullDefinition',
+                kind: 'UseCaseSlotDefinition',
                 type: tesMatch(
                   {
-                    kind: 'ObjectDefinition',
-                    fields: [
-                      tesMatch(
-                        {
-                          kind: 'FieldDefinition',
-                          fieldName: (tokens[12].data as IdentifierTokenData)
-                            .identifier,
-                          type: tesMatch(
+                    kind: 'NonNullDefinition',
+                    type: tesMatch(
+                      {
+                        kind: 'ObjectDefinition',
+                        fields: [
+                          tesMatch(
                             {
-                              kind: 'PrimitiveTypeName',
-                              name: 'number',
+                              kind: 'FieldDefinition',
+                              fieldName: (tokens[12]
+                                .data as IdentifierTokenData).identifier,
+                              required: false,
+                              type: tesMatch(
+                                {
+                                  kind: 'PrimitiveTypeName',
+                                  name: 'number',
+                                },
+                                tokens[13]
+                              ),
                             },
+                            tokens[12],
                             tokens[13]
                           ),
-                        },
-                        tokens[12],
-                        tokens[13]
-                      ),
-                    ],
+                        ],
+                      },
+                      tokens[11],
+                      tokens[14]
+                    ),
                   },
                   tokens[11],
-                  tokens[14]
+                  tokens[15]
                 ),
               },
-              tokens[11],
+              tokens[9],
               tokens[15]
             ),
             error: tesMatch(
               {
-                kind: 'UnionDefinition',
-                types: [
-                  tesMatch(
-                    {
-                      kind: 'NonNullDefinition',
-                      type: tesMatch(
+                kind: 'UseCaseSlotDefinition',
+                type: tesMatch(
+                  {
+                    kind: 'UnionDefinition',
+                    types: [
+                      tesMatch(
                         {
-                          kind: 'PrimitiveTypeName',
-                          name: 'string',
+                          kind: 'NonNullDefinition',
+                          type: tesMatch(
+                            {
+                              kind: 'PrimitiveTypeName',
+                              name: 'string',
+                            },
+                            tokens[17]
+                          ),
                         },
-                        tokens[17]
+                        tokens[17],
+                        tokens[18]
                       ),
-                    },
-                    tokens[17],
-                    tokens[18]
-                  ),
-                  tesMatch(
-                    {
-                      kind: 'EnumDefinition',
-                      values: [
-                        tesMatch(
-                          {
-                            kind: 'EnumValue',
-                            value: (tokens[22].data as IdentifierTokenData)
-                              .identifier,
-                          },
-                          tokens[22]
-                        ),
-                      ],
-                    },
-                    tokens[20],
-                    tokens[23]
-                  ),
-                ],
+                      tesMatch(
+                        {
+                          kind: 'EnumDefinition',
+                          values: [
+                            tesMatch(
+                              {
+                                kind: 'EnumValue',
+                                value: (tokens[22].data as IdentifierTokenData)
+                                  .identifier,
+                              },
+                              tokens[22]
+                            ),
+                          ],
+                        },
+                        tokens[20],
+                        tokens[23]
+                      ),
+                    ],
+                  },
+                  tokens[17],
+                  tokens[23]
+                ),
               },
-              tokens[17],
+              tokens[16],
               tokens[23]
             ),
           },
@@ -1095,11 +1260,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.USECASE_DEFINITION;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'UseCaseDefinition',
@@ -1108,9 +1273,16 @@ describe('syntax rules', () => {
             input: undefined,
             result: tesMatch(
               {
-                kind: 'ModelTypeName',
-                name: (tokens[5].data as IdentifierTokenData).identifier,
+                kind: 'UseCaseSlotDefinition',
+                type: tesMatch(
+                  {
+                    kind: 'ModelTypeName',
+                    name: (tokens[5].data as IdentifierTokenData).identifier,
+                  },
+                  tokens[5]
+                ),
               },
+              tokens[4],
               tokens[5]
             ),
             asyncResult: undefined,
@@ -1132,11 +1304,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.PROFILE_ID;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'ProfileId',
@@ -1154,11 +1326,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.PROFILE;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'Profile',
@@ -1184,11 +1356,11 @@ describe('syntax rules', () => {
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.PROFILE;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'Profile',
@@ -1232,11 +1404,11 @@ describe('syntax rules', () => {
 
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: 'EOF' }),
       ];
-      const buf = new BufferedIterator(tokens[Symbol.iterator]());
+      const stream = new ArrayLexerStream(tokens);
 
       const rule = rules.PROFILE_DOCUMENT;
 
-      expect(rule.tryMatch(buf)).toBeAMatch(
+      expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
             kind: 'ProfileDocument',
@@ -1269,6 +1441,7 @@ describe('syntax rules', () => {
                             kind: 'FieldDefinition',
                             fieldName: (tokens[7].data as IdentifierTokenData)
                               .identifier,
+                            required: false,
                             type: undefined,
                           },
                           tokens[7]
@@ -1292,9 +1465,17 @@ describe('syntax rules', () => {
                   input: undefined,
                   result: tesMatch(
                     {
-                      kind: 'ModelTypeName',
-                      name: (tokens[13].data as IdentifierTokenData).identifier,
+                      kind: 'UseCaseSlotDefinition',
+                      type: tesMatch(
+                        {
+                          kind: 'ModelTypeName',
+                          name: (tokens[13].data as IdentifierTokenData)
+                            .identifier,
+                        },
+                        tokens[13]
+                      ),
                     },
+                    tokens[12],
                     tokens[13]
                   ),
                   asyncResult: undefined,

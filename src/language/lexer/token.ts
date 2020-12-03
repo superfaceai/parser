@@ -1,14 +1,19 @@
+import { SyntaxError } from '../error';
 import { Location, Span } from '../source';
 import * as util from './util';
 
 /** Enum describing the different kinds of tokens that the lexer emits. */
 export const enum LexerTokenKind {
+  /** Token unknown to the lexer. */
+  UNKNOWN,
   SEPARATOR, // SOF/EOF, (), [], {}
   OPERATOR, // :, !, +, -, |, =, @, ,, ;
+  /** Number or boolean literal. */
   LITERAL, // number or boolean
-  STRING, // string literals - separate because it makes later stages easier
+  STRING, // string literals
   IDENTIFIER, // a-z A-Z _ 0-9
-  COMMENT, // line comments (# foo)
+  COMMENT, // line comments (// foo)
+  NEWLINE, // newline
   JESSIE_SCRIPT, // Jessie script
 }
 
@@ -36,17 +41,16 @@ export const SEPARATORS: {
 };
 
 // Operators
-export type OperatorValue = ':' | '+' | '-' | '!' | '|' | '=' | '@' | ',' | ';';
+export type OperatorValue = ':' | '!' | '|' | '=' | '@' | ',' | ';' | '.';
 export const OPERATORS: { [P in OperatorValue]: LexerScanRule<P> } = {
   ':': [':', util.isAny],
-  '+': ['+', util.isAny],
-  '-': ['-', util.isAny],
   '!': ['!', util.isAny],
   '|': ['|', util.isAny],
   '=': ['=', util.isAny],
   '@': ['@', util.isAny],
   ',': [',', util.isAny],
   ';': [';', util.isAny],
+  '.': ['.', util.isAny],
 };
 
 // Literals
@@ -56,14 +60,16 @@ export const LITERALS_BOOL: Record<string, LexerScanRule<boolean>> = {
 };
 export type LiteralValue = number | boolean;
 export type StringValue = string;
-
 export type IdentifierValue = string;
 export type CommentValue = string;
-
 export type JessieScriptValue = string;
 
 // Token datas //
 
+export interface UnknownTokenData {
+  kind: LexerTokenKind.UNKNOWN;
+  error: SyntaxError;
+}
 export interface SeparatorTokenData {
   kind: LexerTokenKind.SEPARATOR;
   separator: SeparatorValue;
@@ -88,37 +94,47 @@ export interface CommentTokenData {
   kind: LexerTokenKind.COMMENT;
   comment: CommentValue;
 }
+export interface NewlineTokenData {
+  kind: LexerTokenKind.NEWLINE;
+}
 export interface JessieScriptTokenData {
   kind: LexerTokenKind.JESSIE_SCRIPT;
   script: JessieScriptValue;
+  sourceScript: string;
   sourceMap: string;
 }
 
 export type DefaultSublexerTokenData =
+  | UnknownTokenData
   | SeparatorTokenData
   | OperatorTokenData
   | LiteralTokenData
   | StringTokenData
   | IdentifierTokenData
-  | CommentTokenData;
+  | CommentTokenData
+  | NewlineTokenData;
 export type JessieSublexerTokenData = JessieScriptTokenData;
 
 export type LexerTokenData = DefaultSublexerTokenData | JessieSublexerTokenData;
 
 export function formatTokenKind(kind: LexerTokenKind): string {
   switch (kind) {
+    case LexerTokenKind.UNKNOWN:
+      return 'unknown';
     case LexerTokenKind.SEPARATOR:
       return 'separator';
     case LexerTokenKind.OPERATOR:
       return 'operator';
     case LexerTokenKind.LITERAL:
-      return 'literal';
+      return 'number or boolean literal';
     case LexerTokenKind.STRING:
       return 'string';
     case LexerTokenKind.IDENTIFIER:
       return 'identifier';
     case LexerTokenKind.COMMENT:
       return 'comment';
+    case LexerTokenKind.NEWLINE:
+      return 'newline';
     case LexerTokenKind.JESSIE_SCRIPT:
       return 'jessie script';
   }
@@ -128,6 +144,8 @@ export function formatTokenData(
 ): { kind: string; data: string } {
   const kind = formatTokenKind(data.kind);
   switch (data.kind) {
+    case LexerTokenKind.UNKNOWN:
+      return { kind, data: 'unknown' };
     case LexerTokenKind.SEPARATOR:
       return { kind, data: data.separator.toString() };
     case LexerTokenKind.OPERATOR:
@@ -140,6 +158,8 @@ export function formatTokenData(
       return { kind, data: data.identifier.toString() };
     case LexerTokenKind.COMMENT:
       return { kind, data: data.comment.toString() };
+    case LexerTokenKind.NEWLINE:
+      return { kind, data: '\n' };
     case LexerTokenKind.JESSIE_SCRIPT:
       return { kind, data: data.script.toString() };
   }
@@ -151,10 +171,10 @@ export class LexerToken {
   constructor(
     /** Data of the token. */
     readonly data: LexerTokenData,
-    /** Span of the source code which this token covers. */
-    readonly span: Span,
     /** Location in the formatted source code of this token. */
-    readonly location: Location
+    readonly location: Location,
+    /** Span of the source code which this token covers. */
+    readonly span: Span
   ) {}
 
   isSOF(): boolean {
@@ -172,7 +192,9 @@ export class LexerToken {
   }
 
   toStringDebug(): string {
-    return `(${this})@${this.location.line}:${this.location.column}[${this.span.start}; ${this.span.end}]`;
+    return `(${this.toString()})@${this.location.line}:${
+      this.location.column
+    }[${this.span.start}; ${this.span.end}]`;
   }
 
   toString(): string {
