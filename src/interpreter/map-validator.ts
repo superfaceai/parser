@@ -340,8 +340,7 @@ export class MapValidator implements MapVisitor {
     node.definitions.forEach(definition => {
       if (isOperationDefinitionNode(definition)) {
         this.operations[definition.name] = definition;
-        this.dataVariable[definition.name] = getOutcomes(definition, false);
-        this.errorVariable[definition.name] = getOutcomes(definition, true);
+        this.visit(definition);
       }
     });
 
@@ -421,6 +420,9 @@ export class MapValidator implements MapVisitor {
   }
 
   visitOperationDefinitionNode(node: OperationDefinitionNode): void {
+    this.dataVariable[node.name] = getOutcomes(node, false);
+    this.errorVariable[node.name] = getOutcomes(node, true);
+
     this.newStack('operation');
 
     node.statements.forEach(statement => this.visit(statement));
@@ -519,9 +521,6 @@ export class MapValidator implements MapVisitor {
         ] = argument.value;
       });
     }
-
-    // visit the operation
-    this.visit(this.operations[node.operationName]);
 
     // call statements
     this.newStack('call');
@@ -676,7 +675,10 @@ export class MapValidator implements MapVisitor {
       });
     }
 
-    if (!this.currentStructure) {
+    if (
+      !this.currentStructure ||
+      this.currentStructure.kind === 'AnyStructure'
+    ) {
       return true;
     }
 
@@ -871,6 +873,10 @@ export class MapValidator implements MapVisitor {
       return result;
     }
 
+    if (this.currentStructure.kind === 'AnyStructure') {
+      return true;
+    }
+
     const { isValid, structureOfFields } = compareStructure(
       node,
       this.currentStructure
@@ -949,7 +955,10 @@ export class MapValidator implements MapVisitor {
   }
 
   visitPrimitiveLiteralNode(node: PrimitiveLiteralNode): boolean {
-    if (!this.currentStructure) {
+    if (
+      !this.currentStructure ||
+      this.currentStructure.kind === 'AnyStructure'
+    ) {
       return true;
     }
 

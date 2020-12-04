@@ -78,7 +78,9 @@ function getPath(node: ts.Node): string[] {
 
 function assertID(node: ts.Node): node is ID {
   return (
-    (ts.isIdentifier(node) || ts.isPropertyAccessExpression(node)) &&
+    (ts.isIdentifier(node) ||
+      ts.isPropertyAccessExpression(node) ||
+      ts.isElementAccessExpression(node)) &&
     node.getText() !== 'undefined'
   );
 }
@@ -93,6 +95,13 @@ function compareStructures(
   }
   if (inputStructure.kind === 'NonNullStructure') {
     inputStructure = inputStructure.value;
+  }
+
+  if (
+    outputStructure.kind === 'AnyStructure' ||
+    inputStructure.kind === 'AnyStructure'
+  ) {
+    return { pass: true, invalidInput: false, invalidOutput: false };
   }
 
   switch (outputStructure.kind) {
@@ -203,7 +212,7 @@ export const RETURN_CONSTRUCTS: {
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure) {
+      if (!outputStructure || outputStructure.kind === 'AnyStructure') {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
       if (outputStructure.kind === 'NonNullStructure') {
@@ -239,7 +248,7 @@ export const RETURN_CONSTRUCTS: {
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure) {
+      if (!outputStructure || outputStructure.kind === 'AnyStructure') {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
       if (outputStructure.kind === 'NonNullStructure') {
@@ -275,7 +284,7 @@ export const RETURN_CONSTRUCTS: {
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure) {
+      if (!outputStructure || outputStructure.kind === 'AnyStructure') {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
       if (outputStructure.kind === 'NonNullStructure') {
@@ -311,7 +320,7 @@ export const RETURN_CONSTRUCTS: {
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure) {
+      if (!outputStructure || outputStructure.kind === 'AnyStructure') {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
       if (outputStructure.kind === 'NonNullStructure') {
@@ -347,7 +356,7 @@ export const RETURN_CONSTRUCTS: {
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure) {
+      if (!outputStructure || outputStructure.kind === 'AnyStructure') {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
       if (outputStructure.kind === 'NonNullStructure') {
@@ -406,7 +415,7 @@ export const RETURN_CONSTRUCTS: {
       }
 
       // if Output is not defined - do not check validation of result or error
-      if (!outputStructure) {
+      if (!outputStructure || outputStructure.kind === 'AnyStructure') {
         return mergeResults(...results);
       }
 
@@ -536,7 +545,7 @@ export const RETURN_CONSTRUCTS: {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
 
-      if (outputStructure) {
+      if (outputStructure && outputStructure.kind !== 'AnyStructure') {
         if (
           outputStructure.kind === 'NonNullStructure' &&
           node.text === 'undefined'
@@ -643,7 +652,7 @@ export const RETURN_CONSTRUCTS: {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
 
-      if (outputStructure) {
+      if (outputStructure && outputStructure.kind !== 'AnyStructure') {
         const variables: ReferencedVariables = {};
         let variableName = node.getText();
 
@@ -773,7 +782,7 @@ export const RETURN_CONSTRUCTS: {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
 
-      if (outputStructure) {
+      if (outputStructure && outputStructure.kind !== 'AnyStructure') {
         const variables: ReferencedVariables = {};
         let expressionName = node.expression.getText();
         let argumentName = node.argumentExpression.getText();
@@ -871,7 +880,7 @@ export const RETURN_CONSTRUCTS: {
         });
       }
 
-      if (!outputStructure) {
+      if (!outputStructure || outputStructure.kind === 'AnyStructure') {
         return mergeResults(...results);
       }
 
@@ -1030,7 +1039,7 @@ export const RETURN_CONSTRUCTS: {
         });
       }
 
-      if (!outputStructure) {
+      if (!outputStructure || outputStructure.kind === 'AnyStructure') {
         return mergeResults(...results);
       }
 

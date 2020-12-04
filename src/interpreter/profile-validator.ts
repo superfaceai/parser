@@ -32,7 +32,8 @@ export type StructureKind =
   | 'ListStructure'
   | 'ObjectStructure'
   | 'ModelStructure'
-  | 'UnionStructure';
+  | 'UnionStructure'
+  | 'AnyStructure';
 
 /**
  * @interface Structure represents skeleton for other structures
@@ -92,6 +93,14 @@ export interface UnionStructure extends Structure {
 }
 
 /**
+ * @interface AnyStructure represent any structure
+ */
+export interface AnyStructure extends Structure {
+  kind: 'AnyStructure';
+  required?: true;
+}
+
+/**
  * @type StructureType - represents all structures
  */
 export type StructureType =
@@ -100,7 +109,8 @@ export type StructureType =
   | NonNullStructure
   | ListStructure
   | ObjectStructure
-  | UnionStructure;
+  | UnionStructure
+  | AnyStructure;
 
 /**
  * @interface UseCaseStructure - represents usecase structure
@@ -221,21 +231,20 @@ export class ProfileValidator implements ProfileVisitor {
     node: FieldDefinitionNode
   ): StructureType | undefined {
     const required = node.required;
+
     if (node.type === undefined) {
       return this.fields[node.fieldName]
         ? ({
             required,
             ...this.fields[node.fieldName],
           } as StructureType)
-        : undefined;
+        : ({ required, kind: 'AnyStructure' } as StructureType);
     }
 
-    return this.visit(node.type)
-      ? ({
-          required,
-          ...this.visit(node.type),
-        } as StructureType)
-      : undefined;
+    return {
+      required,
+      ...this.visit(node.type),
+    } as StructureType;
   }
 
   visitListDefinitionNode(node: ListDefinitionNode): StructureType {
@@ -260,13 +269,11 @@ export class ProfileValidator implements ProfileVisitor {
   ): StructureType | undefined {
     const fieldName = node.fieldName;
 
-    if (node.type !== undefined) {
-      this.fields[fieldName] = this.visit(node.type);
+    this.fields[fieldName] = node.type
+      ? this.visit(node.type)
+      : { kind: 'AnyStructure' };
 
-      return this.fields[fieldName];
-    }
-
-    return undefined;
+    return this.fields[fieldName];
   }
 
   visitNamedModelDefinitionNode(
@@ -274,13 +281,11 @@ export class ProfileValidator implements ProfileVisitor {
   ): StructureType | undefined {
     const modelName = node.modelName;
 
-    if (node.type !== undefined) {
-      this.models[modelName] = this.visit(node.type);
+    this.models[modelName] = node.type
+      ? this.visit(node.type)
+      : { kind: 'AnyStructure' };
 
-      return this.models[modelName];
-    }
-
-    return undefined;
+    return this.models[modelName];
   }
 
   visitNonNullDefinitionNode(
