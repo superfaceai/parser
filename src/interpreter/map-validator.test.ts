@@ -1,12 +1,13 @@
 import { MapASTNode, ProfileDocumentNode } from '@superfaceai/language';
 
+import { ValidationError, ValidationWarning } from './map-validator';
+import { ProfileOutput } from './profile-validator';
 import {
-  MapValidator,
-  ValidationError,
-  ValidationWarning,
-} from './map-validator';
-import { ProfileOutput, ProfileValidator } from './profile-validator';
-import { formatErrors, formatWarnings } from './utils';
+  formatErrors,
+  formatWarnings,
+  getProfileOutput,
+  validateMap,
+} from './utils';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -28,8 +29,7 @@ expect.extend({
     warning: string,
     error?: string
   ) {
-    const mapValidator = new MapValidator(map, profileOutput);
-    const result = mapValidator.validate();
+    const result = validateMap(profileOutput, map);
 
     let message = '';
     let pass = true;
@@ -88,8 +88,7 @@ function valid(
   maps: MapASTNode[],
   ...warnings: string[]
 ): void {
-  const profileValidator = new ProfileValidator();
-  const profileOutput = profileValidator.visit(profile);
+  const profileOutput = getProfileOutput(profile);
 
   it('then validation will pass', () => {
     maps.forEach((map, index) => {
@@ -103,8 +102,7 @@ function invalid(
   maps: MapASTNode[],
   ...results: string[]
 ): void {
-  const profileValidator = new ProfileValidator();
-  const profileOutput = profileValidator.visit(profile);
+  const profileOutput = getProfileOutput(profile);
 
   it('then validation will fail', () => {
     let i = 0;

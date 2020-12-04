@@ -1,12 +1,13 @@
 import { MapASTNode, ProfileDocumentNode } from '@superfaceai/language';
 
+import { ValidationError, ValidationWarning } from './map-validator';
+import { ProfileOutput } from './profile-validator';
 import {
-  MapValidator,
-  ValidationError,
-  ValidationWarning,
-} from './map-validator';
-import { ProfileOutput, ProfileValidator } from './profile-validator';
-import { formatErrors, formatWarnings } from './utils';
+  formatErrors,
+  formatWarnings,
+  getProfileOutput,
+  validateMap,
+} from './utils';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -28,8 +29,7 @@ expect.extend({
     warning: string,
     error?: string
   ) {
-    const mapValidator = new MapValidator(map, profileOutput);
-    const result = mapValidator.validate();
+    const result = validateMap(profileOutput, map);
 
     let message = '';
     let pass = true;
@@ -52,19 +52,24 @@ expect.extend({
       } else {
         const err = formatErrors(errors);
         const warn = formatWarnings(warnings);
+
         if (!err.includes(error)) {
           pass = !pass;
           message = `expected to find error "${error}" in "${err}"`;
           if (warning !== '' && !warn.includes(warning)) {
-            message += `, expected to find warning ${warning} in ${warn}`;
+            message += `, expected to find warning "${warning}" in "${warn}"`;
           }
+        } else if (warning !== '' && !warn.includes(warning)) {
+          pass = !pass;
+          message = `expected to find warning "${warning}" in "${warn}"`;
         }
       }
     } else {
       const warn = formatWarnings(warnings);
+      const err = formatErrors(errors);
       if (errors.length > 0) {
         pass = !pass;
-        message = `expected to pass, errors: ${formatErrors(errors)}`;
+        message = `expected to pass, errors: ${err}, warnings: ${warn}`;
       } else if (warning && !warn.includes(warning)) {
         pass = !pass;
         message = `expected to find warning "${warning}" in "${warn}"`;
@@ -83,8 +88,7 @@ function valid(
   maps: MapASTNode[],
   ...warnings: string[]
 ): void {
-  const profileValidator = new ProfileValidator();
-  const profileOutput = profileValidator.visit(profile);
+  const profileOutput = getProfileOutput(profile);
 
   it('then validation will pass', () => {
     maps.forEach((map, index) => {
@@ -98,8 +102,7 @@ function invalid(
   maps: MapASTNode[],
   ...results: string[]
 ): void {
-  const profileValidator = new ProfileValidator();
-  const profileOutput = profileValidator.visit(profile);
+  const profileOutput = getProfileOutput(profile);
 
   it('then validation will fail', () => {
     let i = 0;
@@ -1401,6 +1404,791 @@ describe('MapValidator', () => {
         'ObjectLiteral - Wrong Object Structure: expected problem, detail, instance, but got some.key\nObjectLiteral - Wrong Object Structure: expected messageId, but got deliveryStatus, messageID\nObjectLiteral - Wrong Object Structure: expected problem, detail, instance, but got status, statusID\nObjectLiteral - Wrong Object Structure: expected messageId, but got status, messageID',
         'JessieExpression - Wrong Input Structure: expected to, from, text, channel, but got input.is.wrong\n1:15 PropertyAccessExpression - Wrong Input Structure: expected to, from, text, channel, but got input.is.wrong\nJessieExpression - Wrong Input Structure: expected to, from, text, channel, but got input.very.very.wrong\n1:22 PropertyAccessExpression - Wrong Input Structure: expected to, from, text, channel, but got input.very.very.wrong',
         'ObjectLiteral - Wrong Object Structure: expected problem, detail, instance, but got some.key\nObjectLiteral - Wrong Object Structure: expected messageId, but got deliveryStatus, messageID\nObjectLiteral - Wrong Object Structure: expected problem, detail, instance, but got status, statusID\nObjectLiteral - Wrong Object Structure: expected messageId, but got status, messageID'
+      );
+    });
+    describe('Send Message usecase with any structures', () => {
+      /**
+        @profile - https://github.com/superfaceai/grid/blob/main/profiles/SendSMS/SendSMS.supr
+  
+        profile = "http://superface.ai/profile/conversation/SendMessage"
+
+        usecase SendMessage unsafe {
+          input {
+            to 
+            from 
+            text  
+            channel 
+          }
+
+          result {
+            messageId
+          }
+
+          async result {
+            messageId
+            deliveryStatus
+          }
+
+          error {
+            problem 
+            detail 
+            instance 
+          }
+        }
+
+        field messageId string
+
+        field deliveryStatus enum {
+          accepted
+          delivered
+          seen
+        }
+
+        field channel enum {
+          sms
+          whatsapp
+          apple_business_chat
+          facebook_messenger
+        }
+      */
+      const profileAst: ProfileDocumentNode = {
+        kind: 'ProfileDocument',
+        profile: {
+          kind: 'Profile',
+          profileId: {
+            kind: 'ProfileId',
+            profileId: 'http://superface.ai/profile/conversation/SendMessage',
+          },
+        },
+        definitions: [
+          {
+            kind: 'UseCaseDefinition',
+            useCaseName: 'SendMessage',
+            safety: 'unsafe',
+            input: {
+              kind: 'UseCaseSlotDefinition',
+              type: {
+                kind: 'ObjectDefinition',
+                fields: [
+                  {
+                    kind: 'FieldDefinition',
+                    fieldName: 'to',
+                    required: false,
+                  },
+                  {
+                    kind: 'FieldDefinition',
+                    fieldName: 'from',
+                    required: false,
+                  },
+                  {
+                    kind: 'FieldDefinition',
+                    fieldName: 'text',
+                    required: false,
+                  },
+                  {
+                    kind: 'FieldDefinition',
+                    fieldName: 'channel',
+                    required: false,
+                  },
+                ],
+              },
+            },
+            result: {
+              kind: 'UseCaseSlotDefinition',
+              type: {
+                kind: 'ObjectDefinition',
+                fields: [
+                  {
+                    kind: 'FieldDefinition',
+                    fieldName: 'messageId',
+                    required: false,
+                  },
+                ],
+              },
+            },
+            asyncResult: {
+              kind: 'UseCaseSlotDefinition',
+              type: {
+                kind: 'ObjectDefinition',
+                fields: [
+                  {
+                    kind: 'FieldDefinition',
+                    fieldName: 'messageId',
+                    required: false,
+                  },
+                  {
+                    kind: 'FieldDefinition',
+                    fieldName: 'deliveryStatus',
+                    required: false,
+                  },
+                ],
+              },
+            },
+            error: {
+              kind: 'UseCaseSlotDefinition',
+              type: {
+                kind: 'ObjectDefinition',
+                fields: [
+                  {
+                    kind: 'FieldDefinition',
+                    fieldName: 'problem',
+                    required: false,
+                  },
+                  {
+                    kind: 'FieldDefinition',
+                    fieldName: 'detail',
+                    required: false,
+                  },
+                  {
+                    kind: 'FieldDefinition',
+                    fieldName: 'instance',
+                    required: false,
+                  },
+                ],
+              },
+            },
+          },
+          {
+            kind: 'NamedFieldDefinition',
+            fieldName: 'messageId',
+            type: {
+              kind: 'PrimitiveTypeName',
+              name: 'string',
+            },
+          },
+          {
+            kind: 'NamedFieldDefinition',
+            fieldName: 'deliveryStatus',
+            type: {
+              kind: 'EnumDefinition',
+              values: [
+                {
+                  kind: 'EnumValue',
+                  value: 'accepted',
+                },
+                {
+                  kind: 'EnumValue',
+                  value: 'delivered',
+                },
+                {
+                  kind: 'EnumValue',
+                  value: 'seen',
+                },
+              ],
+            },
+          },
+          {
+            kind: 'NamedFieldDefinition',
+            fieldName: 'channel',
+            type: {
+              kind: 'EnumDefinition',
+              values: [
+                {
+                  kind: 'EnumValue',
+                  value: 'sms',
+                },
+                {
+                  kind: 'EnumValue',
+                  value: 'whatsapp',
+                },
+                {
+                  kind: 'EnumValue',
+                  value: 'apple_business_chat',
+                },
+                {
+                  kind: 'EnumValue',
+                  value: 'facebook_messenger',
+                },
+              ],
+            },
+          },
+        ],
+      };
+      const mapAst1: MapASTNode = {
+        kind: 'MapDocument',
+        map: {
+          kind: 'Map',
+          profileId: {
+            kind: 'ProfileId',
+            profileId: 'http://superface.ai/profile/conversation/SendMessage',
+          },
+          provider: {
+            kind: 'Provider',
+            providerId: 'whatever',
+          },
+        },
+        definitions: [
+          {
+            kind: 'MapDefinition',
+            name: 'SendMessage',
+            usecaseName: 'SendMessage',
+            statements: [
+              {
+                kind: 'HttpCallStatement',
+                method: 'POST',
+                url: 'http://www.example.com/{input.channel}',
+                request: {
+                  kind: 'HttpRequest',
+                  body: {
+                    kind: 'ObjectLiteral',
+                    fields: [
+                      {
+                        kind: 'Assignment',
+                        key: ['sms', 'to'],
+                        value: {
+                          kind: 'JessieExpression',
+                          expression: 'input.to',
+                        },
+                      },
+                      {
+                        kind: 'Assignment',
+                        key: ['sms', 'from'],
+                        value: {
+                          kind: 'JessieExpression',
+                          expression: 'input.from',
+                        },
+                      },
+                      {
+                        kind: 'Assignment',
+                        key: ['sms', 'text'],
+                        value: {
+                          kind: 'JessieExpression',
+                          expression: 'input.text',
+                        },
+                      },
+                    ],
+                  },
+                },
+                responseHandlers: [
+                  {
+                    kind: 'HttpResponseHandler',
+                    statusCode: 200,
+                    statements: [
+                      {
+                        kind: 'OutcomeStatement',
+                        terminateFlow: false,
+                        isError: true,
+                        condition: {
+                          kind: 'StatementCondition',
+                          expression: {
+                            kind: 'JessieExpression',
+                            expression: '!input.person',
+                          },
+                        },
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['problem'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 'Person not found.',
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: 'OutcomeStatement',
+                        terminateFlow: false,
+                        isError: false,
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['deliveryStatus'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 'accepted',
+                              },
+                            },
+                            {
+                              kind: 'Assignment',
+                              key: ['messageID'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 1,
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                  {
+                    kind: 'HttpResponseHandler',
+                    statusCode: 200,
+                    statements: [
+                      {
+                        kind: 'OutcomeStatement',
+                        terminateFlow: false,
+                        isError: true,
+                        condition: {
+                          kind: 'StatementCondition',
+                          expression: {
+                            kind: 'JessieExpression',
+                            expression: '!input.person',
+                          },
+                        },
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['problem'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 'Person not found.',
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: 'OutcomeStatement',
+                        terminateFlow: false,
+                        isError: false,
+                        condition: {
+                          kind: 'StatementCondition',
+                          expression: {
+                            kind: 'JessieExpression',
+                            expression: 'input.text',
+                          },
+                        },
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['deliveryStatus'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 'seen',
+                              },
+                            },
+                            {
+                              kind: 'Assignment',
+                              key: ['messageID'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 1,
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+      const mapAst2: MapASTNode = {
+        kind: 'MapDocument',
+        map: {
+          kind: 'Map',
+          profileId: {
+            kind: 'ProfileId',
+            profileId: 'http://superface.ai/profile/conversation/SendMessage',
+          },
+          provider: {
+            kind: 'Provider',
+            providerId: 'whatever',
+          },
+        },
+        definitions: [
+          {
+            kind: 'MapDefinition',
+            name: 'SendMessage',
+            usecaseName: 'SendMessage',
+            statements: [
+              {
+                kind: 'HttpCallStatement',
+                method: 'POST',
+                url: 'http://www.example.com/{input.channel}',
+                request: {
+                  kind: 'HttpRequest',
+                  body: {
+                    kind: 'ObjectLiteral',
+                    fields: [
+                      {
+                        kind: 'Assignment',
+                        key: ['sms', 'to'],
+                        value: {
+                          kind: 'JessieExpression',
+                          expression: 'input.to',
+                        },
+                      },
+                      {
+                        kind: 'Assignment',
+                        key: ['sms', 'from'],
+                        value: {
+                          kind: 'JessieExpression',
+                          expression: 'input.from',
+                        },
+                      },
+                      {
+                        kind: 'Assignment',
+                        key: ['sms', 'text'],
+                        value: {
+                          kind: 'JessieExpression',
+                          expression: 'input.text',
+                        },
+                      },
+                    ],
+                  },
+                },
+                responseHandlers: [
+                  {
+                    kind: 'HttpResponseHandler',
+                    statusCode: 200,
+                    statements: [
+                      {
+                        kind: 'OutcomeStatement',
+                        terminateFlow: false,
+                        isError: true,
+                        condition: {
+                          kind: 'StatementCondition',
+                          expression: {
+                            kind: 'JessieExpression',
+                            expression: '!input.channel',
+                          },
+                        },
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['problem'],
+                              value: {
+                                kind: 'ObjectLiteral',
+                                fields: [
+                                  {
+                                    kind: 'Assignment',
+                                    key: ['problemID'],
+                                    value: {
+                                      kind: 'PrimitiveLiteral',
+                                      value: 1,
+                                    },
+                                  },
+                                  {
+                                    kind: 'Assignment',
+                                    key: ['description'],
+                                    value: {
+                                      kind: 'PrimitiveLiteral',
+                                      value: 'some error outcome',
+                                    },
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                  {
+                    kind: 'HttpResponseHandler',
+                    statusCode: 200,
+                    statements: [
+                      {
+                        kind: 'OutcomeStatement',
+                        terminateFlow: false,
+                        isError: true,
+                        condition: {
+                          kind: 'StatementCondition',
+                          expression: {
+                            kind: 'JessieExpression',
+                            expression: '!input.text',
+                          },
+                        },
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['problem'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 'ERROR.',
+                              },
+                            },
+                            {
+                              kind: 'Assignment',
+                              key: ['detail'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: '1',
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: 'OutcomeStatement',
+                        terminateFlow: false,
+                        isError: false,
+                        condition: {
+                          kind: 'StatementCondition',
+                          expression: {
+                            kind: 'JessieExpression',
+                            expression: 'input.text',
+                          },
+                        },
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['deliveryStatus'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 'accepted',
+                              },
+                            },
+                            {
+                              kind: 'Assignment',
+                              key: ['messageID'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 1,
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+      const mapAst3: MapASTNode = {
+        kind: 'MapDocument',
+        map: {
+          kind: 'Map',
+          profileId: {
+            kind: 'ProfileId',
+            profileId: 'http://superface.ai/profile/conversation/SendMessage',
+          },
+          provider: {
+            kind: 'Provider',
+            providerId: 'whatever',
+          },
+        },
+        definitions: [
+          {
+            kind: 'MapDefinition',
+            name: 'SendMessage',
+            usecaseName: 'SendMessage',
+            statements: [
+              {
+                kind: 'HttpCallStatement',
+                method: 'POST',
+                url: 'http://www.example.com/{input.channel}',
+                request: {
+                  kind: 'HttpRequest',
+                  body: {
+                    kind: 'ObjectLiteral',
+                    fields: [
+                      {
+                        kind: 'Assignment',
+                        key: ['sms', 'to'],
+                        value: {
+                          kind: 'JessieExpression',
+                          expression: 'input.is.wrong',
+                        },
+                      },
+                      {
+                        kind: 'Assignment',
+                        key: ['sms', 'from'],
+                        value: {
+                          kind: 'JessieExpression',
+                          expression: 'input.very.very.wrong',
+                        },
+                      },
+                    ],
+                  },
+                },
+                responseHandlers: [
+                  {
+                    kind: 'HttpResponseHandler',
+                    statusCode: 200,
+                    statements: [
+                      {
+                        kind: 'OutcomeStatement',
+                        terminateFlow: false,
+                        isError: true,
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['some', 'key'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 'some error outcome',
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: 'OutcomeStatement',
+                        terminateFlow: false,
+                        isError: false,
+                        condition: {
+                          kind: 'StatementCondition',
+                          expression: {
+                            kind: 'JessieExpression',
+                            expression: '!input.some.person',
+                          },
+                        },
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['messageID'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: false,
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                  {
+                    kind: 'HttpResponseHandler',
+                    statusCode: 200,
+                    statements: [
+                      {
+                        kind: 'OutcomeStatement',
+                        terminateFlow: false,
+                        isError: true,
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['status'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 'ERROR.',
+                              },
+                            },
+                            {
+                              kind: 'Assignment',
+                              key: ['statusID'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: '1',
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: 'OutcomeStatement',
+                        terminateFlow: false,
+                        isError: false,
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['status'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 'OK.',
+                              },
+                            },
+                            {
+                              kind: 'Assignment',
+                              key: ['messageID'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: false,
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: 'OutcomeStatement',
+                        terminateFlow: false,
+                        isError: true,
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['status'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 'ERROR.',
+                              },
+                            },
+                            {
+                              kind: 'Assignment',
+                              key: ['statusID'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: '1',
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: 'OutcomeStatement',
+                        terminateFlow: false,
+                        isError: false,
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['status'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 'OK.',
+                              },
+                            },
+                            {
+                              kind: 'Assignment',
+                              key: ['messageID'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: false,
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      valid(profileAst, [mapAst1, mapAst2]);
+      invalid(
+        profileAst,
+        [mapAst3],
+        'JessieExpression - Wrong Input Structure: expected to, from, text, channel, but got input.is.wrong\n1:15 PropertyAccessExpression - Wrong Input Structure: expected to, from, text, channel, but got input.is.wrong\nJessieExpression - Wrong Input Structure: expected to, from, text, channel, but got input.very.very.wrong\n1:22 PropertyAccessExpression - Wrong Input Structure: expected to, from, text, channel, but got input.very.very.wrong',
+        'ObjectLiteral - Wrong Object Structure: expected problem, detail, instance, but got some.key\nObjectLiteral - Wrong Object Structure: expected messageId, but got messageID\nObjectLiteral - Wrong Object Structure: expected problem, detail, instance, but got status, statusID\nObjectLiteral - Wrong Object Structure: expected messageId, but got status, messageID\nObjectLiteral - Wrong Object Structure: expected problem, detail, instance, but got status, statusID\nObjectLiteral - Wrong Object Structure: expected messageId, but got status, messageID'
       );
     });
     describe('Retrieve Message Status usecase', () => {

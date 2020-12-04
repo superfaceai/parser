@@ -932,7 +932,9 @@ describe('ProfileValidator', () => {
         usecases: [
           {
             useCaseName: 'Test',
-            result: undefined,
+            result: {
+              kind: 'AnyStructure',
+            },
           },
         ],
       };
@@ -995,8 +997,12 @@ describe('ProfileValidator', () => {
             result: {
               kind: 'ObjectStructure',
               fields: {
-                f1: undefined,
-                f2: undefined,
+                f1: {
+                  kind: 'AnyStructure',
+                },
+                f2: {
+                  kind: 'AnyStructure',
+                },
               },
             },
           },
@@ -1058,7 +1064,14 @@ describe('ProfileValidator', () => {
             useCaseName: 'Test',
             result: {
               kind: 'UnionStructure',
-              types: [undefined, undefined],
+              types: [
+                {
+                  kind: 'AnyStructure',
+                },
+                {
+                  kind: 'AnyStructure',
+                },
+              ],
             },
           },
         ],
