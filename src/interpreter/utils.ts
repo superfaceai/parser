@@ -1,5 +1,4 @@
-import {
-  isCallStatementNode,
+import {   isCallStatementNode,
   isHttpCallStatementNode,
   isOutcomeStatementNode,
   LiteralNode,
@@ -7,10 +6,21 @@ import {
   MapDefinitionNode,
   OperationDefinitionNode,
   OutcomeStatementNode,
-} from '@superfaceai/language';
+ProfileDocumentNode ,
+} from '@superfaceai/ast';
 
-import { ValidationError, ValidationWarning } from './map-validator';
-import { ObjectCollection, StructureType } from './profile-validator';
+import {
+  MapValidator,
+  ValidationError,
+  ValidationResult,
+  ValidationWarning,
+} from './map-validator';
+import {
+  ObjectCollection,
+  ProfileOutput,
+  ProfileValidator,
+  StructureType,
+} from './profile-validator';
 
 export function formatErrors(errors?: ValidationError[]): string {
   if (!errors) {
@@ -361,4 +371,21 @@ export const mergeVariables = (
   }
 
   return result;
+};
+
+export const getProfileOutput = (
+  profile: ProfileDocumentNode
+): ProfileOutput => {
+  const profileValidator = new ProfileValidator();
+
+  return profileValidator.visit(profile);
+};
+
+export const validateMap = (
+  profileOutput: ProfileOutput,
+  mapAst: MapASTNode
+): ValidationResult => {
+  const mapValidator = new MapValidator(mapAst, profileOutput);
+
+  return mapValidator.validate();
 };
