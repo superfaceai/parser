@@ -10244,6 +10244,28 @@ describe('MapValidator', () => {
           {
             kind: 'UseCaseDefinition',
             useCaseName: 'Test',
+            input: {
+              kind: 'UseCaseSlotDefinition',
+              type: {
+                kind: 'ObjectDefinition',
+                fields: [
+                  {
+                    kind: 'FieldDefinition',
+                    required: false,
+                    fieldName: 'to',
+                    type: {
+                      kind: 'PrimitiveTypeName',
+                      name: 'string',
+                    },
+                  },
+                  {
+                    kind: 'FieldDefinition',
+                    required: false,
+                    fieldName: 'from',
+                  },
+                ],
+              },
+            },
             result: {
               kind: 'UseCaseSlotDefinition',
               type: {
@@ -10293,9 +10315,22 @@ describe('MapValidator', () => {
             usecaseName: 'Test',
             statements: [
               {
+                kind: 'SetStatement',
+                assignments: [
+                  {
+                    kind: 'Assignment',
+                    key: ['some', 'variable'],
+                    value: {
+                      kind: 'PrimitiveLiteral',
+                      value: 'string',
+                    },
+                  },
+                ],
+              },
+              {
                 kind: 'HttpCallStatement',
                 method: 'POST',
-                url: 'http://www.example.com/',
+                url: 'http://example.com/{some.variable}/{input.from}',
                 responseHandlers: [
                   {
                     kind: 'HttpResponseHandler',
@@ -10398,7 +10433,11 @@ describe('MapValidator', () => {
         ],
       };
 
-      valid(profileAst, [mapAst1]);
+      valid(
+        profileAst,
+        [mapAst1],
+        'HttpCallStatement - Wrong Structure: expected string, but got "AnyStructure"'
+      );
       invalid(
         profileAst,
         [mapAst2],
