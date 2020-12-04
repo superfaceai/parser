@@ -137,6 +137,10 @@ export type ValidationError =
         expected: string[];
         actual: string[];
       };
+    }
+  | {
+      kind: 'inputNotUsed';
+      context: ErrorContext;
     };
 
 export type ValidationWarning =
@@ -237,6 +241,10 @@ export type ValidationWarning =
   | {
       kind: 'mapNotFound';
       context: ErrorContext & { expected: string };
+    }
+  | {
+      kind: 'inputNotUsed';
+      context: ErrorContext;
     };
 
 export type ValidationResult =
@@ -473,6 +481,117 @@ export class MapValidator implements MapVisitor {
   }
 
   visitHttpCallStatementNode(node: HttpCallStatementNode): void {
+    const variableNames = node.url.match(
+      /{([_A-Za-z][_0-9A-Za-z]*[.]?)*(?<![.])}/g
+    );
+
+    if (variableNames) {
+      a: for (let idName of variableNames) {
+        idName = idName.substring(1, idName.length - 1);
+
+        if (idName.startsWith('input')) {
+          if (!this.inputStructure || !this.inputStructure.fields) {
+            this.errors.push({
+              kind: 'inputNotUsed',
+              context: {
+                path: this.getPath(node),
+              },
+            });
+            continue a;
+          }
+
+          let structure: ObjectCollection = { ...this.inputStructure.fields };
+          const idCollection = idName.split('.');
+
+          const keys: string[] = [];
+          b: for (const id of idCollection) {
+            keys.push(id);
+            if (id === 'input') {
+              continue b;
+            }
+
+            const currentStructure = structure[id];
+            const isLast = keys.length === idCollection.length;
+
+            if (!currentStructure) {
+              this.errors.push({
+                kind: 'wrongInput',
+                context: {
+                  path: this.getPath(node),
+                  expected: this.inputStructure,
+                  actual: keys.join('.'),
+                },
+              });
+              continue a;
+            }
+
+            if (!isLast) {
+              // descend the structure into object fields
+              if (currentStructure.kind === 'ObjectStructure') {
+                if (currentStructure.fields) {
+                  structure = currentStructure.fields;
+                }
+                continue b;
+              }
+            } else {
+              if (currentStructure.kind === 'AnyStructure') {
+                this.warnings.push({
+                  kind: 'wrongStructure',
+                  context: {
+                    path: this.getPath(node),
+                    expected: { kind: 'PrimitiveStructure', type: 'string' },
+                    actual: currentStructure,
+                  },
+                });
+                break b;
+              }
+              if (
+                currentStructure.kind === 'PrimitiveStructure' ||
+                currentStructure.kind === 'EnumStructure'
+              ) {
+                break b;
+              }
+            }
+
+            this.errors.push({
+              kind: 'wrongInput',
+              context: {
+                path: this.getPath(node),
+                expected: this.inputStructure,
+                actual: keys.join('.'),
+              },
+            });
+          }
+        } else {
+          const currentVariable = this.variables[idName];
+
+          if (!currentVariable) {
+            this.errors.push({
+              kind: 'variableNotDefined',
+              context: {
+                path: this.getPath(node),
+                name: idName,
+              },
+            });
+            continue a;
+          }
+
+          if (currentVariable.kind === 'PrimitiveLiteral') {
+            continue a;
+          }
+
+          this.errors.push({
+            kind: 'wrongStructure',
+            context: {
+              path: this.getPath(node),
+              expected: { kind: 'PrimitiveStructure', type: 'string' },
+              actual: currentVariable,
+            },
+          });
+        }
+      }
+    }
+
     if (node.request) {
       this.visit(node.request);
     }

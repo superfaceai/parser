@@ -1,4 +1,5 @@
-import {   isCallStatementNode,
+import {
+  isCallStatementNode,
   isHttpCallStatementNode,
   isOutcomeStatementNode,
   LiteralNode,
@@ -6,7 +7,7 @@ import {   isCallStatementNode,
   MapDefinitionNode,
   OperationDefinitionNode,
   OutcomeStatementNode,
-ProfileDocumentNode ,
+  ProfileDocumentNode,
 } from '@superfaceai/ast';
 
 import {
@@ -142,6 +143,9 @@ export function formatErrors(errors?: ValidationError[]): string {
             err.context.name
           } expected ${expected}, but got ${actual.toString()}`;
 
+        case 'inputNotUsed':
+          return `There is no input defined in usecase`;
+
         default:
           throw new Error(`${err.kind} Invalid error!`);
       }
@@ -264,6 +268,9 @@ export function formatWarnings(warnings?: ValidationWarning[]): string {
           expected = Object.keys(warn.context.expected.fields).join(', ');
 
           return `${location} - Wrong Input Structure: expected ${expected}, but got ${warn.context.actual}`;
+
+        case 'inputNotUsed':
+          return `There is no input defined in usecase`;
 
         default:
           throw new Error(`${warn.kind} Invalid warning!`);
