@@ -5,7 +5,19 @@ import {
   ArrayCollection,
   ObjectStructure,
   StructureType,
-} from './profile-validator';
+} from './profile-output';
+import {
+  assertBoolean,
+  assertNumber,
+  assertString,
+  isAnyStructure,
+  isEnumStructure,
+  isListStructure,
+  isNonNullStructure,
+  isObjectStructure,
+  isPrimitiveStructure,
+  isUnionStructure,
+} from './profile-output.utils';
 
 export type ID =
   | ts.Identifier
@@ -90,24 +102,21 @@ function compareStructures(
   inputStructure: StructureType,
   outputStructure: StructureType
 ): ConstructResult {
-  if (outputStructure.kind === 'NonNullStructure') {
+  if (isNonNullStructure(outputStructure)) {
     outputStructure = outputStructure.value;
   }
-  if (inputStructure.kind === 'NonNullStructure') {
+  if (isNonNullStructure(inputStructure)) {
     inputStructure = inputStructure.value;
   }
 
-  if (
-    outputStructure.kind === 'AnyStructure' ||
-    inputStructure.kind === 'AnyStructure'
-  ) {
+  if (isAnyStructure(outputStructure) || isAnyStructure(inputStructure)) {
     return { pass: true, invalidInput: false, invalidOutput: false };
   }
 
   switch (outputStructure.kind) {
     case 'EnumStructure':
       if (
-        inputStructure.kind === 'EnumStructure' &&
+        isEnumStructure(inputStructure) &&
         outputStructure.enums === inputStructure.enums
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
@@ -115,7 +124,7 @@ function compareStructures(
       break;
     case 'ListStructure':
       if (
-        inputStructure.kind === 'ListStructure' &&
+        isListStructure(inputStructure) &&
         outputStructure.value === inputStructure.value
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
@@ -123,7 +132,7 @@ function compareStructures(
       break;
     case 'ObjectStructure':
       if (
-        inputStructure.kind === 'ObjectStructure' &&
+        isObjectStructure(inputStructure) &&
         outputStructure.fields === inputStructure.fields
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
@@ -131,7 +140,7 @@ function compareStructures(
       break;
     case 'PrimitiveStructure':
       if (
-        inputStructure.kind === 'PrimitiveStructure' &&
+        isPrimitiveStructure(inputStructure) &&
         outputStructure.type === inputStructure.type
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
@@ -139,7 +148,7 @@ function compareStructures(
       break;
     case 'UnionStructure':
       if (
-        inputStructure.kind === 'UnionStructure' &&
+        isUnionStructure(inputStructure) &&
         outputStructure.types === inputStructure.types
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
@@ -212,15 +221,15 @@ export const RETURN_CONSTRUCTS: {
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure || outputStructure.kind === 'AnyStructure') {
+      if (!outputStructure || isAnyStructure(outputStructure)) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
-      if (outputStructure.kind === 'NonNullStructure') {
+      if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
       if (
-        outputStructure.kind === 'PrimitiveStructure' &&
-        outputStructure.type === 'string'
+        isPrimitiveStructure(outputStructure) &&
+        assertString(outputStructure)
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
@@ -248,15 +257,15 @@ export const RETURN_CONSTRUCTS: {
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure || outputStructure.kind === 'AnyStructure') {
+      if (!outputStructure || isAnyStructure(outputStructure)) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
-      if (outputStructure.kind === 'NonNullStructure') {
+      if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
       if (
-        outputStructure.kind === 'PrimitiveStructure' &&
-        outputStructure.type === 'number'
+        isPrimitiveStructure(outputStructure) &&
+        assertNumber(outputStructure)
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
@@ -284,15 +293,15 @@ export const RETURN_CONSTRUCTS: {
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure || outputStructure.kind === 'AnyStructure') {
+      if (!outputStructure || isAnyStructure(outputStructure)) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
-      if (outputStructure.kind === 'NonNullStructure') {
+      if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
       if (
-        outputStructure.kind === 'PrimitiveStructure' &&
-        outputStructure.type === 'boolean'
+        isPrimitiveStructure(outputStructure) &&
+        assertBoolean(outputStructure)
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
@@ -320,15 +329,15 @@ export const RETURN_CONSTRUCTS: {
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure || outputStructure.kind === 'AnyStructure') {
+      if (!outputStructure || isAnyStructure(outputStructure)) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
-      if (outputStructure.kind === 'NonNullStructure') {
+      if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
       if (
-        outputStructure.kind === 'PrimitiveStructure' &&
-        outputStructure.type === 'boolean'
+        isPrimitiveStructure(outputStructure) &&
+        assertBoolean(outputStructure)
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
@@ -356,10 +365,10 @@ export const RETURN_CONSTRUCTS: {
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure || outputStructure.kind === 'AnyStructure') {
+      if (!outputStructure || isAnyStructure(outputStructure)) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
-      if (outputStructure.kind === 'NonNullStructure') {
+      if (isNonNullStructure(outputStructure)) {
         return returnIssue(
           {
             kind: 'wrongStructure',
@@ -415,12 +424,12 @@ export const RETURN_CONSTRUCTS: {
       }
 
       // if Output is not defined - do not check validation of result or error
-      if (!outputStructure || outputStructure.kind === 'AnyStructure') {
+      if (!outputStructure || isAnyStructure(outputStructure)) {
         return mergeResults(...results);
       }
 
       // if Output is defined - do check
-      if (outputStructure.kind === 'NonNullStructure') {
+      if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
 
@@ -434,8 +443,8 @@ export const RETURN_CONSTRUCTS: {
       };
 
       if (
-        outputStructure.kind === 'PrimitiveStructure' &&
-        outputStructure.type === 'boolean'
+        isPrimitiveStructure(outputStructure) &&
+        assertBoolean(outputStructure)
       ) {
         return isOutcomeWithCondition
           ? mergeResults(...results, {
@@ -482,8 +491,8 @@ export const RETURN_CONSTRUCTS: {
       }
 
       if (
-        outputStructure.kind === 'PrimitiveStructure' &&
-        outputStructure.type === 'string' &&
+        isPrimitiveStructure(outputStructure) &&
+        assertString(outputStructure) &&
         (nodeContainsString || nodeContainsID) &&
         node.operatorToken.getText() === '+'
       ) {
@@ -495,8 +504,8 @@ export const RETURN_CONSTRUCTS: {
       }
 
       if (
-        outputStructure.kind === 'PrimitiveStructure' &&
-        outputStructure.type === 'number' &&
+        isPrimitiveStructure(outputStructure) &&
+        assertNumber(outputStructure) &&
         !nodeContainsString
       ) {
         return mergeResults(...results, {
@@ -545,11 +554,8 @@ export const RETURN_CONSTRUCTS: {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
 
-      if (outputStructure && outputStructure.kind !== 'AnyStructure') {
-        if (
-          outputStructure.kind === 'NonNullStructure' &&
-          node.text === 'undefined'
-        ) {
+      if (outputStructure && !isAnyStructure(outputStructure)) {
+        if (isNonNullStructure(outputStructure) && node.text === 'undefined') {
           return returnIssue(
             {
               kind: 'nonNullStructure',
@@ -566,7 +572,7 @@ export const RETURN_CONSTRUCTS: {
         }
 
         const variables: ReferencedVariables = {};
-        if (outputStructure.kind === 'UnionStructure') {
+        if (isUnionStructure(outputStructure)) {
           variables[node.text] = Object.values(outputStructure.types);
         } else {
           variables[node.text] = [outputStructure];
@@ -630,7 +636,7 @@ export const RETURN_CONSTRUCTS: {
             return returnIssue(issue, true, false, isOutcomeWithCondition);
           }
 
-          if (structure.kind !== 'ObjectStructure' || !structure.fields) {
+          if (!isObjectStructure(structure) || !structure.fields) {
             return returnIssue(issue, true, false, isOutcomeWithCondition);
           }
 
@@ -652,7 +658,7 @@ export const RETURN_CONSTRUCTS: {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
 
-      if (outputStructure && outputStructure.kind !== 'AnyStructure') {
+      if (outputStructure && !isAnyStructure(outputStructure)) {
         const variables: ReferencedVariables = {};
         let variableName = node.getText();
 
@@ -666,7 +672,7 @@ export const RETURN_CONSTRUCTS: {
           variableName = trimVariableName(variableName, '"');
         }
 
-        if (outputStructure.kind === 'UnionStructure') {
+        if (isUnionStructure(outputStructure)) {
           variables[variableName] = Object.values(outputStructure.types);
         } else {
           variables[variableName] = [outputStructure];
@@ -704,7 +710,7 @@ export const RETURN_CONSTRUCTS: {
 
       if (
         !outputStructure ||
-        outputStructure.kind !== 'ObjectStructure' ||
+        !isObjectStructure(outputStructure) ||
         !outputStructure.fields
       ) {
         return undefined;
@@ -760,7 +766,7 @@ export const RETURN_CONSTRUCTS: {
             return returnIssue(issue, true, false, isOutcomeWithCondition);
           }
 
-          if (structure.kind !== 'ObjectStructure' || !structure.fields) {
+          if (!isObjectStructure(structure) || !structure.fields) {
             return returnIssue(issue, true, false, isOutcomeWithCondition);
           }
 
@@ -782,7 +788,7 @@ export const RETURN_CONSTRUCTS: {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
 
-      if (outputStructure && outputStructure.kind !== 'AnyStructure') {
+      if (outputStructure && !isAnyStructure(outputStructure)) {
         const variables: ReferencedVariables = {};
         let expressionName = node.expression.getText();
         let argumentName = node.argumentExpression.getText();
@@ -804,7 +810,7 @@ export const RETURN_CONSTRUCTS: {
         }
 
         const variableName = expressionName + '.' + argumentName;
-        if (outputStructure.kind === 'UnionStructure') {
+        if (isUnionStructure(outputStructure)) {
           variables[variableName] = Object.values(outputStructure.types);
         } else {
           variables[variableName] = [outputStructure];
@@ -842,7 +848,7 @@ export const RETURN_CONSTRUCTS: {
 
       if (
         !outputStructure ||
-        outputStructure.kind !== 'ObjectStructure' ||
+        !isObjectStructure(outputStructure) ||
         !outputStructure.fields
       ) {
         return undefined;
@@ -880,15 +886,15 @@ export const RETURN_CONSTRUCTS: {
         });
       }
 
-      if (!outputStructure || outputStructure.kind === 'AnyStructure') {
+      if (!outputStructure || isAnyStructure(outputStructure)) {
         return mergeResults(...results);
       }
 
-      if (outputStructure.kind === 'NonNullStructure') {
+      if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
 
-      if (outputStructure.kind !== 'ObjectStructure') {
+      if (!isObjectStructure(outputStructure)) {
         const issue: ValidationIssue = {
           kind: 'wrongStructure',
           context: {
@@ -946,7 +952,7 @@ export const RETURN_CONSTRUCTS: {
           const nodeKey = property.name;
 
           if (!nodeKey) {
-            throw new Error(`Property key: ${key} does not exist!`);
+            throw new Error('This should not happen!');
           }
 
           if (nodeKey.getText() === key) {
@@ -1039,14 +1045,14 @@ export const RETURN_CONSTRUCTS: {
         });
       }
 
-      if (!outputStructure || outputStructure.kind === 'AnyStructure') {
+      if (!outputStructure || isAnyStructure(outputStructure)) {
         return mergeResults(...results);
       }
 
-      if (outputStructure.kind === 'NonNullStructure') {
+      if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
-      if (outputStructure.kind !== 'ListStructure') {
+      if (!isListStructure(outputStructure)) {
         const issue: ValidationIssue = {
           kind: 'wrongStructure',
           context: {
@@ -1074,7 +1080,7 @@ export const RETURN_CONSTRUCTS: {
       let structureOfTypes: ArrayCollection | undefined;
       let structureOfType: StructureType | undefined;
 
-      if (outputStructure.value.kind === 'UnionStructure') {
+      if (isUnionStructure(outputStructure.value)) {
         structureOfTypes = outputStructure.value.types;
       } else {
         structureOfType = outputStructure.value;

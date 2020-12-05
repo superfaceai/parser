@@ -1,7 +1,7 @@
 import { MapASTNode, ProfileDocumentNode } from '@superfaceai/language';
 
 import { ValidationError, ValidationWarning } from './map-validator';
-import { ProfileOutput } from './profile-validator';
+import { ProfileOutput } from './profile-output';
 import {
   formatErrors,
   formatWarnings,

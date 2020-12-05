@@ -1,6 +1,7 @@
 import { ProfileDocumentNode } from '@superfaceai/language';
 
-import { ProfileOutput, ProfileValidator } from './profile-validator';
+import { ProfileOutput } from './profile-output';
+import { ProfileValidator } from './profile-validator';
 
 describe('ProfileValidator', () => {
   describe('When Profile has empty Input', () => {

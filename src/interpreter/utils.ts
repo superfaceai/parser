@@ -1,7 +1,9 @@
 import {
   isCallStatementNode,
   isHttpCallStatementNode,
+  isObjectLiteralNode,
   isOutcomeStatementNode,
+  isPrimitiveLiteralNode,
   LiteralNode,
   MapASTNode,
   MapDefinitionNode,
@@ -19,9 +21,14 @@ import {
 import {
   ObjectCollection,
   ProfileOutput,
-  ProfileValidator,
   StructureType,
-} from './profile-validator';
+} from './profile-output';
+import {
+  isEnumStructure,
+  isNonNullStructure,
+  isPrimitiveStructure,
+} from './profile-output.utils';
+import { ProfileValidator } from './profile-validator';
 
 export function formatErrors(errors?: ValidationError[]): string {
   if (!errors) {
@@ -62,15 +69,15 @@ export function formatErrors(errors?: ValidationError[]): string {
           return `${location} - Wrong Array Structure: expected ${expected}, but gor ${actual}`;
 
         case 'wrongStructure':
-          if (err.context.expected.kind === 'PrimitiveStructure') {
+          if (isPrimitiveStructure(err.context.expected)) {
             expected = err.context.expected.type;
-          } else if (err.context.expected.kind === 'NonNullStructure') {
-            if (err.context.expected.value.kind === 'PrimitiveStructure') {
+          } else if (isNonNullStructure(err.context.expected)) {
+            if (isPrimitiveStructure(err.context.expected.value)) {
               expected = err.context.expected.value.type;
             } else {
               expected = err.context.expected.value.kind;
             }
-          } else if (err.context.expected.kind === 'EnumStructure') {
+          } else if (isEnumStructure(err.context.expected)) {
             expected = err.context.expected.enums.join(' or ');
           } else {
             expected = err.context.expected.kind;
@@ -115,22 +122,22 @@ export function formatErrors(errors?: ValidationError[]): string {
           return `${location} - Wrong Input Structure: expected ${expected}, but got ${err.context.actual}`;
 
         case 'wrongVariableStructure':
-          if (err.context.expected.kind === 'PrimitiveStructure') {
+          if (isPrimitiveStructure(err.context.expected)) {
             expected = err.context.expected.type;
-          } else if (err.context.expected.kind === 'NonNullStructure') {
-            if (err.context.expected.value.kind === 'PrimitiveStructure') {
+          } else if (isNonNullStructure(err.context.expected)) {
+            if (isPrimitiveStructure(err.context.expected.value)) {
               expected = err.context.expected.value.type;
             } else {
               expected = err.context.expected.value.kind;
             }
-          } else if (err.context.expected.kind === 'EnumStructure') {
+          } else if (isEnumStructure(err.context.expected)) {
             expected = err.context.expected.enums.join(' or ');
           } else {
             expected = err.context.expected.kind;
           }
 
           if (typeof err.context.actual !== 'string') {
-            if (err.context.actual.kind === 'PrimitiveLiteral') {
+            if (isPrimitiveLiteralNode(err.context.actual)) {
               actual = err.context.actual.value;
             } else {
               actual = err.context.actual.kind;
@@ -144,7 +151,7 @@ export function formatErrors(errors?: ValidationError[]): string {
           } expected ${expected}, but got ${actual.toString()}`;
 
         case 'inputNotUsed':
-          return `There is no input defined in usecase`;
+          return 'There is no input defined in usecase';
 
         default:
           throw new Error(`${err.kind} Invalid error!`);
@@ -177,15 +184,15 @@ export function formatWarnings(warnings?: ValidationWarning[]): string {
           return `${location} - Wrong Object Structure: expected ${expected}, but got ${actual}`;
 
         case 'wrongStructure':
-          if (warn.context.expected.kind === 'PrimitiveStructure') {
+          if (isPrimitiveStructure(warn.context.expected)) {
             expected = warn.context.expected.type;
-          } else if (warn.context.expected.kind === 'NonNullStructure') {
-            if (warn.context.expected.value.kind === 'PrimitiveStructure') {
+          } else if (isNonNullStructure(warn.context.expected)) {
+            if (isPrimitiveStructure(warn.context.expected.value)) {
               expected = warn.context.expected.value.type;
             } else {
               expected = warn.context.expected.value.kind;
             }
-          } else if (warn.context.expected.kind === 'EnumStructure') {
+          } else if (isEnumStructure(warn.context.expected)) {
             expected = warn.context.expected.enums.join(' or ');
           } else {
             expected = warn.context.expected.kind;
@@ -204,22 +211,22 @@ export function formatWarnings(warnings?: ValidationWarning[]): string {
           return `${location} - Wrong Structure: expected ${expected}, but got "${actual.toString()}"`;
 
         case 'wrongVariableStructure':
-          if (warn.context.expected.kind === 'PrimitiveStructure') {
+          if (isPrimitiveStructure(warn.context.expected)) {
             expected = warn.context.expected.type;
-          } else if (warn.context.expected.kind === 'NonNullStructure') {
-            if (warn.context.expected.value.kind === 'PrimitiveStructure') {
+          } else if (isNonNullStructure(warn.context.expected)) {
+            if (isPrimitiveStructure(warn.context.expected.value)) {
               expected = warn.context.expected.value.type;
             } else {
               expected = warn.context.expected.value.kind;
             }
-          } else if (warn.context.expected.kind === 'EnumStructure') {
+          } else if (isEnumStructure(warn.context.expected)) {
             expected = warn.context.expected.enums.join(' or ');
           } else {
             expected = warn.context.expected.kind;
           }
 
           if (typeof warn.context.actual !== 'string') {
-            if (warn.context.actual.kind === 'PrimitiveLiteral') {
+            if (isPrimitiveLiteralNode(warn.context.actual)) {
               actual = warn.context.actual.value;
             } else {
               actual = warn.context.actual.kind;
@@ -236,7 +243,7 @@ export function formatWarnings(warnings?: ValidationWarning[]): string {
           return `${location} - Missing Variable definition: ${warn.context.name} is not defined`;
 
         case 'resultNotFound':
-          if (warn.context.actualResult.kind === 'PrimitiveLiteral') {
+          if (isPrimitiveLiteralNode(warn.context.actualResult)) {
             actual = warn.context.actualResult.value;
           } else {
             actual = warn.context.actualResult.kind;
@@ -245,7 +252,7 @@ export function formatWarnings(warnings?: ValidationWarning[]): string {
           return `${location} - Result Not Found: returning "${actual.toString()}", but result is undefined`;
 
         case 'errorNotFound':
-          if (warn.context.actualError.kind === 'PrimitiveLiteral') {
+          if (isPrimitiveLiteralNode(warn.context.actualError)) {
             actual = warn.context.actualError.value;
           } else {
             actual = warn.context.actualError.kind;
@@ -270,7 +277,7 @@ export function formatWarnings(warnings?: ValidationWarning[]): string {
           return `${location} - Wrong Input Structure: expected ${expected}, but got ${warn.context.actual}`;
 
         case 'inputNotUsed':
-          return `There is no input defined in usecase`;
+          return 'There is no input defined in usecase';
 
         default:
           throw new Error(`${warn.kind} Invalid warning!`);
@@ -303,7 +310,7 @@ export function compareStructure(
 
     case 'PrimitiveStructure':
       if (
-        node.kind === 'PrimitiveLiteral' &&
+        isPrimitiveLiteralNode(node) &&
         typeof node.value === structure.type
       ) {
         return { isValid: true };
@@ -311,14 +318,14 @@ export function compareStructure(
       break;
 
     case 'ObjectStructure':
-      if (node.kind === 'ObjectLiteral') {
+      if (isObjectLiteralNode(node)) {
         return { isValid: true, structureOfFields: structure.fields };
       }
       break;
 
     case 'EnumStructure':
       if (
-        node.kind === 'PrimitiveLiteral' &&
+        isPrimitiveLiteralNode(node) &&
         structure.enums.includes(node.value)
       ) {
         return { isValid: true };
@@ -329,11 +336,11 @@ export function compareStructure(
 }
 
 function isErrorOutcome(node: MapASTNode): node is OutcomeStatementNode {
-  return node.kind === 'OutcomeStatement' && node.isError;
+  return isOutcomeStatementNode(node) && node.isError;
 }
 
 function isResultOutcome(node: MapASTNode): node is OutcomeStatementNode {
-  return node.kind === 'OutcomeStatement' && !node.isError;
+  return isOutcomeStatementNode(node) && !node.isError;
 }
 
 export function getOutcomes(

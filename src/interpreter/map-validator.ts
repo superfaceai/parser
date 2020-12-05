@@ -6,7 +6,9 @@ import {
   HttpResponseHandlerNode,
   InlineCallNode,
   isMapDefinitionNode,
+  isObjectLiteralNode,
   isOperationDefinitionNode,
+  isPrimitiveLiteralNode,
   JessieExpressionNode,
   LiteralNode,
   MapASTNode,
@@ -34,7 +36,13 @@ import {
   StructureType,
   UnionStructure,
   UseCaseStructure,
-} from './profile-validator';
+} from './profile-output';
+import {
+  isAnyStructure,
+  isEnumStructure,
+  isObjectStructure,
+  isPrimitiveStructure,
+} from './profile-output.utils';
 import { compareStructure, getOutcomes, mergeVariables } from './utils';
 
 function assertUnreachable(node: never): never;
@@ -368,7 +376,7 @@ export class MapValidator implements MapVisitor {
         const map = maps[j];
 
         if (
-          map.kind === 'MapDefinition' &&
+          isMapDefinitionNode(map) &&
           map.usecaseName === usecase.useCaseName
         ) {
           isFound = true;
@@ -527,14 +535,14 @@ export class MapValidator implements MapVisitor {
 
             if (!isLast) {
               // descend the structure into object fields
-              if (currentStructure.kind === 'ObjectStructure') {
+              if (isObjectStructure(currentStructure)) {
                 if (currentStructure.fields) {
                   structure = currentStructure.fields;
                 }
                 continue b;
               }
             } else {
-              if (currentStructure.kind === 'AnyStructure') {
+              if (isAnyStructure(currentStructure)) {
                 this.warnings.push({
                   kind: 'wrongStructure',
                   context: {
@@ -546,8 +554,8 @@ export class MapValidator implements MapVisitor {
                 break b;
               }
               if (
-                currentStructure.kind === 'PrimitiveStructure' ||
-                currentStructure.kind === 'EnumStructure'
+                isPrimitiveStructure(currentStructure) ||
+                isEnumStructure(currentStructure)
               ) {
                 break b;
               }
@@ -576,7 +584,7 @@ export class MapValidator implements MapVisitor {
             continue a;
           }
 
-          if (currentVariable.kind === 'PrimitiveLiteral') {
+          if (isPrimitiveLiteralNode(currentVariable)) {
             continue a;
           }
 
@@ -695,7 +703,7 @@ export class MapValidator implements MapVisitor {
     let isReassigned = false;
 
     const variable = this.variables[key];
-    if (variable && variable.kind === 'ObjectLiteral') {
+    if (variable && isObjectLiteralNode(variable)) {
       const fieldKey = field.key.join('.');
 
       variable.fields.forEach(variableField => {
@@ -794,10 +802,7 @@ export class MapValidator implements MapVisitor {
       });
     }
 
-    if (
-      !this.currentStructure ||
-      this.currentStructure.kind === 'AnyStructure'
-    ) {
+    if (!this.currentStructure || isAnyStructure(this.currentStructure)) {
       return true;
     }
 
@@ -920,6 +925,7 @@ export class MapValidator implements MapVisitor {
       // if validator is in call scope and jessie contains 'data' variable
       if (this.callOperationScope) {
         let outcomes: OutcomeStatementNode[];
+
         if (variableName.split('.')[0] === 'data') {
           outcomes = this.dataVariable[this.callOperationScope];
         } else if (variableName.split('.')[0] === 'error') {
@@ -992,11 +998,11 @@ export class MapValidator implements MapVisitor {
       return result;
     }
 
-    if (this.currentStructure.kind === 'AnyStructure') {
+    if (isAnyStructure(this.currentStructure)) {
       return true;
     }
 
-    const { isValid, structureOfFields } = compareStructure(
+    const { structureOfFields, isValid } = compareStructure(
       node,
       this.currentStructure
     );
@@ -1074,10 +1080,7 @@ export class MapValidator implements MapVisitor {
   }
 
   visitPrimitiveLiteralNode(node: PrimitiveLiteralNode): boolean {
-    if (
-      !this.currentStructure ||
-      this.currentStructure.kind === 'AnyStructure'
-    ) {
+    if (!this.currentStructure || isAnyStructure(this.currentStructure)) {
       return true;
     }
 
