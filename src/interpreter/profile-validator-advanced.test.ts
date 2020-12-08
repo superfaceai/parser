@@ -782,7 +782,12 @@ describe('ProfileValidator Advanced', () => {
                             },
                           },
                         },
-                        undefined,
+                        {
+                          kind: 'NonNullStructure',
+                          value: {
+                            kind: 'ScalarStructure',
+                          },
+                        },
                       ],
                     },
                     f2: {

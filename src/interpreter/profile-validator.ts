@@ -34,32 +34,25 @@ function assertUnreachable(node: ProfileASTNode): never {
 }
 
 export class ProfileValidator implements ProfileVisitor {
-  private fields: Record<string, StructureType | undefined> = {};
-  private models: Record<string, StructureType | undefined> = {};
+  private fields: Record<string, StructureType> = {};
+  private models: Record<string, StructureType> = {};
 
   visit(node: ProfileDocumentNode): ProfileOutput;
   visit(node: ProfileNode | ProfileIdNode): string;
   visit(node: UseCaseDefinitionNode): UseCaseStructure;
   visit(node: EnumValueNode): string | number | boolean;
-  visit(
-    node:
-      | NamedModelDefinitionNode
-      | NamedFieldDefinitionNode
-      | ModelTypeNameNode
-      | FieldDefinitionNode
-      | NonNullDefinitionNode
-  ): StructureType | undefined;
+  visit(node: NamedModelDefinitionNode | NamedFieldDefinitionNode): void;
   visit(node: ObjectDefinitionNode): ObjectStructure;
   visit(node: Type): StructureType;
   visit(node: ProfileASTNode | undefined): undefined;
   visit(
     node: ProfileASTNode
   ):
-    | undefined
     | StructureType
     | UseCaseStructure
     | UseCaseStructure[]
     | ProfileOutput
+    | void
     | string
     | number
     | boolean {
@@ -122,30 +115,21 @@ export class ProfileValidator implements ProfileVisitor {
     return node.value;
   }
 
-  visitFieldDefinitionNode(
-    node: FieldDefinitionNode
-  ): StructureType | undefined {
+  visitFieldDefinitionNode(node: FieldDefinitionNode): StructureType {
     const required = node.required;
-
-    if (node.type === undefined) {
-      return this.fields[node.fieldName]
-        ? ({
-            required,
-            ...this.fields[node.fieldName],
-          } as StructureType)
-        : ({ required, kind: 'AnyStructure' } as StructureType);
-    }
+    const field = this.fields[node.fieldName] ?? { kind: 'ScalarStructure' };
+    const result = node.type ? this.visit(node.type) : { required, ...field };
 
     return {
       required,
-      ...this.visit(node.type),
-    } as StructureType;
+      ...result,
+    };
   }
 
   visitListDefinitionNode(node: ListDefinitionNode): StructureType {
     const value = this.visit(node.elementType);
 
-    if (value?.kind === 'EnumStructure') {
+    if (value.kind === 'EnumStructure') {
       throw new Error('Something went very wrong, this should not happen!');
     }
 
@@ -155,49 +139,33 @@ export class ProfileValidator implements ProfileVisitor {
     };
   }
 
-  visitModelTypeNameNode(node: ModelTypeNameNode): StructureType | undefined {
-    return this.models[node.name];
+  visitModelTypeNameNode(node: ModelTypeNameNode): StructureType {
+    return this.models[node.name] ?? { kind: 'ScalarStructure' };
   }
 
-  visitNamedFieldDefinitionNode(
-    node: NamedFieldDefinitionNode
-  ): StructureType | undefined {
-    const fieldName = node.fieldName;
-
-    this.fields[fieldName] = node.type
-      ? this.visit(node.type)
-      : { kind: 'AnyStructure' };
-
-    return this.fields[fieldName];
+  visitNamedFieldDefinitionNode(node: NamedFieldDefinitionNode): void {
+    if (node.type) {
+      this.fields[node.fieldName] = this.visit(node.type);
+    }
   }
 
-  visitNamedModelDefinitionNode(
-    node: NamedModelDefinitionNode
-  ): StructureType | undefined {
-    const modelName = node.modelName;
-
-    this.models[modelName] = node.type
-      ? this.visit(node.type)
-      : { kind: 'AnyStructure' };
-
-    return this.models[modelName];
+  visitNamedModelDefinitionNode(node: NamedModelDefinitionNode): void {
+    if (node.type) {
+      this.models[node.modelName] = this.visit(node.type);
+    }
   }
 
-  visitNonNullDefinitionNode(
-    node: NonNullDefinitionNode
-  ): StructureType | undefined {
+  visitNonNullDefinitionNode(node: NonNullDefinitionNode): StructureType {
     const value = this.visit(node.type);
 
-    if (value?.kind === 'UnionStructure') {
+    if (value.kind === 'UnionStructure') {
       throw new Error('Something went very wrong, this should not happen!');
     }
 
-    return value
-      ? {
-          kind: 'NonNullStructure',
-          value,
-        }
-      : undefined;
+    return {
+      kind: 'NonNullStructure',
+      value,
+    };
   }
 
   visitObjectDefinitionNode(node: ObjectDefinitionNode): StructureType {
@@ -227,7 +195,7 @@ export class ProfileValidator implements ProfileVisitor {
           definition.kind === 'NamedFieldDefinition'
       )
       .forEach(field => {
-        this.fields[field.fieldName] = undefined;
+        this.fields[field.fieldName] = { kind: 'ScalarStructure' };
         this.visit(field);
       });
 
@@ -237,7 +205,7 @@ export class ProfileValidator implements ProfileVisitor {
           definition.kind === 'NamedModelDefinition'
       )
       .forEach(model => {
-        this.models[model.modelName] = undefined;
+        this.models[model.modelName] = { kind: 'ScalarStructure' };
         this.visit(model);
       });
 
@@ -272,7 +240,7 @@ export class ProfileValidator implements ProfileVisitor {
     node.types.forEach((type, i) => {
       const structure = this.visit(type);
 
-      if (structure?.kind !== 'UnionStructure') {
+      if (structure.kind !== 'UnionStructure') {
         union.types[i] = structure;
       }
     });

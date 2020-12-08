@@ -21,7 +21,6 @@ export interface Structure {
 export interface PrimitiveStructure extends Structure {
   kind: 'PrimitiveStructure';
   type: 'string' | 'number' | 'boolean';
-  required?: true;
 }
 
 /**
@@ -30,7 +29,6 @@ export interface PrimitiveStructure extends Structure {
 export interface EnumStructure extends Structure {
   kind: 'EnumStructure';
   enums: (string | number | boolean)[];
-  required?: true;
 }
 
 /**
@@ -39,7 +37,6 @@ export interface EnumStructure extends Structure {
 export interface NonNullStructure extends Structure {
   kind: 'NonNullStructure';
   value: Exclude<StructureType, UnionStructure>;
-  required?: true;
 }
 
 /**
@@ -48,7 +45,6 @@ export interface NonNullStructure extends Structure {
 export interface ListStructure extends Structure {
   kind: 'ListStructure';
   value: Exclude<StructureType, EnumStructure>;
-  required?: true;
 }
 
 /**
@@ -57,7 +53,6 @@ export interface ListStructure extends Structure {
 export interface ObjectStructure extends Structure {
   kind: 'ObjectStructure';
   fields?: ObjectCollection;
-  required?: true;
 }
 
 /**
@@ -73,7 +68,6 @@ export interface UnionStructure extends Structure {
  */
 export interface ScalarStructure extends Structure {
   kind: 'ScalarStructure';
-  required?: true;
 }
 
 /**
