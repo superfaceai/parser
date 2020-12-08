@@ -82,7 +82,7 @@ export function formatIssues(issues?: ValidationIssue[]): string {
           return `${location} - Error Not Found: returning "${actual.toString()}", but there is no error defined in usecase`;
 
         case 'inputNotFound':
-          return `${location} - Input Not Found: there is no input defined in usecase`;
+          return `${location} - Input Not Found: ${issue.context.actual} - there is no input defined in usecase`;
 
         case 'wrongObjectStructure':
           expected = Object.keys(issue.context.expected).join(', ');

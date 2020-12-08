@@ -46,7 +46,7 @@ export type ValidationError =
     }
   | {
       kind: 'inputNotFound';
-      context: ErrorContext;
+      context: ErrorContext & { actual: string };
     }
   | {
       kind: 'wrongObjectStructure';
@@ -131,7 +131,7 @@ export type ValidationWarning =
     }
   | {
       kind: 'inputNotFound';
-      context: ErrorContext;
+      context: ErrorContext & { actual: string };
     }
   | {
       kind: 'wrongObjectStructure';

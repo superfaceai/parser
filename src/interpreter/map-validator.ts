@@ -295,6 +295,7 @@ export class MapValidator implements MapVisitor {
               kind: 'inputNotFound',
               context: {
                 path: this.getPath(node),
+                actual: idName,
               },
             });
             continue a;
@@ -432,9 +433,8 @@ export class MapValidator implements MapVisitor {
     if (node.arguments.length > 0) {
       this.argumentScopedVariables[node.operationName] = {};
       node.arguments.forEach(argument => {
-        if (this.inputStructure) {
-          this.visit(argument);
-        }
+        this.visit(argument);
+
         this.argumentScopedVariables[node.operationName][
           argument.key.join('.')
         ] = argument.value;
@@ -453,8 +453,8 @@ export class MapValidator implements MapVisitor {
 
   visitOutcomeStatementNode(node: OutcomeStatementNode): void {
     if (node.condition) {
-      this.isOutcomeWithCondition = true;
       this.visit(node.condition);
+      this.isOutcomeWithCondition = true;
     }
 
     if (node.isError) {
@@ -530,9 +530,7 @@ export class MapValidator implements MapVisitor {
   visitSetStatementNode(node: SetStatementNode): void {
     node.assignments.forEach(assignment => {
       const value = assignment.value;
-      if (this.inputStructure) {
-        this.visit(value);
-      }
+      this.visit(value);
 
       const variableKey = assignment.key.join('.');
       this.addVariableToStack(variableKey, value);
@@ -562,9 +560,7 @@ export class MapValidator implements MapVisitor {
   }
 
   visitStatementConditionNode(node: StatementConditionNode): void {
-    if (this.inputStructure) {
-      this.visit(node.expression);
-    }
+    this.visit(node.expression);
   }
 
   visitAssignmentNode(node: AssignmentNode): boolean {
@@ -585,9 +581,8 @@ export class MapValidator implements MapVisitor {
     if (node.arguments.length > 0) {
       this.argumentScopedVariables[node.operationName] = {};
       node.arguments.forEach(argument => {
-        if (this.inputStructure) {
-          this.visit(argument);
-        }
+        this.visit(argument);
+
         this.argumentScopedVariables[node.operationName][
           argument.key.join('.')
         ] = argument.value;
@@ -662,14 +657,6 @@ export class MapValidator implements MapVisitor {
       throw new Error('Rule construct not found!');
     }
 
-    if (
-      this.stackTop.type === 'map' &&
-      !this.currentStructure &&
-      !this.inputStructure
-    ) {
-      throw new Error('Profile capability structure not found!');
-    }
-
     const constructResult = construct.visit(
       rootNode,
       this.currentStructure,
@@ -696,6 +683,14 @@ export class MapValidator implements MapVisitor {
         context: {
           path: this.getPath(node),
           expected: this.inputStructure,
+          actual: node.source ?? node.expression,
+        },
+      });
+    } else if (constructResult.invalidInput) {
+      this.addIssue({
+        kind: 'inputNotFound',
+        context: {
+          path: this.getPath(node),
           actual: node.source ?? node.expression,
         },
       });
@@ -784,12 +779,10 @@ export class MapValidator implements MapVisitor {
   visitObjectLiteralNode(node: ObjectLiteralNode): boolean {
     if (!this.currentStructure) {
       let result = true;
-      if (this.inputStructure) {
-        node.fields.forEach(field => {
-          const fieldResult = this.visit(field);
-          result = result && fieldResult;
-        });
-      }
+      node.fields.forEach(field => {
+        const fieldResult = this.visit(field);
+        result = result && fieldResult;
+      });
 
       return result;
     }

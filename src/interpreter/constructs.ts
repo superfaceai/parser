@@ -540,12 +540,19 @@ export const RETURN_CONSTRUCTS: {
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
       if (node.text === 'input') {
-        if (!inputStructure) {
-          throw new Error('Input not found');
-        }
-
-        if (!inputStructure.fields) {
-          throw new Error('Input not found');
+        if (!inputStructure || !inputStructure.fields) {
+          return returnIssue(
+            {
+              kind: 'inputNotFound',
+              context: {
+                path: getPath(node),
+                actual: node.getText(),
+              },
+            },
+            true,
+            false,
+            isOutcomeWithCondition
+          );
         }
 
         if (outputStructure) {
@@ -599,8 +606,19 @@ export const RETURN_CONSTRUCTS: {
       isOutcomeWithCondition?: boolean
     ): ConstructResult {
       if (node.expression.getText().split('.')[0] === 'input') {
-        if (!inputStructure) {
-          throw new Error('Input not found');
+        if (!inputStructure || !inputStructure.fields) {
+          return returnIssue(
+            {
+              kind: 'inputNotFound',
+              context: {
+                path: getPath(node),
+                actual: node.getText(),
+              },
+            },
+            true,
+            false,
+            isOutcomeWithCondition
+          );
         }
 
         const issue: ValidationIssue = {
@@ -611,10 +629,6 @@ export const RETURN_CONSTRUCTS: {
             actual: node.getText(),
           },
         };
-
-        if (!inputStructure.fields) {
-          return returnIssue(issue, true, false, isOutcomeWithCondition);
-        }
 
         const property = node.name.getText();
         let fieldValue: StructureType | undefined;
@@ -729,8 +743,19 @@ export const RETURN_CONSTRUCTS: {
       isOutcomeWithCondition?: boolean
     ): ConstructResult {
       if (node.expression.getText().split('.')[0] === 'input') {
-        if (!inputStructure) {
-          throw new Error('Input not found');
+        if (!inputStructure || !inputStructure.fields) {
+          return returnIssue(
+            {
+              kind: 'inputNotFound',
+              context: {
+                path: getPath(node),
+                actual: node.getText(),
+              },
+            },
+            true,
+            false,
+            isOutcomeWithCondition
+          );
         }
 
         const issue: ValidationIssue = {
@@ -741,10 +766,6 @@ export const RETURN_CONSTRUCTS: {
             actual: node.getText(),
           },
         };
-
-        if (!inputStructure.fields) {
-          return returnIssue(issue, true, false, isOutcomeWithCondition);
-        }
 
         const property = node.argumentExpression.getText();
         let fieldValue: StructureType | undefined;

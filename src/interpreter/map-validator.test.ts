@@ -11646,6 +11646,11 @@ describe('MapValidator', () => {
         },
         definitions: [
           {
+            kind: 'OperationDefinition',
+            name: 'Foo',
+            statements: [],
+          },
+          {
             kind: 'MapDefinition',
             name: 'Test',
             usecaseName: 'Test',
@@ -11660,10 +11665,29 @@ describe('MapValidator', () => {
                   },
                 },
                 terminateFlow: false,
-                isError: false,
+                isError: true,
                 value: {
                   kind: 'PrimitiveLiteral',
                   value: 'some string',
+                },
+              },
+              {
+                kind: 'OutcomeStatement',
+                terminateFlow: false,
+                isError: false,
+                value: {
+                  kind: 'InlineCall',
+                  operationName: 'Foo',
+                  arguments: [
+                    {
+                      kind: 'Assignment',
+                      key: ['some', 'key'],
+                      value: {
+                        kind: 'JessieExpression',
+                        expression: 'input.some.variable',
+                      },
+                    },
+                  ],
                 },
               },
             ],
@@ -11671,10 +11695,11 @@ describe('MapValidator', () => {
         ],
       };
 
-      valid(
+      invalid(
         profileAst,
         [mapAst],
-        'OutcomeStatement - Result Not Found: returning "some string", but there is no result defined in usecase'
+        'JessieExpression - Input Not Found: input.something - there is no input defined in usecase\n1:16 PropertyAccessExpression - Input Not Found: input.something - there is no input defined in usecase\nJessieExpression - Input Not Found: input.some.variable - there is no input defined in usecase\n1:20 PropertyAccessExpression - Input Not Found: input.some.variable - there is no input defined in usecase',
+        'OutcomeStatement - Result Not Found: returning "InlineCall", but there is no result defined in usecase'
       );
     });
   });
