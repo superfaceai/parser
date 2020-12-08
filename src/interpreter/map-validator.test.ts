@@ -10431,7 +10431,7 @@ describe('MapValidator', () => {
       valid(
         profileAst,
         [mapAst1],
-        'HttpCallStatement - Wrong Structure: expected string, but got "AnyStructure"'
+        'HttpCallStatement - Wrong Structure: expected string, but got "ScalarStructure"'
       );
       invalid(
         profileAst,

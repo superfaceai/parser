@@ -11,12 +11,12 @@ import {
   assertBoolean,
   assertNumber,
   assertString,
-  isAnyStructure,
   isEnumStructure,
   isListStructure,
   isNonNullStructure,
   isObjectStructure,
   isPrimitiveStructure,
+  isScalarStructure,
   isUnionStructure,
 } from './profile-output.utils';
 
@@ -110,7 +110,7 @@ function compareStructures(
     inputStructure = inputStructure.value;
   }
 
-  if (isAnyStructure(outputStructure) || isAnyStructure(inputStructure)) {
+  if (isScalarStructure(outputStructure) || isScalarStructure(inputStructure)) {
     return { pass: true, invalidInput: false, invalidOutput: false };
   }
 
@@ -222,7 +222,7 @@ export const RETURN_CONSTRUCTS: {
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure || isAnyStructure(outputStructure)) {
+      if (!outputStructure || isScalarStructure(outputStructure)) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
       if (isNonNullStructure(outputStructure)) {
@@ -258,7 +258,7 @@ export const RETURN_CONSTRUCTS: {
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure || isAnyStructure(outputStructure)) {
+      if (!outputStructure || isScalarStructure(outputStructure)) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
       if (isNonNullStructure(outputStructure)) {
@@ -294,7 +294,7 @@ export const RETURN_CONSTRUCTS: {
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure || isAnyStructure(outputStructure)) {
+      if (!outputStructure || isScalarStructure(outputStructure)) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
       if (isNonNullStructure(outputStructure)) {
@@ -330,7 +330,7 @@ export const RETURN_CONSTRUCTS: {
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure || isAnyStructure(outputStructure)) {
+      if (!outputStructure || isScalarStructure(outputStructure)) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
       if (isNonNullStructure(outputStructure)) {
@@ -366,7 +366,7 @@ export const RETURN_CONSTRUCTS: {
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure || isAnyStructure(outputStructure)) {
+      if (!outputStructure || isScalarStructure(outputStructure)) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
       if (isNonNullStructure(outputStructure)) {
@@ -425,7 +425,7 @@ export const RETURN_CONSTRUCTS: {
       }
 
       // if Output is not defined - do not check validation of result or error
-      if (!outputStructure || isAnyStructure(outputStructure)) {
+      if (!outputStructure || isScalarStructure(outputStructure)) {
         return mergeResults(...results);
       }
 
@@ -555,7 +555,7 @@ export const RETURN_CONSTRUCTS: {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
 
-      if (outputStructure && !isAnyStructure(outputStructure)) {
+      if (outputStructure && !isScalarStructure(outputStructure)) {
         if (isNonNullStructure(outputStructure) && node.text === 'undefined') {
           return returnIssue(
             {
@@ -659,7 +659,7 @@ export const RETURN_CONSTRUCTS: {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
 
-      if (outputStructure && !isAnyStructure(outputStructure)) {
+      if (outputStructure && !isScalarStructure(outputStructure)) {
         const variables: ReferencedVariables = {};
         let variableName = node.getText();
 
@@ -789,7 +789,7 @@ export const RETURN_CONSTRUCTS: {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
 
-      if (outputStructure && !isAnyStructure(outputStructure)) {
+      if (outputStructure && !isScalarStructure(outputStructure)) {
         const variables: ReferencedVariables = {};
         let expressionName = node.expression.getText();
         let argumentName = node.argumentExpression.getText();
@@ -887,7 +887,7 @@ export const RETURN_CONSTRUCTS: {
         });
       }
 
-      if (!outputStructure || isAnyStructure(outputStructure)) {
+      if (!outputStructure || isScalarStructure(outputStructure)) {
         return mergeResults(...results);
       }
 
@@ -1046,7 +1046,7 @@ export const RETURN_CONSTRUCTS: {
         });
       }
 
-      if (!outputStructure || isAnyStructure(outputStructure)) {
+      if (!outputStructure || isScalarStructure(outputStructure)) {
         return mergeResults(...results);
       }
 

@@ -37,10 +37,10 @@ import {
   UseCaseStructure,
 } from './profile-output';
 import {
-  isAnyStructure,
   isEnumStructure,
   isObjectStructure,
   isPrimitiveStructure,
+  isScalarStructure,
 } from './profile-output.utils';
 import { compareStructure, getOutcomes, mergeVariables } from './utils';
 
@@ -334,7 +334,7 @@ export class MapValidator implements MapVisitor {
                 continue b;
               }
             } else {
-              if (isAnyStructure(currentStructure)) {
+              if (isScalarStructure(currentStructure)) {
                 this.warnings.push({
                   kind: 'wrongStructure',
                   context: {
@@ -594,7 +594,7 @@ export class MapValidator implements MapVisitor {
       });
     }
 
-    if (!this.currentStructure || isAnyStructure(this.currentStructure)) {
+    if (!this.currentStructure || isScalarStructure(this.currentStructure)) {
       return true;
     }
 
@@ -794,7 +794,7 @@ export class MapValidator implements MapVisitor {
       return result;
     }
 
-    if (isAnyStructure(this.currentStructure)) {
+    if (isScalarStructure(this.currentStructure)) {
       return true;
     }
 
@@ -876,7 +876,7 @@ export class MapValidator implements MapVisitor {
   }
 
   visitPrimitiveLiteralNode(node: PrimitiveLiteralNode): boolean {
-    if (!this.currentStructure || isAnyStructure(this.currentStructure)) {
+    if (!this.currentStructure || isScalarStructure(this.currentStructure)) {
       return true;
     }
 

@@ -5,7 +5,7 @@ export type StructureKind =
   | 'ListStructure'
   | 'ObjectStructure'
   | 'UnionStructure'
-  | 'AnyStructure';
+  | 'ScalarStructure';
 
 /**
  * @interface Structure represents skeleton for other structures
@@ -69,10 +69,10 @@ export interface UnionStructure extends Structure {
 }
 
 /**
- * @interface AnyStructure represent any structure
+ * @interface ScalarStructure represent any structure
  */
-export interface AnyStructure extends Structure {
-  kind: 'AnyStructure';
+export interface ScalarStructure extends Structure {
+  kind: 'ScalarStructure';
   required?: true;
 }
 
@@ -86,7 +86,7 @@ export type StructureType =
   | ListStructure
   | ObjectStructure
   | UnionStructure
-  | AnyStructure;
+  | ScalarStructure;
 
 /**
  * @interface UseCaseStructure - represents usecase structure

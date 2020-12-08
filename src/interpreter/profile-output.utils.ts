@@ -1,18 +1,18 @@
 import {
-  AnyStructure,
   EnumStructure,
   ListStructure,
   NonNullStructure,
   ObjectStructure,
   PrimitiveStructure,
+  ScalarStructure,
   StructureType,
   UnionStructure,
 } from './profile-output';
 
-export function isAnyStructure(
+export function isScalarStructure(
   structure: StructureType
-): structure is AnyStructure {
-  return structure.kind === 'AnyStructure';
+): structure is ScalarStructure {
+  return structure.kind === 'ScalarStructure';
 }
 
 export function isNonNullStructure(
