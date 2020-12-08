@@ -28,13 +28,12 @@ import { MapVisitor } from '@superfaceai/sdk';
 import * as ts from 'typescript';
 
 import { RETURN_CONSTRUCTS } from './constructs';
+import { ValidationError, ValidationIssue, ValidationWarning } from './issue';
 import {
-  ArrayCollection,
   ObjectCollection,
   ObjectStructure,
   ProfileOutput,
   StructureType,
-  UnionStructure,
   UseCaseStructure,
 } from './profile-output';
 import {
@@ -50,216 +49,9 @@ function assertUnreachable(node: MapASTNode): never {
   throw new Error(`Invalid Node kind: ${node.kind}`);
 }
 
-export type ErrorContext = { path?: string[] };
-export type ValidationError =
-  | {
-      kind: 'wrongProfileID';
-      context: ErrorContext & { expected: string; actual: string };
-    }
-  | {
-      kind: 'wrongUsecaseName';
-      context: ErrorContext & { expected: string; actual: string };
-    }
-  | {
-      kind: 'usecaseNotFound';
-      context: ErrorContext & { expectedUseCase: string };
-    }
-  | {
-      kind: 'operationNotFound';
-      context: ErrorContext & { expected: string };
-    }
-  | {
-      kind: 'nonNullStructure';
-      context: ErrorContext & {
-        expected: Exclude<StructureType, UnionStructure>;
-        actual: string;
-      };
-    }
-  | {
-      kind: 'resultNotDefined';
-      context: ErrorContext & { expectedResult: StructureType | undefined };
-    }
-  | {
-      kind: 'errorNotDefined';
-      context: ErrorContext & { expectedError: StructureType | undefined };
-    }
-  | {
-      kind: 'wrongObjectStructure';
-      context: ErrorContext & {
-        expected: ObjectCollection;
-        actual: AssignmentNode[];
-      };
-    }
-  | {
-      kind: 'wrongArrayStructure';
-      context: ErrorContext & {
-        expected: ArrayCollection;
-        actual: LiteralNode[];
-      };
-    }
-  | {
-      kind: 'wrongStructure';
-      context: ErrorContext & {
-        expected: StructureType;
-        actual: LiteralNode | StructureType | string;
-      };
-    }
-  | {
-      kind: 'resultNotFound';
-      context: ErrorContext & { actualResult: LiteralNode };
-    }
-  | {
-      kind: 'errorNotFound';
-      context: ErrorContext & { actualError: LiteralNode };
-    }
-  | {
-      kind: 'wrongInput';
-      context: ErrorContext & {
-        expected: ObjectStructure;
-        actual: string;
-      };
-    }
-  | {
-      kind: 'wrongVariableStructure';
-      context: ErrorContext & {
-        name: string;
-        expected: StructureType;
-        actual: LiteralNode | string;
-      };
-    }
-  | {
-      kind: 'variableNotDefined';
-      context: ErrorContext & { name: string };
-    }
-  | {
-      kind: 'missingRequired';
-      context: ErrorContext & { field: string };
-    }
-  | {
-      kind: 'mapNotFound';
-      context: ErrorContext & { expected: string };
-    }
-  | {
-      kind: 'extraMapsFound';
-      context: ErrorContext & {
-        expected: string[];
-        actual: string[];
-      };
-    }
-  | {
-      kind: 'inputNotUsed';
-      context: ErrorContext;
-    };
-
-export type ValidationWarning =
-  | {
-      kind: 'wrongProfileID';
-      context: ErrorContext & { expected: string; actual: string };
-    }
-  | {
-      kind: 'wrongUsecaseName';
-      context: ErrorContext & { expected: string; actual: string };
-    }
-  | {
-      kind: 'usecaseNotFound';
-      context: ErrorContext & { expectedUseCase: string };
-    }
-  | {
-      kind: 'operationNotFound';
-      context: ErrorContext & { expected: string };
-    }
-  | {
-      kind: 'resultNotDefined';
-      context: ErrorContext & { expectedResult: StructureType | undefined };
-    }
-  | {
-      kind: 'errorNotDefined';
-      context: ErrorContext & { expectedError: StructureType | undefined };
-    }
-  | {
-      kind: 'wrongObjectStructure';
-      context: ErrorContext & {
-        expected: ObjectCollection;
-        actual: AssignmentNode[];
-      };
-    }
-  | {
-      kind: 'wrongArrayStructure';
-      context: ErrorContext & {
-        expected: ArrayCollection;
-        actual: LiteralNode[];
-      };
-    }
-  | {
-      kind: 'wrongStructure';
-      context: ErrorContext & {
-        expected: StructureType;
-        actual: LiteralNode | StructureType | string;
-      };
-    }
-  | {
-      kind: 'wrongInput';
-      context: ErrorContext & {
-        expected: ObjectStructure;
-        actual: string;
-      };
-    }
-  | {
-      kind: 'resultNotFound';
-      context: ErrorContext & { actualResult: LiteralNode };
-    }
-  | {
-      kind: 'errorNotFound';
-      context: ErrorContext & { actualError: LiteralNode };
-    }
-  | {
-      kind: 'wrongVariableStructure';
-      context: ErrorContext & {
-        name: string;
-        expected: StructureType;
-        actual: LiteralNode | string;
-      };
-    }
-  | {
-      kind: 'variableNotDefined';
-      context: ErrorContext & { name: string };
-    }
-  | {
-      kind: 'resultNotFound';
-      context: ErrorContext & { actualResult: LiteralNode };
-    }
-  | {
-      kind: 'extraMapsFound';
-      context: ErrorContext & {
-        expected: string[];
-        actual: string[];
-      };
-    }
-  | {
-      kind: 'nonNullStructure';
-      context: ErrorContext & {
-        expected: Exclude<StructureType, UnionStructure>;
-        actual: string;
-      };
-    }
-  | {
-      kind: 'missingRequired';
-      context: ErrorContext & { field: string };
-    }
-  | {
-      kind: 'mapNotFound';
-      context: ErrorContext & { expected: string };
-    }
-  | {
-      kind: 'inputNotUsed';
-      context: ErrorContext;
-    };
-
 export type ValidationResult =
   | { pass: true; warnings?: ValidationWarning[] }
   | { pass: false; errors: ValidationError[]; warnings?: ValidationWarning[] };
-
-export type ValidationIssue = ValidationError | ValidationWarning;
 
 export type ScopeInfo = 'map' | 'operation' | 'call' | 'httpResponse';
 
@@ -500,7 +292,7 @@ export class MapValidator implements MapVisitor {
         if (idName.startsWith('input')) {
           if (!this.inputStructure || !this.inputStructure.fields) {
             this.errors.push({
-              kind: 'inputNotUsed',
+              kind: 'inputNotFound',
               context: {
                 path: this.getPath(node),
               },
@@ -922,8 +714,12 @@ export class MapValidator implements MapVisitor {
         throw new Error('This should not happen!');
       }
 
-      // if validator is in call scope and jessie contains 'data' variable
-      if (this.callOperationScope) {
+      if (
+        this.stackTop.type === 'httpResponse' &&
+        variableName.split('.')[0] === 'body'
+      ) {
+        continue;
+      } else if (this.callOperationScope) {
         let outcomes: OutcomeStatementNode[];
 
         if (variableName.split('.')[0] === 'data') {

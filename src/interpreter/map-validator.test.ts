@@ -1,13 +1,8 @@
 import { MapASTNode, ProfileDocumentNode } from '@superfaceai/language';
 
-import { ValidationError, ValidationWarning } from './map-validator';
+import { ValidationError, ValidationWarning } from './issue';
 import { ProfileOutput } from './profile-output';
-import {
-  formatErrors,
-  formatWarnings,
-  getProfileOutput,
-  validateMap,
-} from './utils';
+import { formatIssues, getProfileOutput, validateMap } from './utils';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -50,8 +45,8 @@ expect.extend({
         pass = !pass;
         message = 'expected to fail';
       } else {
-        const err = formatErrors(errors);
-        const warn = formatWarnings(warnings);
+        const err = formatIssues(errors);
+        const warn = formatIssues(warnings);
 
         if (!err.includes(error)) {
           pass = !pass;
@@ -65,8 +60,8 @@ expect.extend({
         }
       }
     } else {
-      const warn = formatWarnings(warnings);
-      const err = formatErrors(errors);
+      const warn = formatIssues(warnings);
+      const err = formatIssues(errors);
       if (errors.length > 0) {
         pass = !pass;
         message = `expected to pass, errors: ${err}, warnings: ${warn}`;
@@ -11546,7 +11541,7 @@ describe('MapValidator', () => {
       valid(
         profileAst,
         [mapAst],
-        'OutcomeStatement - Result Not Found: returning "some string", but result is undefined'
+        'OutcomeStatement - Result Not Found: returning "some string", but there is no result defined in usecase'
       );
     });
     describe('profile error missing', () => {
@@ -11609,7 +11604,7 @@ describe('MapValidator', () => {
       valid(
         profileAst,
         [mapAst],
-        'OutcomeStatement - Error Not Found: returning "some string", but error is undefined'
+        'OutcomeStatement - Error Not Found: returning "some string", but there is no error defined in usecase'
       );
     });
     describe('profile input missing', () => {
@@ -11679,7 +11674,7 @@ describe('MapValidator', () => {
       valid(
         profileAst,
         [mapAst],
-        'OutcomeStatement - Result Not Found: returning "some string", but result is undefined'
+        'OutcomeStatement - Result Not Found: returning "some string", but there is no result defined in usecase'
       );
     });
   });

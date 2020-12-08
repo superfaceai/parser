@@ -1,6 +1,7 @@
 import * as ts from 'typescript';
 
-import { ValidationIssue, ValidationResult } from './map-validator';
+import { ValidationIssue } from './issue';
+import { ValidationResult } from './map-validator';
 import {
   ArrayCollection,
   ObjectStructure,
@@ -558,7 +559,7 @@ export const RETURN_CONSTRUCTS: {
         if (isNonNullStructure(outputStructure) && node.text === 'undefined') {
           return returnIssue(
             {
-              kind: 'nonNullStructure',
+              kind: 'wrongStructure',
               context: {
                 path: getPath(node),
                 actual: node.getText(),

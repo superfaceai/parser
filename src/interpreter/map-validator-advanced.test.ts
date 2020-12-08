@@ -1,13 +1,8 @@
 import { MapASTNode, ProfileDocumentNode } from '@superfaceai/language';
 
-import { ValidationError, ValidationWarning } from './map-validator';
+import { ValidationError, ValidationWarning } from './issue';
 import { ProfileOutput } from './profile-output';
-import {
-  formatErrors,
-  formatWarnings,
-  getProfileOutput,
-  validateMap,
-} from './utils';
+import { formatIssues, getProfileOutput, validateMap } from './utils';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -50,8 +45,8 @@ expect.extend({
         pass = !pass;
         message = 'expected to fail';
       } else {
-        const err = formatErrors(errors);
-        const warn = formatWarnings(warnings);
+        const err = formatIssues(errors);
+        const warn = formatIssues(warnings);
 
         if (!err.includes(error)) {
           pass = !pass;
@@ -65,8 +60,8 @@ expect.extend({
         }
       }
     } else {
-      const warn = formatWarnings(warnings);
-      const err = formatErrors(errors);
+      const warn = formatIssues(warnings);
+      const err = formatIssues(errors);
       if (errors.length > 0) {
         pass = !pass;
         message = `expected to pass, errors: ${err}, warnings: ${warn}`;
@@ -2467,6 +2462,14 @@ describe('MapValidator', () => {
                       },
                       {
                         kind: 'Assignment',
+                        key: ['some', 'body'],
+                        value: {
+                          kind: 'JessieExpression',
+                          expression: 'body.sid',
+                        },
+                      },
+                      {
+                        kind: 'Assignment',
                         key: ['sms', 'to'],
                         value: {
                           kind: 'JessieExpression',
@@ -2565,7 +2568,7 @@ describe('MapValidator', () => {
         profileAst,
         [mapAst2],
         'JessieExpression - Wrong Input Structure: expected messageId, but got input.wrong.key.in.input\n1:25 PropertyAccessExpression - Wrong Input Structure: expected messageId, but got input.wrong.key.in.input\nJessieExpression - Wrong Input Structure: expected messageId, but got input.to\n1:9 PropertyAccessExpression - Wrong Input Structure: expected messageId, but got input.to',
-        'OutcomeStatement - Error Not Found: returning "ObjectLiteral", but error is undefined\nObjectLiteral - Wrong Object Structure: expected deliveryStatus, but got status, some.key\nObjectLiteral - Wrong Object Structure: expected deliveryStatus, but got status'
+        'OutcomeStatement - Error Not Found: returning "ObjectLiteral", but there is no error defined in usecase\nObjectLiteral - Wrong Object Structure: expected deliveryStatus, but got status, some.key\nObjectLiteral - Wrong Object Structure: expected deliveryStatus, but got status'
       );
     });
   });
