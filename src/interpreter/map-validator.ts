@@ -53,19 +53,21 @@ export type ValidationResult =
   | { pass: true; warnings?: ValidationWarning[] }
   | { pass: false; errors: ValidationError[]; warnings?: ValidationWarning[] };
 
-export type ScopeInfo = 'map' | 'operation' | 'call' | 'httpResponse';
+export type ScopeInfo =
+  | 'map'
+  | 'operation'
+  | 'call'
+  | 'httpResponse'
+  | 'argument';
 
 interface Stack {
   type: ScopeInfo;
+  name: string;
   variables: Record<string, LiteralNode>;
 }
 
 export class MapValidator implements MapVisitor {
   private stack: Stack[] = [];
-  private argumentScopedVariables: Record<
-    string,
-    Record<string, LiteralNode>
-  > = {};
 
   private errors: ValidationError[] = [];
   private warnings: ValidationWarning[] = [];
@@ -75,7 +77,6 @@ export class MapValidator implements MapVisitor {
   private currentStructure: StructureType | undefined;
   private inputStructure: ObjectStructure | undefined;
 
-  private callOperationScope: string | undefined;
   private isOutcomeWithCondition = false;
 
   private dataVariable: Record<string, OutcomeStatementNode[]> = {};
@@ -231,7 +232,7 @@ export class MapValidator implements MapVisitor {
     this.dataVariable[node.name] = getOutcomes(node, false);
     this.errorVariable[node.name] = getOutcomes(node, true);
 
-    this.newStack('operation');
+    this.newStack('operation', node.name);
 
     node.statements.forEach(statement => this.visit(statement));
 
@@ -271,7 +272,7 @@ export class MapValidator implements MapVisitor {
       });
     }
 
-    this.newStack('map');
+    this.newStack('map', node.name);
     this.inputStructure = usecase.input;
 
     node.statements.forEach(statement => this.visit(statement));
@@ -287,7 +288,7 @@ export class MapValidator implements MapVisitor {
 
     if (variableNames) {
       a: for (let idName of variableNames) {
-        idName = idName.substring(1, idName.length - 1);
+        idName = idName.slice(1, -1);
 
         if (idName.startsWith('input')) {
           if (!this.inputStructure || !this.inputStructure.fields) {
@@ -301,7 +302,7 @@ export class MapValidator implements MapVisitor {
             continue a;
           }
 
-          let structure: ObjectCollection = { ...this.inputStructure.fields };
+          let structure: ObjectCollection = this.inputStructure.fields;
           const idCollection = idName.split('.');
 
           const keys: string[] = [];
@@ -429,25 +430,21 @@ export class MapValidator implements MapVisitor {
       });
     }
 
-    // argument handling
+    // arguments handling
+    this.newStack('argument');
     if (node.arguments.length > 0) {
-      this.argumentScopedVariables[node.operationName] = {};
-      node.arguments.forEach(argument => {
-        this.visit(argument);
-
-        this.argumentScopedVariables[node.operationName][
-          argument.key.join('.')
-        ] = argument.value;
+      this.visit({
+        kind: 'SetStatement',
+        assignments: node.arguments,
       });
     }
+    this.stack.pop();
 
     // call statements
-    this.newStack('call');
-    this.callOperationScope = node.operationName;
+    this.newStack('call', node.operationName);
 
     node.statements.forEach(statement => this.visit(statement));
 
-    this.callOperationScope = undefined;
     this.stack.pop();
   }
 
@@ -516,15 +513,22 @@ export class MapValidator implements MapVisitor {
   }
 
   private cleanUpVariables(key: string): void {
-    Object.keys(this.variables).forEach(variableKey => {
-      if (
-        variableKey.length > key.length &&
-        variableKey[key.length] === '.' &&
-        variableKey.includes(key)
-      ) {
-        delete this.stackTop.variables[variableKey];
+    for (const stackTop of this.stack) {
+      const variableKeys = Object.keys(stackTop.variables)
+      let index = variableKeys.length
+
+      while (index--) {
+        const variableKey = variableKeys[index]
+
+        if (
+          variableKey.length > key.length &&
+          variableKey[key.length] === '.' &&
+          variableKey.startsWith(key)
+        ) {
+          delete stackTop.variables[variableKey];
+        }
       }
-    });
+    }
   }
 
   visitSetStatementNode(node: SetStatementNode): void {
@@ -578,16 +582,15 @@ export class MapValidator implements MapVisitor {
       });
     }
 
+    // arguments handling
+    this.newStack('argument');
     if (node.arguments.length > 0) {
-      this.argumentScopedVariables[node.operationName] = {};
-      node.arguments.forEach(argument => {
-        this.visit(argument);
-
-        this.argumentScopedVariables[node.operationName][
-          argument.key.join('.')
-        ] = argument.value;
+      this.visit({
+        kind: 'SetStatement',
+        assignments: node.arguments,
       });
     }
+    this.stack.pop();
 
     if (!this.currentStructure || isScalarStructure(this.currentStructure)) {
       return true;
@@ -714,13 +717,13 @@ export class MapValidator implements MapVisitor {
         variableName.split('.')[0] === 'body'
       ) {
         continue;
-      } else if (this.callOperationScope) {
+      } else if (this.stackTop.type === 'call') {
         let outcomes: OutcomeStatementNode[];
 
         if (variableName.split('.')[0] === 'data') {
-          outcomes = this.dataVariable[this.callOperationScope];
+          outcomes = this.dataVariable[this.stackTop.name];
         } else if (variableName.split('.')[0] === 'error') {
-          outcomes = this.errorVariable[this.callOperationScope];
+          outcomes = this.errorVariable[this.stackTop.name];
         } else {
           continue;
         }
@@ -902,15 +905,16 @@ export class MapValidator implements MapVisitor {
     this.stackTop.variables = mergeVariables(this.stackTop.variables, variable);
   }
 
-  private newStack(type: Stack['type']): void {
-    this.stack.push({ type: type, variables: {} });
+  private newStack(type: Stack['type'], name?: string): void {
+    name = name ?? this.stackTop.name;
+    this.stack.push({ type: type, variables: {}, name });
   }
 
   private get variables(): Record<string, LiteralNode> {
     let variables: Record<string, LiteralNode> = {};
 
     for (const stackTop of this.stack) {
-      variables = mergeVariables(stackTop.variables, variables);
+      variables = mergeVariables(variables, stackTop.variables);
     }
 
     return variables;
