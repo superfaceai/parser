@@ -1,4 +1,4 @@
-import { ProfileDocumentNode } from '@superfaceai/language';
+import { ProfileDocumentNode } from '@superfaceai/ast';
 
 import { ObjectStructure, ProfileOutput } from './profile-output';
 import { ProfileValidator } from './profile-validator';

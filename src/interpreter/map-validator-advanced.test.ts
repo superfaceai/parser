@@ -1,4 +1,4 @@
-import { MapASTNode, ProfileDocumentNode } from '@superfaceai/language';
+import { MapASTNode, ProfileDocumentNode } from '@superfaceai/ast';
 
 import { ValidationError, ValidationWarning } from './issue';
 import { ProfileOutput } from './profile-output';
