@@ -9372,6 +9372,161 @@ describe('MapValidator', () => {
           ''
         );
       });
+      describe('in different scopes', () => {
+        const profileAst: ProfileDocumentNode = {
+          kind: 'ProfileDocument',
+          profile: {
+            kind: 'Profile',
+            profileId: {
+              kind: 'ProfileId',
+              profileId: 'whatever',
+            },
+          },
+          definitions: [
+            {
+              kind: 'UseCaseDefinition',
+              useCaseName: 'Test',
+              result: {
+                kind: 'UseCaseSlotDefinition',
+                type: {
+                  kind: 'PrimitiveTypeName',
+                  name: 'string',
+                },
+              },
+            },
+          ],
+        };
+        const mapAst1: MapASTNode = {
+          kind: 'MapDocument',
+          map: {
+            kind: 'Map',
+            profileId: {
+              kind: 'ProfileId',
+              profileId: 'whatever',
+            },
+            provider: {
+              kind: 'Provider',
+              providerId: 'whatever',
+            },
+          },
+          definitions: [
+            {
+              kind: 'MapDefinition',
+              name: 'Test',
+              usecaseName: 'Test',
+              statements: [
+                {
+                  kind: 'SetStatement',
+                  assignments: [
+                    {
+                      kind: 'Assignment',
+                      key: ['a', 'c'],
+                      value: {
+                        kind: 'PrimitiveLiteral',
+                        value: false,
+                      },
+                    },
+                  ],
+                },
+                {
+                  kind: 'SetStatement',
+                  assignments: [
+                    {
+                      kind: 'Assignment',
+                      key: ['b'],
+                      value: {
+                        kind: 'PrimitiveLiteral',
+                        value: 'some string',
+                      },
+                    },
+                  ],
+                },
+                {
+                  kind: 'HttpCallStatement',
+                  method: 'GET',
+                  url: 'http://example.com/',
+                  responseHandlers: [
+                    {
+                      kind: 'HttpResponseHandler',
+                      statements: [
+                        {
+                          kind: 'SetStatement',
+                          assignments: [
+                            {
+                              kind: 'Assignment',
+                              key: ['a', 'c'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 'some string',
+                              },
+                            },
+                          ],
+                        },
+                        {
+                          kind: 'SetStatement',
+                          assignments: [
+                            {
+                              kind: 'Assignment',
+                              key: ['c'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 'some string',
+                              },
+                            },
+                          ],
+                        },
+                        {
+                          kind: 'OutcomeStatement',
+                          terminateFlow: false,
+                          isError: false,
+                          value: {
+                            kind: 'JessieExpression',
+                            expression: 'a.c',
+                          },
+                        },
+                        {
+                          kind: 'OutcomeStatement',
+                          terminateFlow: false,
+                          isError: false,
+                          value: {
+                            kind: 'JessieExpression',
+                            expression: 'b',
+                          },
+                        },
+                      ]
+                    }
+                  ]
+                },
+                {
+                  kind: 'OutcomeStatement',
+                  terminateFlow: false,
+                  isError: false,
+                  value: {
+                    kind: 'JessieExpression',
+                    expression: 'a.c',
+                  },
+                },
+                {
+                  kind: 'OutcomeStatement',
+                  terminateFlow: false,
+                  isError: false,
+                  value: {
+                    kind: 'JessieExpression',
+                    expression: 'c',
+                  },
+                },
+              ],
+            },
+          ],
+        };
+
+        invalid(
+          profileAst,
+          [mapAst1],
+          'JessieExpression - Wrong Variable Structure: variable a.c expected string, but got false\nJessieExpression - Missing Variable definition: c is not defined',
+          ''
+        );
+      });
     });
     describe('result is conditioned', () => {
       const profileAst: ProfileDocumentNode = {
