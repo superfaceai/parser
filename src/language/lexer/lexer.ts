@@ -151,15 +151,18 @@ export class Lexer implements LexerTokenStream {
       value: tok,
     };
   }
+
   return(value?: undefined): IteratorResult<LexerToken, undefined> {
     return {
       done: true,
       value,
     };
   }
+
   throw(e?: unknown): IteratorResult<LexerToken, undefined> {
     throw e;
   }
+
   [Symbol.iterator](): Generator<
     LexerToken,
     undefined,
@@ -183,10 +186,12 @@ export class Lexer implements LexerTokenStream {
       value: tok,
     };
   }
+
   /** Saves the lexer state to be restored later. */
   save(): LexerSavedState {
     return [this.currentToken, this.fileSeparatorYielded];
   }
+
   /**
    * Roll back the state of the lexer to the given saved state.
    *

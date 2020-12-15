@@ -49,6 +49,7 @@ export class ArrayLexerStream implements LexerTokenStream {
 
     return result;
   }
+
   peek(context?: LexerContext): IteratorResult<LexerToken, undefined> {
     const originalIndex = this.index;
     const result = this.next(context);
@@ -74,6 +75,7 @@ export class ArrayLexerStream implements LexerTokenStream {
       ];
     }
   }
+
   rollback(state: LexerSavedState): void {
     this.index = this.array.indexOf(state[0]) + 1;
   }
@@ -84,9 +86,11 @@ export class ArrayLexerStream implements LexerTokenStream {
       value,
     };
   }
+
   throw(e: unknown): IteratorResult<LexerToken, undefined> {
     throw e;
   }
+
   [Symbol.iterator](): Generator<
     LexerToken,
     undefined,

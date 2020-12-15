@@ -104,6 +104,7 @@ export class ProfileValidator implements ProfileVisitor {
 
     return this.visit(node.type);
   }
+
   visitEnumDefinitionNode(node: EnumDefinitionNode): StructureType {
     return {
       kind: 'EnumStructure',
