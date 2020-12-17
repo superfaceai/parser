@@ -1983,23 +1983,19 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@superfaceai/ast@^0.0.18":
+"@superfaceai/ast@0.0.18", "@superfaceai/ast@^0.0.18":
   version "0.0.18"
   resolved "https://npm.pkg.github.com/download/@superfaceai/ast/0.0.18/e91aa5bf51d97aa602aa04bc88c277a82d1f16eda96805a4d81a94be6b01f440#7dd7a3f3ebb5366ebd1d865aea942a1f70a65c0d"
   integrity sha512-4isw2Tpr82bzX8Yvh7t0uVcPp4ogCouWaj+G71M5VNzeHTXI4+Zx2asJJPEQSsh6/poUoUnyladXqnt+u7DxMg==
 
-"@superfaceai/language@^0.0.17-alpha3":
-  version "0.0.17-alpha3"
-  resolved "https://npm.pkg.github.com/download/@superfaceai/language/0.0.17-alpha3/24796f3a7a24b7e70ea459ba16cc2d55526277174c3d914ead20d8cb6d3ea82e#c3ffa5db6b7e3d84e9edf675657003f44e07fff7"
-  integrity sha512-lRwOb6/MpNGjCpsk+i0av/No1S6v6k1slJVgx0S6TNHwDEAICZ5NJq3Kd8JK2e8mf6bJTQ8m1C3wRW4P+4HIPg==
-
-"@superfaceai/sdk@^0.0.3":
-  version "0.0.3"
-  resolved "https://npm.pkg.github.com/download/@superfaceai/sdk/0.0.3/924764d2768ef78e8560efbb5c3952ec8b960a4761d9894c99dc3d7e3a9c5b50#228bc1df5dc630eaf5cbf429e02a408264e761e3"
-  integrity sha512-MKfR0irW0HcOClVnbpSPHw38Ebl4xREObmN8K9iz6wxHgGlkFV3IgV9sbcGvw73V4sycG3GvtNUmN6gV1W1VZg==
+"@superfaceai/sdk@^0.0.4":
+  version "0.0.4"
+  resolved "https://npm.pkg.github.com/download/@superfaceai/sdk/0.0.4/55cc65705ecdda34e4083eb9cd76597f3a64f1e5fa74aa1038a0060feab8b0b9#a65235bb17cce120cd510ce0532c5d9bfb10c8e3"
+  integrity sha512-jPKVM479DycsoEA5aPOt7imh8CqwLk0ipyYKnEIj3GkDiKVwwJkQGZD8NgPWqNzdrGZgVSQolOcBRzoC2gXGhA==
   dependencies:
-    "@superfaceai/language" "^0.0.17-alpha3"
+    "@superfaceai/ast" "0.0.18"
     cross-fetch "^3.0.5"
+    debug "^4.3.1"
     isomorphic-form-data "^2.0.0"
     vm2 "^3.9.2"
 
@@ -3433,6 +3429,13 @@ debug@^4.0.1, debug@^4.1.0, debug@^4.1.1:
   integrity sha512-pYAIzeRo8J6KPEaJ0VWOh5Pzkbw/RetuzehGM7QRRX5he4fPHx2rdKMB256ehJCkX+XRQm16eZLqLNS8RSZXZw==
   dependencies:
     ms "^2.1.1"
+
+debug@^4.3.1:
+  version "4.3.1"
+  resolved "https://registry.yarnpkg.com/debug/-/debug-4.3.1.tgz#f0d229c505e0c6d8c49ac553d1b13dc183f6b2ee"
+  integrity sha512-doEwdvm4PCeK4K3RQN2ZC2BYUBaxwLARCqZmMjtF8a51J2Rb0xpVloFRnCODwqjpwnAoao4pelN8l3RJdv3gRQ==
+  dependencies:
+    ms "2.1.2"
 
 decamelize@^1.2.0:
   version "1.2.0"
@@ -5965,7 +5968,7 @@ ms@2.0.0:
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
   integrity sha1-VgiurfwAvmwpAd9fmGF4jeDVl8g=
 
-ms@^2.1.1:
+ms@2.1.2, ms@^2.1.1:
   version "2.1.2"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.1.2.tgz#d09d1f357b443f493382a8eb3ccd183872ae6009"
   integrity sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==
