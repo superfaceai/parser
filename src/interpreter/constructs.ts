@@ -19,18 +19,25 @@ import {
   isScalarStructure,
   isUnionStructure,
 } from './profile-output.utils';
+import {
+  findTypescriptIdentifier,
+  findTypescriptProperty,
+  getVariableName,
+  validateObjectStructure,
+} from './utils';
 
-export type ID =
+export type TypescriptIdentifier =
   | ts.Identifier
   | ts.PropertyAccessExpression
   | ts.ElementAccessExpression;
 
-export interface ReferencedVariables {
-  [variableName: string]: (StructureType | undefined)[];
-}
+export type ReferencedVariables = {
+  jessieNode: TypescriptIdentifier;
+  type: StructureType;
+};
 
 export type ConstructResult = ValidationResult & {
-  variables?: ReferencedVariables;
+  variables?: ReferencedVariables[];
   invalidInput: boolean;
   invalidOutput: boolean;
 };
@@ -57,10 +64,7 @@ function mergeResults(...results: ConstructResult[]): ConstructResult {
         ...(!val.pass ? val.errors : []),
       ];
       const warnings = [...(acc.warnings ?? []), ...(val.warnings ?? [])];
-      const variables = {
-        ...(acc.variables ?? {}),
-        ...(val.variables ?? {}),
-      };
+      const variables = [...(acc.variables ?? []), ...(val.variables ?? [])];
       const invalidInput = acc.invalidInput || val.invalidInput;
       const invalidOutput = acc.invalidOutput || val.invalidOutput;
 
@@ -89,12 +93,12 @@ function getPath(node: ts.Node): string[] {
   return [`${node.getStart()}:${node.getEnd()}`, ts.SyntaxKind[node.kind]];
 }
 
-function assertID(node: ts.Node): node is ID {
+function isTypescriptIdentifier(node: ts.Node): node is TypescriptIdentifier {
   return (
     (ts.isIdentifier(node) ||
       ts.isPropertyAccessExpression(node) ||
       ts.isElementAccessExpression(node)) &&
-    node.getText() !== 'undefined'
+    getVariableName(node) !== 'undefined'
   );
 }
 
@@ -212,6 +216,30 @@ function returnIssue(
       };
 }
 
+function getFieldStructure(
+  property: string,
+  node: ts.LeftHandSideExpression,
+  objectStructure: ObjectStructure
+): StructureType | undefined {
+  if (ts.isIdentifier(node)) {
+    if (!objectStructure.fields) {
+      throw new Error('This should not happen!');
+    }
+
+    return objectStructure.fields[property];
+  } else if (ts.isPropertyAccessExpression(node)) {
+    const structure = validateObjectStructure(node, objectStructure);
+
+    if (!structure || !isObjectStructure(structure) || !structure.fields) {
+      return undefined;
+    }
+
+    return structure.fields[property];
+  }
+
+  return undefined;
+}
+
 export const RETURN_CONSTRUCTS: {
   [kind in ts.SyntaxKind]?: VisitConstruct;
 } = {
@@ -222,15 +250,15 @@ export const RETURN_CONSTRUCTS: {
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure || isScalarStructure(outputStructure)) {
+      if (!outputStructure) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
       if (
-        isPrimitiveStructure(outputStructure) &&
-        assertString(outputStructure)
+        isScalarStructure(outputStructure) ||
+        (isPrimitiveStructure(outputStructure) && assertString(outputStructure))
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
@@ -240,7 +268,7 @@ export const RETURN_CONSTRUCTS: {
           kind: 'wrongStructure',
           context: {
             path: getPath(node),
-            actual: node.getText(),
+            actual: node.text,
             expected: outputStructure,
           },
         },
@@ -258,15 +286,15 @@ export const RETURN_CONSTRUCTS: {
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure || isScalarStructure(outputStructure)) {
+      if (!outputStructure) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
       if (
-        isPrimitiveStructure(outputStructure) &&
-        assertNumber(outputStructure)
+        isScalarStructure(outputStructure) ||
+        (isPrimitiveStructure(outputStructure) && assertNumber(outputStructure))
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
@@ -276,7 +304,7 @@ export const RETURN_CONSTRUCTS: {
           kind: 'wrongStructure',
           context: {
             path: getPath(node),
-            actual: node.getText(),
+            actual: node.text,
             expected: outputStructure,
           },
         },
@@ -289,20 +317,21 @@ export const RETURN_CONSTRUCTS: {
 
   [ts.SyntaxKind.FalseKeyword]: {
     visit: (
-      node: ts.BooleanLiteral,
+      node: ts.FalseLiteral,
       outputStructure?: StructureType,
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure || isScalarStructure(outputStructure)) {
+      if (!outputStructure) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
       if (
-        isPrimitiveStructure(outputStructure) &&
-        assertBoolean(outputStructure)
+        isScalarStructure(outputStructure) ||
+        (isPrimitiveStructure(outputStructure) &&
+          assertBoolean(outputStructure))
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
@@ -312,7 +341,7 @@ export const RETURN_CONSTRUCTS: {
           kind: 'wrongStructure',
           context: {
             path: getPath(node),
-            actual: node.getText(),
+            actual: 'false',
             expected: outputStructure,
           },
         },
@@ -325,20 +354,21 @@ export const RETURN_CONSTRUCTS: {
 
   [ts.SyntaxKind.TrueKeyword]: {
     visit: (
-      node: ts.BooleanLiteral,
+      node: ts.TrueLiteral,
       outputStructure?: StructureType,
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure || isScalarStructure(outputStructure)) {
+      if (!outputStructure) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
       if (
-        isPrimitiveStructure(outputStructure) &&
-        assertBoolean(outputStructure)
+        isScalarStructure(outputStructure) ||
+        (isPrimitiveStructure(outputStructure) &&
+          assertBoolean(outputStructure))
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
@@ -348,7 +378,7 @@ export const RETURN_CONSTRUCTS: {
           kind: 'wrongStructure',
           context: {
             path: getPath(node),
-            actual: node.getText(),
+            actual: 'true',
             expected: outputStructure,
           },
         },
@@ -366,7 +396,7 @@ export const RETURN_CONSTRUCTS: {
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
-      if (!outputStructure || isScalarStructure(outputStructure)) {
+      if (!outputStructure) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
       if (isNonNullStructure(outputStructure)) {
@@ -375,7 +405,7 @@ export const RETURN_CONSTRUCTS: {
             kind: 'wrongStructure',
             context: {
               path: getPath(node),
-              actual: node.getText(),
+              actual: 'null',
               expected: outputStructure,
             },
           },
@@ -400,7 +430,7 @@ export const RETURN_CONSTRUCTS: {
 
       // if Input is defined - check ids in children nodes
       if (inputStructure) {
-        if (assertID(node.left)) {
+        if (isTypescriptIdentifier(node.left)) {
           results.push(
             visitConstruct(
               node.left,
@@ -411,7 +441,7 @@ export const RETURN_CONSTRUCTS: {
             )
           );
         }
-        if (assertID(node.right)) {
+        if (isTypescriptIdentifier(node.right)) {
           results.push(
             visitConstruct(
               node,
@@ -425,13 +455,17 @@ export const RETURN_CONSTRUCTS: {
       }
 
       // if Output is not defined - do not check validation of result or error
-      if (!outputStructure || isScalarStructure(outputStructure)) {
+      if (!outputStructure) {
         return mergeResults(...results);
       }
 
       // if Output is defined - do check
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
+      }
+
+      if (isScalarStructure(outputStructure)) {
+        return mergeResults(...results);
       }
 
       const issue: ValidationIssue = {
@@ -447,27 +481,18 @@ export const RETURN_CONSTRUCTS: {
         isPrimitiveStructure(outputStructure) &&
         assertBoolean(outputStructure)
       ) {
-        return isOutcomeWithCondition
-          ? mergeResults(...results, {
-              pass: true,
-              warnings: [issue],
-              invalidInput: false,
-              invalidOutput: true,
-            })
-          : mergeResults(...results, {
-              pass: false,
-              errors: [issue],
-              invalidInput: false,
-              invalidOutput: true,
-            });
+        return mergeResults(
+          ...results,
+          returnIssue(issue, false, true, isOutcomeWithCondition)
+        );
       }
 
       const nodeContainsString =
         ts.isStringLiteral(node.left) || ts.isStringLiteral(node.right);
+      const nodeContainsID =
+        isTypescriptIdentifier(node.left) || isTypescriptIdentifier(node.right);
 
-      const nodeContainsID = assertID(node.left) || assertID(node.right);
-
-      if (assertID(node.left)) {
+      if (isTypescriptIdentifier(node.left)) {
         results.push(
           visitConstruct(
             node.left,
@@ -479,7 +504,7 @@ export const RETURN_CONSTRUCTS: {
         );
       }
 
-      if (assertID(node.right)) {
+      if (isTypescriptIdentifier(node.right)) {
         results.push(
           visitConstruct(
             node.right,
@@ -516,19 +541,10 @@ export const RETURN_CONSTRUCTS: {
         });
       }
 
-      return isOutcomeWithCondition
-        ? mergeResults(...results, {
-            pass: true,
-            warnings: [issue],
-            invalidInput: false,
-            invalidOutput: true,
-          })
-        : mergeResults(...results, {
-            pass: false,
-            errors: [issue],
-            invalidInput: false,
-            invalidOutput: true,
-          });
+      return mergeResults(
+        ...results,
+        returnIssue(issue, false, true, isOutcomeWithCondition)
+      );
     },
   },
 
@@ -546,7 +562,7 @@ export const RETURN_CONSTRUCTS: {
               kind: 'inputNotFound',
               context: {
                 path: getPath(node),
-                actual: node.getText(),
+                actual: getVariableName(node),
               },
             },
             true,
@@ -562,6 +578,7 @@ export const RETURN_CONSTRUCTS: {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
 
+      const variables: ReferencedVariables[] = [];
       if (outputStructure && !isScalarStructure(outputStructure)) {
         if (isNonNullStructure(outputStructure) && node.text === 'undefined') {
           return returnIssue(
@@ -569,7 +586,7 @@ export const RETURN_CONSTRUCTS: {
               kind: 'wrongStructure',
               context: {
                 path: getPath(node),
-                actual: node.getText(),
+                actual: getVariableName(node),
                 expected: outputStructure.value,
               },
             },
@@ -579,22 +596,18 @@ export const RETURN_CONSTRUCTS: {
           );
         }
 
-        const variables: ReferencedVariables = {};
-        if (isUnionStructure(outputStructure)) {
-          variables[node.text] = Object.values(outputStructure.types);
-        } else {
-          variables[node.text] = [outputStructure];
-        }
-
-        return {
-          pass: true,
-          invalidInput: false,
-          invalidOutput: false,
-          variables,
-        };
+        variables.push({
+          jessieNode: node,
+          type: outputStructure,
+        });
       }
 
-      return { pass: true, invalidInput: false, invalidOutput: false };
+      return {
+        pass: true,
+        invalidInput: false,
+        invalidOutput: false,
+        variables,
+      };
     },
   },
 
@@ -605,14 +618,18 @@ export const RETURN_CONSTRUCTS: {
       inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult {
-      if (node.expression.getText().split('.')[0] === 'input') {
+      if (findTypescriptIdentifier('input', node.expression)) {
+        if (findTypescriptProperty('auth', node.expression)) {
+          return { pass: true, invalidInput: false, invalidOutput: false };
+        }
+
         if (!inputStructure || !inputStructure.fields) {
           return returnIssue(
             {
               kind: 'inputNotFound',
               context: {
                 path: getPath(node),
-                actual: node.getText(),
+                actual: getVariableName(node),
               },
             },
             true,
@@ -626,112 +643,42 @@ export const RETURN_CONSTRUCTS: {
           context: {
             path: getPath(node),
             expected: inputStructure,
-            actual: node.getText(),
+            actual: getVariableName(node),
           },
         };
 
-        const property = node.name.getText();
-        let fieldValue: StructureType | undefined;
+        const property = node.name.text;
+        const fieldValue = getFieldStructure(
+          property,
+          node.expression,
+          inputStructure
+        );
 
-        // input.to or input.from or input.person
-        if (ts.isIdentifier(node.expression)) {
-          fieldValue = inputStructure.fields[property];
-
-          if (!fieldValue) {
-            return returnIssue(issue, true, false, isOutcomeWithCondition);
-          }
-        } else if (ts.isPropertyAccessExpression(node.expression)) {
-          // input.person.to or input.person.from or input.person.text.length
-          let structure: StructureType | undefined;
-          if (this.visitInput) {
-            structure = this.visitInput(node.expression, inputStructure);
-          }
-
-          if (!structure) {
-            return returnIssue(issue, true, false, isOutcomeWithCondition);
-          }
-
-          if (!isObjectStructure(structure) || !structure.fields) {
-            return returnIssue(issue, true, false, isOutcomeWithCondition);
-          }
-
-          fieldValue = structure.fields[property];
-
-          if (!fieldValue) {
-            return returnIssue(issue, true, false, isOutcomeWithCondition);
-          }
+        if (!fieldValue) {
+          return returnIssue(issue, true, false, isOutcomeWithCondition);
         }
 
         if (outputStructure) {
-          if (!fieldValue) {
-            throw new Error('This should not happen!');
-          }
-
           return compareStructures(node, fieldValue, outputStructure);
         }
 
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
 
+      const variables: ReferencedVariables[] = [];
       if (outputStructure && !isScalarStructure(outputStructure)) {
-        const variables: ReferencedVariables = {};
-        let variableName = node.getText();
-
-        const trimVariableName = (text: string, quote: '"' | "'"): string =>
-          text.slice(1, text.lastIndexOf(quote)) +
-          text.slice(text.lastIndexOf(quote) + 1, text.length);
-
-        if (variableName.startsWith("'")) {
-          variableName = trimVariableName(variableName, "'");
-        } else if (variableName.startsWith('"')) {
-          variableName = trimVariableName(variableName, '"');
-        }
-
-        if (isUnionStructure(outputStructure)) {
-          variables[variableName] = Object.values(outputStructure.types);
-        } else {
-          variables[variableName] = [outputStructure];
-        }
-
-        return {
-          pass: true,
-          invalidInput: false,
-          invalidOutput: false,
-          variables,
-        };
+        variables.push({
+          jessieNode: node,
+          type: outputStructure,
+        });
       }
 
-      return { pass: true, invalidInput: false, invalidOutput: false };
-    },
-
-    visitInput(
-      node: ts.PropertyAccessExpression,
-      structure: ObjectStructure
-    ): StructureType | undefined {
-      const { expression, name } = node;
-      let outputStructure: StructureType | undefined;
-
-      if (ts.isPropertyAccessExpression(expression)) {
-        if (this.visitInput) {
-          outputStructure = this.visitInput(expression, structure);
-        }
-      } else if (ts.isIdentifier(expression)) {
-        if (!structure.fields) {
-          return undefined;
-        }
-
-        return structure.fields[name.getText()];
-      }
-
-      if (
-        !outputStructure ||
-        !isObjectStructure(outputStructure) ||
-        !outputStructure.fields
-      ) {
-        return undefined;
-      }
-
-      return outputStructure.fields[name.getText()];
+      return {
+        pass: true,
+        invalidInput: false,
+        invalidOutput: false,
+        variables,
+      };
     },
   },
 
@@ -742,20 +689,21 @@ export const RETURN_CONSTRUCTS: {
       inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult {
-      if (node.expression.getText().split('.')[0] === 'input') {
+      if (findTypescriptIdentifier('input', node.expression)) {
+        if (findTypescriptProperty('auth', node.expression)) {
+          return { pass: true, invalidInput: false, invalidOutput: false };
+        }
+
         if (!inputStructure || !inputStructure.fields) {
-          return returnIssue(
-            {
-              kind: 'inputNotFound',
-              context: {
-                path: getPath(node),
-                actual: node.getText(),
-              },
+          const issue: ValidationIssue = {
+            kind: 'inputNotFound',
+            context: {
+              path: getPath(node),
+              actual: getVariableName(node),
             },
-            true,
-            false,
-            isOutcomeWithCondition
-          );
+          };
+
+          return returnIssue(issue, true, false, isOutcomeWithCondition);
         }
 
         const issue: ValidationIssue = {
@@ -763,120 +711,42 @@ export const RETURN_CONSTRUCTS: {
           context: {
             path: getPath(node),
             expected: inputStructure,
-            actual: node.getText(),
+            actual: getVariableName(node),
           },
         };
 
-        const property = node.argumentExpression.getText();
-        let fieldValue: StructureType | undefined;
+        const property = (node.argumentExpression as ts.Identifier).text;
+        const fieldValue = getFieldStructure(
+          property,
+          node.expression,
+          inputStructure
+        );
 
-        // input['to'] or input['from'] or input['person']
-        if (ts.isIdentifier(node.expression)) {
-          fieldValue = inputStructure.fields[property];
-
-          if (!fieldValue) {
-            return returnIssue(issue, true, false, isOutcomeWithCondition);
-          }
-        } else if (ts.isPropertyAccessExpression(node.expression)) {
-          // input.person['to'] or input.person['from'] or input.person.text['length']
-          let structure: StructureType | undefined;
-          if (this.visitInput) {
-            structure = this.visitInput(node.expression, inputStructure);
-          }
-
-          if (!structure) {
-            return returnIssue(issue, true, false, isOutcomeWithCondition);
-          }
-
-          if (!isObjectStructure(structure) || !structure.fields) {
-            return returnIssue(issue, true, false, isOutcomeWithCondition);
-          }
-
-          fieldValue = structure.fields[property];
-
-          if (!fieldValue) {
-            return returnIssue(issue, true, false, isOutcomeWithCondition);
-          }
+        if (!fieldValue) {
+          return returnIssue(issue, true, false, isOutcomeWithCondition);
         }
 
         if (outputStructure) {
-          if (!fieldValue) {
-            throw new Error('This should not happen!');
-          }
-
           return compareStructures(node, fieldValue, outputStructure);
         }
 
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
 
+      const variables: ReferencedVariables[] = [];
       if (outputStructure && !isScalarStructure(outputStructure)) {
-        const variables: ReferencedVariables = {};
-        let expressionName = node.expression.getText();
-        let argumentName = node.argumentExpression.getText();
-
-        const trimVariableName = (text: string, quote: '"' | "'"): string =>
-          text.slice(1, text.lastIndexOf(quote)) +
-          text.slice(text.lastIndexOf(quote) + 1, text.length);
-
-        if (expressionName.startsWith("'")) {
-          expressionName = trimVariableName(expressionName, "'");
-        } else if (expressionName.startsWith('"')) {
-          expressionName = trimVariableName(expressionName, '"');
-        }
-
-        if (argumentName.startsWith("'")) {
-          argumentName = trimVariableName(argumentName, "'");
-        } else if (argumentName.startsWith('"')) {
-          argumentName = trimVariableName(argumentName, '"');
-        }
-
-        const variableName = expressionName + '.' + argumentName;
-        if (isUnionStructure(outputStructure)) {
-          variables[variableName] = Object.values(outputStructure.types);
-        } else {
-          variables[variableName] = [outputStructure];
-        }
-
-        return {
-          pass: true,
-          invalidInput: false,
-          invalidOutput: false,
-          variables,
-        };
+        variables.push({
+          jessieNode: node,
+          type: outputStructure,
+        });
       }
 
-      return { pass: true, invalidInput: false, invalidOutput: false };
-    },
-
-    visitInput(
-      node: ts.PropertyAccessExpression,
-      structure: ObjectStructure
-    ): StructureType | undefined {
-      const { expression, name } = node;
-      let outputStructure: StructureType | undefined;
-
-      if (ts.isPropertyAccessExpression(expression)) {
-        if (this.visitInput) {
-          outputStructure = this.visitInput(expression, structure);
-        }
-      } else if (ts.isIdentifier(expression)) {
-        if (!structure.fields) {
-          return undefined;
-        }
-
-        return structure.fields[name.getText()];
-      }
-
-      if (
-        !outputStructure ||
-        !isObjectStructure(outputStructure) ||
-        !outputStructure.fields
-      ) {
-        return undefined;
-      }
-
-      return outputStructure.fields[name.getText()];
+      return {
+        pass: true,
+        invalidInput: false,
+        invalidOutput: false,
+        variables,
+      };
     },
   },
 
@@ -889,12 +759,12 @@ export const RETURN_CONSTRUCTS: {
     ): ConstructResult {
       const results: ConstructResult[] = [];
 
+      // object should only contain property assignments
+      const properties = node.properties.filter(ts.isPropertyAssignment);
+
       if (inputStructure) {
-        node.properties.slice(0, node.properties.length).forEach(property => {
-          if (
-            ts.isPropertyAssignment(property) &&
-            assertID(property.initializer)
-          ) {
+        for (const property of properties) {
+          if (isTypescriptIdentifier(property.initializer)) {
             results.push(
               visitConstruct(
                 property.initializer,
@@ -905,15 +775,19 @@ export const RETURN_CONSTRUCTS: {
               )
             );
           }
-        });
+        }
       }
 
-      if (!outputStructure || isScalarStructure(outputStructure)) {
+      if (!outputStructure) {
         return mergeResults(...results);
       }
 
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
+      }
+
+      if (isScalarStructure(outputStructure)) {
+        return mergeResults(...results);
       }
 
       if (!isObjectStructure(outputStructure)) {
@@ -926,117 +800,81 @@ export const RETURN_CONSTRUCTS: {
           },
         };
 
-        isOutcomeWithCondition
-          ? results.push({
-              pass: true,
-              warnings: [issue],
-              invalidInput: false,
-              invalidOutput: true,
-            })
-          : results.push(...results, {
-              pass: false,
-              errors: [issue],
-              invalidInput: false,
-              invalidOutput: true,
-            });
-
-        return mergeResults(...results);
+        return mergeResults(
+          ...results,
+          returnIssue(issue, false, true, isOutcomeWithCondition)
+        );
       }
 
-      const properties = node.properties.slice(0, node.properties.length);
-      const structureOfFields = outputStructure.fields;
+      const structureOfProperties = outputStructure.fields;
 
-      if (properties.length === 0 && !structureOfFields) {
+      if (properties.length === 0 && !structureOfProperties) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
 
-      if (!structureOfFields) {
+      if (!structureOfProperties) {
         throw new Error('This should not happen!');
       }
 
-      const propertyValues = Object.values(properties);
-      const fieldNames = Object.keys(structureOfFields);
-      let index = fieldNames.length;
+      // all fields
+      const profileProperties = Object.entries(structureOfProperties);
+      const profilePropertyNames = Object.keys(structureOfProperties);
+      const mapPropertyNames = properties.map(
+        property => (property.name as ts.Identifier).text
+      );
 
-      while (index--) {
-        const key = fieldNames[index];
-        const value = structureOfFields[key];
+      // required fields
+      const requiredProperties = profileProperties.filter(
+        ([, value]) => value.required
+      );
+      const requiredPropertiesNotFound = requiredProperties.filter(
+        ([key]) => !mapPropertyNames.includes(key)
+      );
 
-        if (!value) {
-          throw new Error(`Value with key: ${key} does not exist!`);
-        }
+      // fields found inside node
+      const matchingProperties = properties.filter(property =>
+        profilePropertyNames.includes((property.name as ts.Identifier).text)
+      );
+      const extraProperties = properties.filter(
+        property =>
+          !profilePropertyNames.includes((property.name as ts.Identifier).text)
+      );
 
-        let isFound = false;
-        let nodeIndex = propertyValues.length;
-
-        while (nodeIndex--) {
-          const property = propertyValues[nodeIndex];
-          const nodeKey = property.name;
-
-          if (!nodeKey) {
-            throw new Error('This should not happen!');
-          }
-
-          if (nodeKey.getText() === key) {
-            if (ts.isPropertyAssignment(property)) {
-              results.push(
-                visitConstruct(
-                  property.initializer,
-                  value,
-                  undefined,
-                  isOutcomeWithCondition,
-                  RETURN_CONSTRUCTS[property.initializer.kind]
-                )
-              );
-
-              isFound = true;
-              fieldNames.splice(index, 1);
-              propertyValues.splice(nodeIndex, 1);
-            }
-          }
-        }
-
-        if (value.required && !isFound) {
-          const issue: ValidationIssue = {
-            kind: 'missingRequired',
-            context: {
-              path: getPath(node),
-              field: key,
-            },
-          };
-
-          isOutcomeWithCondition
-            ? results.push({
-                pass: true,
-                warnings: [issue],
-                invalidInput: false,
-                invalidOutput: true,
-              })
-            : results.push({
-                pass: false,
-                errors: [issue],
-                invalidInput: false,
-                invalidOutput: true,
-              });
-        }
+      for (const property of matchingProperties) {
+        results.push(
+          visitConstruct(
+            property.initializer,
+            structureOfProperties[(property.name as ts.Identifier).text],
+            undefined,
+            isOutcomeWithCondition,
+            RETURN_CONSTRUCTS[property.initializer.kind]
+          )
+        );
       }
 
-      if (propertyValues.length > 0) {
-        results.push({
-          pass: true,
-          warnings: [
-            {
-              kind: 'wrongStructure',
-              context: {
-                path: getPath(node),
-                actual: node.getText(),
-                expected: outputStructure,
-              },
-            },
-          ],
-          invalidInput: false,
-          invalidOutput: false,
-        });
+      for (const [key] of requiredPropertiesNotFound) {
+        const issue: ValidationIssue = {
+          kind: 'missingRequired',
+          context: {
+            path: getPath(node),
+            field: key,
+          },
+        };
+
+        results.push(returnIssue(issue, false, true, isOutcomeWithCondition));
+      }
+
+      if (extraProperties.length > 0) {
+        const issue: ValidationIssue = {
+          kind: 'wrongObjectStructure',
+          context: {
+            path: getPath(node),
+            expected: structureOfProperties,
+            actual: node.getText(),
+          },
+        };
+
+        results.push(returnIssue(issue, false, false, true));
       }
 
       return mergeResults(...results);
@@ -1053,8 +891,8 @@ export const RETURN_CONSTRUCTS: {
       const results: ConstructResult[] = [];
 
       if (inputStructure) {
-        node.elements.slice(0, node.elements.length).forEach(element => {
-          if (assertID(element))
+        for (const element of node.elements) {
+          if (isTypescriptIdentifier(element))
             results.push(
               visitConstruct(
                 element,
@@ -1064,39 +902,35 @@ export const RETURN_CONSTRUCTS: {
                 RETURN_CONSTRUCTS[element.kind]
               )
             );
-        });
+        }
       }
 
-      if (!outputStructure || isScalarStructure(outputStructure)) {
+      if (!outputStructure) {
         return mergeResults(...results);
       }
 
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
-      if (!isListStructure(outputStructure)) {
-        const issue: ValidationIssue = {
-          kind: 'wrongStructure',
-          context: {
-            path: getPath(node),
-            actual: node.getText(),
-            expected: outputStructure,
-          },
-        };
 
-        return isOutcomeWithCondition
-          ? mergeResults(...results, {
-              pass: true,
-              warnings: [issue],
-              invalidInput: false,
-              invalidOutput: true,
-            })
-          : mergeResults(...results, {
-              pass: false,
-              errors: [issue],
-              invalidInput: false,
-              invalidOutput: true,
-            });
+      if (isScalarStructure(outputStructure)) {
+        return mergeResults(...results);
+      }
+
+      const wrongStructureIssue: ValidationIssue = {
+        kind: 'wrongStructure',
+        context: {
+          path: getPath(node),
+          actual: node.getText(),
+          expected: outputStructure,
+        },
+      };
+
+      if (!isListStructure(outputStructure)) {
+        return mergeResults(
+          ...results,
+          returnIssue(wrongStructureIssue, false, true, isOutcomeWithCondition)
+        );
       }
 
       let structureOfTypes: ArrayCollection | undefined;
@@ -1108,10 +942,8 @@ export const RETURN_CONSTRUCTS: {
         structureOfType = outputStructure.value;
       }
 
-      const elements = node.elements.slice(0, node.elements.length);
-
       if (structureOfType) {
-        elements.forEach(element => {
+        for (const element of node.elements) {
           results.push(
             visitConstruct(
               element,
@@ -1121,7 +953,7 @@ export const RETURN_CONSTRUCTS: {
               RETURN_CONSTRUCTS[element.kind]
             )
           );
-        });
+        }
 
         return mergeResults(...results);
       }
@@ -1131,12 +963,9 @@ export const RETURN_CONSTRUCTS: {
       }
 
       const typeValues = Object.values(structureOfTypes);
-      let nodeIndex = elements.length;
 
-      while (nodeIndex--) {
-        const element = elements[nodeIndex];
-
-        if (assertID(element)) {
+      for (const element of node.elements) {
+        if (isTypescriptIdentifier(element)) {
           results.push(
             visitConstruct(
               element,
@@ -1151,11 +980,7 @@ export const RETURN_CONSTRUCTS: {
 
         let diff = 0;
 
-        typeValues.forEach(value => {
-          if (!value) {
-            throw new Error('This should not happen!');
-          }
-
+        for (const value of typeValues) {
           const result = visitConstruct(
             element,
             value,
@@ -1167,24 +992,17 @@ export const RETURN_CONSTRUCTS: {
           if (!result.pass) {
             diff++;
           }
-        });
+        }
 
         if (diff === typeValues.length) {
-          results.push({
-            pass: false,
-            errors: [
-              {
-                kind: 'wrongStructure',
-                context: {
-                  path: getPath(node),
-                  actual: node.getText(),
-                  expected: outputStructure,
-                },
-              },
-            ],
-            invalidInput: false,
-            invalidOutput: true,
-          });
+          results.push(
+            returnIssue(
+              wrongStructureIssue,
+              false,
+              true,
+              isOutcomeWithCondition
+            )
+          );
         }
       }
 

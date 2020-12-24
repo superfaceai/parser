@@ -8,7 +8,6 @@ import {
   isMapDefinitionNode,
   isObjectLiteralNode,
   isOperationDefinitionNode,
-  isPrimitiveLiteralNode,
   JessieExpressionNode,
   LiteralNode,
   MapASTNode,
@@ -28,9 +27,8 @@ import { MapVisitor } from '@superfaceai/sdk';
 import * as ts from 'typescript';
 
 import { RETURN_CONSTRUCTS } from './constructs';
-import { ValidationError, ValidationIssue, ValidationWarning } from './issue';
+import { ValidationIssue } from './issue';
 import {
-  ObjectCollection,
   ObjectStructure,
   ProfileOutput,
   StructureType,
@@ -38,11 +36,20 @@ import {
 } from './profile-output';
 import {
   isEnumStructure,
-  isObjectStructure,
+  isNonNullStructure,
   isPrimitiveStructure,
   isScalarStructure,
 } from './profile-output.utils';
-import { compareStructure, getOutcomes, mergeVariables } from './utils';
+import {
+  compareStructure,
+  findTypescriptIdentifier,
+  findTypescriptProperty,
+  getOutcomes,
+  getTypescriptIdentifier,
+  getVariableName,
+  mergeVariables,
+  validateObjectStructure,
+} from './utils';
 
 function assertUnreachable(node: never): never;
 function assertUnreachable(node: MapASTNode): never {
@@ -50,15 +57,10 @@ function assertUnreachable(node: MapASTNode): never {
 }
 
 export type ValidationResult =
-  | { pass: true; warnings?: ValidationWarning[] }
-  | { pass: false; errors: ValidationError[]; warnings?: ValidationWarning[] };
+  | { pass: true; warnings?: ValidationIssue[] }
+  | { pass: false; errors: ValidationIssue[]; warnings?: ValidationIssue[] };
 
-export type ScopeInfo =
-  | 'map'
-  | 'operation'
-  | 'call'
-  | 'httpResponse'
-  | 'argument';
+export type ScopeInfo = 'map' | 'call' | 'httpResponse';
 
 interface Stack {
   type: ScopeInfo;
@@ -69,8 +71,8 @@ interface Stack {
 export class MapValidator implements MapVisitor {
   private stack: Stack[] = [];
 
-  private errors: ValidationError[] = [];
-  private warnings: ValidationWarning[] = [];
+  private errors: ValidationIssue[] = [];
+  private warnings: ValidationIssue[] = [];
   private operations: Record<string, OperationDefinitionNode> = {};
 
   private currentUseCase: UseCaseStructure | undefined;
@@ -78,9 +80,6 @@ export class MapValidator implements MapVisitor {
   private inputStructure: ObjectStructure | undefined;
 
   private isOutcomeWithCondition = false;
-
-  private dataVariable: Record<string, OutcomeStatementNode[]> = {};
-  private errorVariable: Record<string, OutcomeStatementNode[]> = {};
 
   constructor(
     private readonly mapAst: MapASTNode,
@@ -145,65 +144,55 @@ export class MapValidator implements MapVisitor {
     // check the valid ProfileID
     this.visit(node.map);
 
-    // save operations and their outcomes
+    // store operations
     node.definitions.forEach(definition => {
       if (isOperationDefinitionNode(definition)) {
         this.operations[definition.name] = definition;
-        this.visit(definition);
       }
     });
 
-    // check usecase - map compatibility
+    // all usecases & maps
     const maps = node.definitions.filter(isMapDefinitionNode);
-    const usecases = Array.from(this.profileOutput.usecases);
+    const mapNames = maps.map(map => map.name);
+    const usecaseNames = this.profileOutput.usecases.map(
+      usecase => usecase.useCaseName
+    );
 
-    for (let i = 0; i < usecases.length; i++) {
-      const usecase = usecases.pop();
-      if (!usecase) {
-        throw new Error('This should not happen!');
-      }
+    // found usecases
+    const validMaps = maps.filter(map => usecaseNames.includes(map.name));
 
-      let isFound = false;
+    // not found usecases
+    const extraMaps = mapNames.filter(name => !usecaseNames.includes(name));
+    const notFoundMaps = usecaseNames.filter(
+      usecase => !mapNames.includes(usecase)
+    );
 
-      for (let j = maps.length - 1; j >= 0; j--) {
-        const map = maps[j];
-
-        if (
-          isMapDefinitionNode(map) &&
-          map.usecaseName === usecase.useCaseName
-        ) {
-          isFound = true;
-          this.currentUseCase = usecase;
-          this.visit(map);
-          maps.splice(j, 1);
-          break;
-        }
-      }
-
-      if (!isFound) {
-        this.errors.push({
-          kind: 'mapNotFound',
-          context: {
-            path: this.getPath(node),
-            expected: usecase.useCaseName,
-          },
-        });
-      }
+    for (const map of notFoundMaps) {
+      this.errors.push({
+        kind: 'mapNotFound',
+        context: {
+          path: this.getPath(node),
+          expected: map,
+        },
+      });
     }
 
-    if (maps.length > 0) {
+    if (extraMaps.length > 0) {
       this.warnings.push({
         kind: 'extraMapsFound',
         context: {
           path: this.getPath(node),
-          expected: this.profileOutput.usecases.map(
-            usecase => usecase.useCaseName
-          ),
-          actual: node.definitions
-            .filter(isMapDefinitionNode)
-            .map(def => def.usecaseName),
+          expected: usecaseNames,
+          actual: mapNames,
         },
       });
+    }
+
+    for (const map of validMaps) {
+      this.currentUseCase = this.profileOutput.usecases.find(
+        usecase => usecase.useCaseName === map.name
+      );
+      this.visit(map);
     }
   }
 
@@ -228,15 +217,8 @@ export class MapValidator implements MapVisitor {
     }
   }
 
-  visitOperationDefinitionNode(node: OperationDefinitionNode): void {
-    this.dataVariable[node.name] = getOutcomes(node, false);
-    this.errorVariable[node.name] = getOutcomes(node, true);
-
-    this.newStack('operation', node.name);
-
-    node.statements.forEach(statement => this.visit(statement));
-
-    this.stack.pop();
+  visitOperationDefinitionNode(_node: OperationDefinitionNode): never {
+    throw new Error('Method not implemented.');
   }
 
   visitMapDefinitionNode(node: MapDefinitionNode): void {
@@ -282,114 +264,84 @@ export class MapValidator implements MapVisitor {
   }
 
   visitHttpCallStatementNode(node: HttpCallStatementNode): void {
-    const variableNames = node.url.match(
-      /{([_A-Za-z][_0-9A-Za-z]*[.]?)*(?<![.])}/g
-    );
+    const variableExpressions = node.url
+      .match(/{([_A-Za-z][_0-9A-Za-z]*[.]?)*(?<![.])}/g)
+      ?.map(expression => expression.slice(1, -1));
 
-    if (variableNames) {
-      a: for (let idName of variableNames) {
-        idName = idName.slice(1, -1);
+    if (variableExpressions) {
+      for (const expression of variableExpressions) {
+        const sourceFile = ts.createSourceFile(
+          'scripts.js',
+          `(${expression})`,
+          ts.ScriptTarget.ES2015,
+          true,
+          ts.ScriptKind.JS
+        );
 
-        if (idName.startsWith('input')) {
+        const typescriptIdentifier = getTypescriptIdentifier(sourceFile);
+
+        if (!typescriptIdentifier) {
+          throw new Error('Invalid variable!');
+        }
+
+        if (findTypescriptIdentifier('input', typescriptIdentifier)) {
+          if (findTypescriptProperty('auth', typescriptIdentifier)) {
+            continue;
+          }
+
           if (!this.inputStructure || !this.inputStructure.fields) {
             this.errors.push({
               kind: 'inputNotFound',
               context: {
                 path: this.getPath(node),
-                actual: idName,
+                actual: expression,
               },
             });
-            continue a;
+            continue;
           }
 
-          let structure: ObjectCollection = this.inputStructure.fields;
-          const idCollection = idName.split('.');
+          const wrongStructureIssue: ValidationIssue = {
+            kind: 'wrongStructure',
+            context: {
+              path: this.getPath(node),
+              expected: { kind: 'PrimitiveStructure', type: 'string' },
+              actual: this.inputStructure,
+            },
+          };
 
-          const keys: string[] = [];
-          b: for (const id of idCollection) {
-            keys.push(id);
-            if (id === 'input') {
-              continue b;
-            }
+          // identifier `input` by itself is always an object
+          if (ts.isIdentifier(typescriptIdentifier)) {
+            this.errors.push(wrongStructureIssue);
+            continue;
+          }
 
-            const currentStructure = structure[id];
-            const isLast = keys.length === idCollection.length;
+          const structure = validateObjectStructure(
+            typescriptIdentifier,
+            this.inputStructure
+          );
 
-            if (!currentStructure) {
-              this.errors.push({
-                kind: 'wrongInput',
-                context: {
-                  path: this.getPath(node),
-                  expected: this.inputStructure,
-                  actual: keys.join('.'),
-                },
-              });
-              continue a;
-            }
-
-            if (!isLast) {
-              // descend the structure into object fields
-              if (isObjectStructure(currentStructure)) {
-                if (currentStructure.fields) {
-                  structure = currentStructure.fields;
-                }
-                continue b;
-              }
-            } else {
-              if (isScalarStructure(currentStructure)) {
-                this.warnings.push({
-                  kind: 'wrongStructure',
-                  context: {
-                    path: this.getPath(node),
-                    expected: { kind: 'PrimitiveStructure', type: 'string' },
-                    actual: currentStructure,
-                  },
-                });
-                break b;
-              }
-              if (
-                isPrimitiveStructure(currentStructure) ||
-                isEnumStructure(currentStructure)
-              ) {
-                break b;
-              }
-            }
-
+          if (!structure) {
             this.errors.push({
               kind: 'wrongInput',
               context: {
                 path: this.getPath(node),
                 expected: this.inputStructure,
-                actual: keys.join('.'),
+                actual: expression,
               },
             });
-          }
-        } else {
-          const currentVariable = this.variables[idName];
-
-          if (!currentVariable) {
-            this.errors.push({
-              kind: 'variableNotDefined',
-              context: {
-                path: this.getPath(node),
-                name: idName,
-              },
-            });
-            continue a;
+            continue;
           }
 
-          if (isPrimitiveLiteralNode(currentVariable)) {
-            continue a;
+          wrongStructureIssue.context.actual = structure;
+          if (isScalarStructure(structure)) {
+            this.warnings.push(wrongStructureIssue);
+            continue;
           }
 
-          this.errors.push({
-            kind: 'wrongStructure',
-            context: {
-              path: this.getPath(node),
-              expected: { kind: 'PrimitiveStructure', type: 'string' },
-              actual: currentVariable,
-            },
-          });
+          if (!isPrimitiveStructure(structure) && !isEnumStructure(structure)) {
+            this.errors.push(wrongStructureIssue);
+            continue;
+          }
         }
       }
     }
@@ -420,27 +372,10 @@ export class MapValidator implements MapVisitor {
   }
 
   visitCallStatementNode(node: CallStatementNode): void {
-    if (!this.operations[node.operationName]) {
-      this.errors.push({
-        kind: 'operationNotFound',
-        context: {
-          path: this.getPath(node),
-          expected: node.operationName,
-        },
-      });
-    }
-
-    // arguments handling
-    this.newStack('argument');
     if (node.arguments.length > 0) {
-      this.visit({
-        kind: 'SetStatement',
-        assignments: node.arguments,
-      });
+      node.arguments.forEach(argument => this.visit(argument));
     }
-    this.stack.pop();
 
-    // call statements
     this.newStack('call', node.operationName);
 
     node.statements.forEach(statement => this.visit(statement));
@@ -514,11 +449,11 @@ export class MapValidator implements MapVisitor {
 
   private cleanUpVariables(key: string): void {
     for (const stackTop of this.stack) {
-      const variableKeys = Object.keys(stackTop.variables)
-      let index = variableKeys.length
+      const variableKeys = Object.keys(stackTop.variables);
+      let index = variableKeys.length;
 
       while (index--) {
-        const variableKey = variableKeys[index]
+        const variableKey = variableKeys[index];
 
         if (
           variableKey.length > key.length &&
@@ -572,74 +507,8 @@ export class MapValidator implements MapVisitor {
   }
 
   visitInlineCallNode(node: InlineCallNode): boolean {
-    if (!this.operations[node.operationName]) {
-      this.errors.push({
-        kind: 'operationNotFound',
-        context: {
-          path: this.getPath(node),
-          expected: node.operationName,
-        },
-      });
-    }
-
-    // arguments handling
-    this.newStack('argument');
     if (node.arguments.length > 0) {
-      this.visit({
-        kind: 'SetStatement',
-        assignments: node.arguments,
-      });
-    }
-    this.stack.pop();
-
-    if (!this.currentStructure || isScalarStructure(this.currentStructure)) {
-      return true;
-    }
-
-    const outcomeValues = this.dataVariable[node.operationName];
-
-    if (outcomeValues.length === 0) {
-      this.errors.push({
-        kind: 'resultNotDefined',
-        context: {
-          path: this.getPath(node),
-          expectedResult: this.currentStructure,
-        },
-      });
-
-      return false;
-    }
-
-    return outcomeValues.every(value => this.visit(value.value));
-  }
-
-  private validateJessieIDs(
-    types: (StructureType | undefined)[],
-    variable: LiteralNode
-  ): boolean {
-    let isValid = false;
-
-    // multiple types such as in UnionStructure
-    for (const type of types) {
-      if (!type) {
-        throw new Error('This should not happen!');
-      }
-      const previousEndIndex = this.errors.length;
-      this.currentStructure = type;
-
-      isValid = isValid || this.visit(variable);
-
-      if (this.errors.length - previousEndIndex > 0) {
-        this.errors = this.errors.slice(0, previousEndIndex);
-      }
-
-      if (!this.currentStructure) {
-        throw new Error('This should not happen!');
-      }
-
-      if (!isValid) {
-        return false;
-      }
+      node.arguments.forEach(argument => this.visit(argument));
     }
 
     return true;
@@ -679,7 +548,6 @@ export class MapValidator implements MapVisitor {
         },
       });
     }
-
     if (this.inputStructure && constructResult.invalidInput) {
       this.addIssue({
         kind: 'wrongInput',
@@ -705,74 +573,38 @@ export class MapValidator implements MapVisitor {
     this.warnings.push(...(constructResult.warnings ?? []));
 
     // validate variables from jessie
-    for (const variableName in constructResult.variables) {
-      const types = constructResult.variables[variableName];
-
-      if (!this.currentStructure) {
-        throw new Error('This should not happen!');
+    for (const { jessieNode, type } of constructResult.variables ?? []) {
+      if (
+        this.stackTop.type === 'httpResponse' &&
+        findTypescriptIdentifier('body', jessieNode)
+      ) {
+        continue;
       }
 
       if (
-        this.stackTop.type === 'httpResponse' &&
-        variableName.split('.')[0] === 'body'
+        this.stackTop.type === 'call' &&
+        (findTypescriptIdentifier('data', jessieNode) ||
+          findTypescriptIdentifier('error', jessieNode))
       ) {
         continue;
-      } else if (this.stackTop.type === 'call') {
-        let outcomes: OutcomeStatementNode[];
+      }
 
-        if (variableName.split('.')[0] === 'data') {
-          outcomes = this.dataVariable[this.stackTop.name];
-        } else if (variableName.split('.')[0] === 'error') {
-          outcomes = this.errorVariable[this.stackTop.name];
-        } else {
-          continue;
-        }
+      const variableName = getVariableName(jessieNode);
+      const variable = this.variables[variableName];
 
-        for (const outcome of outcomes) {
-          this.isOutcomeWithCondition = outcome.condition ? true : false;
-          result = this.validateJessieIDs(types, outcome.value);
+      this.currentStructure = type;
+      result = this.visit(variable);
 
-          if (!result) {
-            this.addIssue({
-              kind: 'wrongVariableStructure',
-              context: {
-                path: this.getPath(node),
-                name: variableName,
-                expected: this.currentStructure,
-                actual: outcome.value,
-              },
-            });
-          }
-        }
-      } else {
-        const variable = this.variables[variableName];
-
-        if (!variable) {
-          result = false;
-          this.addIssue({
-            kind: 'variableNotDefined',
-            context: {
-              path: this.getPath(node),
-              name: variableName,
-            },
-          });
-
-          continue;
-        }
-
-        result = this.validateJessieIDs(types, variable);
-
-        if (!result) {
-          this.addIssue({
-            kind: 'wrongVariableStructure',
-            context: {
-              path: this.getPath(node),
-              name: variableName,
-              expected: this.currentStructure,
-              actual: variable,
-            },
-          });
-        }
+      if (!result) {
+        this.addIssue({
+          kind: 'wrongVariableStructure',
+          context: {
+            path: this.getPath(node),
+            name: variableName,
+            expected: this.currentStructure,
+            actual: variable,
+          },
+        });
       }
     }
 
@@ -784,10 +616,14 @@ export class MapValidator implements MapVisitor {
       let result = true;
       node.fields.forEach(field => {
         const fieldResult = this.visit(field);
-        result = result && fieldResult;
+        result &&= fieldResult;
       });
 
       return result;
+    }
+
+    if (isNonNullStructure(this.currentStructure)) {
+      this.currentStructure = this.currentStructure.value;
     }
 
     if (isScalarStructure(this.currentStructure)) {
@@ -816,48 +652,66 @@ export class MapValidator implements MapVisitor {
       throw new Error('This should not happen!');
     }
 
-    const fieldValues = Object.values(node.fields);
-    const fieldNames = Object.keys(structureOfFields);
+    // all fields
+    const profileFields = Object.entries(structureOfFields);
+    const profileFieldNames = Object.keys(structureOfFields);
+    const mapFieldNames = node.fields.map(field => field.key[0]);
+
+    // required fields
+    const requiredFields = profileFields.filter(([, value]) => value.required);
+    const requiredFieldsNotFound = requiredFields.filter(
+      ([key]) => !mapFieldNames.includes(key)
+    );
+
+    // fields found inside node
+    const matchingFields = node.fields.filter(field =>
+      profileFieldNames.includes(field.key[0])
+    );
+    const extraFields = node.fields.filter(
+      field => !profileFieldNames.includes(field.key[0])
+    );
+
     let result = true;
-    let index = fieldNames.length;
+    for (const field of matchingFields) {
+      let visitResult = true;
+      this.currentStructure = structureOfFields[field.key[0]];
 
-    while (index--) {
-      const key = fieldNames[index];
-      const value = structureOfFields[key];
-      if (!value) {
-        throw new Error(`Value with key: ${key} does not exist!`);
-      }
-
-      let isFound = false;
-      let nodeIndex = fieldValues.length;
-
-      while (nodeIndex--) {
-        const field = fieldValues[nodeIndex];
-        const nodeKey = field.key.join('');
-
-        if (nodeKey === key) {
-          this.currentStructure = value;
-          this.visit(field);
-
-          isFound = true;
-          fieldNames.splice(index, 1);
-          fieldValues.splice(nodeIndex, 1);
-        }
-      }
-
-      if (value.required && !isFound) {
-        result = false;
-        this.addIssue({
-          kind: 'missingRequired',
-          context: {
-            path: this.getPath(node),
-            field: value ? value.kind : 'undefined',
+      // it should not validate against final value when dot.notation is used
+      if (field.key.length > 1) {
+        const [head, ...tail] = field.key;
+        visitResult = this.visit({
+          kind: 'Assignment',
+          key: [head],
+          value: {
+            kind: 'ObjectLiteral',
+            fields: [
+              {
+                kind: 'Assignment',
+                key: tail,
+                value: field.value,
+              },
+            ],
           },
         });
+      } else {
+        visitResult = this.visit(field);
       }
+
+      result &&= visitResult;
     }
 
-    if (fieldValues.length > 0) {
+    for (const [, value] of requiredFieldsNotFound) {
+      result = false;
+      this.addIssue({
+        kind: 'missingRequired',
+        context: {
+          path: this.getPath(node),
+          field: value ? value.kind : 'undefined',
+        },
+      });
+    }
+
+    if (extraFields.length > 0) {
       this.warnings.push({
         kind: 'wrongObjectStructure',
         context: {
@@ -872,7 +726,15 @@ export class MapValidator implements MapVisitor {
   }
 
   visitPrimitiveLiteralNode(node: PrimitiveLiteralNode): boolean {
-    if (!this.currentStructure || isScalarStructure(this.currentStructure)) {
+    if (!this.currentStructure) {
+      return true;
+    }
+
+    if (isNonNullStructure(this.currentStructure)) {
+      this.currentStructure = this.currentStructure.value;
+    }
+
+    if (isScalarStructure(this.currentStructure)) {
       return true;
     }
 

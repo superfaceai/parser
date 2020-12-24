@@ -1,7 +1,6 @@
 import { AssignmentNode, LiteralNode } from '@superfaceai/ast';
 
 import {
-  ArrayCollection,
   ObjectCollection,
   ObjectStructure,
   StructureType,
@@ -25,10 +24,6 @@ export type ValidationIssue =
       };
     }
   | {
-      kind: 'operationNotFound';
-      context: ErrorContext & { expected: string };
-    }
-  | {
       kind: 'resultNotDefined';
       context: ErrorContext & { expectedResult: StructureType | undefined };
     }
@@ -49,21 +44,10 @@ export type ValidationIssue =
       context: ErrorContext & { actual: string };
     }
   | {
-      kind: 'argumentsNotFound';
-      context: ErrorContext & { actual: string };
-    }
-  | {
       kind: 'wrongObjectStructure';
       context: ErrorContext & {
         expected: ObjectCollection;
-        actual: AssignmentNode[];
-      };
-    }
-  | {
-      kind: 'wrongArrayStructure';
-      context: ErrorContext & {
-        expected: ArrayCollection;
-        actual: LiteralNode[];
+        actual: AssignmentNode[] | string;
       };
     }
   | {
@@ -85,22 +69,10 @@ export type ValidationIssue =
       };
     }
   | {
-      kind: 'wrongArgument';
-      context: ErrorContext & {
-        expected: Record<string, LiteralNode>;
-        actual: string;
-      };
-    }
-  | {
       kind: 'wrongVariableStructure';
       context: ErrorContext & {
         name: string;
         expected: StructureType;
         actual: LiteralNode | string;
       };
-    }
-  | {
-      kind: 'variableNotDefined';
-      context: ErrorContext & { name: string };
     };
-

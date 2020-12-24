@@ -11,17 +11,21 @@ import {
   OutcomeStatementNode,
   ProfileDocumentNode,
 } from '@superfaceai/ast';
+import * as ts from 'typescript';
 
+import { TypescriptIdentifier } from './constructs';
 import { ValidationIssue } from './issue';
 import { MapValidator, ValidationResult } from './map-validator';
 import {
   ObjectCollection,
+  ObjectStructure,
   ProfileOutput,
   StructureType,
 } from './profile-output';
 import {
   isEnumStructure,
   isNonNullStructure,
+  isObjectStructure,
   isPrimitiveStructure,
 } from './profile-output.utils';
 import { ProfileValidator } from './profile-validator';
@@ -54,9 +58,6 @@ export function formatIssues(issues?: ValidationIssue[]): string {
             ','
           )}, but got ${issue.context.actual.join(', ')}`;
 
-        case 'operationNotFound':
-          return `${location} - Operation not found: ${issue.context.expected}`;
-
         case 'resultNotDefined':
           return `${location} - Result not defined`;
 
@@ -86,17 +87,12 @@ export function formatIssues(issues?: ValidationIssue[]): string {
 
         case 'wrongObjectStructure':
           expected = Object.keys(issue.context.expected).join(', ');
-          actual = issue.context.actual
-            .map(val => val.key.join('.'))
-            .join(', ');
+          actual =
+            typeof issue.context.actual === 'string'
+              ? issue.context.actual
+              : issue.context.actual.map(val => val.key.join('.')).join(', ');
 
           return `${location} - Wrong Object Structure: expected ${expected}, but got ${actual}`;
-
-        case 'wrongArrayStructure':
-          expected = Object.values(issue.context.expected).join(', ');
-          actual = issue.context.actual.map(val => val.kind).join(', ');
-
-          return `${location} - Wrong Array Structure: expected ${expected}, but gor ${actual}`;
 
         case 'wrongStructure':
           if (isPrimitiveStructure(issue.context.expected)) {
@@ -165,9 +161,6 @@ export function formatIssues(issues?: ValidationIssue[]): string {
             issue.context.name
           } expected ${expected}, but got ${actual.toString()}`;
 
-        case 'variableNotDefined':
-          return `${location} - Missing Variable definition: ${issue.context.name} is not defined`;
-
         default:
           throw new Error('Invalid issue!');
       }
@@ -189,14 +182,6 @@ export function compareStructure(
   nonNull?: boolean;
 } {
   switch (structure.kind) {
-    case 'NonNullStructure':
-      if (structure.value)
-        return {
-          nonNull: true,
-          ...compareStructure(node, structure.value),
-        };
-      break;
-
     case 'PrimitiveStructure':
       if (
         isPrimitiveLiteralNode(node) &&
@@ -218,6 +203,15 @@ export function compareStructure(
         structure.enums.includes(node.value)
       ) {
         return { isValid: true };
+      }
+      break;
+
+    case 'UnionStructure':
+      for (const type of Object.values(structure.types)) {
+        const compareResult = compareStructure(node, type);
+        if (compareResult.isValid) {
+          return compareResult;
+        }
       }
   }
 
@@ -292,3 +286,138 @@ export const validateMap = (
 
   return mapValidator.validate();
 };
+
+export function getTypescriptIdentifier(
+  node: ts.Node
+): TypescriptIdentifier | undefined {
+  if (
+    ts.isPropertyAccessExpression(node) ||
+    ts.isElementAccessExpression(node) ||
+    ts.isIdentifier(node)
+  ) {
+    return node;
+  }
+
+  return ts.forEachChild(node, getTypescriptIdentifier);
+}
+
+export function validateObjectStructure(
+  node: TypescriptIdentifier,
+  structure: ObjectStructure
+): StructureType | undefined {
+  if (ts.isIdentifier(node)) {
+    return structure;
+  }
+
+  let expression: ts.LeftHandSideExpression;
+  let name: ts.PrivateIdentifier | ts.Expression;
+
+  if (ts.isElementAccessExpression(node)) {
+    expression = node.expression;
+    name = node.argumentExpression;
+  } else {
+    expression = node.expression;
+    name = node.name;
+  }
+
+  const key = name.getText().replace(/['"[\]]/g, '');
+  let outputStructure: StructureType | undefined;
+
+  if (
+    ts.isPropertyAccessExpression(expression) ||
+    ts.isElementAccessExpression(expression)
+  ) {
+    outputStructure = validateObjectStructure(expression, structure);
+  } else if (ts.isIdentifier(expression)) {
+    if (!structure.fields) {
+      return undefined;
+    }
+
+    return structure.fields[key];
+  }
+
+  if (
+    !outputStructure ||
+    !isObjectStructure(outputStructure) ||
+    !outputStructure.fields
+  ) {
+    return undefined;
+  }
+
+  return outputStructure.fields[key];
+}
+
+export function findTypescriptIdentifier(name: string, node: ts.Node): boolean {
+  if (
+    ts.isPropertyAccessExpression(node) ||
+    ts.isElementAccessExpression(node)
+  ) {
+    return findTypescriptIdentifier(name, node.expression);
+  }
+  if (ts.isIdentifier(node)) {
+    return node.text === name;
+  }
+
+  return false;
+}
+
+export function findTypescriptProperty(name: string, node: ts.Node): boolean {
+  if (ts.isPropertyAccessExpression(node)) {
+    return ts.isIdentifier(node.expression)
+      ? name === node.name.text
+      : findTypescriptProperty(name, node.expression);
+  }
+
+  if (ts.isElementAccessExpression(node)) {
+    return ts.isIdentifier(node.expression)
+      ? name === node.argumentExpression.getText().replace(/['"[\]]/g, '')
+      : findTypescriptProperty(name, node.expression);
+  }
+
+  return false;
+}
+
+export function getTypescriptIdentifierName(node: ts.Node): string {
+  if (ts.isIdentifier(node)) {
+    return node.text;
+  }
+
+  if (ts.isPropertyAccessExpression(node)) {
+    return node.getText().replace(/['"]/g, '');
+  }
+
+  if (ts.isElementAccessExpression(node)) {
+    return `${node.expression.getText()}.${node.argumentExpression.getText()}`.replace(
+      /['"[\]]/g,
+      ''
+    );
+  }
+
+  return 'undefined';
+}
+
+export function getVariableName(
+  node: TypescriptIdentifier | ts.LeftHandSideExpression,
+  name?: string
+): string {
+  name = name ? name.replace(/['"[\]]/g, '') : '';
+
+  if (ts.isIdentifier(node) || ts.isStringLiteral(node)) {
+    return name !== '' ? `${node.text}.${name}` : node.text;
+  }
+
+  if (ts.isPropertyAccessExpression(node)) {
+    name = name !== '' ? `${node.name.text}.${name}` : node.name.text;
+
+    return getVariableName(node.expression, name);
+  }
+
+  if (ts.isElementAccessExpression(node)) {
+    const nodeName = (node.argumentExpression as ts.Identifier).text;
+    name = name !== '' ? `${nodeName}.${name}` : nodeName;
+
+    return getVariableName(node.expression, name);
+  }
+
+  return 'undefined';
+}

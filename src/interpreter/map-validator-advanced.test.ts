@@ -1,6 +1,6 @@
 import { MapASTNode, ProfileDocumentNode } from '@superfaceai/ast';
 
-import { ValidationError, ValidationWarning } from './issue';
+import { ValidationIssue } from './issue';
 import { ProfileOutput } from './profile-output';
 import { formatIssues, getProfileOutput, validateMap } from './utils';
 
@@ -28,8 +28,8 @@ expect.extend({
 
     let message = '';
     let pass = true;
-    let errors: ValidationError[] = [];
-    let warnings: ValidationWarning[] = [];
+    let errors: ValidationIssue[] = [];
+    let warnings: ValidationIssue[] = [];
 
     if (!result.pass) {
       errors = result.errors;

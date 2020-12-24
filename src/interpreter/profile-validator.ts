@@ -176,7 +176,9 @@ export class ProfileValidator implements ProfileVisitor {
 
     node.fields.forEach((field: FieldDefinitionNode) => {
       obj.fields = { ...obj.fields };
-      obj.fields[field.fieldName] = this.visit(field);
+      obj.fields[field.fieldName] = this.visit(field) ?? {
+        kind: 'ScalarStructure',
+      };
     });
 
     return obj;

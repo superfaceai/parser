@@ -103,8 +103,8 @@ export interface ProfileOutput {
   usecases: UseCaseStructure[];
 }
 
-// TODO: decide which notation to use
-export type ObjectCollection = Record<string, StructureType | undefined>;
-export type ArrayCollection = {
-  [P in number]?: Exclude<StructureType, UnionStructure>;
-};
+export type ObjectCollection = Record<string, StructureType>;
+export type ArrayCollection = Record<
+  number,
+  Exclude<StructureType, UnionStructure>
+>;
