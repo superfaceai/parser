@@ -1,6 +1,6 @@
 import { MapASTNode, ProfileDocumentNode } from '@superfaceai/ast';
 
-import { ValidationError, ValidationWarning } from './issue';
+import { ValidationIssue } from './issue';
 import { ProfileOutput } from './profile-output';
 import { formatIssues, getProfileOutput, validateMap } from './utils';
 
@@ -28,8 +28,8 @@ expect.extend({
 
     let message = '';
     let pass = true;
-    let errors: ValidationError[] = [];
-    let warnings: ValidationWarning[] = [];
+    let errors: ValidationIssue[] = [];
+    let warnings: ValidationIssue[] = [];
 
     if (!result.pass) {
       errors = result.errors;
@@ -1780,17 +1780,12 @@ describe('MapValidator', () => {
           profileAst,
           [mapAst1, mapAst2],
           '',
-          '',
-          '',
-          '',
-          '',
-          'ObjectLiteral - Wrong Object Structure: expected f1, f2, but got f1, f3',
-          'ObjectLiteral - Wrong Object Structure: expected f1, f2, but got f1, f2, f3'
+          'ObjectLiteral - Wrong Object Structure: expected f1, f2, but got f1, f3\nObjectLiteral - Wrong Object Structure: expected f1, f2, but got f1, f2, f3'
         );
         invalid(
           profileAst,
           [mapAst3],
-          '1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nJessieExpression - Wrong Structure: expected number, but got "null"\n1:5 NullKeyword - Wrong Structure: expected number, but got "null"\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"',
+          'JessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nJessieExpression - Wrong Structure: expected number, but got "null"\n1:5 NullKeyword - Wrong Structure: expected number, but got "null"',
           ''
         );
       });
@@ -1974,7 +1969,6 @@ describe('MapValidator', () => {
         valid(
           profileAst,
           [mapAst1, mapAst2],
-          '',
           '',
           'ObjectLiteral - Wrong Object Structure: expected f1, but got f1, f3'
         );
@@ -2306,7 +2300,7 @@ describe('MapValidator', () => {
         invalid(
           profileAst,
           [mapAst3],
-          'ObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nJessieExpression - Wrong Structure: expected boolean, but got "null"\n1:5 NullKeyword - Wrong Structure: expected boolean, but got "null"\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected boolean, but got "null"\n1:5 NullKeyword - Wrong Structure: expected boolean, but got "null"\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nObjectLiteral - Missing required field',
+          'ObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nJessieExpression - Wrong Structure: expected boolean, but got "null"\n1:5 NullKeyword - Wrong Structure: expected boolean, but got "null"\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nJessieExpression - Wrong Structure: expected boolean, but got "null"\n1:5 NullKeyword - Wrong Structure: expected boolean, but got "null"\nObjectLiteral - Missing required field',
           ''
         );
       });
@@ -2605,7 +2599,7 @@ describe('MapValidator', () => {
         invalid(
           profileAst,
           [mapAst3],
-          'ObjectLiteral - Missing required field\nObjectLiteral - Missing required field\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nJessieExpression - Wrong Structure: expected boolean, but got "null"\n1:5 NullKeyword - Wrong Structure: expected boolean, but got "null"\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected boolean, but got "null"\n1:5 NullKeyword - Wrong Structure: expected boolean, but got "null"\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nObjectLiteral - Missing required field\nObjectLiteral - Missing required field',
+          'ObjectLiteral - Missing required field\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected boolean, but got "null"\n1:5 NullKeyword - Wrong Structure: expected boolean, but got "null"\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nJessieExpression - Wrong Structure: expected boolean, but got "null"\n1:5 NullKeyword - Wrong Structure: expected boolean, but got "null"\nObjectLiteral - Missing required field\nObjectLiteral - Missing required field',
           ''
         );
       });
@@ -2855,7 +2849,318 @@ describe('MapValidator', () => {
           [mapAst2, mapAst3],
           'MapDefinition - Result not defined',
           '',
-          'ObjectLiteral - Missing required field\nObjectLiteral - Missing required field\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected ObjectStructure, but got "null"\n1:5 NullKeyword - Wrong Structure: expected ObjectStructure, but got "null"',
+          'ObjectLiteral - Missing required field\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nObjectLiteral - Missing required field\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected ObjectStructure, but got "null"\n1:5 NullKeyword - Wrong Structure: expected ObjectStructure, but got "null"',
+          ''
+        );
+      });
+      describe('that uses dot.notation for fields', () => {
+        const profileAst: ProfileDocumentNode = {
+          kind: 'ProfileDocument',
+          profile: {
+            kind: 'Profile',
+            profileId: {
+              kind: 'ProfileId',
+              profileId: 'whatever',
+            },
+          },
+          definitions: [
+            {
+              kind: 'UseCaseDefinition',
+              useCaseName: 'Test',
+
+              result: {
+                kind: 'UseCaseSlotDefinition',
+                type: {
+                  kind: 'ObjectDefinition',
+                  fields: [
+                    {
+                      kind: 'FieldDefinition',
+                      required: false,
+                      fieldName: 'f1',
+                      type: {
+                        kind: 'ObjectDefinition',
+                        fields: [
+                          {
+                            kind: 'FieldDefinition',
+                            required: false,
+                            fieldName: 'f2',
+                            type: {
+                              kind: 'ObjectDefinition',
+                              fields: [
+                                {
+                                  kind: 'FieldDefinition',
+                                  required: false,
+                                  fieldName: 'inner',
+                                  type: {
+                                    kind: 'PrimitiveTypeName',
+                                    name: 'number',
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                        ],
+                      },
+                    },
+                    {
+                      kind: 'FieldDefinition',
+                      required: false,
+                      fieldName: 'f2',
+                      type: {
+                        kind: 'PrimitiveTypeName',
+                        name: 'number',
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        };
+        const mapAst1: MapASTNode = {
+          kind: 'MapDocument',
+          map: {
+            kind: 'Map',
+            profileId: {
+              kind: 'ProfileId',
+              profileId: 'whatever',
+            },
+            provider: {
+              kind: 'Provider',
+              providerId: 'whatever',
+            },
+          },
+          definitions: [
+            {
+              kind: 'MapDefinition',
+              name: 'Test',
+              usecaseName: 'Test',
+              statements: [
+                {
+                  kind: 'OutcomeStatement',
+                  terminateFlow: false,
+                  isError: false,
+                  value: {
+                    kind: 'ObjectLiteral',
+                    fields: [
+                      {
+                        kind: 'Assignment',
+                        key: ['f1', 'f2', 'inner'],
+                        value: {
+                          kind: 'PrimitiveLiteral',
+                          value: 1,
+                        },
+                      },
+                      {
+                        kind: 'Assignment',
+                        key: ['f2'],
+                        value: {
+                          kind: 'PrimitiveLiteral',
+                          value: 2,
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: 'OutcomeStatement',
+                  terminateFlow: false,
+                  isError: false,
+                  value: {
+                    kind: 'ObjectLiteral',
+                    fields: [
+                      {
+                        kind: 'Assignment',
+                        key: ['f1'],
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['f2', 'inner'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 1,
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: 'Assignment',
+                        key: ['f2'],
+                        value: {
+                          kind: 'PrimitiveLiteral',
+                          value: 2,
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: 'OutcomeStatement',
+                  terminateFlow: false,
+                  isError: false,
+                  value: {
+                    kind: 'ObjectLiteral',
+                    fields: [
+                      {
+                        kind: 'Assignment',
+                        key: ['f1'],
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['f2'],
+                              value: {
+                                kind: 'ObjectLiteral',
+                                fields: [
+                                  {
+                                    kind: 'Assignment',
+                                    key: ['inner'],
+                                    value: {
+                                      kind: 'PrimitiveLiteral',
+                                      value: 1,
+                                    },
+                                  },
+                                ],
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: 'Assignment',
+                        key: ['f2'],
+                        value: {
+                          kind: 'PrimitiveLiteral',
+                          value: 2,
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        };
+        const mapAst2: MapASTNode = {
+          kind: 'MapDocument',
+          map: {
+            kind: 'Map',
+            profileId: {
+              kind: 'ProfileId',
+              profileId: 'whatever',
+            },
+            provider: {
+              kind: 'Provider',
+              providerId: 'whatever',
+            },
+          },
+          definitions: [
+            {
+              kind: 'MapDefinition',
+              name: 'Test',
+              usecaseName: 'Test',
+              statements: [
+                {
+                  kind: 'OutcomeStatement',
+                  terminateFlow: false,
+                  isError: false,
+                  value: {
+                    kind: 'ObjectLiteral',
+                    fields: [
+                      {
+                        kind: 'Assignment',
+                        key: ['f1', 'f2', 'inner'],
+                        value: {
+                          kind: 'PrimitiveLiteral',
+                          value: 1,
+                        },
+                      },
+                      {
+                        kind: 'Assignment',
+                        key: ['f2', 'f1'],
+                        value: {
+                          kind: 'PrimitiveLiteral',
+                          value: 2,
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: 'OutcomeStatement',
+                  terminateFlow: false,
+                  isError: false,
+                  value: {
+                    kind: 'ObjectLiteral',
+                    fields: [
+                      {
+                        kind: 'Assignment',
+                        key: ['f1', 'f2.inner'],
+                        value: {
+                          kind: 'PrimitiveLiteral',
+                          value: 1,
+                        },
+                      },
+                      {
+                        kind: 'Assignment',
+                        key: ['f2', 'f1'],
+                        value: {
+                          kind: 'PrimitiveLiteral',
+                          value: 2,
+                        },
+                      },
+                    ],
+                  },
+                },
+                {
+                  kind: 'OutcomeStatement',
+                  terminateFlow: false,
+                  isError: false,
+                  value: {
+                    kind: 'ObjectLiteral',
+                    fields: [
+                      {
+                        kind: 'Assignment',
+                        key: ['f1', 'f2', 'inner'],
+                        value: {
+                          kind: 'PrimitiveLiteral',
+                          value: 1,
+                        },
+                      },
+                      {
+                        kind: 'Assignment',
+                        key: ['f2'],
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['f1'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 2,
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          ],
+        };
+
+        valid(profileAst, [mapAst1]);
+        invalid(
+          profileAst,
+          [mapAst2],
+          'ObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"\nObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"\nObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"',
           ''
         );
       });
@@ -4311,17 +4616,12 @@ describe('MapValidator', () => {
           profileAst,
           [mapAst1, mapAst2],
           '',
-          '',
-          '',
-          '',
-          '',
-          'ObjectLiteral - Wrong Object Structure: expected f1, f2, but got f1, f3',
-          'ObjectLiteral - Wrong Object Structure: expected f1, f2, but got f1, f2, f3'
+          'ObjectLiteral - Wrong Object Structure: expected f1, f2, but got f1, f3\nObjectLiteral - Wrong Object Structure: expected f1, f2, but got f1, f2, f3'
         );
         invalid(
           profileAst,
           [mapAst3],
-          '1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nJessieExpression - Wrong Structure: expected number, but got "null"\n1:5 NullKeyword - Wrong Structure: expected number, but got "null"\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"',
+          'JessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nJessieExpression - Wrong Structure: expected number, but got "null"\n1:5 NullKeyword - Wrong Structure: expected number, but got "null"',
           ''
         );
       });
@@ -4505,7 +4805,6 @@ describe('MapValidator', () => {
         valid(
           profileAst,
           [mapAst1, mapAst2],
-          '',
           '',
           'ObjectLiteral - Wrong Object Structure: expected f1, but got f1, f3'
         );
@@ -4837,7 +5136,7 @@ describe('MapValidator', () => {
         invalid(
           profileAst,
           [mapAst3],
-          'ObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nJessieExpression - Wrong Structure: expected boolean, but got "null"\n1:5 NullKeyword - Wrong Structure: expected boolean, but got "null"\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected boolean, but got "null"\n1:5 NullKeyword - Wrong Structure: expected boolean, but got "null"\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nObjectLiteral - Missing required field',
+          'ObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nJessieExpression - Wrong Structure: expected boolean, but got "null"\n1:5 NullKeyword - Wrong Structure: expected boolean, but got "null"\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nJessieExpression - Wrong Structure: expected boolean, but got "null"\n1:5 NullKeyword - Wrong Structure: expected boolean, but got "null"\nObjectLiteral - Missing required field',
           ''
         );
       });
@@ -5136,7 +5435,7 @@ describe('MapValidator', () => {
         invalid(
           profileAst,
           [mapAst3],
-          'ObjectLiteral - Missing required field\nObjectLiteral - Missing required field\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nJessieExpression - Wrong Structure: expected boolean, but got "null"\n1:5 NullKeyword - Wrong Structure: expected boolean, but got "null"\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected boolean, but got "null"\n1:5 NullKeyword - Wrong Structure: expected boolean, but got "null"\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nObjectLiteral - Missing required field\nObjectLiteral - Missing required field',
+          'ObjectLiteral - Missing required field\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected boolean, but got "null"\n1:5 NullKeyword - Wrong Structure: expected boolean, but got "null"\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nJessieExpression - Wrong Structure: expected boolean, but got "null"\n1:5 NullKeyword - Wrong Structure: expected boolean, but got "null"\nObjectLiteral - Missing required field\nObjectLiteral - Missing required field',
           ''
         );
       });
@@ -5386,7 +5685,7 @@ describe('MapValidator', () => {
           [mapAst2, mapAst3],
           'MapDefinition - Error not defined',
           '',
-          'ObjectLiteral - Missing required field\nObjectLiteral - Missing required field\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected ObjectStructure, but got "null"\n1:5 NullKeyword - Wrong Structure: expected ObjectStructure, but got "null"',
+          'ObjectLiteral - Missing required field\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected string, but got "null"\n1:5 NullKeyword - Wrong Structure: expected string, but got "null"\nObjectLiteral - Missing required field\nObjectLiteral - Missing required field\nJessieExpression - Wrong Structure: expected ObjectStructure, but got "null"\n1:5 NullKeyword - Wrong Structure: expected ObjectStructure, but got "null"',
           ''
         );
       });
@@ -8952,7 +9251,7 @@ describe('MapValidator', () => {
                   isError: false,
                   value: {
                     kind: 'JessieExpression',
-                    expression: 'a.b',
+                    expression: 'a',
                   },
                 },
               ],
@@ -9022,7 +9321,7 @@ describe('MapValidator', () => {
         invalid(
           profileAst,
           [mapAst3, mapAst4],
-          'JessieExpression - Missing Variable definition: a.b is not defined',
+          'JessieExpression - Wrong Variable Structure: variable a expected string, but got false',
           '',
           'JessieExpression - Wrong Variable Structure: variable a.b expected string, but got false',
           ''
@@ -9191,7 +9490,7 @@ describe('MapValidator', () => {
                       key: ['foo.bar', 'a'],
                       value: {
                         kind: 'PrimitiveLiteral',
-                        value: 'some string',
+                        value: false,
                       },
                     },
                   ],
@@ -9202,7 +9501,7 @@ describe('MapValidator', () => {
                   isError: false,
                   value: {
                     kind: 'JessieExpression',
-                    expression: '"foo.nope".a',
+                    expression: '"foo.bar".a',
                   },
                 },
               ],
@@ -9214,7 +9513,7 @@ describe('MapValidator', () => {
         invalid(
           profileAst,
           [mapAst3],
-          'JessieExpression - Missing Variable definition: foo.nope.a is not defined',
+          'JessieExpression - Wrong Variable Structure: variable foo.bar.a expected string, but got false',
           ''
         );
       });
@@ -9292,83 +9591,6 @@ describe('MapValidator', () => {
           profileAst,
           [mapAst1],
           'JessieExpression - Wrong Variable Structure: variable a.b expected string, but got false',
-          ''
-        );
-      });
-      describe('undefined variable', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                type: {
-                  kind: 'PrimitiveTypeName',
-                  name: 'string',
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a', 'c'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: false,
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'a.b',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-
-        invalid(
-          profileAst,
-          [mapAst1],
-          'JessieExpression - Missing Variable definition: a.b is not defined',
           ''
         );
       });
@@ -9493,9 +9715,9 @@ describe('MapValidator', () => {
                             expression: 'b',
                           },
                         },
-                      ]
-                    }
-                  ]
+                      ],
+                    },
+                  ],
                 },
                 {
                   kind: 'OutcomeStatement',
@@ -9506,15 +9728,6 @@ describe('MapValidator', () => {
                     expression: 'a.c',
                   },
                 },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'c',
-                  },
-                },
               ],
             },
           ],
@@ -9523,7 +9736,7 @@ describe('MapValidator', () => {
         invalid(
           profileAst,
           [mapAst1],
-          'JessieExpression - Wrong Variable Structure: variable a.c expected string, but got false\nJessieExpression - Missing Variable definition: c is not defined',
+          'JessieExpression - Wrong Variable Structure: variable a.c expected string, but got false',
           ''
         );
       });
@@ -9760,625 +9973,6 @@ describe('MapValidator', () => {
         [mapAst],
         'ObjectLiteral - Wrong Structure: expected string, but got "ObjectLiteral"\nPrimitiveLiteral - Wrong Structure: expected ObjectStructure, but got "some string"'
       );
-    });
-    describe.skip('map is using operations', () => {
-      describe('string returned from operation', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                type: {
-                  kind: 'PrimitiveTypeName',
-                  name: 'string',
-                },
-              },
-            },
-          ],
-        };
-        const mapAst: MapASTNode = {
-          kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
-          definitions: [
-            {
-              kind: 'OperationDefinition',
-              name: 'Bar',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  isError: false,
-                  terminateFlow: true,
-                  value: {
-                    kind: 'PrimitiveLiteral',
-                    value: 'some string',
-                  },
-                },
-              ],
-            },
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'CallStatement',
-                  operationName: 'Bar',
-                  arguments: [],
-                  statements: [
-                    {
-                      kind: 'OutcomeStatement',
-                      isError: false,
-                      terminateFlow: false,
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: 'data',
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        };
-
-        valid(profileAst, [mapAst]);
-      });
-      describe('string returned from multiple operations', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                type: {
-                  kind: 'PrimitiveTypeName',
-                  name: 'string',
-                },
-              },
-            },
-          ],
-        };
-        const mapAst: MapASTNode = {
-          kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
-          definitions: [
-            {
-              kind: 'OperationDefinition',
-              name: 'Bar',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  isError: false,
-                  terminateFlow: true,
-                  value: {
-                    kind: 'PrimitiveLiteral',
-                    value: 'some string',
-                  },
-                },
-              ],
-            },
-            {
-              kind: 'OperationDefinition',
-              name: 'Foo',
-              statements: [
-                {
-                  kind: 'CallStatement',
-                  operationName: 'Bar',
-                  arguments: [],
-                  statements: [
-                    {
-                      kind: 'OutcomeStatement',
-                      isError: false,
-                      terminateFlow: true,
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: 'data',
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'CallStatement',
-                  operationName: 'Foo',
-                  arguments: [],
-                  statements: [
-                    {
-                      kind: 'OutcomeStatement',
-                      isError: false,
-                      terminateFlow: false,
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: 'data',
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        };
-
-        valid(profileAst, [mapAst]);
-      });
-      describe('string returned from operation that was passed in as argument', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                type: {
-                  kind: 'PrimitiveTypeName',
-                  name: 'string',
-                },
-              },
-            },
-          ],
-        };
-        const mapAst: MapASTNode = {
-          kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
-          definitions: [
-            {
-              kind: 'OperationDefinition',
-              name: 'Foo',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  isError: false,
-                  terminateFlow: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'args.data.message',
-                  },
-                },
-              ],
-            },
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'CallStatement',
-                  operationName: 'Foo',
-                  arguments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['data', 'message'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'some string',
-                      },
-                    },
-                  ],
-                  statements: [
-                    {
-                      kind: 'OutcomeStatement',
-                      isError: false,
-                      terminateFlow: false,
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: 'data',
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        };
-
-        valid(profileAst, [mapAst]);
-      });
-      describe('string acquired from multiple outcomes', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                type: {
-                  kind: 'PrimitiveTypeName',
-                  name: 'string',
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
-          definitions: [
-            {
-              kind: 'OperationDefinition',
-              name: 'Bar',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  isError: false,
-                  terminateFlow: true,
-                  value: {
-                    kind: 'PrimitiveLiteral',
-                    value: 'some string',
-                  },
-                },
-              ],
-            },
-            {
-              kind: 'OperationDefinition',
-              name: 'Foo',
-              statements: [
-                {
-                  kind: 'CallStatement',
-                  operationName: 'Bar',
-                  arguments: [],
-                  statements: [
-                    {
-                      kind: 'OutcomeStatement',
-                      isError: false,
-                      terminateFlow: true,
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: 'data',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'some string',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  isError: false,
-                  terminateFlow: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'args.data.message',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  isError: false,
-                  terminateFlow: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'a',
-                  },
-                },
-              ],
-            },
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'CallStatement',
-                  operationName: 'Foo',
-                  arguments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['data', 'message'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'some string',
-                      },
-                    },
-                  ],
-                  statements: [
-                    {
-                      kind: 'OutcomeStatement',
-                      isError: false,
-                      terminateFlow: false,
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: 'data',
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
-          definitions: [
-            {
-              kind: 'OperationDefinition',
-              name: 'FooBar',
-              statements: [
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'some string',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['b'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'whatever',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  isError: false,
-                  terminateFlow: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'a',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  isError: false,
-                  terminateFlow: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'b',
-                  },
-                },
-              ],
-            },
-            {
-              kind: 'OperationDefinition',
-              name: 'Bar',
-              statements: [
-                {
-                  kind: 'CallStatement',
-                  operationName: 'FooBar',
-                  arguments: [],
-                  statements: [
-                    {
-                      kind: 'OutcomeStatement',
-                      isError: false,
-                      terminateFlow: true,
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: 'data',
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
-            {
-              kind: 'OperationDefinition',
-              name: 'Foo',
-              statements: [
-                {
-                  kind: 'CallStatement',
-                  operationName: 'Bar',
-                  arguments: [],
-                  statements: [
-                    {
-                      kind: 'OutcomeStatement',
-                      isError: false,
-                      terminateFlow: true,
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: 'data',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'some string',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  isError: false,
-                  terminateFlow: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'args.data.message',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  isError: false,
-                  terminateFlow: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'a',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  isError: false,
-                  terminateFlow: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['result'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'soome string',
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'CallStatement',
-                  operationName: 'Foo',
-                  arguments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['data', 'message'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'some string',
-                      },
-                    },
-                  ],
-                  statements: [
-                    {
-                      kind: 'OutcomeStatement',
-                      isError: false,
-                      terminateFlow: false,
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: 'data',
-                      },
-                    },
-                    {
-                      kind: 'OutcomeStatement',
-                      isError: false,
-                      terminateFlow: false,
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: 'data.result',
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
-          ],
-        };
-
-        valid(profileAst, [mapAst1, mapAst2]);
-      });
     });
     describe('map is using http call', () => {
       const profileAst: ProfileDocumentNode = {
@@ -10801,13 +10395,7 @@ describe('MapValidator', () => {
         ],
       };
 
-      valid(profileAst, [mapAst1]);
-      invalid(
-        profileAst,
-        [mapAst2],
-        'ObjectLiteral - Wrong Structure: expected string, but got "ObjectLiteral"',
-        ''
-      );
+      valid(profileAst, [mapAst1, mapAst2]);
     });
   });
 
