@@ -2,6 +2,9 @@ import {
   EnumDefinitionNode,
   EnumValueNode,
   FieldDefinitionNode,
+  isNamedFieldDefinitionNode,
+  isNamedModelDefinitionNode,
+  isUseCaseDefinitionNode,
   ListDefinitionNode,
   ModelTypeNameNode,
   NamedFieldDefinitionNode,
@@ -27,6 +30,7 @@ import {
   UnionStructure,
   UseCaseStructure,
 } from './profile-output';
+import { isEnumStructure, isUnionStructure } from './profile-output.utils';
 
 function assertUnreachable(node: never): never;
 function assertUnreachable(node: ProfileASTNode): never {
@@ -130,7 +134,7 @@ export class ProfileValidator implements ProfileVisitor {
   visitListDefinitionNode(node: ListDefinitionNode): StructureType {
     const value = this.visit(node.elementType);
 
-    if (value.kind === 'EnumStructure') {
+    if (isEnumStructure(value)) {
       throw new Error('Something went very wrong, this should not happen!');
     }
 
@@ -159,7 +163,7 @@ export class ProfileValidator implements ProfileVisitor {
   visitNonNullDefinitionNode(node: NonNullDefinitionNode): StructureType {
     const value = this.visit(node.type);
 
-    if (value.kind === 'UnionStructure') {
+    if (isUnionStructure(value)) {
       throw new Error('Something went very wrong, this should not happen!');
     }
 
@@ -174,7 +178,7 @@ export class ProfileValidator implements ProfileVisitor {
       kind: 'ObjectStructure',
     };
 
-    node.fields.forEach((field: FieldDefinitionNode) => {
+    node.fields.forEach(field => {
       obj.fields = { ...obj.fields };
       obj.fields[field.fieldName] = this.visit(field) ?? {
         kind: 'ScalarStructure',
@@ -193,31 +197,22 @@ export class ProfileValidator implements ProfileVisitor {
 
   visitProfileDocumentNode(node: ProfileDocumentNode): ProfileOutput {
     node.definitions
-      .filter(
-        (definition): definition is NamedFieldDefinitionNode =>
-          definition.kind === 'NamedFieldDefinition'
-      )
-      .forEach(field => {
+      .filter(isNamedFieldDefinitionNode)
+      .forEach((field: NamedFieldDefinitionNode) => {
         this.fields[field.fieldName] = { kind: 'ScalarStructure' };
         this.visit(field);
       });
 
     node.definitions
-      .filter(
-        (definition): definition is NamedModelDefinitionNode =>
-          definition.kind === 'NamedModelDefinition'
-      )
-      .forEach(model => {
+      .filter(isNamedModelDefinitionNode)
+      .forEach((model: NamedModelDefinitionNode) => {
         this.models[model.modelName] = { kind: 'ScalarStructure' };
         this.visit(model);
       });
 
     const profileId = this.visit(node.profile);
     const usecases = node.definitions
-      .filter(
-        (definition): definition is UseCaseDefinitionNode =>
-          definition.kind === 'UseCaseDefinition'
-      )
+      .filter(isUseCaseDefinitionNode)
       .map(definition => this.visit(definition));
 
     return {
@@ -243,7 +238,7 @@ export class ProfileValidator implements ProfileVisitor {
     node.types.forEach((type, i) => {
       const structure = this.visit(type);
 
-      if (structure.kind !== 'UnionStructure') {
+      if (!isUnionStructure(structure)) {
         union.types[i] = structure;
       }
     });

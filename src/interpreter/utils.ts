@@ -301,6 +301,8 @@ export function getTypescriptIdentifier(
   return ts.forEachChild(node, getTypescriptIdentifier);
 }
 
+export const redudantExpressionCharacters = /['"[\]]/g;
+
 export function validateObjectStructure(
   node: TypescriptIdentifier,
   structure: ObjectStructure
@@ -320,7 +322,7 @@ export function validateObjectStructure(
     name = node.name;
   }
 
-  const key = name.getText().replace(/['"[\]]/g, '');
+  const key = name.getText().replace(redudantExpressionCharacters, '');
   let outputStructure: StructureType | undefined;
 
   if (
@@ -370,7 +372,10 @@ export function findTypescriptProperty(name: string, node: ts.Node): boolean {
 
   if (ts.isElementAccessExpression(node)) {
     return ts.isIdentifier(node.expression)
-      ? name === node.argumentExpression.getText().replace(/['"[\]]/g, '')
+      ? name ===
+          node.argumentExpression
+            .getText()
+            .replace(redudantExpressionCharacters, '')
       : findTypescriptProperty(name, node.expression);
   }
 
@@ -383,12 +388,12 @@ export function getTypescriptIdentifierName(node: ts.Node): string {
   }
 
   if (ts.isPropertyAccessExpression(node)) {
-    return node.getText().replace(/['"]/g, '');
+    return node.getText().replace(redudantExpressionCharacters, '');
   }
 
   if (ts.isElementAccessExpression(node)) {
     return `${node.expression.getText()}.${node.argumentExpression.getText()}`.replace(
-      /['"[\]]/g,
+      redudantExpressionCharacters,
       ''
     );
   }
@@ -400,7 +405,7 @@ export function getVariableName(
   node: TypescriptIdentifier | ts.LeftHandSideExpression,
   name?: string
 ): string {
-  name = name ? name.replace(/['"[\]]/g, '') : '';
+  name = name ? name.replace(redudantExpressionCharacters, '') : '';
 
   if (ts.isIdentifier(node) || ts.isStringLiteral(node)) {
     return name !== '' ? `${node.text}.${name}` : node.text;

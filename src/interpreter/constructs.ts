@@ -8,15 +8,15 @@ import {
   StructureType,
 } from './profile-output';
 import {
-  assertBoolean,
-  assertNumber,
-  assertString,
+  isBooleanStructure,
   isEnumStructure,
   isListStructure,
   isNonNullStructure,
+  isNumberStructure,
   isObjectStructure,
   isPrimitiveStructure,
   isScalarStructure,
+  isStringStructure,
   isUnionStructure,
 } from './profile-output.utils';
 import {
@@ -258,7 +258,8 @@ export const RETURN_CONSTRUCTS: {
       }
       if (
         isScalarStructure(outputStructure) ||
-        (isPrimitiveStructure(outputStructure) && assertString(outputStructure))
+        (isPrimitiveStructure(outputStructure) &&
+          isStringStructure(outputStructure))
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
@@ -294,7 +295,8 @@ export const RETURN_CONSTRUCTS: {
       }
       if (
         isScalarStructure(outputStructure) ||
-        (isPrimitiveStructure(outputStructure) && assertNumber(outputStructure))
+        (isPrimitiveStructure(outputStructure) &&
+          isNumberStructure(outputStructure))
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
@@ -331,7 +333,7 @@ export const RETURN_CONSTRUCTS: {
       if (
         isScalarStructure(outputStructure) ||
         (isPrimitiveStructure(outputStructure) &&
-          assertBoolean(outputStructure))
+          isBooleanStructure(outputStructure))
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
@@ -368,7 +370,7 @@ export const RETURN_CONSTRUCTS: {
       if (
         isScalarStructure(outputStructure) ||
         (isPrimitiveStructure(outputStructure) &&
-          assertBoolean(outputStructure))
+          isBooleanStructure(outputStructure))
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
@@ -479,7 +481,7 @@ export const RETURN_CONSTRUCTS: {
 
       if (
         isPrimitiveStructure(outputStructure) &&
-        assertBoolean(outputStructure)
+        isBooleanStructure(outputStructure)
       ) {
         return mergeResults(
           ...results,
@@ -518,7 +520,7 @@ export const RETURN_CONSTRUCTS: {
 
       if (
         isPrimitiveStructure(outputStructure) &&
-        assertString(outputStructure) &&
+        isStringStructure(outputStructure) &&
         (nodeContainsString || nodeContainsID) &&
         node.operatorToken.getText() === '+'
       ) {
@@ -531,7 +533,7 @@ export const RETURN_CONSTRUCTS: {
 
       if (
         isPrimitiveStructure(outputStructure) &&
-        assertNumber(outputStructure) &&
+        isNumberStructure(outputStructure) &&
         !nodeContainsString
       ) {
         return mergeResults(...results, {

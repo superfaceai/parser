@@ -205,7 +205,7 @@ export class MapValidator implements MapVisitor {
   }
 
   visitMapProfileIdNode(node: MapProfileIdNode): void {
-    if (!(node.profileId === this.profileOutput.profileId)) {
+    if (node.profileId !== this.profileOutput.profileId) {
       this.errors.push({
         kind: 'wrongProfileID',
         context: {
@@ -419,82 +419,10 @@ export class MapValidator implements MapVisitor {
     this.currentStructure = undefined;
   }
 
-  private constructObject(key: string, field: AssignmentNode): void {
-    const object: ObjectLiteralNode = {
-      kind: 'ObjectLiteral',
-      fields: [],
-    };
-    let isReassigned = false;
-
-    const variable = this.variables[key];
-    if (variable && isObjectLiteralNode(variable)) {
-      const fieldKey = field.key.join('.');
-
-      variable.fields.forEach(variableField => {
-        if (variableField.key.join('.') === fieldKey) {
-          isReassigned = true;
-          variableField.value = field.value;
-        }
-      });
-
-      object.fields.push(...variable.fields);
-    }
-
-    if (!isReassigned) {
-      object.fields.push(field);
-    }
-
-    this.addVariableToStack(key, object);
-  }
-
-  private cleanUpVariables(key: string): void {
-    for (const stackTop of this.stack) {
-      const variableKeys = Object.keys(stackTop.variables);
-      let index = variableKeys.length;
-
-      while (index--) {
-        const variableKey = variableKeys[index];
-
-        if (
-          variableKey.length > key.length &&
-          variableKey[key.length] === '.' &&
-          variableKey.startsWith(key)
-        ) {
-          delete stackTop.variables[variableKey];
-        }
-      }
-    }
-  }
-
   visitSetStatementNode(node: SetStatementNode): void {
     node.assignments.forEach(assignment => {
-      const value = assignment.value;
-      this.visit(value);
-
-      const variableKey = assignment.key.join('.');
-      this.addVariableToStack(variableKey, value);
-
-      if (assignment.key.length > 1) {
-        const keys: string[] = [];
-        const field: AssignmentNode = {
-          kind: 'Assignment',
-          key: Array.from(assignment.key),
-          value,
-        };
-
-        assignment.key.forEach(key => {
-          keys.push(key);
-          field.key.shift();
-
-          if (field.key.length === 0) {
-            return;
-          }
-
-          this.constructObject(keys.join('.'), field);
-        });
-      }
-
-      this.cleanUpVariables(variableKey);
+      this.visit(assignment.value);
+      this.addVariableToStack(assignment);
     });
   }
 
@@ -679,7 +607,7 @@ export class MapValidator implements MapVisitor {
       // it should not validate against final value when dot.notation is used
       if (field.key.length > 1) {
         const [head, ...tail] = field.key;
-        visitResult = this.visit({
+        const assignment: AssignmentNode = {
           kind: 'Assignment',
           key: [head],
           value: {
@@ -692,7 +620,8 @@ export class MapValidator implements MapVisitor {
               },
             ],
           },
-        });
+        };
+        visitResult = this.visit(assignment);
       } else {
         visitResult = this.visit(field);
       }
@@ -760,11 +689,78 @@ export class MapValidator implements MapVisitor {
       : [node.kind];
   }
 
-  private addVariableToStack(key: string, value: LiteralNode): void {
+  private cleanUpVariables(key: string): void {
+    for (const variableKey of Object.keys(this.variables)) {
+      if (
+        variableKey.length > key.length &&
+        variableKey[key.length] === '.' &&
+        variableKey.startsWith(key)
+      ) {
+        delete this.variables[variableKey];
+      }
+    }
+  }
+
+  private handleVariable(assignment: AssignmentNode): void {
+    if (assignment.key.length > 1) {
+      const keys: string[] = [];
+      const tmpField: AssignmentNode = {
+        kind: 'Assignment',
+        key: Array.from(assignment.key),
+        value: assignment.value,
+      };
+
+      for (const assignmentKey of assignment.key) {
+        keys.push(assignmentKey);
+        tmpField.key.shift();
+
+        if (tmpField.key.length === 0) {
+          return;
+        }
+
+        let isReassigned = false;
+        const variable = this.variables[keys.join('.')];
+        const value: ObjectLiteralNode = {
+          kind: 'ObjectLiteral',
+          fields: [],
+        };
+
+        if (variable && isObjectLiteralNode(variable)) {
+          const fieldKey = tmpField.key.join('.');
+
+          for (const variableField of variable.fields) {
+            if (variableField.key.join('.') === fieldKey) {
+              isReassigned = true;
+              variableField.value = tmpField.value;
+            }
+          }
+
+          value.fields.push(...variable.fields);
+        }
+
+        if (!isReassigned) {
+          value.fields.push(tmpField);
+        }
+
+        this.addVariableToStack({
+          kind: 'Assignment',
+          key: keys,
+          value,
+        });
+      }
+    }
+  }
+
+  private addVariableToStack(assignment: AssignmentNode): void {
+    const key = assignment.key.join('.');
+
     const variable: Record<string, LiteralNode> = {};
-    variable[key] = value;
+    variable[key] = assignment.value;
 
     this.stackTop.variables = mergeVariables(this.stackTop.variables, variable);
+
+    this.handleVariable(assignment);
+    this.cleanUpVariables(key);
   }
 
   private newStack(type: Stack['type'], name?: string): void {

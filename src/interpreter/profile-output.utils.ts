@@ -51,14 +51,20 @@ export function isObjectStructure(
   return structure.kind === 'ObjectStructure';
 }
 
-export function assertBoolean(primitiveStructure: PrimitiveStructure): boolean {
+export function isBooleanStructure(
+  primitiveStructure: PrimitiveStructure
+): boolean {
   return primitiveStructure.type === 'boolean';
 }
 
-export function assertNumber(primitiveStructure: PrimitiveStructure): boolean {
+export function isNumberStructure(
+  primitiveStructure: PrimitiveStructure
+): boolean {
   return primitiveStructure.type === 'number';
 }
 
-export function assertString(primitiveStructure: PrimitiveStructure): boolean {
+export function isStringStructure(
+  primitiveStructure: PrimitiveStructure
+): boolean {
   return primitiveStructure.type === 'string';
 }
