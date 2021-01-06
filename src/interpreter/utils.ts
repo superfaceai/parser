@@ -301,7 +301,11 @@ export function getTypescriptIdentifier(
   return ts.forEachChild(node, getTypescriptIdentifier);
 }
 
-export const redudantExpressionCharacters = /['"[\]]/g;
+export const REDUDANT_EXPRESSION_CHARACTERS_REGEX = /['"[\]]/g;
+
+export function replaceRedudantCharacters(text: string): string {
+  return text.replace(REDUDANT_EXPRESSION_CHARACTERS_REGEX, '');
+}
 
 export function validateObjectStructure(
   node: TypescriptIdentifier,
@@ -322,7 +326,7 @@ export function validateObjectStructure(
     name = node.name;
   }
 
-  const key = name.getText().replace(redudantExpressionCharacters, '');
+  const key = replaceRedudantCharacters(name.getText());
   let outputStructure: StructureType | undefined;
 
   if (
@@ -372,10 +376,7 @@ export function findTypescriptProperty(name: string, node: ts.Node): boolean {
 
   if (ts.isElementAccessExpression(node)) {
     return ts.isIdentifier(node.expression)
-      ? name ===
-          node.argumentExpression
-            .getText()
-            .replace(redudantExpressionCharacters, '')
+      ? name === replaceRedudantCharacters(node.argumentExpression.getText())
       : findTypescriptProperty(name, node.expression);
   }
 
@@ -388,13 +389,12 @@ export function getTypescriptIdentifierName(node: ts.Node): string {
   }
 
   if (ts.isPropertyAccessExpression(node)) {
-    return node.getText().replace(redudantExpressionCharacters, '');
+    return replaceRedudantCharacters(node.getText());
   }
 
   if (ts.isElementAccessExpression(node)) {
-    return `${node.expression.getText()}.${node.argumentExpression.getText()}`.replace(
-      redudantExpressionCharacters,
-      ''
+    return replaceRedudantCharacters(
+      `${node.expression.getText()}.${node.argumentExpression.getText()}`
     );
   }
 
@@ -405,7 +405,7 @@ export function getVariableName(
   node: TypescriptIdentifier | ts.LeftHandSideExpression,
   name?: string
 ): string {
-  name = name ? name.replace(redudantExpressionCharacters, '') : '';
+  name = name ? replaceRedudantCharacters(name) : '';
 
   if (ts.isIdentifier(node) || ts.isStringLiteral(node)) {
     return name !== '' ? `${node.text}.${name}` : node.text;

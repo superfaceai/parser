@@ -149,15 +149,15 @@ export class ProfileValidator implements ProfileVisitor {
   }
 
   visitNamedFieldDefinitionNode(node: NamedFieldDefinitionNode): void {
-    if (node.type) {
-      this.fields[node.fieldName] = this.visit(node.type);
-    }
+    this.fields[node.fieldName] = node.type
+      ? this.visit(node.type)
+      : { kind: 'ScalarStructure' };
   }
 
   visitNamedModelDefinitionNode(node: NamedModelDefinitionNode): void {
-    if (node.type) {
-      this.models[node.modelName] = this.visit(node.type);
-    }
+    this.models[node.modelName] = node.type
+      ? this.visit(node.type)
+      : { kind: 'ScalarStructure' };
   }
 
   visitNonNullDefinitionNode(node: NonNullDefinitionNode): StructureType {
@@ -174,18 +174,17 @@ export class ProfileValidator implements ProfileVisitor {
   }
 
   visitObjectDefinitionNode(node: ObjectDefinitionNode): StructureType {
-    const obj: ObjectStructure = {
-      kind: 'ObjectStructure',
-    };
+    return node.fields.reduce<ObjectStructure>(
+      (obj, field) => {
+        obj.fields = { ...obj.fields };
+        obj.fields[field.fieldName] = this.visit(field) ?? {
+          kind: 'ScalarStructure',
+        };
 
-    node.fields.forEach(field => {
-      obj.fields = { ...obj.fields };
-      obj.fields[field.fieldName] = this.visit(field) ?? {
-        kind: 'ScalarStructure',
-      };
-    });
-
-    return obj;
+        return obj;
+      },
+      { kind: 'ObjectStructure' }
+    );
   }
 
   visitPrimitiveTypeNameNode(node: PrimitiveTypeNameNode): StructureType {
@@ -198,17 +197,11 @@ export class ProfileValidator implements ProfileVisitor {
   visitProfileDocumentNode(node: ProfileDocumentNode): ProfileOutput {
     node.definitions
       .filter(isNamedFieldDefinitionNode)
-      .forEach((field: NamedFieldDefinitionNode) => {
-        this.fields[field.fieldName] = { kind: 'ScalarStructure' };
-        this.visit(field);
-      });
+      .forEach(field => this.visit(field));
 
     node.definitions
       .filter(isNamedModelDefinitionNode)
-      .forEach((model: NamedModelDefinitionNode) => {
-        this.models[model.modelName] = { kind: 'ScalarStructure' };
-        this.visit(model);
-      });
+      .forEach(model => this.visit(model));
 
     const profileId = this.visit(node.profile);
     const usecases = node.definitions

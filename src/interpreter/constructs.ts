@@ -258,8 +258,7 @@ export const RETURN_CONSTRUCTS: {
       }
       if (
         isScalarStructure(outputStructure) ||
-        (isPrimitiveStructure(outputStructure) &&
-          isStringStructure(outputStructure))
+        isStringStructure(outputStructure)
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
@@ -295,8 +294,7 @@ export const RETURN_CONSTRUCTS: {
       }
       if (
         isScalarStructure(outputStructure) ||
-        (isPrimitiveStructure(outputStructure) &&
-          isNumberStructure(outputStructure))
+        isNumberStructure(outputStructure)
       ) {
         return { pass: true, invalidInput: false, invalidOutput: false };
       }
@@ -519,7 +517,6 @@ export const RETURN_CONSTRUCTS: {
       }
 
       if (
-        isPrimitiveStructure(outputStructure) &&
         isStringStructure(outputStructure) &&
         (nodeContainsString || nodeContainsID) &&
         node.operatorToken.getText() === '+'
@@ -531,11 +528,7 @@ export const RETURN_CONSTRUCTS: {
         });
       }
 
-      if (
-        isPrimitiveStructure(outputStructure) &&
-        isNumberStructure(outputStructure) &&
-        !nodeContainsString
-      ) {
+      if (isNumberStructure(outputStructure) && !nodeContainsString) {
         return mergeResults(...results, {
           pass: true,
           invalidInput: false,
