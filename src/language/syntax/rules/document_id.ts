@@ -3,16 +3,18 @@ export function isLowercaseIdentifier(str: string): boolean {
   return ID_NAME_RE.test(str);
 }
 
-type ParseVersionResult = {
-  kind: 'parsed',
-  major: number,
-  minor?: number,
-  patch?: number,
-  label?: string
-} | {
-  kind: 'error',
-  message: string
-};
+type ParseVersionResult =
+  | {
+      kind: 'parsed';
+      major: number;
+      minor?: number;
+      patch?: number;
+      label?: string;
+    }
+  | {
+      kind: 'error';
+      message: string;
+    };
 const VERSION_NUMBER_RE = /[0-9]+/;
 function parseVersionNumber(str: string): number | undefined {
   const value = str.trim();
@@ -38,7 +40,10 @@ export function parseVersion(version: string): ParseVersionResult {
   if (minorStr !== undefined) {
     minor = parseVersionNumber(minorStr);
     if (minor === undefined) {
-      return { kind: 'error', message: 'minor component is not a valid number' };
+      return {
+        kind: 'error',
+        message: 'minor component is not a valid number',
+      };
     }
   }
 
@@ -46,7 +51,10 @@ export function parseVersion(version: string): ParseVersionResult {
   if (patchStr !== undefined) {
     patch = parseVersionNumber(patchStr);
     if (patch === undefined) {
-      return { kind: 'error', message: 'patch component is not a valid number' };
+      return {
+        kind: 'error',
+        message: 'patch component is not a valid number',
+      };
     }
   }
 
@@ -55,29 +63,31 @@ export function parseVersion(version: string): ParseVersionResult {
     major,
     minor,
     patch,
-    label
-  }
+    label,
+  };
 }
 
 /**
  * Parses document name.
- * 
+ *
  * This function parses both profile and map names and returns a corresponding result.
  */
-export type ParseDocumentIdentifierResult = {
-  kind: 'parsed',
-  scope?: string,
-  name: string,
-  version?: {
-    major: number,
-    minor: number,
-    patch: number,
-    label?: string
-  }
-} | {
-  kind: 'error',
-  message: string
-};
+export type ParseDocumentIdentifierResult =
+  | {
+      kind: 'parsed';
+      scope?: string;
+      name: string;
+      version?: {
+        major: number;
+        minor: number;
+        patch: number;
+        label?: string;
+      };
+    }
+  | {
+      kind: 'error';
+      message: string;
+    };
 function parseDocumentId(id: string): ParseDocumentIdentifierResult {
   // parse scope first
   let scope: string | undefined;
@@ -85,7 +95,10 @@ function parseDocumentId(id: string): ParseDocumentIdentifierResult {
   if (scopeRestId !== undefined) {
     scope = splitScope;
     if (!isLowercaseIdentifier(scope)) {
-      return { kind: 'error', message: 'scope is not a valid lowercase identifier' }
+      return {
+        kind: 'error',
+        message: 'scope is not a valid lowercase identifier',
+      };
     }
 
     // strip the scope
@@ -98,7 +111,10 @@ function parseDocumentId(id: string): ParseDocumentIdentifierResult {
     parsedVersion = parseVersion(splitVersion);
 
     if (parsedVersion.kind === 'error') {
-      return { kind: 'error', message: 'could not parse version: ' + parsedVersion.message };
+      return {
+        kind: 'error',
+        message: 'could not parse version: ' + parsedVersion.message,
+      };
     }
 
     // strip the version
@@ -114,7 +130,7 @@ function parseDocumentId(id: string): ParseDocumentIdentifierResult {
       major: parsedVersion.major,
       minor: parsedVersion.minor ?? 0,
       patch: parsedVersion.patch ?? 0,
-      label: parsedVersion.label
+      label: parsedVersion.label,
     };
   }
 
@@ -122,20 +138,22 @@ function parseDocumentId(id: string): ParseDocumentIdentifierResult {
     kind: 'parsed',
     scope,
     name,
-    version
+    version,
   };
 }
 
-type ParseProfileIdResult = {
-  kind: 'parsed',
-  scope?: string,
-  name: string,
-  version?: {
-    major: number,
-    minor: number,
-    patch: number
-  }
-} | { kind: 'error', message: string };
+type ParseProfileIdResult =
+  | {
+      kind: 'parsed';
+      scope?: string;
+      name: string;
+      version?: {
+        major: number;
+        minor: number;
+        patch: number;
+      };
+    }
+  | { kind: 'error'; message: string };
 export function parseProfileId(id: string): ParseProfileIdResult {
   const baseResult = parseDocumentId(id);
 
@@ -144,7 +162,10 @@ export function parseProfileId(id: string): ParseProfileIdResult {
   }
 
   if (!isLowercaseIdentifier(baseResult.name)) {
-    return { kind: 'error', message: 'name is not a valid lowercase identifier' }
+    return {
+      kind: 'error',
+      message: 'name is not a valid lowercase identifier',
+    };
   }
 
   let version = undefined;
@@ -152,7 +173,7 @@ export function parseProfileId(id: string): ParseProfileIdResult {
     version = {
       major: baseResult.version.major,
       minor: baseResult.version.minor,
-      patch: baseResult.version.patch
+      patch: baseResult.version.patch,
     };
   }
 
@@ -160,74 +181,13 @@ export function parseProfileId(id: string): ParseProfileIdResult {
     kind: 'parsed',
     scope: baseResult.scope,
     name: baseResult.name,
-    version
-  }
+    version,
+  };
 }
 
-type ParseMapIdResult = {
-  kind: 'parsed',
-  scope?: string,
-  name: string,
-  provider: string,
-  variant?: string,
-  version?: {
-    major: number,
-    minor: number,
-    patch: number,
-    revision?: number
-  }
-} | { kind: 'error', message: string };
-export function parseMapId(id: string): ParseMapIdResult {
-  const baseResult = parseDocumentId(id);
-
-  if (baseResult.kind === 'error') {
-    return baseResult;
-  }
-
-  // parse name portion
-  const [name, provider, variant] = baseResult.name.split('.', 3);
-  if (!isLowercaseIdentifier(name)) {
-    return { kind: 'error', message: 'name is not a valid lowercase identifier' };
-  }
-  if (provider !== undefined && !isLowercaseIdentifier(provider)) {
-    return { kind: 'error', message: 'provider is not a valid lowercase identifier' };
-  }
-  if (variant !== undefined && !isLowercaseIdentifier(variant)) {
-    return { kind: 'error', message: 'variant is not a valid lowercase identifier' };
-  }
-
-  let version = undefined;
-  if (baseResult.version !== undefined) {
-    let revision = undefined;
-    if (baseResult.version.label !== undefined) {
-      const parsedRevision = parseRevisionLabel(baseResult.version.label);
-
-      if (parsedRevision.kind === 'error') {
-        return { kind: 'error', message: 'could not parse revision: ' + parsedRevision.message }
-      }
-
-      revision = parsedRevision.revision;
-    }
-
-    version = {
-      major: baseResult.version.major,
-      minor: baseResult.version.minor,
-      patch: baseResult.version.patch,
-      revision
-    };
-  }
-
-  return {
-    kind: 'parsed',
-    scope: baseResult.scope,
-    name,
-    provider,
-    variant,
-    version
-  }
-}
-
-type ParseRevisionLabelResult = { kind: 'parsed', revision: number } | { kind: 'error', message: string };
+type ParseRevisionLabelResult =
+  | { kind: 'parsed'; revision: number }
+  | { kind: 'error'; message: string };
 /**
  * Parses version label in format `revN`
  */
@@ -241,11 +201,92 @@ export function parseRevisionLabel(label: string): ParseRevisionLabelResult {
 
   const revision = parseVersionNumber(value);
   if (revision === undefined) {
-    return { kind: 'error', message: 'label must be in format `revN` where N is a non-negative integer' };
+    return {
+      kind: 'error',
+      message:
+        'label must be in format `revN` where N is a non-negative integer',
+    };
   }
 
   return {
     kind: 'parsed',
-    revision
+    revision,
+  };
+}
+
+type ParseMapIdResult =
+  | {
+      kind: 'parsed';
+      scope?: string;
+      name: string;
+      provider: string;
+      variant?: string;
+      version?: {
+        major: number;
+        minor: number;
+        patch: number;
+        revision?: number;
+      };
+    }
+  | { kind: 'error'; message: string };
+export function parseMapId(id: string): ParseMapIdResult {
+  const baseResult = parseDocumentId(id);
+
+  if (baseResult.kind === 'error') {
+    return baseResult;
   }
+
+  // parse name portion
+  const [name, provider, variant] = baseResult.name.split('.', 3);
+  if (!isLowercaseIdentifier(name)) {
+    return {
+      kind: 'error',
+      message: 'name is not a valid lowercase identifier',
+    };
+  }
+  if (provider !== undefined && !isLowercaseIdentifier(provider)) {
+    return {
+      kind: 'error',
+      message: 'provider is not a valid lowercase identifier',
+    };
+  }
+  if (variant !== undefined && !isLowercaseIdentifier(variant)) {
+    return {
+      kind: 'error',
+      message: 'variant is not a valid lowercase identifier',
+    };
+  }
+
+  let version = undefined;
+  if (baseResult.version !== undefined) {
+    let revision = undefined;
+    if (baseResult.version.label !== undefined) {
+      const parsedRevision = parseRevisionLabel(baseResult.version.label);
+
+      if (parsedRevision.kind === 'error') {
+        return {
+          kind: 'error',
+          message: 'could not parse revision: ' + parsedRevision.message,
+        };
+      }
+
+      revision = parsedRevision.revision;
+    }
+
+    version = {
+      major: baseResult.version.major,
+      minor: baseResult.version.minor,
+      patch: baseResult.version.patch,
+      revision,
+    };
+  }
+
+  return {
+    kind: 'parsed',
+    scope: baseResult.scope,
+    name,
+    provider,
+    variant,
+    version,
+  };
 }

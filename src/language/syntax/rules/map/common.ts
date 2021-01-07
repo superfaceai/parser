@@ -201,15 +201,16 @@ export function ASSIGNMENT_FACTORY(
   );
 }
 
-const PROFILE_ID = SyntaxRule.identifier('profile').followedBy(SyntaxRuleSeparator.operator('=')).andFollowedBy(
-  SyntaxRule.string().andThen(
-    (id) => {
+const PROFILE_ID = SyntaxRule.identifier('profile')
+  .followedBy(SyntaxRuleSeparator.operator('='))
+  .andFollowedBy(
+    SyntaxRule.string().andThen(id => {
       const parsedId = parseProfileId(id.data.string);
       // must link to a profile
       if (parsedId.kind !== 'parsed' || parsedId.version === undefined) {
         return {
-          kind: 'nomatch'
-        }
+          kind: 'nomatch',
+        };
       }
 
       return {
@@ -219,14 +220,12 @@ const PROFILE_ID = SyntaxRule.identifier('profile').followedBy(SyntaxRuleSeparat
           name: parsedId.name,
           version: parsedId.version,
           location: id.location,
-          span: id.span
-        }
-      }
-    },
-    'profile id in format `[<scope>/]<name>@<semver>` with lowecase identifiers'
+          span: id.span,
+        },
+      };
+    }, 'profile id in format `[<scope>/]<name>@<semver>` with lowecase identifiers')
   )
-).map(
-  ([keyword, _op, id]) => {
+  .map(([keyword, _op, id]) => {
     return {
       scope: id.scope,
       name: id.name,
@@ -234,18 +233,18 @@ const PROFILE_ID = SyntaxRule.identifier('profile').followedBy(SyntaxRuleSeparat
       location: keyword.location,
       span: {
         start: keyword.span.start,
-        end: id.span.end
-      }
-    }
-  }
-);
-const PROVIDER_ID = SyntaxRule.identifier('provider').followedBy(SyntaxRuleSeparator.operator('=')).andFollowedBy(
-  SyntaxRule.string().andThen(
-    (provider) => {
+        end: id.span.end,
+      },
+    };
+  });
+const PROVIDER_ID = SyntaxRule.identifier('provider')
+  .followedBy(SyntaxRuleSeparator.operator('='))
+  .andFollowedBy(
+    SyntaxRule.string().andThen(provider => {
       if (!isLowercaseIdentifier(provider.data.string)) {
         return {
-          kind: 'nomatch'
-        }
+          kind: 'nomatch',
+        };
       }
 
       return {
@@ -253,78 +252,71 @@ const PROVIDER_ID = SyntaxRule.identifier('provider').followedBy(SyntaxRuleSepar
         value: {
           provider: provider.data.string,
           location: provider.location,
-          span: provider.span
-        }
-      }
-    },
-    'lowercase identifier'
+          span: provider.span,
+        },
+      };
+    }, 'lowercase identifier')
   )
-).map(
-  ([keyword, _op, provider]) => {
+  .map(([keyword, _op, provider]) => {
     return {
       provider: provider.provider,
       location: keyword.location,
       span: {
         start: keyword.span.start,
-        end: provider.span.end
-      }
-    }
-  }
-);
+        end: provider.span.end,
+      },
+    };
+  });
 
-export const MAP_VARIANT = SyntaxRule.identifier('variant').followedBy(SyntaxRuleSeparator.operator('=')).andFollowedBy(
-  SyntaxRule.string().andThen(
-    (variant) => {
+export const MAP_VARIANT = SyntaxRule.identifier('variant')
+  .followedBy(SyntaxRuleSeparator.operator('='))
+  .andFollowedBy(
+    SyntaxRule.string().andThen(variant => {
       if (!isLowercaseIdentifier(variant.data.string)) {
         return {
-          kind: 'nomatch'
-        }
+          kind: 'nomatch',
+        };
       }
 
       return {
         kind: 'match',
-        value: variant
-      }
-    },
-    'lowercase identifier'
+        value: variant,
+      };
+    }, 'lowercase identifier')
   )
-).map(
-  ([keyword, _op, variant]) => {
+  .map(([keyword, _op, variant]) => {
     return {
       variant: variant.data.string,
       location: keyword.location,
       span: {
         start: keyword.span.start,
-        end: variant.span.end
-      }
-    }
-  }
-)
+        end: variant.span.end,
+      },
+    };
+  });
 
 export const MAP_HEADER: SyntaxRuleSrc<MapHeaderNode> = documentedNode(
-  PROFILE_ID.followedBy(
-    PROVIDER_ID
-  ).andFollowedBy(
-    SyntaxRule.optional(MAP_VARIANT)
-  ).map(
-    ([profile, provider, maybeVariant]): SrcNode<MapHeaderNode> => {
-      return {
-        kind: 'MapHeader',
-        profile: {
-          scope: profile.scope,
-          name: profile.name,
-          version: profile.version
-        },
-        provider: provider.provider,
-        variant: maybeVariant?.variant,
-        location: profile.location,
-        span: {
-          start: profile.span.start,
-          end: (maybeVariant ?? provider).span.end
-        },
-      };
-    }
-  )
+  PROFILE_ID.followedBy(PROVIDER_ID)
+    .andFollowedBy(SyntaxRule.optional(MAP_VARIANT))
+    .map(
+      ([profile, provider, maybeVariant]): SrcNode<MapHeaderNode> => {
+        return {
+          kind: 'MapHeader',
+          profile: {
+            scope: profile.scope,
+            name: profile.name,
+            version: profile.version,
+          },
+          provider: provider.provider,
+          variant: maybeVariant?.variant,
+          location: profile.location,
+          span: {
+            start: profile.span.start,
+            end: (maybeVariant ?? provider).span.end,
+          },
+        };
+      }
+    )
 );
 
 export function MAP_DOCUMENT_FACTORY(
@@ -347,7 +339,7 @@ export function MAP_DOCUMENT_FACTORY(
           location: header.location,
           span: {
             start: header.span.start,
-            end: (definitions?.[definitions.length - 1] ?? header).span.end
+            end: (definitions?.[definitions.length - 1] ?? header).span.end,
           },
         };
       }

@@ -1321,8 +1321,8 @@ describe('profile syntax rules', () => {
             version: {
               major: 1,
               minor: 2,
-              patch: 34
-            }
+              patch: 34,
+            },
           },
           tokens[0],
           tokens[5]
@@ -1353,7 +1353,7 @@ describe('profile syntax rules', () => {
             version: {
               major: 11,
               minor: 12,
-              patch: 0
+              patch: 0,
             },
             title: 'Title',
             description: 'Description',
@@ -1407,8 +1407,8 @@ describe('profile syntax rules', () => {
                 version: {
                   major: 1,
                   minor: 0,
-                  patch: 0
-                }
+                  patch: 0,
+                },
               },
               tokens[1],
               tokens[6]

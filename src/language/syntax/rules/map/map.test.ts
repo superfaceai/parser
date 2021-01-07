@@ -1111,11 +1111,11 @@ describe('strict map syntax rules', () => {
               version: {
                 major: 1,
                 minor: 0,
-                patch: 3
-              }
+                patch: 3,
+              },
             },
             provider: 'provider',
-            variant: 'my-v4riant'
+            variant: 'my-v4riant',
           },
           tokens[0],
           tokens[8]
@@ -1170,10 +1170,10 @@ describe('strict map syntax rules', () => {
                   version: {
                     major: 111,
                     minor: 0,
-                    patch: 0
-                  }
+                    patch: 0,
+                  },
                 },
-                provider: 'pro_v1der'
+                provider: 'pro_v1der',
               },
               tokens[1],
               tokens[6]

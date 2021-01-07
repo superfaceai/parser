@@ -448,15 +448,16 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
 );
 
 // DOCUMENT //
-const PROFILE_NAME = SyntaxRule.identifier('name').followedBy(SyntaxRuleSeparator.operator('=')).andFollowedBy(
-  SyntaxRule.string().andThen(
-    (name) => {
+const PROFILE_NAME = SyntaxRule.identifier('name')
+  .followedBy(SyntaxRuleSeparator.operator('='))
+  .andFollowedBy(
+    SyntaxRule.string().andThen(name => {
       const parsedName = parseProfileId(name.data.string);
       // profiles can't have version specified in the name
       if (parsedName.kind !== 'parsed' || parsedName.version !== undefined) {
         return {
-          kind: 'nomatch'
-        }
+          kind: 'nomatch',
+        };
       }
 
       return {
@@ -465,31 +466,29 @@ const PROFILE_NAME = SyntaxRule.identifier('name').followedBy(SyntaxRuleSeparato
           scope: parsedName.scope,
           name: parsedName.name,
           location: name.location,
-          span: name.span
-        }
-      }
-    },
-    'profile name in format `[<scope>/]<name>` with lowercase identifier'
+          span: name.span,
+        },
+      };
+    }, 'profile name in format `[<scope>/]<name>` with lowercase identifier')
   )
-).map(
-  ([keyword, _op, name]) => {
+  .map(([keyword, _op, name]) => {
     return {
       scope: name.scope,
       name: name.name,
       location: keyword.location,
       span: {
         start: keyword.span.start,
-        end: name.span.end
-      }
-    }
-  }
-);
-const PROFILE_VERSION = SyntaxRule.identifier('version').followedBy(SyntaxRuleSeparator.operator('=')).andFollowedBy(
-  SyntaxRule.string().andThen(
-    (version) => {
+        end: name.span.end,
+      },
+    };
+  });
+const PROFILE_VERSION = SyntaxRule.identifier('version')
+  .followedBy(SyntaxRuleSeparator.operator('='))
+  .andFollowedBy(
+    SyntaxRule.string().andThen(version => {
       const parsedVersion = parseVersion(version.data.string);
       if (parsedVersion.kind !== 'parsed') {
-        return { kind: 'nomatch' }
+        return { kind: 'nomatch' };
       }
 
       return {
@@ -500,28 +499,25 @@ const PROFILE_VERSION = SyntaxRule.identifier('version').followedBy(SyntaxRuleSe
           patch: parsedVersion.patch ?? 0,
           label: parsedVersion.label,
           location: version.location,
-          span: version.span
-        }
-      }
-    },
-    'semver version'
+          span: version.span,
+        },
+      };
+    }, 'semver version')
   )
-).map(
-  ([keyword, _op, version]) => {
+  .map(([keyword, _op, version]) => {
     return {
       version: {
         major: version.major,
         minor: version.minor,
-        patch: version.patch
+        patch: version.patch,
       },
       location: keyword.location,
       span: {
         start: keyword.span.start,
-        end: version.span.end
-      }
-    }
-  }
-);
+        end: version.span.end,
+      },
+    };
+  });
 export const PROFILE_HEADER: SyntaxRuleSrc<ProfileHeaderNode> = documentedNode(
   PROFILE_NAME.followedBy(PROFILE_VERSION).map(
     ([name, version]): SrcNode<ProfileHeaderNode> => {
@@ -534,9 +530,9 @@ export const PROFILE_HEADER: SyntaxRuleSrc<ProfileHeaderNode> = documentedNode(
         location: name.location,
         span: {
           start: name.span.start,
-          end: (version ?? name).span.end
-        }
-      }
+          end: (version ?? name).span.end,
+        },
+      };
     }
   )
 );
@@ -561,7 +557,7 @@ export const PROFILE_DOCUMENT: SyntaxRuleSrc<ProfileDocumentNode> = SyntaxRule.s
         location: header.location,
         span: {
           start: header.span.start,
-          end: (definitions?.[definitions.length - 1] ?? header).span.end
+          end: (definitions?.[definitions.length - 1] ?? header).span.end,
         },
       };
     }
