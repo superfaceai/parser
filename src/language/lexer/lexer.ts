@@ -93,7 +93,6 @@ export class Lexer implements LexerTokenStream {
 
   /** Advances the lexer returning the current token. */
   advance(context?: LexerContext): LexerToken {
-    // We use the `nextToken` field to detect first emission on EOF
     if (this.currentToken.isEOF()) {
       this.fileSeparatorYielded = true;
 

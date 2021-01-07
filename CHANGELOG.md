@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Changed
+* Refactored `computeEndLocation` to be externally reusable
+
 ## [0.0.6] - 2020-11-30
 
 ### Changed
