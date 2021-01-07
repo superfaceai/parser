@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Added
+* Document id and version parsing implementation
+
 ### Changed
 * Refactored `computeEndLocation` to be externally reusable
 
