@@ -2,9 +2,17 @@
 
 ### Added
 * Document id and version parsing implementation
+* Profile `version` header field
+* Map `variant` header field
 
 ### Changed
 * Refactored `computeEndLocation` to be externally reusable
+* Profile `profile = <string>` syntax to `name = '[<scope>/]<name>`
+* Map `profile = <string>` syntax to `profile = [<scope>/]<name>@<version>`
+* Moved test files from `examples` folder to `fixtures` folder
+
+### Fixed
+* Some typos in comments and descriptions
 
 ## [0.0.6] - 2020-11-30
 

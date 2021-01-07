@@ -1298,85 +1298,68 @@ describe('profile syntax rules', () => {
   });
 
   describe('document', () => {
-    it('should parse profile id', () => {
+    it('should parse profile header', () => {
       const tokens: ReadonlyArray<LexerToken> = [
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'name' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-        tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'scope/profile' }),
+
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'version' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: '1.2.34' }),
       ];
       const stream = new ArrayLexerStream(tokens);
 
-      const rule = rules.PROFILE_ID;
+      const rule = rules.PROFILE_HEADER;
 
       expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
-            kind: 'ProfileId',
-            profileId: (tokens[2].data as StringTokenData).string,
+            kind: 'ProfileHeader',
+            scope: 'scope',
+            name: 'profile',
+            version: {
+              major: 1,
+              minor: 2,
+              patch: 34
+            }
           },
           tokens[0],
-          tokens[2]
+          tokens[5]
         )
       );
     });
 
-    it('should parse profile', () => {
-      const tokens: ReadonlyArray<LexerToken> = [
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
-        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-        tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
-      ];
-      const stream = new ArrayLexerStream(tokens);
-
-      const rule = rules.PROFILE;
-
-      expect(rule.tryMatch(stream)).toBeAMatch(
-        tesMatch(
-          {
-            kind: 'Profile',
-            profileId: tesMatch(
-              {
-                kind: 'ProfileId',
-                profileId: (tokens[2].data as StringTokenData).string,
-              },
-              tokens[0],
-              tokens[2]
-            ),
-          },
-          tokens[0],
-          tokens[2]
-        )
-      );
-    });
-
-    it('should parse profile with documentation', () => {
+    it('should parse profile header with documentation', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.STRING, string: 'Title\n\nDescription' }),
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'name' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-        tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'profile-name' }),
+
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'version' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: '11.12' }),
       ];
       const stream = new ArrayLexerStream(tokens);
 
-      const rule = rules.PROFILE;
+      const rule = rules.PROFILE_HEADER;
 
       expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
-            kind: 'Profile',
-            profileId: tesMatch(
-              {
-                kind: 'ProfileId',
-                profileId: (tokens[3].data as StringTokenData).string,
-              },
-              tokens[1],
-              tokens[3]
-            ),
+            kind: 'ProfileHeader',
+            name: 'profile-name',
+            version: {
+              major: 11,
+              minor: 12,
+              patch: 0
+            },
             title: 'Title',
             description: 'Description',
           },
           tokens[0],
-          tokens[3]
+          tokens[6]
         )
       );
     });
@@ -1385,18 +1368,22 @@ describe('profile syntax rules', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: 'SOF' }),
 
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'name' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-        tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'my_scope/profile' }),
+
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'version' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: '1' }),
 
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model1' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'field' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
 
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'usecase' }),
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'usecase' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'usecase1' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'result' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'MyType' }),
@@ -1412,26 +1399,25 @@ describe('profile syntax rules', () => {
         tesMatch(
           {
             kind: 'ProfileDocument',
-            profile: tesMatch(
+            header: tesMatch(
               {
-                kind: 'Profile',
-                profileId: tesMatch(
-                  {
-                    kind: 'ProfileId',
-                    profileId: (tokens[3].data as StringTokenData).string,
-                  },
-                  tokens[1],
-                  tokens[3]
-                ),
+                kind: 'ProfileHeader',
+                scope: 'my_scope',
+                name: 'profile',
+                version: {
+                  major: 1,
+                  minor: 0,
+                  patch: 0
+                }
               },
               tokens[1],
-              tokens[3]
+              tokens[6]
             ),
             definitions: [
               tesMatch(
                 {
                   kind: 'NamedModelDefinition',
-                  modelName: (tokens[4].data as IdentifierTokenData).identifier,
+                  modelName: (tokens[8].data as IdentifierTokenData).identifier,
                   type: tesMatch(
                     {
                       kind: 'ObjectDefinition',
@@ -1439,27 +1425,27 @@ describe('profile syntax rules', () => {
                         tesMatch(
                           {
                             kind: 'FieldDefinition',
-                            fieldName: (tokens[7].data as IdentifierTokenData)
+                            fieldName: (tokens[10].data as IdentifierTokenData)
                               .identifier,
                             required: false,
                             type: undefined,
                           },
-                          tokens[7]
+                          tokens[10]
                         ),
                       ],
                     },
-                    tokens[6],
-                    tokens[8]
+                    tokens[9],
+                    tokens[11]
                   ),
                 },
-                tokens[4],
-                tokens[8]
+                tokens[7],
+                tokens[11]
               ),
 
               tesMatch(
                 {
                   kind: 'UseCaseDefinition',
-                  useCaseName: (tokens[10].data as IdentifierTokenData)
+                  useCaseName: (tokens[13].data as IdentifierTokenData)
                     .identifier,
                   safety: undefined,
                   input: undefined,
@@ -1469,25 +1455,25 @@ describe('profile syntax rules', () => {
                       type: tesMatch(
                         {
                           kind: 'ModelTypeName',
-                          name: (tokens[13].data as IdentifierTokenData)
+                          name: (tokens[16].data as IdentifierTokenData)
                             .identifier,
                         },
-                        tokens[13]
+                        tokens[16]
                       ),
                     },
-                    tokens[12],
-                    tokens[13]
+                    tokens[15],
+                    tokens[16]
                   ),
                   asyncResult: undefined,
                   error: undefined,
                 },
-                tokens[9],
-                tokens[14]
+                tokens[12],
+                tokens[17]
               ),
             ],
           },
           tokens[1],
-          tokens[14]
+          tokens[17]
         )
       );
     });

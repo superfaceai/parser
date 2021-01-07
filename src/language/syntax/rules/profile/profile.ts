@@ -10,8 +10,7 @@ import {
   ObjectDefinitionNode,
   PrimitiveTypeNameNode,
   ProfileDocumentNode,
-  ProfileIdNode,
-  ProfileNode,
+  ProfileHeaderNode,
   Type,
   UnionDefinitionNode,
   UseCaseDefinitionNode,
@@ -26,6 +25,7 @@ import {
   SyntaxRuleSeparator,
 } from '../../rule';
 import { documentedNode, SrcNode, SyntaxRuleSrc } from '../common';
+import { parseProfileId, parseVersion } from '../document_id';
 
 // MUTABLE RULES //
 
@@ -448,38 +448,95 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
 );
 
 // DOCUMENT //
-
-/** `profile = string` */
-export const PROFILE_ID: SyntaxRuleSrc<ProfileIdNode> = SyntaxRule.identifier(
-  'profile'
-)
-  .followedBy(SyntaxRuleSeparator.operator('='))
-  .andFollowedBy(SyntaxRule.string())
-  .map(
-    (matches): SrcNode<ProfileIdNode> => {
-      const [keyword /* op */, , profileId] = matches;
+const PROFILE_NAME = SyntaxRule.identifier('name').followedBy(SyntaxRuleSeparator.operator('=')).andFollowedBy(
+  SyntaxRule.string().andThen(
+    (name) => {
+      const parsedName = parseProfileId(name.data.string);
+      // profiles can't have version specified in the name
+      if (parsedName.kind !== 'parsed' || parsedName.version !== undefined) {
+        return {
+          kind: 'nomatch'
+        }
+      }
 
       return {
-        kind: 'ProfileId',
-        profileId: profileId.data.string,
-        location: keyword.location,
-        span: { start: keyword.span.start, end: profileId.span.end },
-      };
+        kind: 'match',
+        value: {
+          scope: parsedName.scope,
+          name: parsedName.name,
+          location: name.location,
+          span: name.span
+        }
+      }
+    },
+    'profile name in format `[<scope>/]<name>` with lowercase identifier'
+  )
+).map(
+  ([keyword, _op, name]) => {
+    return {
+      scope: name.scope,
+      name: name.name,
+      location: keyword.location,
+      span: {
+        start: keyword.span.start,
+        end: name.span.end
+      }
     }
-  );
+  }
+);
+const PROFILE_VERSION = SyntaxRule.identifier('version').followedBy(SyntaxRuleSeparator.operator('=')).andFollowedBy(
+  SyntaxRule.string().andThen(
+    (version) => {
+      const parsedVersion = parseVersion(version.data.string);
+      if (parsedVersion.kind !== 'parsed') {
+        return { kind: 'nomatch' }
+      }
 
-export const PROFILE: SyntaxRuleSrc<ProfileNode> = documentedNode(
-  PROFILE_ID.map(
-    (profileId): SrcNode<ProfileNode> => {
       return {
-        kind: 'Profile',
-        profileId,
-        location: profileId.location,
+        kind: 'match',
+        value: {
+          major: parsedVersion.major,
+          minor: parsedVersion.minor ?? 0,
+          patch: parsedVersion.patch ?? 0,
+          label: parsedVersion.label,
+          location: version.location,
+          span: version.span
+        }
+      }
+    },
+    'semver version'
+  )
+).map(
+  ([keyword, _op, version]) => {
+    return {
+      version: {
+        major: version.major,
+        minor: version.minor,
+        patch: version.patch
+      },
+      location: keyword.location,
+      span: {
+        start: keyword.span.start,
+        end: version.span.end
+      }
+    }
+  }
+);
+export const PROFILE_HEADER: SyntaxRuleSrc<ProfileHeaderNode> = documentedNode(
+  PROFILE_NAME.followedBy(PROFILE_VERSION).map(
+    ([name, version]): SrcNode<ProfileHeaderNode> => {
+      return {
+        kind: 'ProfileHeader',
+        scope: name.scope,
+        name: name.name,
+        version: version.version,
+
+        location: name.location,
         span: {
-          start: profileId.span.start,
-          end: profileId.span.end,
-        },
-      };
+          start: name.span.start,
+          end: (version ?? name).span.end
+        }
+      }
     }
   )
 );
@@ -490,26 +547,22 @@ export const PROFILE_DOCUMENT_DEFINITION: SyntaxRuleSrc<DocumentDefinition> = US
 export const PROFILE_DOCUMENT: SyntaxRuleSrc<ProfileDocumentNode> = SyntaxRule.separator(
   'SOF'
 )
-  .followedBy(PROFILE)
+  .followedBy(PROFILE_HEADER)
   .andFollowedBy(
     SyntaxRule.optional(SyntaxRule.repeat(PROFILE_DOCUMENT_DEFINITION))
   )
   .andFollowedBy(SyntaxRule.separator('EOF'))
   .map(
-    (matches): SrcNode<ProfileDocumentNode> => {
-      const [, /* SOF */ profile, definitions /* EOF */] = matches;
-
-      let spanEnd = profile.span.end;
-      if (definitions !== undefined) {
-        spanEnd = definitions[definitions.length - 1].span.end;
-      }
-
+    ([_SOF, header, definitions, _EOF]): SrcNode<ProfileDocumentNode> => {
       return {
         kind: 'ProfileDocument',
-        profile,
+        header,
         definitions: definitions ?? [],
-        location: profile.location,
-        span: { start: profile.span.start, end: spanEnd },
+        location: header.location,
+        span: {
+          start: header.span.start,
+          end: (definitions?.[definitions.length - 1] ?? header).span.end
+        },
       };
     }
   );
