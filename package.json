@@ -1,6 +1,6 @@
 {
   "name": "@superfaceai/parser",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "Level 5 autonomous, self-driving API client, https://superface.ai",
   "repository": "https://github.com/superfaceai/parser.git",
   "source": "lib/index.js",

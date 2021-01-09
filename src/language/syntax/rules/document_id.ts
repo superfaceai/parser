@@ -15,7 +15,7 @@ type ParseVersionResult =
       kind: 'error';
       message: string;
     };
-const VERSION_NUMBER_RE = /[0-9]+/;
+const VERSION_NUMBER_RE = /^[0-9]+$/;
 function parseVersionNumber(str: string): number | undefined {
   const value = str.trim();
   if (!VERSION_NUMBER_RE.test(value)) {

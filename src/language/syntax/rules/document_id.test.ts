@@ -1,4 +1,4 @@
-import { parseMapId, parseProfileId } from './document_id';
+import { parseMapId, parseProfileId, parseVersion } from './document_id';
 
 describe('document name parsing', () => {
   it('parses minimal profile name', () => {
@@ -97,6 +97,14 @@ describe('document name parsing', () => {
       kind: 'error',
       message:
         'could not parse revision: label must be in format `revN` where N is a non-negative integer',
+    });
+  });
+
+  it('returns an error for invalid version', () => {
+    const version = '1.x1';
+    expect(parseVersion(version)).toStrictEqual({
+      kind: 'error',
+      message: 'minor component is not a valid number',
     });
   });
 });
