@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { join } from 'path';
 
 import { Source } from './source';
 import { parseMap, parseProfile, parseRule } from './syntax/parser';
@@ -70,7 +71,9 @@ describe('profile', () => {
   });
 
   it('should parse conversation.profile', () => {
-    const input = `profile = "http://superface.ai/profile/conversation/SendMessage"
+    const input = `
+    name = "conversation/send-message"
+    version = "0.1.0"
 
     "Send single conversation message"
     usecase SendMessage unsafe {
@@ -137,11 +140,14 @@ describe('profile', () => {
 
     expect(profile).toMatchObject({
       kind: 'ProfileDocument',
-      profile: {
-        kind: 'Profile',
-        profileId: {
-          kind: 'ProfileId',
-          profileId: 'http://superface.ai/profile/conversation/SendMessage',
+      header: {
+        kind: 'ProfileHeader',
+        scope: 'conversation',
+        name: 'send-message',
+        version: {
+          major: 0,
+          minor: 1,
+          patch: 0,
         },
       },
       definitions: [
@@ -423,11 +429,11 @@ describe('profile', () => {
 });
 
 const STRICT_MAP = fs
-  .readFileSync('examples/strict.map.slang')
+  .readFileSync(join('fixtures', 'strict.map.slang'))
   .toString('utf-8');
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const STRICT_MAP_AST: Record<string, unknown> = JSON.parse(
-  fs.readFileSync('examples/strict.map.json').toString('utf-8')
+  fs.readFileSync(join('fixtures', 'strict.map.json')).toString('utf-8')
 );
 
 describe('map strict', () => {

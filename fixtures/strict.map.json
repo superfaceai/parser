@@ -1,15 +1,17 @@
 {
 	"kind": "MapDocument",
-	"map": {
-		"kind": "Map",
-		"profileId": {
-			"kind": "ProfileId",
-			"profileId": "http://example.com/profile"
+	"header": {
+		"kind": "MapHeader",
+		"profile": {
+			"scope": "example",
+			"name": "profile",
+			"version": {
+				"major": 0,
+				"minor": 1,
+				"patch": 0
+			}
 		},
-		"provider": {
-			"kind": "Provider",
-			"providerId": "http://example.com/provider"
-		}
+		"provider": "example-provider"
 	},
 	"definitions": [
 		{

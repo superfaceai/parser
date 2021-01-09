@@ -1076,38 +1076,27 @@ describe('strict map syntax rules', () => {
   });
 
   describe('document', () => {
-    it('should parse profile id', () => {
+    it('should parse map header', () => {
       const tokens = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({
           kind: LexerTokenKind.STRING,
-          string: 'http://example.com/profile',
+          string: 'scope/profile@1.0.3',
         }),
-      ];
-      const stream = new ArrayLexerStream(tokens);
 
-      const rule = map.common.PROFILE_ID;
-
-      expect(rule.tryMatch(stream)).toBeAMatch(
-        tesMatch(
-          {
-            kind: 'ProfileId',
-            profileId: (tokens[2].data as StringTokenData).string,
-          },
-          tokens[0],
-          tokens[2]
-        )
-      );
-    });
-
-    it('should parse provider', () => {
-      const tokens = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'provider' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({
           kind: LexerTokenKind.STRING,
-          string: 'http://example.com/provider',
+          string: 'provider',
+        }),
+
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'variant' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({
+          kind: LexerTokenKind.STRING,
+          string: 'my-v4riant',
         }),
       ];
       const stream = new ArrayLexerStream(tokens);
@@ -1115,62 +1104,24 @@ describe('strict map syntax rules', () => {
       expectAllToBeAMatch(
         tesMatch(
           {
-            kind: 'Provider',
-            providerId: (tokens[2].data as StringTokenData).string,
+            kind: 'MapHeader',
+            profile: {
+              scope: 'scope',
+              name: 'profile',
+              version: {
+                major: 1,
+                minor: 0,
+                patch: 3,
+              },
+            },
+            provider: 'provider',
+            variant: 'my-v4riant',
           },
           tokens[0],
-          tokens[2]
+          tokens[8]
         ),
         stream,
-        map.common.PROVIDER_ID,
-        ...allFeatures()
-      );
-    });
-
-    it('should parse map', () => {
-      const tokens = [
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'profile' }),
-        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-        tesTok({
-          kind: LexerTokenKind.STRING,
-          string: 'http://example.com/profile',
-        }),
-
-        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'provider' }),
-        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-        tesTok({
-          kind: LexerTokenKind.STRING,
-          string: 'http://example.com/provider',
-        }),
-      ];
-      const stream = new ArrayLexerStream(tokens);
-
-      expectAllToBeAMatch(
-        tesMatch(
-          {
-            kind: 'Map',
-            profileId: tesMatch(
-              {
-                kind: 'ProfileId',
-                profileId: (tokens[2].data as StringTokenData).string,
-              },
-              tokens[0],
-              tokens[2]
-            ),
-            provider: tesMatch(
-              {
-                kind: 'Provider',
-                providerId: (tokens[5].data as StringTokenData).string,
-              },
-              tokens[3],
-              tokens[5]
-            ),
-          },
-          tokens[0],
-          tokens[5]
-        ),
-        stream,
-        map.common.MAP,
+        map.common.MAP_HEADER,
         ...allFeatures()
       );
     });
@@ -1183,14 +1134,14 @@ describe('strict map syntax rules', () => {
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({
           kind: LexerTokenKind.STRING,
-          string: 'http://example.com/profile',
+          string: 'pro-file@111',
         }),
 
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'provider' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
         tesTok({
           kind: LexerTokenKind.STRING,
-          string: 'http://example.com/provider',
+          string: 'pro_v1der',
         }),
 
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'map' }), // 7
@@ -1211,25 +1162,18 @@ describe('strict map syntax rules', () => {
         tesMatch(
           {
             kind: 'MapDocument',
-            map: tesMatch(
+            header: tesMatch(
               {
-                kind: 'Map',
-                profileId: tesMatch(
-                  {
-                    kind: 'ProfileId',
-                    profileId: (tokens[3].data as StringTokenData).string,
+                kind: 'MapHeader',
+                profile: {
+                  name: 'pro-file',
+                  version: {
+                    major: 111,
+                    minor: 0,
+                    patch: 0,
                   },
-                  tokens[1],
-                  tokens[3]
-                ),
-                provider: tesMatch(
-                  {
-                    kind: 'Provider',
-                    providerId: (tokens[6].data as StringTokenData).string,
-                  },
-                  tokens[4],
-                  tokens[6]
-                ),
+                },
+                provider: 'pro_v1der',
               },
               tokens[1],
               tokens[6]
