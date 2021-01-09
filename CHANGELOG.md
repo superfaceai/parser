@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [0.0.7] - 2021-01-09
+
 ### Added
 * Document id and version parsing implementation
 * Profile `version` header field
@@ -68,7 +70,8 @@
 * Documentation extraction from doc strings
 * Usecase result parsing as optional
 
-[Unreleased]: https://github.com/superfaceai/parser/compare/v0.0.6...HEAD
+[Unreleased]: https://github.com/superfaceai/parser/compare/v0.0.7...HEAD
+[0.0.7]: https://github.com/superfaceai/parser/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/superfaceai/parser/compare/v0.0.5...v0.0.6
 [0.0.5]: https://github.com/superfaceai/parser/compare/v0.0.4-beta3...v0.0.5
 [v0.0.4-beta3]: https://github.com/superfaceai/parser/compare/v0.0.3...v0.0.4-beta3
