@@ -3,6 +3,41 @@ export function isLowercaseIdentifier(str: string): boolean {
   return ID_NAME_RE.test(str);
 }
 
+/**
+ * Splits string at delimiter, stopping at maxSplits splits.
+ *
+ * The last element of the array contains the rest of the string.
+ *
+ * Example:
+ * ```
+ * splitLimit('1.2.3.4', '.', 2) // ['1', '2', '3.4']
+ * // Note that this is **not** the same as:
+ * str.split(delimiter, 3) // ['1', '2', '3']
+ * ```
+ */
+function splitLimit(
+  str: string,
+  delimiter: string,
+  maxSplits: number
+): string[] {
+  const result: string[] = [];
+
+  let current = str;
+  while (result.length < maxSplits) {
+    const i = current.indexOf(delimiter);
+    if (i === -1) {
+      break;
+    }
+
+    result.push(current.slice(0, i));
+    current = current.slice(i + 1);
+  }
+
+  result.push(current);
+
+  return result;
+}
+
 type ParseVersionResult =
   | {
       kind: 'parsed';
@@ -28,8 +63,13 @@ function parseVersionNumber(str: string): number | undefined {
  * Parses version in format `major.minor.patch-label`
  */
 export function parseVersion(version: string): ParseVersionResult {
-  const [majorStr, minorStr, restStr] = version.split('.', 3);
-  const [patchStr, label] = restStr?.split('-', 2) ?? [restStr];
+  const [majorStr, minorStr, restStr] = splitLimit(version, '.', 2);
+
+  let patchStr: string | undefined = undefined;
+  let label: string | undefined = undefined;
+  if (restStr !== undefined) {
+    [patchStr, label] = splitLimit(restStr, '-', 1);
+  }
 
   const major = parseVersionNumber(majorStr);
   if (major === undefined) {
@@ -91,7 +131,7 @@ export type ParseDocumentIdentifierResult =
 function parseDocumentId(id: string): ParseDocumentIdentifierResult {
   // parse scope first
   let scope: string | undefined;
-  const [splitScope, scopeRestId] = id.split('/', 2);
+  const [splitScope, scopeRestId] = splitLimit(id, '/', 1);
   if (scopeRestId !== undefined) {
     scope = splitScope;
     if (!isLowercaseIdentifier(scope)) {
@@ -106,7 +146,7 @@ function parseDocumentId(id: string): ParseDocumentIdentifierResult {
   }
 
   let parsedVersion;
-  const [versionRestId, splitVersion] = id.split('@', 2);
+  const [versionRestId, splitVersion] = splitLimit(id, '@', 1);
   if (splitVersion !== undefined) {
     parsedVersion = parseVersion(splitVersion);
 
@@ -237,7 +277,7 @@ export function parseMapId(id: string): ParseMapIdResult {
   }
 
   // parse name portion
-  const [name, provider, variant] = baseResult.name.split('.', 3);
+  const [name, provider, variant] = splitLimit(baseResult.name, '.', 2);
   if (!isLowercaseIdentifier(name)) {
     return {
       kind: 'error',

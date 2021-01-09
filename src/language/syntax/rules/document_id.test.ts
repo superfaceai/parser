@@ -100,11 +100,19 @@ describe('document name parsing', () => {
     });
   });
 
-  it('returns an error for invalid version', () => {
+  it('returns an error for invalid version - 1.x1', () => {
     const version = '1.x1';
     expect(parseVersion(version)).toStrictEqual({
       kind: 'error',
       message: 'minor component is not a valid number',
+    });
+  });
+
+  it('returns an error for invalid version - 1.2.3.4', () => {
+    const version = '1.2.3.4';
+    expect(parseVersion(version)).toStrictEqual({
+      kind: 'error',
+      message: 'patch component is not a valid number',
     });
   });
 });
