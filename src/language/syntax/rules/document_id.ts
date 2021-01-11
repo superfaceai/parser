@@ -1,4 +1,4 @@
-const ID_NAME_RE = /^[a-z_-][a-z0-9_-]*$/;
+const ID_NAME_RE = /^[a-z][a-z0-9_-]*$/;
 export function isLowercaseIdentifier(str: string): boolean {
   return ID_NAME_RE.test(str);
 }
@@ -38,7 +38,7 @@ function splitLimit(
   return result;
 }
 
-type ParseVersionResult =
+export type ParseVersionResult =
   | {
       kind: 'parsed';
       major: number;
@@ -182,7 +182,7 @@ function parseDocumentId(id: string): ParseDocumentIdentifierResult {
   };
 }
 
-type ParseProfileIdResult =
+export type ParseProfileIdResult =
   | {
       kind: 'parsed';
       scope?: string;
@@ -254,7 +254,7 @@ export function parseRevisionLabel(label: string): ParseRevisionLabelResult {
   };
 }
 
-type ParseMapIdResult =
+export type ParseMapIdResult =
   | {
       kind: 'parsed';
       scope?: string;
