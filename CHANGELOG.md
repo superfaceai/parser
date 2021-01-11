@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+### Changed
+* Exported `parseVersion`, `parseProfileId` and `parseMapId` publicly
+* Changed ast dependency to `v0.0.20`
+
+### Fixed
+* Fixed `ID_NAME_RE` to not accept leading `_` or `-`
+
 ## [0.0.9] - 2021-01-09
 
 ### Fixed
