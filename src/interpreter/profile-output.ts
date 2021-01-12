@@ -93,13 +93,25 @@ export interface UseCaseStructure {
   error?: StructureType;
 }
 
+export interface VersionStructure {
+  major: number;
+  minor: number;
+  patch: number;
+  label?: string;
+}
+
+export interface ProfileStructure {
+  name: string;
+  version: VersionStructure;
+}
+
 /**
  * @interface ProfileOutput - represent profile structure
- * @property profileId - profile id
+ * @property profile - object containing name and version of the profile
  * @property usecase (opt.) - contains structure of input, result, error and other components
  */
 export interface ProfileOutput {
-  profileId: string;
+  profile: ProfileStructure;
   usecases: UseCaseStructure[];
 }
 

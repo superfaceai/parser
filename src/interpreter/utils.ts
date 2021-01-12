@@ -21,6 +21,7 @@ import {
   ObjectStructure,
   ProfileOutput,
   StructureType,
+  VersionStructure,
 } from './profile-output';
 import {
   isEnumStructure,
@@ -29,6 +30,13 @@ import {
   isPrimitiveStructure,
 } from './profile-output.utils';
 import { ProfileValidator } from './profile-validator';
+
+export function composeVersion(version: VersionStructure): string {
+  return (
+    `${version.major}.${version.minor}.${version.patch}` +
+    (version.label ? `-${version.label}` : '')
+  );
+}
 
 export function formatIssues(issues?: ValidationIssue[]): string {
   if (!issues) {
@@ -49,6 +57,9 @@ export function formatIssues(issues?: ValidationIssue[]): string {
       switch (issue.kind) {
         case 'wrongProfileID':
           return `${location} - Wrong Profile ID: expected ${issue.context.expected}, but got ${issue.context.actual}`;
+
+        case 'wrongProfileVersion':
+          return `${location} - Wrong Profile Version: expected ${composeVersion(issue.context.expected)}, but got ${composeVersion(issue.context.actual)}`;
 
         case 'mapNotFound':
           return `${location} - Map not found: ${issue.context.expected}`;

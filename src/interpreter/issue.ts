@@ -4,6 +4,7 @@ import {
   ObjectCollection,
   ObjectStructure,
   StructureType,
+  VersionStructure,
 } from './profile-output';
 
 export type ErrorContext = { path?: string[] };
@@ -11,6 +12,13 @@ export type ValidationIssue =
   | {
       kind: 'wrongProfileID';
       context: ErrorContext & { expected: string; actual: string };
+    }
+  | {
+      kind: 'wrongProfileVersion';
+      context: ErrorContext & {
+        expected: VersionStructure;
+        actual: VersionStructure;
+      };
     }
   | {
       kind: 'mapNotFound';

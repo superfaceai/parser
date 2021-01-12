@@ -13,13 +13,11 @@ import {
   MapASTNode,
   MapDefinitionNode,
   MapDocumentNode,
-  MapNode,
-  MapProfileIdNode,
+  MapHeaderNode,
   ObjectLiteralNode,
   OperationDefinitionNode,
   OutcomeStatementNode,
   PrimitiveLiteralNode,
-  ProviderNode,
   SetStatementNode,
   StatementConditionNode,
 } from '@superfaceai/ast';
@@ -100,12 +98,8 @@ export class MapValidator implements MapVisitor {
     switch (node.kind) {
       case 'MapDocument':
         return this.visitMapDocumentNode(node);
-      case 'Map':
-        return this.visitMapNode(node);
-      case 'Provider':
-        return this.visitProviderNode(node);
-      case 'ProfileId':
-        return this.visitMapProfileIdNode(node);
+      case 'MapHeader':
+        return this.visitMapHeaderNode(node);
       case 'OperationDefinition':
         return this.visitOperationDefinitionNode(node);
       case 'MapDefinition':
@@ -142,7 +136,7 @@ export class MapValidator implements MapVisitor {
 
   visitMapDocumentNode(node: MapDocumentNode): void {
     // check the valid ProfileID
-    this.visit(node.map);
+    this.visit(node.header);
 
     // store operations
     node.definitions.forEach(definition => {
@@ -196,22 +190,25 @@ export class MapValidator implements MapVisitor {
     }
   }
 
-  visitMapNode(node: MapNode): void {
-    this.visit(node.profileId);
-  }
-
-  visitProviderNode(_node: ProviderNode): void {
-    throw new Error('Method not implemented.');
-  }
-
-  visitMapProfileIdNode(node: MapProfileIdNode): void {
-    if (node.profileId !== this.profileOutput.profileId) {
+  visitMapHeaderNode(node: MapHeaderNode): void {
+    if (node.profile.name !== this.profileOutput.profile.name) {
       this.errors.push({
         kind: 'wrongProfileID',
         context: {
           path: this.getPath(node),
-          expected: this.profileOutput.profileId,
-          actual: node.profileId,
+          expected: this.profileOutput.profile.name,
+          actual: node.profile.name,
+        },
+      });
+    }
+
+    if (node.profile.version !== this.profileOutput.profile.version) {
+      this.errors.push({
+        kind: 'wrongProfileVersion',
+        context: {
+          path: this.getPath(node),
+          expected: this.profileOutput.profile.version,
+          actual: node.profile.version,
         },
       });
     }

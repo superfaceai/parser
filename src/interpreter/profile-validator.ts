@@ -14,8 +14,7 @@ import {
   PrimitiveTypeNameNode,
   ProfileASTNode,
   ProfileDocumentNode,
-  ProfileIdNode,
-  ProfileNode,
+  ProfileHeaderNode,
   Type,
   UnionDefinitionNode,
   UseCaseDefinitionNode,
@@ -26,6 +25,7 @@ import { ProfileVisitor } from '@superfaceai/sdk';
 import {
   ObjectStructure,
   ProfileOutput,
+  ProfileStructure,
   StructureType,
   UnionStructure,
   UseCaseStructure,
@@ -42,7 +42,7 @@ export class ProfileValidator implements ProfileVisitor {
   private models: Record<string, StructureType> = {};
 
   visit(node: ProfileDocumentNode): ProfileOutput;
-  visit(node: ProfileNode | ProfileIdNode): string;
+  visit(node: ProfileHeaderNode): ProfileStructure;
   visit(node: UseCaseDefinitionNode): UseCaseStructure;
   visit(node: EnumValueNode): string | number | boolean;
   visit(node: NamedModelDefinitionNode | NamedFieldDefinitionNode): void;
@@ -56,6 +56,7 @@ export class ProfileValidator implements ProfileVisitor {
     | UseCaseStructure
     | UseCaseStructure[]
     | ProfileOutput
+    | ProfileStructure
     | void
     | string
     | number
@@ -86,10 +87,8 @@ export class ProfileValidator implements ProfileVisitor {
         return this.visitPrimitiveTypeNameNode(node);
       case 'ProfileDocument':
         return this.visitProfileDocumentNode(node);
-      case 'ProfileId':
-        return this.visitProfileIdNode(node);
-      case 'Profile':
-        return this.visitProfileNode(node);
+      case 'ProfileHeader':
+        return this.visitProfileHeaderNode(node);
       case 'UnionDefinition':
         return this.visitUnionDefinitionNode(node);
       case 'UseCaseDefinition':
@@ -203,23 +202,22 @@ export class ProfileValidator implements ProfileVisitor {
       .filter(isNamedModelDefinitionNode)
       .forEach(model => this.visit(model));
 
-    const profileId = this.visit(node.profile);
+    const profile = this.visit(node.header);
     const usecases = node.definitions
       .filter(isUseCaseDefinitionNode)
       .map(definition => this.visit(definition));
 
     return {
-      profileId,
+      profile,
       usecases,
     };
   }
 
-  visitProfileIdNode(node: ProfileIdNode): string {
-    return node.profileId;
-  }
-
-  visitProfileNode(node: ProfileNode): string {
-    return this.visit(node.profileId);
+  visitProfileHeaderNode(node: ProfileHeaderNode): ProfileStructure {
+    return {
+      name: node.name,
+      version: node.version,
+    };
   }
 
   visitUnionDefinitionNode(node: UnionDefinitionNode): StructureType {
