@@ -1,4 +1,5 @@
 import { ProfileDocumentNode } from '@superfaceai/ast';
+
 import { ProfileIOAnalyzer } from './profile-io-analyzer';
 import { ProfileOutput } from './profile-output';
 
