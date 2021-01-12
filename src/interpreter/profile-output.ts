@@ -113,7 +113,7 @@ export interface VersionStructure {
 }
 
 /**
- *  represents Profile name 
+ *  represents Profile name
  *  name = my-profile
  */
 export interface ProfileHeaderStructure extends DocumentedStructure {

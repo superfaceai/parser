@@ -1297,9 +1297,9 @@ describe('ProfileIOAnalyzer', () => {
             kind: 'UseCaseSlotDefinition',
             type: {
               kind: 'ModelTypeName',
-              name: 'Output'
-            }
-          }
+              name: 'Output',
+            },
+          },
         },
         {
           kind: 'NamedFieldDefinition',
@@ -1314,7 +1314,7 @@ describe('ProfileIOAnalyzer', () => {
           fieldName: 'to',
           type: {
             kind: 'PrimitiveTypeName',
-            name: 'string'
+            name: 'string',
           },
         },
         {
@@ -1343,11 +1343,11 @@ describe('ProfileIOAnalyzer', () => {
               {
                 kind: 'FieldDefinition',
                 required: true,
-                fieldName: 'to'
-              }
-            ]
-          }
-        }
+                fieldName: 'to',
+              },
+            ],
+          },
+        },
       ],
     };
     const analyzer = new ProfileIOAnalyzer();
@@ -1384,10 +1384,10 @@ describe('ProfileIOAnalyzer', () => {
             fields: {
               to: {
                 kind: 'PrimitiveStructure',
-                type: 'string'
-              }
-            }
-          }
+                type: 'string',
+              },
+            },
+          },
         },
       ],
     };
