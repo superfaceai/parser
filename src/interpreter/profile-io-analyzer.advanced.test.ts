@@ -27,7 +27,7 @@ describe('ProfileValidator Advanced', () => {
         }
      *
      */
-    describe('and Result is a Union Type with multiple Types', () => {
+    describe('and Result is an Union Type with multiple Types', () => {
       const ast: ProfileDocumentNode = {
         kind: 'ProfileDocument',
         header,
@@ -179,7 +179,14 @@ describe('ProfileValidator Advanced', () => {
       // result {} | m1! | [string! | boolean!]! | enum { S B }! | {f1 string} | {f1 m1, f2 m2}
       const profileValidator = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        profileId: 'test',
+        header: {
+          name: 'test',
+          version: {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+        },
         usecases: [
           {
             useCaseName: 'Test',
@@ -442,7 +449,14 @@ describe('ProfileValidator Advanced', () => {
         },
       };
       const expected: ProfileOutput = {
-        profileId: 'test',
+        header: {
+          name: 'test',
+          version: {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+        },
         usecases: [
           {
             useCaseName: 'Test',
@@ -474,7 +488,7 @@ describe('ProfileValidator Advanced', () => {
         field f1 {
             if1 string
             if2 boolean
-        }! | m1!
+        }!
         field f2 [string | boolean]!
         field f3 enum {STRING BOOLEAN}!
         field f4 {
@@ -533,13 +547,6 @@ describe('ProfileValidator Advanced', () => {
                         },
                       },
                     ],
-                  },
-                },
-                {
-                  kind: 'NonNullDefinition',
-                  type: {
-                    kind: 'ModelTypeName',
-                    name: 'm1',
                   },
                 },
               ],
@@ -742,7 +749,14 @@ describe('ProfileValidator Advanced', () => {
 
       const profileValidator = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        profileId: 'test',
+        header: {
+          name: 'test',
+          version: {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+        },
         usecases: [
           {
             useCaseName: 'Test',
@@ -772,12 +786,6 @@ describe('ProfileValidator Advanced', () => {
                                 type: 'boolean',
                               },
                             },
-                          },
-                        },
-                        {
-                          kind: 'NonNullStructure',
-                          value: {
-                            kind: 'ScalarStructure',
                           },
                         },
                       ],

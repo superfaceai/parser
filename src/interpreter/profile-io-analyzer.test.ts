@@ -42,7 +42,14 @@ describe('ProfileIOAnalyzer', () => {
       };
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        profileId: 'test',
+        header: {
+          name: 'test',
+          version: {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+        },
         usecases: [
           {
             useCaseName: 'Test',
@@ -98,7 +105,14 @@ describe('ProfileIOAnalyzer', () => {
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        profileId: 'test',
+        header: {
+          name: 'test',
+          version: {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+        },
         usecases: [
           {
             useCaseName: 'Test',
@@ -157,7 +171,14 @@ describe('ProfileIOAnalyzer', () => {
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        profileId: 'test',
+        header: {
+          name: 'test',
+          version: {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+        },
         usecases: [
           {
             useCaseName: 'Test',
@@ -215,7 +236,14 @@ describe('ProfileIOAnalyzer', () => {
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        profileId: 'test',
+        header: {
+          name: 'test',
+          version: {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+        },
         usecases: [
           {
             useCaseName: 'Test',
@@ -270,7 +298,14 @@ describe('ProfileIOAnalyzer', () => {
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        profileId: 'test',
+        header: {
+          name: 'test',
+          version: {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+        },
         usecases: [
           {
             useCaseName: 'Test',
@@ -317,7 +352,14 @@ describe('ProfileIOAnalyzer', () => {
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        profileId: 'test',
+        header: {
+          name: 'test',
+          version: {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+        },
         usecases: [
           {
             useCaseName: 'Test',
@@ -365,7 +407,14 @@ describe('ProfileIOAnalyzer', () => {
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        profileId: 'test',
+        header: {
+          name: 'test',
+          version: {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+        },
         usecases: [
           {
             useCaseName: 'Test',
@@ -427,7 +476,14 @@ describe('ProfileIOAnalyzer', () => {
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        profileId: 'test',
+        header: {
+          name: 'test',
+          version: {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+        },
         usecases: [
           {
             useCaseName: 'Test',
@@ -486,7 +542,14 @@ describe('ProfileIOAnalyzer', () => {
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        profileId: 'test',
+        header: {
+          name: 'test',
+          version: {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+        },
         usecases: [
           {
             useCaseName: 'Test',
@@ -589,7 +652,14 @@ describe('ProfileIOAnalyzer', () => {
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        profileId: 'test',
+        header: {
+          name: 'test',
+          version: {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+        },
         usecases: [
           {
             useCaseName: 'Test',
@@ -690,7 +760,14 @@ describe('ProfileIOAnalyzer', () => {
       };
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        profileId: 'test',
+        header: {
+          name: 'test',
+          version: {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+        },
         usecases: [
           {
             useCaseName: 'Test',
@@ -794,7 +871,14 @@ describe('ProfileIOAnalyzer', () => {
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        profileId: 'test',
+        header: {
+          name: 'test',
+          version: {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+        },
         usecases: [
           {
             useCaseName: 'Test',
@@ -861,7 +945,14 @@ describe('ProfileIOAnalyzer', () => {
       };
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        profileId: 'test',
+        header: {
+          name: 'test',
+          version: {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+        },
         usecases: [
           {
             useCaseName: 'Test',
@@ -917,7 +1008,14 @@ describe('ProfileIOAnalyzer', () => {
       };
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        profileId: 'test',
+        header: {
+          name: 'test',
+          version: {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+        },
         usecases: [
           {
             useCaseName: 'Test',
@@ -979,7 +1077,14 @@ describe('ProfileIOAnalyzer', () => {
       };
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        profileId: 'test',
+        header: {
+          name: 'test',
+          version: {
+            major: 0,
+            minor: 0,
+            patch: 0,
+          },
+        },
         usecases: [
           {
             useCaseName: 'Test',
@@ -1008,17 +1113,7 @@ describe('ProfileIOAnalyzer', () => {
   it('should extract documentation strings', () => {
     const ast: ProfileDocumentNode = {
       kind: 'ProfileDocument',
-      header: {
-        kind: 'ProfileHeader',
-        name: 'test',
-        version: {
-          major: 1,
-          minor: 0,
-          patch: 0,
-        },
-        title: 'Test Document',
-        description: 'This is a test',
-      },
+      header,
       definitions: [
         {
           kind: 'UseCaseDefinition',
@@ -1115,9 +1210,14 @@ describe('ProfileIOAnalyzer', () => {
     const analyzer = new ProfileIOAnalyzer();
     const result = analyzer.visit(ast);
     const expected: ProfileOutput = {
-      profileId: 'test',
-      title: 'Test Document',
-      description: 'This is a test',
+      header: {
+        name: 'test',
+        version: {
+          major: 0,
+          minor: 0,
+          patch: 0,
+        },
+      },
       usecases: [
         {
           useCaseName: 'TestCase',
@@ -1170,5 +1270,129 @@ describe('ProfileIOAnalyzer', () => {
       ],
     };
     expect(result).toStrictEqual(expected);
+  });
+
+  it('should correctly reference fields and models', () => {
+    const ast: ProfileDocumentNode = {
+      kind: 'ProfileDocument',
+      header,
+      definitions: [
+        {
+          kind: 'UseCaseDefinition',
+          useCaseName: 'Test',
+          error: {
+            kind: 'UseCaseSlotDefinition',
+            type: {
+              kind: 'ObjectDefinition',
+              fields: [
+                {
+                  kind: 'FieldDefinition',
+                  fieldName: 'message',
+                  required: false,
+                },
+              ],
+            },
+          },
+          result: {
+            kind: 'UseCaseSlotDefinition',
+            type: {
+              kind: 'ModelTypeName',
+              name: 'Output'
+            }
+          }
+        },
+        {
+          kind: 'NamedFieldDefinition',
+          fieldName: 'message',
+          type: {
+            kind: 'ModelTypeName',
+            name: 'ErrorEnum',
+          },
+        },
+        {
+          kind: 'NamedFieldDefinition',
+          fieldName: 'to',
+          type: {
+            kind: 'PrimitiveTypeName',
+            name: 'string'
+          },
+        },
+        {
+          kind: 'NamedModelDefinition',
+          modelName: 'ErrorEnum',
+          type: {
+            kind: 'EnumDefinition',
+            values: [
+              {
+                kind: 'EnumValue',
+                value: 'a',
+              },
+              {
+                kind: 'EnumValue',
+                value: 'b',
+              },
+            ],
+          },
+        },
+        {
+          kind: 'NamedModelDefinition',
+          modelName: 'Output',
+          type: {
+            kind: 'ObjectDefinition',
+            fields: [
+              {
+                kind: 'FieldDefinition',
+                required: true,
+                fieldName: 'to'
+              }
+            ]
+          }
+        }
+      ],
+    };
+    const analyzer = new ProfileIOAnalyzer();
+    const expected: ProfileOutput = {
+      header: {
+        name: 'test',
+        version: {
+          major: 0,
+          minor: 0,
+          patch: 0,
+        },
+      },
+      usecases: [
+        {
+          useCaseName: 'Test',
+          error: {
+            kind: 'ObjectStructure',
+            fields: {
+              message: {
+                kind: 'EnumStructure',
+                enums: [
+                  {
+                    value: 'a',
+                  },
+                  {
+                    value: 'b',
+                  },
+                ],
+              },
+            },
+          },
+          result: {
+            kind: 'ObjectStructure',
+            fields: {
+              to: {
+                kind: 'PrimitiveStructure',
+                type: 'string'
+              }
+            }
+          }
+        },
+      ],
+    };
+
+    const output = analyzer.visit(ast);
+    expect(output).toMatchObject(expected);
   });
 });
