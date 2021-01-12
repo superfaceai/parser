@@ -27,6 +27,7 @@ import createDebug from 'debug';
 import {
   DocumentedStructure,
   ObjectStructure,
+  ProfileHeaderStructure,
   ProfileOutput,
   StructureType,
   UnionStructure,
@@ -57,11 +58,13 @@ function assertUnreachable(node: ProfileASTNode): never {
 }
 
 export class ProfileIOAnalyzer implements ProfileVisitor {
+  private namedFields: Record<string, NamedFieldDefinitionNode | undefined> = {};
+  private namedModels: Record<string, NamedModelDefinitionNode | undefined> = {};
   private fields: Record<string, StructureType> = {};
   private models: Record<string, StructureType> = {};
 
   visit(node: ProfileDocumentNode): ProfileOutput;
-  visit(node: ProfileHeaderNode): { profileId: string } & DocumentedStructure;
+  visit(node: ProfileHeaderNode): ProfileHeaderStructure;
   visit(node: UseCaseDefinitionNode): UseCaseStructure;
   visit(node: EnumValueNode): string | number | boolean;
   visit(node: NamedModelDefinitionNode | NamedFieldDefinitionNode): void;
@@ -75,7 +78,7 @@ export class ProfileIOAnalyzer implements ProfileVisitor {
     | UseCaseStructure
     | UseCaseStructure[]
     | ProfileOutput
-    | ({ profileId: string } & DocumentedStructure)
+    | ProfileHeaderStructure
     | void
     | string
     | number
@@ -144,6 +147,10 @@ export class ProfileIOAnalyzer implements ProfileVisitor {
   }
 
   visitFieldDefinitionNode(node: FieldDefinitionNode): StructureType {
+    if (!this.fields[node.fieldName]) {
+      this.visit(this.namedFields[node.fieldName]);
+    }
+
     const required = node.required;
     const field = this.fields[node.fieldName] ?? { kind: 'ScalarStructure' };
     const result = node.type ? this.visit(node.type) : { required, ...field };
@@ -168,6 +175,10 @@ export class ProfileIOAnalyzer implements ProfileVisitor {
   }
 
   visitModelTypeNameNode(node: ModelTypeNameNode): StructureType {
+    if (!this.models[node.name]) {
+      this.visit(this.namedModels[node.name]);
+    }
+
     return this.models[node.name] ?? { kind: 'ScalarStructure' };
   }
 
@@ -220,27 +231,30 @@ export class ProfileIOAnalyzer implements ProfileVisitor {
   }
 
   visitProfileDocumentNode(node: ProfileDocumentNode): ProfileOutput {
-    node.definitions
-      .filter(isNamedFieldDefinitionNode)
-      .forEach(field => this.visit(field));
+    const fields = node.definitions.filter(isNamedFieldDefinitionNode);
+    const models = node.definitions.filter(isNamedModelDefinitionNode);
 
-    node.definitions
-      .filter(isNamedModelDefinitionNode)
-      .forEach(model => this.visit(model));
+    this.initializeFields(fields);
+    this.initializeModels(models);
 
-    const { profileId, title, description } = this.visit(node.header);
+    fields.forEach(field => this.visit(field));
+    models.forEach(model => this.visit(model));
+
+    const header = this.visit(node.header);
     const usecases = node.definitions
       .filter(isUseCaseDefinitionNode)
       .map(definition => this.visit(definition));
 
-    return addDoc({ title, description }, { profileId, usecases });
+    return addDoc(
+      { title: header.title, description: header.description },
+      { header, usecases }
+    );
   }
 
-  visitProfileHeaderNode(
-    node: ProfileHeaderNode
-  ): { profileId: string; title?: string; description?: string } {
+  visitProfileHeaderNode(node: ProfileHeaderNode): ProfileHeaderStructure {
     return addDoc(node, {
-      profileId: node.name,
+      name: node.name,
+      version: node.version,
     });
   }
 
@@ -268,5 +282,21 @@ export class ProfileIOAnalyzer implements ProfileVisitor {
       result: this.visit(node.result),
       error: this.visit(node.error),
     });
+  }
+
+  /**
+   * store the field types for later reference
+   * @param fields
+   */
+  private initializeFields(fields: NamedFieldDefinitionNode[]): void {
+    for (const field of fields) {
+      this.namedFields[field.fieldName] = field;
+    }
+  }
+
+  private initializeModels(models: NamedModelDefinitionNode[]): void {
+    for (const model of models) {
+      this.namedModels[model.modelName] = model;
+    }
   }
 }

@@ -102,12 +102,32 @@ export interface UseCaseStructure extends DocumentedStructure {
 }
 
 /**
+ *  represents version of the profile
+ *  version = @1.0.0-rev100
+ */
+export interface VersionStructure {
+  major: number;
+  minor: number;
+  patch: number;
+  label?: string;
+}
+
+/**
+ *  represents Profile name 
+ *  name = my-profile
+ */
+export interface ProfileHeaderStructure extends DocumentedStructure {
+  name: string;
+  version: VersionStructure;
+}
+
+/**
  * @interface ProfileOutput - represent profile structure
  * @property profileId - profile id
  * @property usecase (opt.) - contains structure of input, result, error and other components
  */
 export interface ProfileOutput extends DocumentedStructure {
-  profileId: string;
+  header: ProfileHeaderStructure;
   usecases: UseCaseStructure[];
 }
 
