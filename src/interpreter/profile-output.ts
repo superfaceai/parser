@@ -118,6 +118,7 @@ export interface VersionStructure {
  */
 export interface ProfileHeaderStructure extends DocumentedStructure {
   name: string;
+  scope?: string;
   version: VersionStructure;
 }
 

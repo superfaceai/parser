@@ -258,10 +258,16 @@ export class ProfileIOAnalyzer implements ProfileVisitor {
   }
 
   visitProfileHeaderNode(node: ProfileHeaderNode): ProfileHeaderStructure {
-    return addDoc(node, {
+    const header: ProfileHeaderStructure = {
       name: node.name,
       version: node.version,
-    });
+    }
+    
+    if (node.scope) {
+      header.scope = node.scope
+    }
+    
+    return addDoc(node, header);
   }
 
   visitUnionDefinitionNode(node: UnionDefinitionNode): StructureType {
@@ -291,8 +297,7 @@ export class ProfileIOAnalyzer implements ProfileVisitor {
   }
 
   /**
-   * store the field types for later reference
-   * @param fields
+   * store the named fields for later reference
    */
   private initializeFields(fields: NamedFieldDefinitionNode[]): void {
     for (const field of fields) {
@@ -300,6 +305,9 @@ export class ProfileIOAnalyzer implements ProfileVisitor {
     }
   }
 
+  /**
+   * store the named models for later reference
+   */
   private initializeModels(models: NamedModelDefinitionNode[]): void {
     for (const model of models) {
       this.namedModels[model.modelName] = model;
