@@ -1,5 +1,8 @@
 ## [Unreleased]
 
+### Fixed
+* Document id `parseProfileId` not returning version label
+
 ## [0.0.11] - 2021-01-19
 
 ### Added
@@ -100,7 +103,7 @@
 * Documentation extraction from doc strings
 * Usecase result parsing as optional
 
-[Unreleased]: https://github.com/superfaceai/parser/compare/v0.0.10...HEAD
+[Unreleased]: https://github.com/superfaceai/parser/compare/v0.0.11...HEAD
 [0.0.11]: https://github.com/superfaceai/parser/compare/v0.0.10...v0.0.11
 [0.0.10]: https://github.com/superfaceai/parser/compare/v0.0.9...v0.0.10
 [0.0.9]: https://github.com/superfaceai/parser/compare/v0.0.8...v0.0.9

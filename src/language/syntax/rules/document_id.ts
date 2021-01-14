@@ -191,6 +191,7 @@ export type ParseProfileIdResult =
         major: number;
         minor: number;
         patch: number;
+        label?: string;
       };
     }
   | { kind: 'error'; message: string };
@@ -214,6 +215,7 @@ export function parseProfileId(id: string): ParseProfileIdResult {
       major: baseResult.version.major,
       minor: baseResult.version.minor,
       patch: baseResult.version.patch,
+      label: baseResult.version.label,
     };
   }
 
