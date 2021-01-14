@@ -10,6 +10,10 @@ import {
   StatementConditionNode,
 } from '@superfaceai/ast';
 
+import {
+  isLowercaseIdentifier,
+  parseProfileId,
+} from '../../../../common/document/parser';
 import { LexerTokenKind } from '../../../index';
 import { JessieExpressionTerminationToken } from '../../../lexer/sublexer/jessie/expression';
 import { IdentifierTokenData, StringTokenData } from '../../../lexer/token';
@@ -22,7 +26,6 @@ import {
   SyntaxRuleSeparator,
 } from '../../rule';
 import { documentedNode, SrcNode, SyntaxRuleSrc } from '../common';
-import { isLowercaseIdentifier, parseProfileId } from '../document_id';
 
 const TERMINATOR_LOOKAHEAD: Record<
   JessieExpressionTerminationToken,
@@ -205,13 +208,14 @@ const PROFILE_ID = SyntaxRule.identifier('profile')
   .followedBy(SyntaxRuleSeparator.operator('='))
   .andFollowedBy(
     SyntaxRule.string().andThen(id => {
-      const parsedId = parseProfileId(id.data.string);
+      const parseIdResult = parseProfileId(id.data.string);
       // must link to a profile
-      if (parsedId.kind !== 'parsed' || parsedId.version === undefined) {
+      if (parseIdResult.kind !== 'parsed') {
         return {
           kind: 'nomatch',
         };
       }
+      const parsedId = parseIdResult.value;
 
       return {
         kind: 'match',
@@ -223,7 +227,7 @@ const PROFILE_ID = SyntaxRule.identifier('profile')
           span: id.span,
         },
       };
-    }, 'profile id in format `[<scope>/]<name>@<semver>` with lowecase identifiers')
+    }, 'profile id in format `[<scope>/]<name>@<semver>` with lowercase identifiers')
   )
   .map(([keyword, _op, id]) => {
     return {
@@ -305,7 +309,12 @@ export const MAP_HEADER: SyntaxRuleSrc<MapHeaderNode> = documentedNode(
           profile: {
             scope: profile.scope,
             name: profile.name,
-            version: profile.version,
+            // TODO: should we default to zeros here?
+            version: {
+              major: profile.version.major,
+              minor: profile.version.minor ?? 0,
+              patch: profile.version.patch ?? 0,
+            },
           },
           provider: provider.provider,
           variant: maybeVariant?.variant,

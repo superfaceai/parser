@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+### Added
+* Public `parseDocumentId` for partial parsing
+
+### Changed
+* Interfaces for map and profile id
+* Improved document id version parsing
+
 ### Fixed
 * Document id `parseProfileId` not returning version label
 
