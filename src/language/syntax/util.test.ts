@@ -2,12 +2,12 @@ import { extractDocumentation } from './util';
 
 describe('extract documentation', () => {
   it('should extract nothing from undefined', () => {
-    expect(extractDocumentation(undefined)).toStrictEqual({});
+    expect(extractDocumentation(undefined)).toBeUndefined();
   });
 
   it('should extract nothing from empty or whitespace-only', () => {
-    expect(extractDocumentation('')).toStrictEqual({});
-    expect(extractDocumentation('   \t    \t\n\n\t   ')).toStrictEqual({});
+    expect(extractDocumentation('')).toBeUndefined();
+    expect(extractDocumentation('   \t    \t\n\n\t   ')).toBeUndefined();
   });
 
   it('should extract title from single line', () => {
