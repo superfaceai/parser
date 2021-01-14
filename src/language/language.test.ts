@@ -84,8 +84,7 @@ describe('profile', () => {
         text
       }
     
-      """
-      Title
+      """  Title
       Description of the result
       """
       result {
@@ -98,6 +97,8 @@ describe('profile', () => {
       }
     
       error {
+        """ Problem
+        Description of this field """
         problem
         detail
         instance
@@ -219,6 +220,8 @@ describe('profile', () => {
                 {
                   kind: 'FieldDefinition',
                   fieldName: 'problem',
+                  title: 'Problem',
+                  description: 'Description of this field',
                 },
                 {
                   kind: 'FieldDefinition',
