@@ -261,12 +261,12 @@ export class ProfileIOAnalyzer implements ProfileVisitor {
     const header: ProfileHeaderStructure = {
       name: node.name,
       version: node.version,
-    }
-    
+    };
+
     if (node.scope) {
-      header.scope = node.scope
+      header.scope = node.scope;
     }
-    
+
     return addDoc(node, header);
   }
 
