@@ -27,7 +27,7 @@ describe('ProfileValidator Advanced', () => {
         }
      *
      */
-    describe('and Result is an Union Type with multiple Types', () => {
+    describe('and Result is a Union Type with multiple Types', () => {
       const ast: ProfileDocumentNode = {
         kind: 'ProfileDocument',
         header,

@@ -1040,7 +1040,7 @@ describe('ProfileIOAnalyzer', () => {
       });
     });
 
-    describe('and Result is an Union with undefined models', () => {
+    describe('and Result is a Union with undefined models', () => {
       const ast: ProfileDocumentNode = {
         kind: 'ProfileDocument',
         header,
@@ -1103,7 +1103,7 @@ describe('ProfileIOAnalyzer', () => {
         ],
       };
 
-      test('then result is an Union of two undefined types', () => {
+      test('then result is a Union of two undefined types', () => {
         const output = analyzer.visit(ast);
         expect(output).toMatchObject(expected);
       });
