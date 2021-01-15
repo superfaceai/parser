@@ -44,68 +44,66 @@ function resolveStringLiteralEscape(
   };
 }
 
-function transformBlockStringValue(string: string): string {
-  let predecingEmptyLines = 0;
-  let foundNonemptyLine = false;
+/**
+ * Returns the index of the first and last string in the array that is non-empty.
+ *
+ * Returns `[-1, -1]` if no non-empty lines are found.
+ */
+function firstLastNonempty(lines: string[]): [number, number] {
+  let first = -1;
+  let last = -1;
 
-  let followingEmptyLines = 0;
+  for (let i = 0; i < lines.length; i += 1) {
+    if (lines[i].trim() !== '') {
+      last = i;
 
-  let commonIndentChar: number | undefined = undefined;
-  let commonIndent: number | undefined = undefined;
-
-  const lines = string.split('\n');
-  for (const line of lines) {
-    if (line.trim() === '') {
-      // Count empty lines
-      if (!foundNonemptyLine) {
-        predecingEmptyLines += 1;
+      if (first === -1) {
+        first = i;
       }
-      followingEmptyLines += 1;
-    } else {
-      foundNonemptyLine = true;
-      followingEmptyLines = 0;
-
-      // Handle common ident
-      if (commonIndent === 0) {
-        // Once we find a line with 0 indent, don't bother with indent anymore
-        continue;
-      }
-
-      // Handle first non-empty line
-      if (commonIndentChar === undefined) {
-        const firstChar = line.charCodeAt(0);
-        if (util.isWhitespace(firstChar)) {
-          commonIndent = util.countStarting(char => char === firstChar, line);
-          commonIndentChar = firstChar;
-        } else {
-          commonIndent = 0;
-        }
-
-        continue;
-      }
-
-      // Handle non-first non-empty lines
-      commonIndent = Math.min(
-        commonIndentChar,
-        util.countStarting(char => char === commonIndentChar, line)
-      );
     }
   }
 
-  const filteredLines = lines.slice(
-    predecingEmptyLines,
-    lines.length - followingEmptyLines
+  return [first, last];
+}
+
+/** Returns the greatest common substring at the start both of `a` and `b`. */
+function commonPrefix(a: string, b: string): string {
+  let common = '';
+
+  const len = Math.min(a.length, b.length);
+  for (let i = 0; i < len; i += 1) {
+    if (a[i] !== b[i]) {
+      break;
+    }
+
+    common += a[i];
+  }
+
+  return common;
+}
+
+function transformBlockStringValue(string: string): string {
+  const lines = string.split('\n');
+
+  const [nonemptyStart, nonemptyEnd] = firstLastNonempty(lines);
+  // This is ok because `slice(-1, 0)` returns an empty array for which we check next
+  const nonemptyLines = lines.slice(nonemptyStart, nonemptyEnd + 1);
+  if (nonemptyLines.length === 0) {
+    return '';
+  }
+
+  const leadingIndentCount = util.countStarting(
+    char => util.isWhitespace(char),
+    nonemptyLines[0]
+  );
+  const commonIndent = nonemptyLines.reduce(
+    (acc, curr) => commonPrefix(acc, curr),
+    nonemptyLines[0].slice(0, leadingIndentCount)
   );
 
-  let output = '';
-  if (commonIndent !== undefined) {
-    // Note that this map closure only works because slice accepts undefined.
-    // Otherwise, we'd need to create an itermediate variable that would tell TS that
-    // commonIndent isn't undefined at the point when the closure is created.
-    output = filteredLines.map(l => l.slice(commonIndent)).join('\n');
-  } else {
-    output = filteredLines.join('\n');
-  }
+  const output = nonemptyLines
+    .map(line => line.slice(commonIndent.length))
+    .join('\n');
 
   return output;
 }
