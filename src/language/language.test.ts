@@ -84,8 +84,7 @@ describe('profile', () => {
         text
       }
     
-      """
-      Title
+      """  Title
       Description of the result
       """
       result {
@@ -98,8 +97,14 @@ describe('profile', () => {
       }
     
       error {
+        """ Problem
+        Description of this field """
         problem
+        """ Detail """
         detail
+        " Instance whoop whoop
+
+        "
         instance
       }
     }
@@ -115,7 +120,7 @@ describe('profile', () => {
       }
     }
     
-    "Identifier of Message
+    "Identifier of Message  
       The identifier is channel-specific and not unique. It should be treated as an opaque value and only used in subsequent calls"
     field messageId string
     
@@ -219,14 +224,18 @@ describe('profile', () => {
                 {
                   kind: 'FieldDefinition',
                   fieldName: 'problem',
+                  title: 'Problem',
+                  description: 'Description of this field',
                 },
                 {
                   kind: 'FieldDefinition',
                   fieldName: 'detail',
+                  title: 'Detail',
                 },
                 {
                   kind: 'FieldDefinition',
                   fieldName: 'instance',
+                  title: 'Instance whoop whoop',
                 },
               ],
             },
