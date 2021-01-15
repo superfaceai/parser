@@ -79,16 +79,22 @@ export interface ScalarStructure extends Structure, DocumentedStructure {
 }
 
 /**
+ * @type DocumentedStructureType - represents all documented structures
+ */
+export type DocumentedStructureType =
+  | PrimitiveStructure
+  | EnumStructure
+  | ObjectStructure
+  | ScalarStructure;
+
+/**
  * @type StructureType - represents all structures
  */
 export type StructureType =
-  | PrimitiveStructure
-  | EnumStructure
+  | DocumentedStructureType
   | NonNullStructure
   | ListStructure
-  | ObjectStructure
-  | UnionStructure
-  | ScalarStructure;
+  | UnionStructure;
 
 /**
  * @interface UseCaseStructure - represents usecase structure
