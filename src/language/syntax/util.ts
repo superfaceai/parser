@@ -122,9 +122,10 @@ export function extractDocumentation(
 
   const title = lines[firstNonemptyLineIndex].trim();
 
-  const descriptionStart = lines
-    .slice(0, firstNonemptyLineIndex + 1)
-    .reduce((acc, curr) => (acc += curr.length), 0);
+  const descriptionStart =
+    lines
+      .slice(0, firstNonemptyLineIndex + 1)
+      .reduce((acc, curr) => (acc += curr.length), 0) + firstNonemptyLineIndex;
   const description = input.slice(descriptionStart).trim();
 
   if (description !== '') {

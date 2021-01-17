@@ -17,12 +17,23 @@ describe('extract documentation', () => {
     });
   });
 
-  it('should extract title and description from multiline', () => {
+  it('should extract title and description from multiline with whitespace trimming', () => {
     const title = 'This is the title, it does not contain newlines';
     const description =
       'This is \n the description, it does \n contain \n some newlines';
     expect(
-      extractDocumentation(title + '\n' + '  \t\n' + description)
+      extractDocumentation(' ' + title + ' \t\n' + '  \t\n' + description)
+    ).toStrictEqual({
+      title,
+      description,
+    });
+  });
+
+  it('should extract title and description from multiline with empty leading newlines', () => {
+    const title = 'Title';
+    const description = 'Description';
+    expect(
+      extractDocumentation('\n' + title + '\n' + description)
     ).toStrictEqual({
       title,
       description,
