@@ -132,6 +132,10 @@ describe('profile', () => {
       seen
     }
     
+    "
+    Title of the field channel
+    Description of the field channel
+    "
     field channel enum {
       sms
       whatsapp
@@ -307,6 +311,8 @@ describe('profile', () => {
               },
             ],
           },
+          title: 'Title of the field channel',
+          description: 'Description of the field channel',
         },
       ],
     });
