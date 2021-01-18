@@ -55,8 +55,13 @@ export function formatIssues(issues?: ValidationIssue[]): string {
       let actual;
 
       switch (issue.kind) {
-        case 'wrongProfileID':
-          return `${location} - Wrong Profile ID: expected ${issue.context.expected}, but got ${issue.context.actual}`;
+        case 'wrongScope':
+          return `${location} - Wrong Scope: expected ${
+            issue.context.expected ?? 'no scope in profile'
+          }, but got ${issue.context.actual ?? 'no scope in map'}`;
+
+        case 'wrongProfileName':
+          return `${location} - Wrong Profile Name: expected ${issue.context.expected}, but got ${issue.context.actual}`;
 
         case 'wrongProfileVersion':
           return `${location} - Wrong Profile Version: expected ${composeVersion(
@@ -117,7 +122,9 @@ export function formatIssues(issues?: ValidationIssue[]): string {
               expected = issue.context.expected.value.kind;
             }
           } else if (isEnumStructure(issue.context.expected)) {
-            expected = issue.context.expected.enums.join(' or ');
+            expected = issue.context.expected.enums
+              .map(enumValue => enumValue.value)
+              .join(' or ');
           } else {
             expected = issue.context.expected.kind;
           }
@@ -155,7 +162,9 @@ export function formatIssues(issues?: ValidationIssue[]): string {
               expected = issue.context.expected.value.kind;
             }
           } else if (isEnumStructure(issue.context.expected)) {
-            expected = issue.context.expected.enums.join(' or ');
+            expected = issue.context.expected.enums
+              .map(enumValue => enumValue.value)
+              .join(' or ');
           } else {
             expected = issue.context.expected.kind;
           }

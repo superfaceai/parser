@@ -191,23 +191,41 @@ export class MapValidator implements MapVisitor {
   }
 
   visitMapHeaderNode(node: MapHeaderNode): void {
-    if (node.profile.name !== this.profileOutput.profile.name) {
+    const { scope, name, version } = this.profileOutput.header;
+
+    if (
+      (scope && scope !== node.profile.scope) ||
+      (!scope && node.profile.scope)
+    ) {
       this.errors.push({
-        kind: 'wrongProfileID',
+        kind: 'wrongScope',
         context: {
           path: this.getPath(node),
-          expected: this.profileOutput.profile.name,
+          expected: scope,
+          actual: node.profile.scope,
+        },
+      });
+    }
+
+    if (node.profile.name !== name) {
+      this.errors.push({
+        kind: 'wrongProfileName',
+        context: {
+          path: this.getPath(node),
+          expected: name,
           actual: node.profile.name,
         },
       });
     }
 
-    if (node.profile.version !== this.profileOutput.profile.version) {
+    // map should be compatible with every patch version of a profile, therefore it should ignore patch version
+    const { major, minor } = node.profile.version;
+    if (major !== version.major || minor !== version.minor) {
       this.errors.push({
         kind: 'wrongProfileVersion',
         context: {
           path: this.getPath(node),
-          expected: this.profileOutput.profile.version,
+          expected: version,
           actual: node.profile.version,
         },
       });

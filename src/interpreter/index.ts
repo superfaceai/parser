@@ -1,4 +1,4 @@
-export * from './profile-validator';
+export * from './profile-io-analyzer';
 export * from './map-validator';
 export * from './utils';
 export * from './profile-output';

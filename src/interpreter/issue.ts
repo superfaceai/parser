@@ -10,7 +10,14 @@ import {
 export type ErrorContext = { path?: string[] };
 export type ValidationIssue =
   | {
-      kind: 'wrongProfileID';
+      kind: 'wrongScope';
+      context: ErrorContext & {
+        expected: string | undefined;
+        actual: string | undefined;
+      };
+    }
+  | {
+      kind: 'wrongProfileName';
       context: ErrorContext & { expected: string; actual: string };
     }
   | {
