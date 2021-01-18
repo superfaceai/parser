@@ -1,8 +1,34 @@
-import { MapASTNode, ProfileDocumentNode } from '@superfaceai/ast';
+import {
+  MapASTNode,
+  MapHeaderNode,
+  ProfileDocumentNode,
+  ProfileHeaderNode,
+} from '@superfaceai/ast';
 
 import { ValidationIssue } from './issue';
 import { ProfileOutput } from './profile-output';
 import { formatIssues, getProfileOutput, validateMap } from './utils';
+
+const version = {
+  major: 1,
+  minor: 0,
+  patch: 0,
+};
+
+const profileHeader: ProfileHeaderNode = {
+  kind: 'ProfileHeader',
+  name: 'whatever',
+  version,
+};
+
+const mapHeader: MapHeaderNode = {
+  kind: 'MapHeader',
+  profile: {
+    name: 'whatever',
+    version,
+  },
+  provider: 'whatever',
+};
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -160,13 +186,7 @@ describe('MapValidator', () => {
         */
       const profileAst: ProfileDocumentNode = {
         kind: 'ProfileDocument',
-        profile: {
-          kind: 'Profile',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-        },
+        header: profileHeader,
         definitions: [
           {
             kind: 'UseCaseDefinition',
@@ -285,17 +305,7 @@ describe('MapValidator', () => {
 
       const mapAst1: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -394,17 +404,7 @@ describe('MapValidator', () => {
       };
       const mapAst2: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -502,17 +502,7 @@ describe('MapValidator', () => {
       };
       const mapAst3: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -668,13 +658,7 @@ describe('MapValidator', () => {
       */
       const profileAst: ProfileDocumentNode = {
         kind: 'ProfileDocument',
-        profile: {
-          kind: 'Profile',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'http://superface.ai/profile/conversation/SendMessage',
-          },
-        },
+        header: profileHeader,
         definitions: [
           {
             kind: 'UseCaseDefinition',
@@ -849,17 +833,7 @@ describe('MapValidator', () => {
       };
       const mapAst1: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'http://superface.ai/profile/conversation/SendMessage',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -1032,17 +1006,7 @@ describe('MapValidator', () => {
       };
       const mapAst2: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'http://superface.ai/profile/conversation/SendMessage',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -1223,17 +1187,7 @@ describe('MapValidator', () => {
       };
       const mapAst3: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'http://superface.ai/profile/conversation/SendMessage',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -1448,13 +1402,7 @@ describe('MapValidator', () => {
       */
       const profileAst: ProfileDocumentNode = {
         kind: 'ProfileDocument',
-        profile: {
-          kind: 'Profile',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'http://superface.ai/profile/conversation/SendMessage',
-          },
-        },
+        header: profileHeader,
         definitions: [
           {
             kind: 'UseCaseDefinition',
@@ -1601,17 +1549,7 @@ describe('MapValidator', () => {
       };
       const mapAst1: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'http://superface.ai/profile/conversation/SendMessage',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -1784,17 +1722,7 @@ describe('MapValidator', () => {
       };
       const mapAst2: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'http://superface.ai/profile/conversation/SendMessage',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -1966,17 +1894,7 @@ describe('MapValidator', () => {
       };
       const mapAst3: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'http://superface.ai/profile/conversation/SendMessage',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -2221,13 +2139,7 @@ describe('MapValidator', () => {
        */
       const profileAst: ProfileDocumentNode = {
         kind: 'ProfileDocument',
-        profile: {
-          kind: 'Profile',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'http://superface.ai/profile/conversation/SendMessage',
-          },
-        },
+        header: profileHeader,
         definitions: [
           {
             kind: 'UseCaseDefinition',
@@ -2325,17 +2237,7 @@ describe('MapValidator', () => {
       };
       const mapAst1: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'http://superface.ai/profile/conversation/SendMessage',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -2422,17 +2324,7 @@ describe('MapValidator', () => {
       };
       const mapAst2: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'http://superface.ai/profile/conversation/SendMessage',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',

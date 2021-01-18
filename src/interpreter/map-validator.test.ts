@@ -1,8 +1,34 @@
-import { MapASTNode, ProfileDocumentNode } from '@superfaceai/ast';
+import {
+  MapASTNode,
+  MapHeaderNode,
+  ProfileDocumentNode,
+  ProfileHeaderNode,
+} from '@superfaceai/ast';
 
 import { ValidationIssue } from './issue';
 import { ProfileOutput } from './profile-output';
 import { formatIssues, getProfileOutput, validateMap } from './utils';
+
+const version = {
+  major: 1,
+  minor: 0,
+  patch: 0,
+};
+
+const profileHeader: ProfileHeaderNode = {
+  kind: 'ProfileHeader',
+  name: 'whatever',
+  version,
+};
+
+const mapHeader: MapHeaderNode = {
+  kind: 'MapHeader',
+  profile: {
+    name: 'whatever',
+    version,
+  },
+  provider: 'whatever',
+};
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -113,13 +139,8 @@ describe('MapValidator', () => {
     describe('result is PrimitiveTypeName', () => {
       const profileAst: ProfileDocumentNode = {
         kind: 'ProfileDocument',
-        profile: {
-          kind: 'Profile',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-        },
+
+        header: profileHeader,
         definitions: [
           {
             kind: 'UseCaseDefinition',
@@ -140,17 +161,7 @@ describe('MapValidator', () => {
       };
       const mapAst1: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -181,17 +192,7 @@ describe('MapValidator', () => {
       };
       const mapAst2: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -223,13 +224,7 @@ describe('MapValidator', () => {
     describe('error is PrimitiveTypeName', () => {
       const profileAst: ProfileDocumentNode = {
         kind: 'ProfileDocument',
-        profile: {
-          kind: 'Profile',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-        },
+        header: profileHeader,
         definitions: [
           {
             kind: 'UseCaseDefinition',
@@ -249,17 +244,7 @@ describe('MapValidator', () => {
       };
       const mapAst1: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -290,17 +275,7 @@ describe('MapValidator', () => {
       };
       const mapAst2: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -333,13 +308,8 @@ describe('MapValidator', () => {
       describe('possibly null field f1', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -366,17 +336,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -388,17 +348,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -508,17 +458,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -573,13 +513,8 @@ describe('MapValidator', () => {
       describe('possibly null fields: f1, f2', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -616,17 +551,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -638,17 +563,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -838,17 +753,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -902,13 +807,8 @@ describe('MapValidator', () => {
       describe('non null field f1', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -939,17 +839,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -961,17 +851,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -1055,17 +935,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -1129,13 +999,8 @@ describe('MapValidator', () => {
       describe('fields: f1, f2, where f2 is non null', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -1175,17 +1040,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -1197,17 +1052,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -1395,17 +1240,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -1485,13 +1320,8 @@ describe('MapValidator', () => {
       describe('non null fields: f1, f2', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -1534,17 +1364,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -1556,17 +1376,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -1710,17 +1520,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -1792,13 +1592,8 @@ describe('MapValidator', () => {
       describe('one required field: f1', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -1828,17 +1623,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -1850,17 +1635,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -1917,17 +1692,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -1982,13 +1747,8 @@ describe('MapValidator', () => {
       describe('one required and one not required field: f1, f2', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -2031,17 +1791,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -2053,17 +1803,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -2180,17 +1920,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -2307,13 +2037,8 @@ describe('MapValidator', () => {
       describe('required fields: f1, f2', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -2356,17 +2081,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -2378,17 +2093,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -2461,17 +2166,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -2606,13 +2301,8 @@ describe('MapValidator', () => {
       describe('non null object with two required fields f1, f2', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -2658,17 +2348,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -2741,17 +2421,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -2763,17 +2433,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -2856,13 +2516,8 @@ describe('MapValidator', () => {
       describe('that uses dot.notation for fields', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -2919,17 +2574,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -3047,17 +2692,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -3169,13 +2804,8 @@ describe('MapValidator', () => {
       describe('possibly null field f1', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -3202,17 +2832,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -3224,17 +2844,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -3344,17 +2954,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -3409,13 +3009,8 @@ describe('MapValidator', () => {
       describe('possibly null fields: f1, f2', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -3452,17 +3047,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -3474,17 +3059,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -3674,17 +3249,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -3738,13 +3303,8 @@ describe('MapValidator', () => {
       describe('non null field f1', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -3775,17 +3335,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -3797,17 +3347,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -3891,17 +3431,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -3965,13 +3495,8 @@ describe('MapValidator', () => {
       describe('fields: f1, f2, where f2 is non null', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -4011,17 +3536,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -4033,17 +3548,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -4231,17 +3736,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -4321,13 +3816,8 @@ describe('MapValidator', () => {
       describe('non null fields: f1, f2', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -4370,17 +3860,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -4392,17 +3872,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -4546,17 +4016,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -4628,13 +4088,8 @@ describe('MapValidator', () => {
       describe('one required field: f1', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -4664,17 +4119,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -4686,17 +4131,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -4753,17 +4188,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -4818,13 +4243,8 @@ describe('MapValidator', () => {
       describe('one required and one not required field: f1, f2', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -4867,17 +4287,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -4889,17 +4299,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -5016,17 +4416,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -5143,13 +4533,8 @@ describe('MapValidator', () => {
       describe('required fields: f1, f2', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -5192,17 +4577,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -5214,17 +4589,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -5297,17 +4662,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -5442,13 +4797,8 @@ describe('MapValidator', () => {
       describe('non null object with two required fields f1, f2', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -5494,17 +4844,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -5577,17 +4917,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -5599,17 +4929,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -5694,13 +5014,8 @@ describe('MapValidator', () => {
       describe('primitive type', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -5720,17 +5035,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -5742,17 +5047,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -5792,17 +5087,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -5843,13 +5128,8 @@ describe('MapValidator', () => {
       describe('primitive or object type', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -5872,17 +5152,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -5894,17 +5164,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -5972,17 +5232,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -6032,13 +5282,8 @@ describe('MapValidator', () => {
       describe('non null primitive type or possibly null object type', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -6067,17 +5312,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -6089,17 +5324,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -6148,17 +5373,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -6208,13 +5423,8 @@ describe('MapValidator', () => {
       describe('non null primitive type', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -6237,17 +5447,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -6259,17 +5459,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -6291,17 +5481,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -6369,13 +5549,8 @@ describe('MapValidator', () => {
       describe('non null primitive or object type', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -6410,17 +5585,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -6432,17 +5597,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -6482,17 +5637,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -6560,13 +5705,8 @@ describe('MapValidator', () => {
       describe('non null list with primitive or object type', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -6598,17 +5738,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -6630,17 +5760,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -6662,17 +5782,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -6684,17 +5794,7 @@ describe('MapValidator', () => {
         };
         const mapAst4: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -6748,13 +5848,8 @@ describe('MapValidator', () => {
       describe('primitive type', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -6774,17 +5869,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -6796,17 +5881,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -6846,17 +5921,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -6897,13 +5962,8 @@ describe('MapValidator', () => {
       describe('primitive or object type', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -6926,17 +5986,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -6948,17 +5998,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -7026,17 +6066,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -7086,13 +6116,8 @@ describe('MapValidator', () => {
       describe('non null primitive type or possibly null object type', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -7121,17 +6146,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -7143,17 +6158,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -7202,17 +6207,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -7262,13 +6257,8 @@ describe('MapValidator', () => {
       describe('non null primitive type', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -7291,17 +6281,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -7313,17 +6293,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -7345,17 +6315,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -7423,13 +6383,8 @@ describe('MapValidator', () => {
       describe('non null primitive or object type', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -7464,17 +6419,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -7486,17 +6431,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -7536,17 +6471,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -7614,13 +6539,8 @@ describe('MapValidator', () => {
       describe('non null list with primitive or object type', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -7652,17 +6572,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -7684,17 +6594,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -7716,17 +6616,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -7738,17 +6628,7 @@ describe('MapValidator', () => {
         };
         const mapAst4: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -7802,13 +6682,8 @@ describe('MapValidator', () => {
       describe('object', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -7844,17 +6719,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -7886,17 +6751,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -7928,13 +6783,8 @@ describe('MapValidator', () => {
       describe('array', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -7963,17 +6813,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -8028,17 +6868,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -8094,13 +6924,8 @@ describe('MapValidator', () => {
       describe('primitive type', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -8117,17 +6942,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -8194,17 +7009,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -8274,13 +7079,8 @@ describe('MapValidator', () => {
       describe('object', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -8316,17 +7116,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -8358,17 +7148,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -8400,13 +7180,8 @@ describe('MapValidator', () => {
       describe('array', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -8435,17 +7210,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -8500,17 +7265,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -8566,13 +7321,8 @@ describe('MapValidator', () => {
       describe('primitive type', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -8589,17 +7339,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -8666,17 +7406,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -8746,13 +7476,8 @@ describe('MapValidator', () => {
       describe('referenced in outcome', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -8769,17 +7494,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -8814,17 +7529,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -8869,13 +7574,8 @@ describe('MapValidator', () => {
       describe('reassigned (object)', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -8911,17 +7611,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -8982,17 +7672,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -9063,13 +7743,8 @@ describe('MapValidator', () => {
       describe('reassigned (string)', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -9086,17 +7761,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -9144,17 +7809,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -9202,17 +7857,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -9260,17 +7905,7 @@ describe('MapValidator', () => {
         };
         const mapAst4: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -9330,13 +7965,8 @@ describe('MapValidator', () => {
       describe('using variable with string key', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -9353,17 +7983,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -9398,17 +8018,7 @@ describe('MapValidator', () => {
         };
         const mapAst2: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -9465,17 +8075,7 @@ describe('MapValidator', () => {
         };
         const mapAst3: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -9520,13 +8120,8 @@ describe('MapValidator', () => {
       describe('wrong structure', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -9543,17 +8138,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -9597,13 +8182,8 @@ describe('MapValidator', () => {
       describe('in different scopes', () => {
         const profileAst: ProfileDocumentNode = {
           kind: 'ProfileDocument',
-          profile: {
-            kind: 'Profile',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-          },
+
+          header: profileHeader,
           definitions: [
             {
               kind: 'UseCaseDefinition',
@@ -9620,17 +8200,7 @@ describe('MapValidator', () => {
         };
         const mapAst1: MapASTNode = {
           kind: 'MapDocument',
-          map: {
-            kind: 'Map',
-            profileId: {
-              kind: 'ProfileId',
-              profileId: 'whatever',
-            },
-            provider: {
-              kind: 'Provider',
-              providerId: 'whatever',
-            },
-          },
+          header: mapHeader,
           definitions: [
             {
               kind: 'MapDefinition',
@@ -9744,13 +8314,8 @@ describe('MapValidator', () => {
     describe('result is conditioned', () => {
       const profileAst: ProfileDocumentNode = {
         kind: 'ProfileDocument',
-        profile: {
-          kind: 'Profile',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-        },
+
+        header: profileHeader,
         definitions: [
           {
             kind: 'UseCaseDefinition',
@@ -9788,17 +8353,7 @@ describe('MapValidator', () => {
       };
       const mapAst: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -9853,13 +8408,8 @@ describe('MapValidator', () => {
     describe('error is conditioned', () => {
       const profileAst: ProfileDocumentNode = {
         kind: 'ProfileDocument',
-        profile: {
-          kind: 'Profile',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-        },
+
+        header: profileHeader,
         definitions: [
           {
             kind: 'UseCaseDefinition',
@@ -9896,17 +8446,7 @@ describe('MapValidator', () => {
       };
       const mapAst: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -9977,13 +8517,8 @@ describe('MapValidator', () => {
     describe('map is using http call', () => {
       const profileAst: ProfileDocumentNode = {
         kind: 'ProfileDocument',
-        profile: {
-          kind: 'Profile',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-        },
+
+        header: profileHeader,
         definitions: [
           {
             kind: 'UseCaseDefinition',
@@ -10041,17 +8576,7 @@ describe('MapValidator', () => {
       };
       const mapAst1: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -10116,17 +8641,7 @@ describe('MapValidator', () => {
       };
       const mapAst2: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -10192,13 +8707,8 @@ describe('MapValidator', () => {
     describe('map is using inline call', () => {
       const profileAst: ProfileDocumentNode = {
         kind: 'ProfileDocument',
-        profile: {
-          kind: 'Profile',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-        },
+
+        header: profileHeader,
         definitions: [
           {
             kind: 'UseCaseDefinition',
@@ -10234,17 +8744,7 @@ describe('MapValidator', () => {
       };
       const mapAst1: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'OperationDefinition',
@@ -10315,17 +8815,7 @@ describe('MapValidator', () => {
       };
       const mapAst2: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'OperationDefinition',
@@ -10402,13 +8892,7 @@ describe('MapValidator', () => {
   describe('input', () => {
     const profileAst: ProfileDocumentNode = {
       kind: 'ProfileDocument',
-      profile: {
-        kind: 'Profile',
-        profileId: {
-          kind: 'ProfileId',
-          profileId: 'whatever',
-        },
-      },
+      header: profileHeader,
       definitions: [
         {
           kind: 'UseCaseDefinition',
@@ -10482,17 +8966,7 @@ describe('MapValidator', () => {
     describe('input referenced in HttpCallStatement', () => {
       const mapAst1: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -10567,17 +9041,7 @@ describe('MapValidator', () => {
       };
       const mapAst2: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -10662,17 +9126,7 @@ describe('MapValidator', () => {
     describe('input referenced in SetStatement', () => {
       const mapAst1: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -10706,17 +9160,7 @@ describe('MapValidator', () => {
       };
       const mapAst2: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -10760,17 +9204,7 @@ describe('MapValidator', () => {
     describe('input referenced in StatementConditionNode', () => {
       const mapAst1: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -10812,17 +9246,7 @@ describe('MapValidator', () => {
       };
       const mapAst2: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -10874,17 +9298,7 @@ describe('MapValidator', () => {
     describe('input referenced in arguments of CallStatement', () => {
       const mapAst1: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'OperationDefinition',
@@ -10933,17 +9347,7 @@ describe('MapValidator', () => {
       };
       const mapAst2: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'OperationDefinition',
@@ -11014,13 +9418,8 @@ describe('MapValidator', () => {
     describe('multiple maps', () => {
       const profileAst: ProfileDocumentNode = {
         kind: 'ProfileDocument',
-        profile: {
-          kind: 'Profile',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-        },
+
+        header: profileHeader,
         definitions: [
           {
             kind: 'UseCaseDefinition',
@@ -11038,17 +9437,7 @@ describe('MapValidator', () => {
       };
       const mapAst: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -11090,13 +9479,8 @@ describe('MapValidator', () => {
     describe('missing maps', () => {
       const profileAst: ProfileDocumentNode = {
         kind: 'ProfileDocument',
-        profile: {
-          kind: 'Profile',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-        },
+
+        header: profileHeader,
         definitions: [
           {
             kind: 'UseCaseDefinition',
@@ -11126,17 +9510,7 @@ describe('MapValidator', () => {
       };
       const mapAst: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -11159,16 +9533,10 @@ describe('MapValidator', () => {
 
       invalid(profileAst, [mapAst], 'MapDocument - Map not found: Test2', '');
     });
-    describe('wrong profile id', () => {
+    describe('wrong profile name', () => {
       const profileAst: ProfileDocumentNode = {
         kind: 'ProfileDocument',
-        profile: {
-          kind: 'Profile',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'correctProfileID',
-          },
-        },
+        header: profileHeader,
         definitions: [
           {
             kind: 'UseCaseDefinition',
@@ -11186,16 +9554,13 @@ describe('MapValidator', () => {
       };
       const mapAst: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'wrongProfileID',
+        header: {
+          kind: 'MapHeader',
+          profile: {
+            name: 'wrong',
+            version: mapHeader.profile.version,
           },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
+          provider: mapHeader.provider,
         },
         definitions: [
           {
@@ -11220,20 +9585,131 @@ describe('MapValidator', () => {
       invalid(
         profileAst,
         [mapAst],
-        'ProfileId - Wrong Profile ID: expected correctProfileID, but got wrongProfileID',
+        'MapHeader - Wrong Profile Name: expected whatever, but got wrong',
+        ''
+      );
+    });
+    describe('wrong scope', () => {
+      const profileAst: ProfileDocumentNode = {
+        kind: 'ProfileDocument',
+        header: profileHeader,
+        definitions: [
+          {
+            kind: 'UseCaseDefinition',
+            useCaseName: 'Test',
+            result: {
+              kind: 'UseCaseSlotDefinition',
+              type: {
+                kind: 'PrimitiveTypeName',
+                name: 'string',
+              },
+            },
+          },
+        ],
+      };
+      const mapAst: MapASTNode = {
+        kind: 'MapDocument',
+        header: {
+          kind: 'MapHeader',
+          profile: {
+            name: mapHeader.profile.name,
+            scope: 'starwars',
+            version: mapHeader.profile.version,
+          },
+          provider: mapHeader.provider,
+        },
+        definitions: [
+          {
+            kind: 'MapDefinition',
+            name: 'Test',
+            usecaseName: 'Test',
+            statements: [
+              {
+                kind: 'OutcomeStatement',
+                terminateFlow: false,
+                isError: false,
+                value: {
+                  kind: 'PrimitiveLiteral',
+                  value: 'some string',
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      invalid(
+        profileAst,
+        [mapAst],
+        'MapHeader - Wrong Scope: expected no scope in profile, but got starwars',
+        ''
+      );
+    });
+    describe('wrong version', () => {
+      const profileAst: ProfileDocumentNode = {
+        kind: 'ProfileDocument',
+        header: profileHeader,
+        definitions: [
+          {
+            kind: 'UseCaseDefinition',
+            useCaseName: 'Test',
+
+            result: {
+              kind: 'UseCaseSlotDefinition',
+              type: {
+                kind: 'PrimitiveTypeName',
+                name: 'string',
+              },
+            },
+          },
+        ],
+      };
+      const mapAst: MapASTNode = {
+        kind: 'MapDocument',
+        header: {
+          kind: 'MapHeader',
+          profile: {
+            name: mapHeader.profile.name,
+            version: {
+              major: 2,
+              minor: 0,
+              patch: 0,
+            },
+          },
+          provider: mapHeader.provider,
+        },
+        definitions: [
+          {
+            kind: 'MapDefinition',
+            name: 'Test',
+            usecaseName: 'Test',
+            statements: [
+              {
+                kind: 'OutcomeStatement',
+                terminateFlow: false,
+                isError: false,
+                value: {
+                  kind: 'PrimitiveLiteral',
+                  value: 'some string',
+                },
+              },
+            ],
+          },
+        ],
+      };
+
+      invalid(
+        profileAst,
+        [mapAst],
+        'MapHeader - Wrong Profile Version: expected 1.0.0, but got 2.0.0',
         ''
       );
     });
     describe('profile result missing', () => {
       const profileAst: ProfileDocumentNode = {
         kind: 'ProfileDocument',
-        profile: {
-          kind: 'Profile',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-        },
+
+        header: profileHeader,
         definitions: [
           {
             kind: 'UseCaseDefinition',
@@ -11250,17 +9726,7 @@ describe('MapValidator', () => {
       };
       const mapAst: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -11290,13 +9756,8 @@ describe('MapValidator', () => {
     describe('profile error missing', () => {
       const profileAst: ProfileDocumentNode = {
         kind: 'ProfileDocument',
-        profile: {
-          kind: 'Profile',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-        },
+
+        header: profileHeader,
         definitions: [
           {
             kind: 'UseCaseDefinition',
@@ -11313,17 +9774,7 @@ describe('MapValidator', () => {
       };
       const mapAst: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'MapDefinition',
@@ -11353,13 +9804,8 @@ describe('MapValidator', () => {
     describe('profile input missing', () => {
       const profileAst: ProfileDocumentNode = {
         kind: 'ProfileDocument',
-        profile: {
-          kind: 'Profile',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-        },
+
+        header: profileHeader,
         definitions: [
           {
             kind: 'UseCaseDefinition',
@@ -11376,17 +9822,7 @@ describe('MapValidator', () => {
       };
       const mapAst: MapASTNode = {
         kind: 'MapDocument',
-        map: {
-          kind: 'Map',
-          profileId: {
-            kind: 'ProfileId',
-            profileId: 'whatever',
-          },
-          provider: {
-            kind: 'Provider',
-            providerId: 'whatever',
-          },
-        },
+        header: mapHeader,
         definitions: [
           {
             kind: 'OperationDefinition',
