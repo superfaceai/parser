@@ -188,13 +188,13 @@ describe('langauge syntax errors', () => {
 
   describe('profile parser', () => {
     it('should report error from parseProfile', () => {
-      const source = new Source('profile: "http://superface.ai/profile/test"');
+      const source = new Source('name: "http://superface.ai/profile/test"');
 
       expect(() => parseProfile(source)).toThrowSyntaxError(
         'Expected `=` but found `:`',
-        '[input]:1:8',
-        '1 | profile: "http://superface.ai/profile/test"',
-        '  |        ^                                   '
+        '[input]:1:5',
+        '1 | name: "http://superface.ai/profile/test"',
+        '  |     ^                                   '
       );
     });
 

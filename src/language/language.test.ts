@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { join } from 'path';
 
 import { Source } from './source';
 import { parseMap, parseProfile, parseRule } from './syntax/parser';
@@ -70,7 +71,9 @@ describe('profile', () => {
   });
 
   it('should parse conversation.profile', () => {
-    const input = `profile = "http://superface.ai/profile/conversation/SendMessage"
+    const input = `
+    name = "conversation/send-message"
+    version = "0.1.0"
 
     "Send single conversation message"
     usecase SendMessage unsafe {
@@ -81,8 +84,7 @@ describe('profile', () => {
         text
       }
     
-      """
-      Title
+      """  Title
       Description of the result
       """
       result {
@@ -95,8 +97,14 @@ describe('profile', () => {
       }
     
       error {
+        """ Problem
+        Description of this field """
         problem
+        """ Detail """
         detail
+        " Instance whoop whoop
+
+        "
         instance
       }
     }
@@ -112,7 +120,7 @@ describe('profile', () => {
       }
     }
     
-    "Identifier of Message
+    "Identifier of Message  
       The identifier is channel-specific and not unique. It should be treated as an opaque value and only used in subsequent calls"
     field messageId string
     
@@ -124,6 +132,10 @@ describe('profile', () => {
       seen
     }
     
+    "
+    Title of the field channel
+    Description of the field channel
+    "
     field channel enum {
       sms
       whatsapp
@@ -137,11 +149,14 @@ describe('profile', () => {
 
     expect(profile).toMatchObject({
       kind: 'ProfileDocument',
-      profile: {
-        kind: 'Profile',
-        profileId: {
-          kind: 'ProfileId',
-          profileId: 'http://superface.ai/profile/conversation/SendMessage',
+      header: {
+        kind: 'ProfileHeader',
+        scope: 'conversation',
+        name: 'send-message',
+        version: {
+          major: 0,
+          minor: 1,
+          patch: 0,
         },
       },
       definitions: [
@@ -213,14 +228,18 @@ describe('profile', () => {
                 {
                   kind: 'FieldDefinition',
                   fieldName: 'problem',
+                  title: 'Problem',
+                  description: 'Description of this field',
                 },
                 {
                   kind: 'FieldDefinition',
                   fieldName: 'detail',
+                  title: 'Detail',
                 },
                 {
                   kind: 'FieldDefinition',
                   fieldName: 'instance',
+                  title: 'Instance whoop whoop',
                 },
               ],
             },
@@ -292,6 +311,8 @@ describe('profile', () => {
               },
             ],
           },
+          title: 'Title of the field channel',
+          description: 'Description of the field channel',
         },
       ],
     });
@@ -423,11 +444,11 @@ describe('profile', () => {
 });
 
 const STRICT_MAP = fs
-  .readFileSync('examples/strict.map.slang')
+  .readFileSync(join('fixtures', 'strict.map.slang'))
   .toString('utf-8');
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const STRICT_MAP_AST: Record<string, unknown> = JSON.parse(
-  fs.readFileSync('examples/strict.map.json').toString('utf-8')
+  fs.readFileSync(join('fixtures', 'strict.map.json')).toString('utf-8')
 );
 
 describe('map strict', () => {

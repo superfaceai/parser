@@ -16,9 +16,17 @@ export interface Structure {
 }
 
 /**
+ * @interface DocumentedStructure represents documentable structures
+ */
+export interface DocumentedStructure {
+  title?: string;
+  description?: string;
+}
+
+/**
  * @interface PrimitiveStructure represents structure of primitive type
  */
-export interface PrimitiveStructure extends Structure {
+export interface PrimitiveStructure extends Structure, DocumentedStructure {
   kind: 'PrimitiveStructure';
   type: 'string' | 'number' | 'boolean';
 }
@@ -26,9 +34,9 @@ export interface PrimitiveStructure extends Structure {
 /**
  * @interface EnumStructure represent structure of enum type
  */
-export interface EnumStructure extends Structure {
+export interface EnumStructure extends Structure, DocumentedStructure {
   kind: 'EnumStructure';
-  enums: (string | number | boolean)[];
+  enums: ({ value: string | number | boolean } & DocumentedStructure)[];
 }
 
 /**
@@ -50,7 +58,7 @@ export interface ListStructure extends Structure {
 /**
  * @interface ObjectStructure represent structure of {}object type
  */
-export interface ObjectStructure extends Structure {
+export interface ObjectStructure extends Structure, DocumentedStructure {
   kind: 'ObjectStructure';
   fields?: ObjectCollection;
 }
@@ -66,26 +74,32 @@ export interface UnionStructure extends Structure {
 /**
  * @interface ScalarStructure represent any structure
  */
-export interface ScalarStructure extends Structure {
+export interface ScalarStructure extends Structure, DocumentedStructure {
   kind: 'ScalarStructure';
 }
+
+/**
+ * @type DocumentedStructureType - represents all documented structures
+ */
+export type DocumentedStructureType =
+  | PrimitiveStructure
+  | EnumStructure
+  | ObjectStructure
+  | ScalarStructure;
 
 /**
  * @type StructureType - represents all structures
  */
 export type StructureType =
-  | PrimitiveStructure
-  | EnumStructure
+  | DocumentedStructureType
   | NonNullStructure
   | ListStructure
-  | ObjectStructure
-  | UnionStructure
-  | ScalarStructure;
+  | UnionStructure;
 
 /**
  * @interface UseCaseStructure - represents usecase structure
  */
-export interface UseCaseStructure {
+export interface UseCaseStructure extends DocumentedStructure {
   useCaseName: string;
   input?: ObjectStructure;
   result?: StructureType;
@@ -93,6 +107,10 @@ export interface UseCaseStructure {
   error?: StructureType;
 }
 
+/**
+ *  @interface VersionStructure - represents version of the profile
+ *  version = @1.0.0-rev100
+ */
 export interface VersionStructure {
   major: number;
   minor: number;
@@ -100,18 +118,20 @@ export interface VersionStructure {
   label?: string;
 }
 
-export interface ProfileStructure {
+/**
+ * @interface ProfileHeaderStructure - represents profile header node
+ */
+export interface ProfileHeaderStructure extends DocumentedStructure {
   name: string;
+  scope?: string;
   version: VersionStructure;
 }
 
 /**
  * @interface ProfileOutput - represent profile structure
- * @property profile - object containing name and version of the profile
- * @property usecase (opt.) - contains structure of input, result, error and other components
  */
-export interface ProfileOutput {
-  profile: ProfileStructure;
+export interface ProfileOutput extends DocumentedStructure {
+  header: ProfileHeaderStructure;
   usecases: UseCaseStructure[];
 }
 

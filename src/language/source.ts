@@ -30,3 +30,39 @@ export class Source {
     this.fileLocationOffset = fileLocationOffset ?? { line: 0, column: 0 };
   }
 }
+
+/**
+ * Computes the location of the end of the slice given the starting location.
+ *
+ * The final location is affected by newlines contained in the `slice`.
+ */
+export function computeEndLocation(
+  slice: string,
+  startLocation: Location
+): Location {
+  const charArray = Array.from(slice);
+  const [newlines, newlineOffset] = charArray.reduce(
+    (acc: [newlines: number, offset: number | undefined], char, index) => {
+      if (char === '\n') {
+        acc[0] += 1;
+        acc[1] = index;
+      }
+
+      return acc;
+    },
+    [0, undefined]
+  );
+
+  let column;
+  if (newlineOffset === undefined) {
+    // If no newlines were found the new column is just the old column plus the slice length
+    column = startLocation.column + slice.length;
+  } else {
+    column = slice.length - newlineOffset;
+  }
+
+  return {
+    line: startLocation.line + newlines,
+    column,
+  };
+}

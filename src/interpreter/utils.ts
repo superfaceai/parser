@@ -16,6 +16,7 @@ import * as ts from 'typescript';
 import { TypescriptIdentifier } from './constructs';
 import { ValidationIssue } from './issue';
 import { MapValidator, ValidationResult } from './map-validator';
+import { ProfileIOAnalyzer } from './profile-io-analyzer';
 import {
   ObjectCollection,
   ObjectStructure,
@@ -29,7 +30,6 @@ import {
   isObjectStructure,
   isPrimitiveStructure,
 } from './profile-output.utils';
-import { ProfileValidator } from './profile-validator';
 
 export function composeVersion(version: VersionStructure): string {
   return (
@@ -59,7 +59,9 @@ export function formatIssues(issues?: ValidationIssue[]): string {
           return `${location} - Wrong Profile ID: expected ${issue.context.expected}, but got ${issue.context.actual}`;
 
         case 'wrongProfileVersion':
-          return `${location} - Wrong Profile Version: expected ${composeVersion(issue.context.expected)}, but got ${composeVersion(issue.context.actual)}`;
+          return `${location} - Wrong Profile Version: expected ${composeVersion(
+            issue.context.expected
+          )}, but got ${composeVersion(issue.context.actual)}`;
 
         case 'mapNotFound':
           return `${location} - Map not found: ${issue.context.expected}`;
@@ -211,7 +213,7 @@ export function compareStructure(
     case 'EnumStructure':
       if (
         isPrimitiveLiteralNode(node) &&
-        structure.enums.includes(node.value)
+        structure.enums.map(enumValue => enumValue.value).includes(node.value)
       ) {
         return { isValid: true };
       }
@@ -284,9 +286,9 @@ export const mergeVariables = (
 export const getProfileOutput = (
   profile: ProfileDocumentNode
 ): ProfileOutput => {
-  const profileValidator = new ProfileValidator();
+  const analyzer = new ProfileIOAnalyzer();
 
-  return profileValidator.visit(profile);
+  return analyzer.visit(profile);
 };
 
 export const validateMap = (

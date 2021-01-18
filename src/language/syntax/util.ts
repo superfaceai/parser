@@ -111,26 +111,36 @@ export class ArrayLexerStream implements LexerTokenStream {
  */
 export function extractDocumentation(
   input?: string
-): { title?: string; description?: string } {
+): { title: string; description?: string } | undefined {
   if (input === undefined) {
-    return {};
+    return undefined;
   }
 
-  const lines = input.split('\n').filter(line => line.trim() !== '');
-  if (lines.length === 0) {
-    return {};
+  const lines = input.split('\n');
+  const firstNonemptyLineIndex = lines.findIndex(line => line.trim() !== '');
+
+  // No non-whitespace found
+  if (firstNonemptyLineIndex === -1) {
+    return undefined;
   }
 
-  if (lines.length === 1) {
+  const title = lines[firstNonemptyLineIndex].trim();
+
+  const descriptionStart =
+    lines
+      .slice(0, firstNonemptyLineIndex + 1)
+      .reduce((acc, curr) => (acc += curr.length), 0) + firstNonemptyLineIndex;
+  const description = input.slice(descriptionStart).trim();
+
+  if (description !== '') {
     return {
-      title: input,
+      title,
+      description,
+    };
+  } else {
+    // description is only whitespace
+    return {
+      title,
     };
   }
-
-  const firstNewline = input?.indexOf('\n');
-
-  return {
-    title: input?.slice(0, firstNewline),
-    description: input.slice(firstNewline + 1).trim(),
-  };
 }

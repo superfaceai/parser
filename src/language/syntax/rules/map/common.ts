@@ -4,11 +4,9 @@ import {
   LiteralNode,
   MapDefinitionNode,
   MapDocumentNode,
-  MapNode,
-  MapProfileIdNode,
+  MapHeaderNode,
   OperationDefinitionNode,
   PrimitiveLiteralNode,
-  ProviderNode,
   StatementConditionNode,
 } from '@superfaceai/ast';
 
@@ -24,6 +22,7 @@ import {
   SyntaxRuleSeparator,
 } from '../../rule';
 import { documentedNode, SrcNode, SyntaxRuleSrc } from '../common';
+import { isLowercaseIdentifier, parseProfileId } from '../document_id';
 
 const TERMINATOR_LOOKAHEAD: Record<
   JessieExpressionTerminationToken,
@@ -202,52 +201,122 @@ export function ASSIGNMENT_FACTORY(
   );
 }
 
-/** `profile = string` */
-export const PROFILE_ID: SyntaxRuleSrc<MapProfileIdNode> = SyntaxRule.identifier(
-  'profile'
-)
-  .followedBy(SyntaxRule.operator('='))
-  .andFollowedBy(SyntaxRule.string())
-  .map(
-    ([keyword, _op, profileId]): SrcNode<MapProfileIdNode> => {
-      return {
-        kind: 'ProfileId',
-        profileId: profileId.data.string,
-        location: keyword.location,
-        span: { start: keyword.span.start, end: profileId.span.end },
-      };
-    }
-  );
+const PROFILE_ID = SyntaxRule.identifier('profile')
+  .followedBy(SyntaxRuleSeparator.operator('='))
+  .andFollowedBy(
+    SyntaxRule.string().andThen(id => {
+      const parsedId = parseProfileId(id.data.string);
+      // must link to a profile
+      if (parsedId.kind !== 'parsed' || parsedId.version === undefined) {
+        return {
+          kind: 'nomatch',
+        };
+      }
 
-/** `provider = string` */
-export const PROVIDER_ID: SyntaxRuleSrc<ProviderNode> = SyntaxRule.identifier(
-  'provider'
-)
-  .followedBy(SyntaxRule.operator('='))
-  .andFollowedBy(SyntaxRule.string())
-  .map(
-    ([keyword, _op, providerId]): SrcNode<ProviderNode> => {
       return {
-        kind: 'Provider',
-        providerId: providerId.data.string,
-        location: keyword.location,
-        span: { start: keyword.span.start, end: providerId.span.end },
+        kind: 'match',
+        value: {
+          scope: parsedId.scope,
+          name: parsedId.name,
+          version: parsedId.version,
+          location: id.location,
+          span: id.span,
+        },
       };
-    }
-  );
-
-export const MAP: SyntaxRuleSrc<MapNode> = documentedNode(
-  PROFILE_ID.followedBy(PROVIDER_ID).map(
-    ([profileId, provider]): SrcNode<MapNode> => {
-      return {
-        kind: 'Map',
-        profileId,
-        provider,
-        location: profileId.location,
-        span: { start: profileId.span.start, end: provider.span.end },
-      };
-    }
+    }, 'profile id in format `[<scope>/]<name>@<semver>` with lowecase identifiers')
   )
+  .map(([keyword, _op, id]) => {
+    return {
+      scope: id.scope,
+      name: id.name,
+      version: id.version,
+      location: keyword.location,
+      span: {
+        start: keyword.span.start,
+        end: id.span.end,
+      },
+    };
+  });
+const PROVIDER_ID = SyntaxRule.identifier('provider')
+  .followedBy(SyntaxRuleSeparator.operator('='))
+  .andFollowedBy(
+    SyntaxRule.string().andThen(provider => {
+      if (!isLowercaseIdentifier(provider.data.string)) {
+        return {
+          kind: 'nomatch',
+        };
+      }
+
+      return {
+        kind: 'match',
+        value: {
+          provider: provider.data.string,
+          location: provider.location,
+          span: provider.span,
+        },
+      };
+    }, 'lowercase identifier')
+  )
+  .map(([keyword, _op, provider]) => {
+    return {
+      provider: provider.provider,
+      location: keyword.location,
+      span: {
+        start: keyword.span.start,
+        end: provider.span.end,
+      },
+    };
+  });
+
+export const MAP_VARIANT = SyntaxRule.identifier('variant')
+  .followedBy(SyntaxRuleSeparator.operator('='))
+  .andFollowedBy(
+    SyntaxRule.string().andThen(variant => {
+      if (!isLowercaseIdentifier(variant.data.string)) {
+        return {
+          kind: 'nomatch',
+        };
+      }
+
+      return {
+        kind: 'match',
+        value: variant,
+      };
+    }, 'lowercase identifier')
+  )
+  .map(([keyword, _op, variant]) => {
+    return {
+      variant: variant.data.string,
+      location: keyword.location,
+      span: {
+        start: keyword.span.start,
+        end: variant.span.end,
+      },
+    };
+  });
+
+export const MAP_HEADER: SyntaxRuleSrc<MapHeaderNode> = documentedNode(
+  PROFILE_ID.followedBy(PROVIDER_ID)
+    .andFollowedBy(SyntaxRule.optional(MAP_VARIANT))
+    .map(
+      ([profile, provider, maybeVariant]): SrcNode<MapHeaderNode> => {
+        return {
+          kind: 'MapHeader',
+          profile: {
+            scope: profile.scope,
+            name: profile.name,
+            version: profile.version,
+          },
+          provider: provider.provider,
+          variant: maybeVariant?.variant,
+          location: profile.location,
+          span: {
+            start: profile.span.start,
+            end: (maybeVariant ?? provider).span.end,
+          },
+        };
+      }
+    )
 );
 
 export function MAP_DOCUMENT_FACTORY(
@@ -256,24 +325,22 @@ export function MAP_DOCUMENT_FACTORY(
   >
 ): SyntaxRuleSrc<MapDocumentNode> {
   return SyntaxRule.separator('SOF')
-    .followedBy(MAP)
+    .followedBy(MAP_HEADER)
     .andFollowedBy(
       SyntaxRule.optional(SyntaxRule.repeat(mapDocumentDefinition))
     )
     .andFollowedBy(SyntaxRule.separator('EOF'))
     .map(
-      ([_SOF, map, definitions, _EOF]): SrcNode<MapDocumentNode> => {
-        let spanEnd = map.span.end;
-        if (definitions !== undefined) {
-          spanEnd = definitions[definitions.length - 1].span.end;
-        }
-
+      ([_SOF, header, definitions, _EOF]): SrcNode<MapDocumentNode> => {
         return {
           kind: 'MapDocument',
-          map,
+          header,
           definitions: definitions ?? [],
-          location: map.location,
-          span: { start: map.span.start, end: spanEnd },
+          location: header.location,
+          span: {
+            start: header.span.start,
+            end: (definitions?.[definitions.length - 1] ?? header).span.end,
+          },
         };
       }
     );

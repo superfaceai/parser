@@ -31,8 +31,8 @@ export function documentedNode<N extends SrcNode<DocumentedNode & ASTNodeBase>>(
       ([maybeDoc, result]): N => {
         if (maybeDoc !== undefined) {
           const doc = extractDocumentation(maybeDoc.data.string);
-          result.title = doc.title;
-          result.description = doc.description;
+          result.title = doc?.title;
+          result.description = doc?.description;
           result.location = maybeDoc.location;
           result.span.start = maybeDoc.span.start;
         }

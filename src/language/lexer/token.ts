@@ -7,7 +7,7 @@ export const enum LexerTokenKind {
   /** Token unknown to the lexer. */
   UNKNOWN,
   SEPARATOR, // SOF/EOF, (), [], {}
-  OPERATOR, // :, !, +, -, |, =, @, ,, ;
+  OPERATOR, // :, !, |, =, @, ,, ;, .
   /** Number or boolean literal. */
   LITERAL, // number or boolean
   STRING, // string literals

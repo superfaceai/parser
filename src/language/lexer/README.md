@@ -52,7 +52,7 @@ Identifiers are user-defined names. Allowed identifiers have format: `[_a-zA-Z][
 
 ## Comments
 
-Comments are values with no semantical meaning to the language. Line comments are supported with starting char `#`.
+Comments are values with no semantical meaning to the language. Line comments are supported with starting prefix `//`.
 
 _Node: By default, comment tokens are filtered. This can be configured using the lexer token kind filter._
 

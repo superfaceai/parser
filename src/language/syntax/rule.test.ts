@@ -163,7 +163,7 @@ describe('syntax rule factory', () => {
       });
     });
 
-    it("shouldn't match identififer rule", () => {
+    it("shouldn't match identifier rule", () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '@' }),
       ];

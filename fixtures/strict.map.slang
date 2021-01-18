@@ -5,8 +5,8 @@ Strict Map
 Example of the map syntax adhering to the strict syntax.
 """
 
-profile = "http://example.com/profile"
-provider = "http://example.com/provider"
+profile = "example/profile@0.1"
+provider = "example-provider"
 
 // https://sfspec.surge.sh/map#sec-Usecase-Map
 "Map Foo
