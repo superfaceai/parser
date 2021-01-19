@@ -56,41 +56,40 @@ export interface VisitConstruct<T extends ts.Node = ts.Node> {
 }
 
 const VALID_CONSTRUCT_RESULT: ConstructResult = {
-  pass: true, invalidInput: false, invalidOutput: false
-}
+  pass: true,
+  invalidInput: false,
+  invalidOutput: false,
+};
 
 function mergeResults(...results: ConstructResult[]): ConstructResult {
-  return results.reduce(
-    (acc: ConstructResult, val: ConstructResult) => {
-      const pass = acc.pass && val.pass;
-      const errors = [
-        ...(!acc.pass ? acc.errors : []),
-        ...(!val.pass ? val.errors : []),
-      ];
-      const warnings = [...(acc.warnings ?? []), ...(val.warnings ?? [])];
-      const variables = [...(acc.variables ?? []), ...(val.variables ?? [])];
-      const invalidInput = acc.invalidInput || val.invalidInput;
-      const invalidOutput = acc.invalidOutput || val.invalidOutput;
+  return results.reduce((acc: ConstructResult, val: ConstructResult) => {
+    const pass = acc.pass && val.pass;
+    const errors = [
+      ...(!acc.pass ? acc.errors : []),
+      ...(!val.pass ? val.errors : []),
+    ];
+    const warnings = [...(acc.warnings ?? []), ...(val.warnings ?? [])];
+    const variables = [...(acc.variables ?? []), ...(val.variables ?? [])];
+    const invalidInput = acc.invalidInput || val.invalidInput;
+    const invalidOutput = acc.invalidOutput || val.invalidOutput;
 
-      return pass
-        ? {
-            pass,
-            warnings,
-            variables,
-            invalidInput,
-            invalidOutput,
-          }
-        : {
-            pass,
-            errors,
-            warnings,
-            variables,
-            invalidInput,
-            invalidOutput,
-          };
-    },
-    VALID_CONSTRUCT_RESULT
-  );
+    return pass
+      ? {
+          pass,
+          warnings,
+          variables,
+          invalidInput,
+          invalidOutput,
+        }
+      : {
+          pass,
+          errors,
+          warnings,
+          variables,
+          invalidInput,
+          invalidOutput,
+        };
+  }, VALID_CONSTRUCT_RESULT);
 }
 
 function getPath(node: ts.Node): string[] {
