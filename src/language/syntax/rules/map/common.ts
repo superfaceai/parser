@@ -11,7 +11,7 @@ import {
 } from '@superfaceai/ast';
 
 import {
-  isLowercaseIdentifier,
+  isValidDocumentIdentifier,
   parseProfileId,
 } from '../../../../common/document/parser';
 import { LexerTokenKind } from '../../../index';
@@ -245,7 +245,7 @@ const PROVIDER_ID = SyntaxRule.identifier('provider')
   .followedBy(SyntaxRuleSeparator.operator('='))
   .andFollowedBy(
     SyntaxRule.string().andThen(provider => {
-      if (!isLowercaseIdentifier(provider.data.string)) {
+      if (!isValidDocumentIdentifier(provider.data.string)) {
         return {
           kind: 'nomatch',
         };
@@ -276,7 +276,7 @@ export const MAP_VARIANT = SyntaxRule.identifier('variant')
   .followedBy(SyntaxRuleSeparator.operator('='))
   .andFollowedBy(
     SyntaxRule.string().andThen(variant => {
-      if (!isLowercaseIdentifier(variant.data.string)) {
+      if (!isValidDocumentIdentifier(variant.data.string)) {
         return {
           kind: 'nomatch',
         };

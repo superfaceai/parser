@@ -6,6 +6,7 @@
 ### Changed
 * Interfaces for map and profile id
 * Improved document id version parsing
+* Rename `isLowercaseIdentifier` to `isValidDocumentIdentifier`
 
 ### Fixed
 * Document id `parseProfileId` not returning version label

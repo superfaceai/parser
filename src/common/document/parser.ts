@@ -14,7 +14,7 @@ const ID_NAME_RE = /^[a-z][a-z0-9_-]*$/;
 /**
  * Checks whether the identififer is a lowercase identififer as required for document ids in the spec.
  */
-export function isLowercaseIdentifier(str: string): boolean {
+export function isValidDocumentIdentifier(str: string): boolean {
   return ID_NAME_RE.test(str);
 }
 
@@ -86,7 +86,7 @@ export function parseDocumentId(id: string): ParseResult<DocumentId> {
   const [splitScope, scopeRestId] = splitLimit(id, '/', 1);
   if (scopeRestId !== undefined) {
     scope = splitScope;
-    if (!isLowercaseIdentifier(scope)) {
+    if (!isValidDocumentIdentifier(scope)) {
       return {
         kind: 'error',
         message: 'scope is not a valid lowercase identifier',
@@ -112,26 +112,16 @@ export function parseDocumentId(id: string): ParseResult<DocumentId> {
     // strip the version
     id = versionRestId;
   }
+  const version = parsedVersion?.value;
 
   const middle = id.split('.');
   for (const m of middle) {
-    if (!isLowercaseIdentifier(m)) {
+    if (!isValidDocumentIdentifier(m)) {
       return {
         kind: 'error',
         message: `"${m}" is not a valid lowercase identifier`,
       };
     }
-  }
-
-  // unpack version
-  let version = undefined;
-  if (parsedVersion !== undefined) {
-    version = {
-      major: parsedVersion.value.major,
-      minor: parsedVersion.value.minor,
-      patch: parsedVersion.value.patch,
-      label: parsedVersion.value.label,
-    };
   }
 
   return {
@@ -165,19 +155,13 @@ export function parseProfileId(id: string): ParseResult<ProfileDocumentId> {
       message: 'profile id requires a version tag',
     };
   }
-  const version = {
-    major: base.version.major,
-    minor: base.version.minor,
-    patch: base.version.patch,
-    label: base.version.label,
-  };
 
   return {
     kind: 'parsed',
     value: {
       scope: base.scope,
       name: base.middle[0],
-      version,
+      version: base.version,
     },
   };
 }
@@ -213,7 +197,7 @@ export function parseRevisionLabel(label: string): ParseResult<number> {
 
 /**
  * Parses the id using `parseDocumentId`, checks that the middle portion contains
- * a valid `name`, `porovider` and parses the revision tag, if any.
+ * a valid `name`, `provider` and parses the revision tag, if any.
  */
 export function parseMapId(id: string): ParseResult<MapDocumentId> {
   const baseResult = parseDocumentId(id);
