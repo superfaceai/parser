@@ -108,7 +108,7 @@ export interface UseCaseStructure extends DocumentedStructure {
 }
 
 /**
- *  represents version of the profile
+ *  @interface VersionStructure - represents version of the profile
  *  version = @1.0.0-rev100
  */
 export interface VersionStructure {
@@ -119,8 +119,7 @@ export interface VersionStructure {
 }
 
 /**
- *  represents Profile name
- *  name = my-profile
+ * @interface ProfileHeaderStructure - represents profile header node
  */
 export interface ProfileHeaderStructure extends DocumentedStructure {
   name: string;
@@ -130,8 +129,6 @@ export interface ProfileHeaderStructure extends DocumentedStructure {
 
 /**
  * @interface ProfileOutput - represent profile structure
- * @property profileId - profile id
- * @property usecase (opt.) - contains structure of input, result, error and other components
  */
 export interface ProfileOutput extends DocumentedStructure {
   header: ProfileHeaderStructure;

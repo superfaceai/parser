@@ -62,10 +62,12 @@ export class ProfileIOAnalyzer implements ProfileVisitor {
     string,
     NamedFieldDefinitionNode | undefined
   > = {};
+
   private namedModels: Record<
     string,
     NamedModelDefinitionNode | undefined
   > = {};
+
   private fields: Record<string, StructureType> = {};
   private models: Record<string, StructureType> = {};
 

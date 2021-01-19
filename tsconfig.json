@@ -5,7 +5,7 @@
     "downlevelIteration": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": [],
+    "lib": ["ES2017"],
     "module": "ESNext",
     "rootDir": "./src",
     "outDir": "./lib",
