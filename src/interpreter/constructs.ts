@@ -55,6 +55,10 @@ export interface VisitConstruct<T extends ts.Node = ts.Node> {
   ): StructureType | undefined;
 }
 
+const VALID_CONSTRUCT_RESULT: ConstructResult = {
+  pass: true, invalidInput: false, invalidOutput: false
+}
+
 function mergeResults(...results: ConstructResult[]): ConstructResult {
   return results.reduce(
     (acc: ConstructResult, val: ConstructResult) => {
@@ -85,7 +89,7 @@ function mergeResults(...results: ConstructResult[]): ConstructResult {
             invalidOutput,
           };
     },
-    { pass: true, invalidInput: false, invalidOutput: false }
+    VALID_CONSTRUCT_RESULT
   );
 }
 
@@ -115,50 +119,47 @@ function compareStructures(
   }
 
   if (isScalarStructure(outputStructure) || isScalarStructure(inputStructure)) {
-    return { pass: true, invalidInput: false, invalidOutput: false };
+    return VALID_CONSTRUCT_RESULT;
   }
 
-  switch (outputStructure.kind) {
-    case 'EnumStructure':
-      if (
-        isEnumStructure(inputStructure) &&
-        outputStructure.enums === inputStructure.enums
-      ) {
-        return { pass: true, invalidInput: false, invalidOutput: false };
-      }
-      break;
-    case 'ListStructure':
-      if (
-        isListStructure(inputStructure) &&
-        outputStructure.value === inputStructure.value
-      ) {
-        return { pass: true, invalidInput: false, invalidOutput: false };
-      }
-      break;
-    case 'ObjectStructure':
-      if (
-        isObjectStructure(inputStructure) &&
-        outputStructure.fields === inputStructure.fields
-      ) {
-        return { pass: true, invalidInput: false, invalidOutput: false };
-      }
-      break;
-    case 'PrimitiveStructure':
-      if (
-        isPrimitiveStructure(inputStructure) &&
-        outputStructure.type === inputStructure.type
-      ) {
-        return { pass: true, invalidInput: false, invalidOutput: false };
-      }
-      break;
-    case 'UnionStructure':
-      if (
-        isUnionStructure(inputStructure) &&
-        outputStructure.types === inputStructure.types
-      ) {
-        return { pass: true, invalidInput: false, invalidOutput: false };
-      }
-      break;
+  if (
+    isEnumStructure(outputStructure) &&
+    isEnumStructure(inputStructure) &&
+    outputStructure.enums === inputStructure.enums
+  ) {
+    return VALID_CONSTRUCT_RESULT;
+  }
+
+  if (
+    isListStructure(outputStructure) &&
+    isListStructure(inputStructure) &&
+    outputStructure.value === inputStructure.value
+  ) {
+    return VALID_CONSTRUCT_RESULT;
+  }
+
+  if (
+    isObjectStructure(outputStructure) &&
+    isObjectStructure(inputStructure) &&
+    outputStructure.fields === inputStructure.fields
+  ) {
+    return VALID_CONSTRUCT_RESULT;
+  }
+
+  if (
+    isPrimitiveStructure(outputStructure) &&
+    isPrimitiveStructure(inputStructure) &&
+    outputStructure.type === inputStructure.type
+  ) {
+    return VALID_CONSTRUCT_RESULT;
+  }
+
+  if (
+    isUnionStructure(outputStructure) &&
+    isUnionStructure(inputStructure) &&
+    outputStructure.types === inputStructure.types
+  ) {
+    return VALID_CONSTRUCT_RESULT;
   }
 
   return {
@@ -192,7 +193,7 @@ function visitConstruct(
         inputStructure,
         isOutcomeWithCondition
       )
-    : { pass: true, invalidInput: false, invalidOutput: false };
+    : VALID_CONSTRUCT_RESULT;
 }
 
 function returnIssue(
@@ -251,7 +252,7 @@ export const RETURN_CONSTRUCTS: {
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
       if (!outputStructure) {
-        return { pass: true, invalidInput: false, invalidOutput: false };
+        return VALID_CONSTRUCT_RESULT;
       }
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
@@ -260,7 +261,7 @@ export const RETURN_CONSTRUCTS: {
         isScalarStructure(outputStructure) ||
         isStringStructure(outputStructure)
       ) {
-        return { pass: true, invalidInput: false, invalidOutput: false };
+        return VALID_CONSTRUCT_RESULT;
       }
 
       return returnIssue(
@@ -287,7 +288,7 @@ export const RETURN_CONSTRUCTS: {
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
       if (!outputStructure) {
-        return { pass: true, invalidInput: false, invalidOutput: false };
+        return VALID_CONSTRUCT_RESULT;
       }
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
@@ -296,7 +297,7 @@ export const RETURN_CONSTRUCTS: {
         isScalarStructure(outputStructure) ||
         isNumberStructure(outputStructure)
       ) {
-        return { pass: true, invalidInput: false, invalidOutput: false };
+        return VALID_CONSTRUCT_RESULT;
       }
 
       return returnIssue(
@@ -323,7 +324,7 @@ export const RETURN_CONSTRUCTS: {
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
       if (!outputStructure) {
-        return { pass: true, invalidInput: false, invalidOutput: false };
+        return VALID_CONSTRUCT_RESULT;
       }
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
@@ -333,7 +334,7 @@ export const RETURN_CONSTRUCTS: {
         (isPrimitiveStructure(outputStructure) &&
           isBooleanStructure(outputStructure))
       ) {
-        return { pass: true, invalidInput: false, invalidOutput: false };
+        return VALID_CONSTRUCT_RESULT;
       }
 
       return returnIssue(
@@ -360,7 +361,7 @@ export const RETURN_CONSTRUCTS: {
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
       if (!outputStructure) {
-        return { pass: true, invalidInput: false, invalidOutput: false };
+        return VALID_CONSTRUCT_RESULT;
       }
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
@@ -370,7 +371,7 @@ export const RETURN_CONSTRUCTS: {
         (isPrimitiveStructure(outputStructure) &&
           isBooleanStructure(outputStructure))
       ) {
-        return { pass: true, invalidInput: false, invalidOutput: false };
+        return VALID_CONSTRUCT_RESULT;
       }
 
       return returnIssue(
@@ -397,7 +398,7 @@ export const RETURN_CONSTRUCTS: {
       isOutcomeWithCondition?: boolean
     ): ConstructResult => {
       if (!outputStructure) {
-        return { pass: true, invalidInput: false, invalidOutput: false };
+        return VALID_CONSTRUCT_RESULT;
       }
       if (isNonNullStructure(outputStructure)) {
         return returnIssue(
@@ -415,7 +416,7 @@ export const RETURN_CONSTRUCTS: {
         );
       }
 
-      return { pass: true, invalidInput: false, invalidOutput: false };
+      return VALID_CONSTRUCT_RESULT;
     },
   },
 
@@ -521,19 +522,11 @@ export const RETURN_CONSTRUCTS: {
         (nodeContainsString || nodeContainsID) &&
         node.operatorToken.getText() === '+'
       ) {
-        return mergeResults(...results, {
-          pass: true,
-          invalidInput: false,
-          invalidOutput: false,
-        });
+        return mergeResults(...results, VALID_CONSTRUCT_RESULT);
       }
 
       if (isNumberStructure(outputStructure) && !nodeContainsString) {
-        return mergeResults(...results, {
-          pass: true,
-          invalidInput: false,
-          invalidOutput: false,
-        });
+        return mergeResults(...results, VALID_CONSTRUCT_RESULT);
       }
 
       return mergeResults(
@@ -570,7 +563,7 @@ export const RETURN_CONSTRUCTS: {
           return compareStructures(node, inputStructure, outputStructure);
         }
 
-        return { pass: true, invalidInput: false, invalidOutput: false };
+        return VALID_CONSTRUCT_RESULT;
       }
 
       const variables: ReferencedVariables[] = [];
@@ -598,9 +591,7 @@ export const RETURN_CONSTRUCTS: {
       }
 
       return {
-        pass: true,
-        invalidInput: false,
-        invalidOutput: false,
+        ...VALID_CONSTRUCT_RESULT,
         variables,
       };
     },
@@ -615,7 +606,7 @@ export const RETURN_CONSTRUCTS: {
     ): ConstructResult {
       if (findTypescriptIdentifier('input', node.expression)) {
         if (findTypescriptProperty('auth', node.expression)) {
-          return { pass: true, invalidInput: false, invalidOutput: false };
+          return VALID_CONSTRUCT_RESULT;
         }
 
         if (!inputStructure || !inputStructure.fields) {
@@ -657,7 +648,7 @@ export const RETURN_CONSTRUCTS: {
           return compareStructures(node, fieldValue, outputStructure);
         }
 
-        return { pass: true, invalidInput: false, invalidOutput: false };
+        return VALID_CONSTRUCT_RESULT;
       }
 
       const variables: ReferencedVariables[] = [];
@@ -669,9 +660,7 @@ export const RETURN_CONSTRUCTS: {
       }
 
       return {
-        pass: true,
-        invalidInput: false,
-        invalidOutput: false,
+        ...VALID_CONSTRUCT_RESULT,
         variables,
       };
     },
@@ -686,7 +675,7 @@ export const RETURN_CONSTRUCTS: {
     ): ConstructResult {
       if (findTypescriptIdentifier('input', node.expression)) {
         if (findTypescriptProperty('auth', node.expression)) {
-          return { pass: true, invalidInput: false, invalidOutput: false };
+          return VALID_CONSTRUCT_RESULT;
         }
 
         if (!inputStructure || !inputStructure.fields) {
@@ -725,7 +714,7 @@ export const RETURN_CONSTRUCTS: {
           return compareStructures(node, fieldValue, outputStructure);
         }
 
-        return { pass: true, invalidInput: false, invalidOutput: false };
+        return VALID_CONSTRUCT_RESULT;
       }
 
       const variables: ReferencedVariables[] = [];
@@ -737,9 +726,7 @@ export const RETURN_CONSTRUCTS: {
       }
 
       return {
-        pass: true,
-        invalidInput: false,
-        invalidOutput: false,
+        ...VALID_CONSTRUCT_RESULT,
         variables,
       };
     },
@@ -804,7 +791,7 @@ export const RETURN_CONSTRUCTS: {
       const structureOfProperties = outputStructure.fields;
 
       if (properties.length === 0 && !structureOfProperties) {
-        return { pass: true, invalidInput: false, invalidOutput: false };
+        return VALID_CONSTRUCT_RESULT;
       }
 
       if (!structureOfProperties) {
@@ -1001,11 +988,7 @@ export const RETURN_CONSTRUCTS: {
         }
       }
 
-      return mergeResults(...results, {
-        pass: true,
-        invalidInput: false,
-        invalidOutput: false,
-      });
+      return mergeResults(...results, VALID_CONSTRUCT_RESULT);
     },
   },
 
