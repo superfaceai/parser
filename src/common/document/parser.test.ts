@@ -1,12 +1,33 @@
-import { parseMapId, parseProfileId, parseVersion } from './document_id';
+import {
+  parseDocumentId,
+  parseMapId,
+  parseProfileId,
+  parseVersion,
+} from './parser';
 
 describe('document name parsing', () => {
-  it('parses minimal profile name', () => {
+  it('parses partial profile name', () => {
     const id = 'my-profile';
+
+    expect(parseDocumentId(id)).toEqual({
+      kind: 'parsed',
+      value: {
+        middle: ['my-profile'],
+      },
+    });
+  });
+
+  it('parses minimal profile name', () => {
+    const id = 'my_profile@17';
 
     expect(parseProfileId(id)).toEqual({
       kind: 'parsed',
-      name: 'my-profile',
+      value: {
+        name: 'my_profile',
+        version: {
+          major: 17,
+        },
+      },
     });
   });
 
@@ -15,40 +36,59 @@ describe('document name parsing', () => {
 
     expect(parseProfileId(id)).toEqual({
       kind: 'parsed',
-      scope: 'my-sc0pe',
-      name: 'my-profile',
-      version: {
-        major: 1,
-        minor: 2,
-        patch: 34,
+      value: {
+        scope: 'my-sc0pe',
+        name: 'my-profile',
+        version: {
+          major: 1,
+          minor: 2,
+          patch: 34,
+        },
+      },
+    });
+  });
+
+  it('parses partial map name', () => {
+    const id = 'my-profile.x_prov1der';
+
+    expect(parseDocumentId(id)).toEqual({
+      kind: 'parsed',
+      value: {
+        middle: ['my-profile', 'x_prov1der'],
       },
     });
   });
 
   it('parses minimal map name', () => {
-    const id = 'my-profile.x_prov1der';
+    const id = 'prof.prov@32';
 
     expect(parseMapId(id)).toEqual({
       kind: 'parsed',
-      name: 'my-profile',
-      provider: 'x_prov1der',
+      value: {
+        name: 'prof',
+        provider: 'prov',
+        version: {
+          major: 32,
+        },
+      },
     });
   });
 
   it('parses full map name', () => {
-    const id = 'our_scope/my-profile.x_prov1der.v4riant@1.2.34-rev567';
+    const id = 'our_scope/my-profile.x_prov1der.v4riant@1.2-rev567';
 
     expect(parseMapId(id)).toEqual({
       kind: 'parsed',
-      scope: 'our_scope',
-      name: 'my-profile',
-      provider: 'x_prov1der',
-      variant: 'v4riant',
-      version: {
-        major: 1,
-        minor: 2,
-        patch: 34,
-        revision: 567,
+      value: {
+        scope: 'our_scope',
+        name: 'my-profile',
+        provider: 'x_prov1der',
+        variant: 'v4riant',
+        version: {
+          major: 1,
+          minor: 2,
+          revision: 567,
+        },
       },
     });
   });
@@ -56,6 +96,10 @@ describe('document name parsing', () => {
   it('returns an error for uppercase', () => {
     const id = 'SCOPE/profile';
 
+    expect(parseDocumentId(id)).toStrictEqual({
+      kind: 'error',
+      message: 'scope is not a valid lowercase identifier',
+    });
     expect(parseProfileId(id)).toStrictEqual({
       kind: 'error',
       message: 'scope is not a valid lowercase identifier',
@@ -67,12 +111,12 @@ describe('document name parsing', () => {
 
     expect(parseMapId(id)).toStrictEqual({
       kind: 'error',
-      message: 'provider is not a valid lowercase identifier',
+      message: '"" is not a valid lowercase identifier',
     });
 
     expect(parseProfileId(id)).toStrictEqual({
       kind: 'error',
-      message: 'name is not a valid lowercase identifier',
+      message: '"" is not a valid lowercase identifier',
     });
   });
 
@@ -81,12 +125,12 @@ describe('document name parsing', () => {
 
     expect(parseMapId(id)).toStrictEqual({
       kind: 'error',
-      message: 'variant is not a valid lowercase identifier',
+      message: '"" is not a valid lowercase identifier',
     });
 
     expect(parseProfileId(id)).toStrictEqual({
       kind: 'error',
-      message: 'name is not a valid lowercase identifier',
+      message: '"" is not a valid lowercase identifier',
     });
   });
 
@@ -96,7 +140,7 @@ describe('document name parsing', () => {
     expect(parseMapId(id)).toStrictEqual({
       kind: 'error',
       message:
-        'could not parse revision: label must be in format `revN` where N is a non-negative integer',
+        'revision label must be in format `revN` where N is a non-negative integer',
     });
   });
 

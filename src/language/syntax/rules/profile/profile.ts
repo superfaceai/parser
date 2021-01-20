@@ -17,6 +17,10 @@ import {
   UseCaseSlotDefinitionNode,
 } from '@superfaceai/ast';
 
+import {
+  parseDocumentId,
+  parseVersion,
+} from '../../../../common/document/parser';
 import { IdentifierTokenData, LexerTokenKind } from '../../../lexer/token';
 import {
   LexerTokenMatch,
@@ -25,7 +29,6 @@ import {
   SyntaxRuleSeparator,
 } from '../../rule';
 import { documentedNode, SrcNode, SyntaxRuleSrc } from '../common';
-import { parseProfileId, parseVersion } from '../document_id';
 
 // MUTABLE RULES //
 
@@ -452,19 +455,24 @@ const PROFILE_NAME = SyntaxRule.identifier('name')
   .followedBy(SyntaxRuleSeparator.operator('='))
   .andFollowedBy(
     SyntaxRule.string().andThen(name => {
-      const parsedName = parseProfileId(name.data.string);
+      const parseNameResult = parseDocumentId(name.data.string);
       // profiles can't have version specified in the name
-      if (parsedName.kind !== 'parsed' || parsedName.version !== undefined) {
+      if (
+        parseNameResult.kind !== 'parsed' ||
+        parseNameResult.value.middle.length !== 1 ||
+        parseNameResult.value.version !== undefined
+      ) {
         return {
           kind: 'nomatch',
         };
       }
+      const parsedName = parseNameResult.value;
 
       return {
         kind: 'match',
         value: {
           scope: parsedName.scope,
-          name: parsedName.name,
+          name: parsedName.middle[0],
           location: name.location,
           span: name.span,
         },
@@ -486,10 +494,11 @@ const PROFILE_VERSION = SyntaxRule.identifier('version')
   .followedBy(SyntaxRuleSeparator.operator('='))
   .andFollowedBy(
     SyntaxRule.string().andThen(version => {
-      const parsedVersion = parseVersion(version.data.string);
-      if (parsedVersion.kind !== 'parsed') {
+      const parseVersionResult = parseVersion(version.data.string);
+      if (parseVersionResult.kind !== 'parsed') {
         return { kind: 'nomatch' };
       }
+      const parsedVersion = parseVersionResult.value;
 
       return {
         kind: 'match',
