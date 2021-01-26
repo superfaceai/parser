@@ -49,10 +49,6 @@ export interface VisitConstruct<T extends ts.Node = ts.Node> {
     inputStructure?: ObjectStructure,
     isOutcomeWithCondition?: boolean
   ): ConstructResult;
-  visitInput?(
-    node: ts.PropertyAccessExpression,
-    structure: ObjectStructure
-  ): StructureType | undefined;
 }
 
 const VALID_CONSTRUCT_RESULT: ConstructResult = {

@@ -33,7 +33,7 @@ import {
   UnionStructure,
   UseCaseStructure,
 } from './profile-output';
-import { isEnumStructure, isUnionStructure } from './profile-output.utils';
+import { isUnionStructure } from './profile-output.utils';
 
 const debug = createDebug('superface-parser:profile-io-analyzer');
 
@@ -171,10 +171,6 @@ export class ProfileIOAnalyzer implements ProfileVisitor {
 
   visitListDefinitionNode(node: ListDefinitionNode): StructureType {
     const value = this.visit(node.elementType);
-
-    if (isEnumStructure(value)) {
-      throw new Error('Something went very wrong, this should not happen!');
-    }
 
     return {
       kind: 'ListStructure',

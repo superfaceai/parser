@@ -1,5 +1,10 @@
 ## [Unreleased]
 
+### Fixed
+* Allow enum inside list in Profile IO Analyzer
+
+## [0.0.11] - 2021-01-19
+
 ### Added
 * Public `parseDocumentId` for partial parsing
 
@@ -112,6 +117,7 @@
 * Usecase result parsing as optional
 
 [Unreleased]: https://github.com/superfaceai/parser/compare/v0.0.11...HEAD
+[0.0.12]: https://github.com/superfaceai/parser/compare/v0.0.11...v0.0.12
 [0.0.11]: https://github.com/superfaceai/parser/compare/v0.0.10...v0.0.11
 [0.0.10]: https://github.com/superfaceai/parser/compare/v0.0.9...v0.0.10
 [0.0.9]: https://github.com/superfaceai/parser/compare/v0.0.8...v0.0.9
