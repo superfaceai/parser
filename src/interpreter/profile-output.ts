@@ -52,7 +52,7 @@ export interface NonNullStructure extends Structure {
  */
 export interface ListStructure extends Structure {
   kind: 'ListStructure';
-  value: Exclude<StructureType, EnumStructure>;
+  value: StructureType;
 }
 
 /**
