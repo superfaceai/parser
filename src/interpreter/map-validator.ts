@@ -1,6 +1,7 @@
 import {
   AssignmentNode,
   CallStatementNode,
+  ConditionAtomNode,
   HttpCallStatementNode,
   HttpRequestNode,
   HttpResponseHandlerNode,
@@ -8,9 +9,11 @@ import {
   isMapDefinitionNode,
   isObjectLiteralNode,
   isOperationDefinitionNode,
+  IterationAtomNode,
   JessieExpressionNode,
   LiteralNode,
   MapASTNode,
+  MapAstVisitor,
   MapDefinitionNode,
   MapDocumentNode,
   MapHeaderNode,
@@ -19,9 +22,7 @@ import {
   OutcomeStatementNode,
   PrimitiveLiteralNode,
   SetStatementNode,
-  StatementConditionNode,
 } from '@superfaceai/ast';
-import { MapVisitor } from '@superfaceai/sdk';
 import * as ts from 'typescript';
 
 import { RETURN_CONSTRUCTS } from './constructs';
@@ -66,7 +67,7 @@ interface Stack {
   variables: Record<string, LiteralNode>;
 }
 
-export class MapValidator implements MapVisitor {
+export class MapValidator implements MapAstVisitor {
   private stack: Stack[] = [];
 
   private errors: ValidationIssue[] = [];
@@ -116,8 +117,10 @@ export class MapValidator implements MapVisitor {
         return this.visitOutcomeStatementNode(node);
       case 'SetStatement':
         return this.visitSetStatementNode(node);
-      case 'StatementCondition':
-        return this.visitStatementConditionNode(node);
+      case 'ConditionAtom':
+        return this.visitConditionAtomNode(node);
+      case 'IterationAtom':
+        return this.visitIterationAtomNode(node);
       case 'Assignment':
         return this.visitAssignmentNode(node);
       case 'InlineCall':
@@ -441,8 +444,12 @@ export class MapValidator implements MapVisitor {
     });
   }
 
-  visitStatementConditionNode(node: StatementConditionNode): void {
+  visitConditionAtomNode(node: ConditionAtomNode): void {
     this.visit(node.expression);
+  }
+
+  visitIterationAtomNode(node: IterationAtomNode): void {
+    this.visit(node.iterable);
   }
 
   visitAssignmentNode(node: AssignmentNode): boolean {

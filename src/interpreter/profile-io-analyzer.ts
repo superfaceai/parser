@@ -14,6 +14,7 @@ import {
   ObjectDefinitionNode,
   PrimitiveTypeNameNode,
   ProfileASTNode,
+  ProfileAstVisitor,
   ProfileDocumentNode,
   ProfileHeaderNode,
   Type,
@@ -21,7 +22,6 @@ import {
   UseCaseDefinitionNode,
   UseCaseSlotDefinitionNode,
 } from '@superfaceai/ast';
-import { ProfileVisitor } from '@superfaceai/sdk';
 import createDebug from 'debug';
 
 import {
@@ -57,7 +57,7 @@ function assertUnreachable(node: ProfileASTNode): never {
   throw new Error(`Invalid Node kind: ${node.kind}`);
 }
 
-export class ProfileIOAnalyzer implements ProfileVisitor {
+export class ProfileIOAnalyzer implements ProfileAstVisitor {
   private namedFields: Record<
     string,
     NamedFieldDefinitionNode | undefined

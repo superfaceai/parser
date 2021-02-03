@@ -22,7 +22,7 @@
 				{
 					"kind": "SetStatement",
 					"condition": {
-						"kind": "StatementCondition",
+						"kind": "ConditionAtom",
 						"expression": {
 							"kind": "JessieExpression",
 							"expression": "!cond"
@@ -118,7 +118,7 @@
 						}
 					],
 					"condition": {
-						"kind": "StatementCondition",
+						"kind": "ConditionAtom",
 						"expression": {
 							"kind": "JessieExpression",
 							"expression": "cond"
@@ -128,7 +128,7 @@
 						{
 							"kind": "OutcomeStatement",
 							"condition": {
-								"kind": "StatementCondition",
+								"kind": "ConditionAtom",
 								"expression": {
 									"kind": "JessieExpression",
 									"expression": "cond"
@@ -153,7 +153,7 @@
 						{
 							"kind": "OutcomeStatement",
 							"condition": {
-								"kind": "StatementCondition",
+								"kind": "ConditionAtom",
 								"expression": {
 									"kind": "JessieExpression",
 									"expression": "cond"
@@ -178,7 +178,7 @@
 						{
 							"kind": "OutcomeStatement",
 							"condition": {
-								"kind": "StatementCondition",
+								"kind": "ConditionAtom",
 								"expression": {
 									"kind": "JessieExpression",
 									"expression": "cond"
@@ -203,7 +203,7 @@
 						{
 							"kind": "OutcomeStatement",
 							"condition": {
-								"kind": "StatementCondition",
+								"kind": "ConditionAtom",
 								"expression": {
 									"kind": "JessieExpression",
 									"expression": "cond"

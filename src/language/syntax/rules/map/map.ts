@@ -20,12 +20,13 @@ import { SyntaxRule, SyntaxRuleMutable, SyntaxRuleOr } from '../../rule';
 import { documentedNode, SrcNode, SyntaxRuleSrc } from '../common';
 import {
   ASSIGNMENT_FACTORY,
+  CONDITION_ATOM,
   consumeLocalTerminators,
+  ITERATION_ATOM,
   JESSIE_EXPRESSION_FACTORY,
   MAP_DOCUMENT_FACTORY,
   MAYBE_CONTENT_TYPE,
   PRIMITIVE_LITERAL,
-  STATEMENT_CONDITION,
   terminatorLookahead,
 } from './common';
 
@@ -52,25 +53,43 @@ export const ARGUMENT_LIST_ASSIGNMENT = ASSIGNMENT_FACTORY(
 );
 
 const CALL_STATEMENT_HEAD = SyntaxRule.identifier('call')
-  .followedBy(SyntaxRule.identifier())
+  .followedBy(SyntaxRule.optional(ITERATION_ATOM))
+  .andFollowedBy(SyntaxRule.identifier())
   .andFollowedBy(SyntaxRule.separator('('))
   .andFollowedBy(
     SyntaxRule.optional(SyntaxRule.repeat(ARGUMENT_LIST_ASSIGNMENT))
   )
-  .andFollowedBy(SyntaxRule.separator(')'));
+  .andFollowedBy(SyntaxRule.separator(')'))
+  .andFollowedBy(SyntaxRule.optional(CONDITION_ATOM))
+  .map(
+    ([
+      key,
+      maybeIteration,
+      name,
+      _sepStart,
+      maybeArguments,
+      sepEnd,
+      maybeCondition,
+    ]) => {
+      return {
+        iteration: maybeIteration,
+        condition: maybeCondition,
+        operationName: name.data.identifier,
+        arguments: maybeArguments ?? [],
+        location: key.location,
+        span: {
+          start: key.span.start,
+          end: (maybeCondition ?? sepEnd).span.end,
+        },
+      };
+    }
+  );
+
 export const INLINE_CALL: SyntaxRuleSrc<InlineCallNode> = CALL_STATEMENT_HEAD.map(
-  ([key, name, _sepArgStart, maybeArguments, sepArgEnd]): SrcNode<
-    InlineCallNode
-  > => {
+  (head): SrcNode<InlineCallNode> => {
     return {
       kind: 'InlineCall',
-      operationName: name.data.identifier,
-      arguments: maybeArguments ?? [],
-      location: key.location,
-      span: {
-        start: key.span.start,
-        end: sepArgEnd.span.end,
-      },
+      ...head,
     };
   }
 );
@@ -143,7 +162,7 @@ export const STATEMENT_RHS_VALUE: SyntaxRuleSrc<LiteralNode> = OBJECT_LITERAL.pe
 const SET_STATEMENT_FULL: SyntaxRuleSrc<SetStatementNode> = SyntaxRule.identifier(
   'set'
 )
-  .followedBy(SyntaxRule.optional(STATEMENT_CONDITION))
+  .followedBy(SyntaxRule.optional(CONDITION_ATOM))
   .andFollowedBy(SyntaxRule.separator('{'))
   .andFollowedBy(SyntaxRule.repeat(SET_BLOCK_ASSIGNMENT))
   .andFollowedBy(SyntaxRule.separator('}'))
@@ -187,35 +206,19 @@ export const SET_STATEMENT: SyntaxRuleSrc<SetStatementNode> = SET_STATEMENT_FULL
 export function CALL_STATEMENT_FACTORY(
   substatementRule: SyntaxRuleSrc<OutcomeStatementNode>
 ): SyntaxRuleSrc<CallStatementNode> {
-  return CALL_STATEMENT_HEAD.andFollowedBy(
-    SyntaxRule.optional(STATEMENT_CONDITION)
-  )
-    .andFollowedBy(SyntaxRule.separator('{'))
+  return CALL_STATEMENT_HEAD.followedBy(SyntaxRule.separator('{'))
     .andFollowedBy(
       SyntaxRule.optional(SyntaxRule.repeat(SET_STATEMENT.or(substatementRule)))
     )
     .andFollowedBy(SyntaxRule.separator('}'))
     .map(
-      ([
-        key,
-        name,
-        _sepArgStart,
-        maybeArguments,
-        _sepArgEnd,
-        maybeCondition,
-        _sepStart,
-        statements,
-        sepEnd,
-      ]): SrcNode<CallStatementNode> => {
+      ([head, _sepStart, statements, sepEnd]): SrcNode<CallStatementNode> => {
         return {
           kind: 'CallStatement',
-          condition: maybeCondition,
-          operationName: name.data.identifier,
-          arguments: maybeArguments ?? [],
+          ...head,
           statements: statements ?? [],
-          location: key.location,
           span: {
-            start: key.span.start,
+            start: head.span.start,
             end: sepEnd.span.end,
           },
         };
@@ -553,7 +556,7 @@ export const MAP_OUTCOME_STATEMENT: SyntaxRuleSrc<OutcomeStatementNode> = Syntax
   .andFollowedBy(
     SyntaxRule.identifier('result').or(SyntaxRule.identifier('error'))
   )
-  .andFollowedBy(SyntaxRule.optional(STATEMENT_CONDITION))
+  .andFollowedBy(SyntaxRule.optional(CONDITION_ATOM))
   .andFollowedBy(STATEMENT_RHS_VALUE)
   .map(
     ([maybeReturn, keyMap, keyType, maybeCondition, value]): SrcNode<
@@ -581,7 +584,7 @@ export const OPERATION_OUTCOME_STATEMENT: SyntaxRuleSrc<OutcomeStatementNode> = 
   'return'
 )
   .or(SyntaxRule.identifier('fail'))
-  .followedBy(SyntaxRule.optional(STATEMENT_CONDITION))
+  .followedBy(SyntaxRule.optional(CONDITION_ATOM))
   .andFollowedBy(STATEMENT_RHS_VALUE)
   .map(
     ([keyType, maybeCondition, value]): SrcNode<OutcomeStatementNode> => {

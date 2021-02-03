@@ -1,5 +1,12 @@
 ## [Unreleased]
 
+### Added
+* `call foreach` map rule
+
+### Changed
+* Map validator uses `MapAstVisitor` from ast package
+* Profile io validator uses `ProfileAstVisitor` from ast package
+
 ### Fixed
 * Allow enum inside list in Profile IO Analyzer
 

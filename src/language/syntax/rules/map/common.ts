@@ -1,5 +1,7 @@
 import {
   AssignmentNode,
+  ConditionAtomNode,
+  IterationAtomNode,
   JessieExpressionNode,
   LiteralNode,
   MapDefinitionNode,
@@ -7,7 +9,6 @@ import {
   MapHeaderNode,
   OperationDefinitionNode,
   PrimitiveLiteralNode,
-  StatementConditionNode,
 } from '@superfaceai/ast';
 
 import {
@@ -142,16 +143,16 @@ export function JESSIE_EXPRESSION_FACTORY(
 /**
  * if (<jessie>)
  */
-export const STATEMENT_CONDITION: SyntaxRuleSrc<StatementConditionNode> = SyntaxRule.identifier(
+export const CONDITION_ATOM: SyntaxRuleSrc<ConditionAtomNode> = SyntaxRule.identifier(
   'if'
 )
   .followedBy(SyntaxRule.separator('('))
   .andFollowedBy(JESSIE_EXPRESSION_FACTORY(')'))
   .andFollowedBy(SyntaxRule.separator(')'))
   .map(
-    ([key, _sepStart, expression, sepEnd]): SrcNode<StatementConditionNode> => {
+    ([key, _sepStart, expression, sepEnd]): SrcNode<ConditionAtomNode> => {
       return {
-        kind: 'StatementCondition',
+        kind: 'ConditionAtom',
         expression,
         location: key.location,
         span: {
@@ -162,6 +163,31 @@ export const STATEMENT_CONDITION: SyntaxRuleSrc<StatementConditionNode> = Syntax
     }
   )
   .peekUnknown();
+
+export const ITERATION_ATOM: SyntaxRuleSrc<IterationAtomNode> = SyntaxRule.identifier(
+  'foreach'
+)
+  .followedBy(SyntaxRule.separator('('))
+  .andFollowedBy(SyntaxRule.identifier())
+  .andFollowedBy(SyntaxRule.identifier('of'))
+  .andFollowedBy(JESSIE_EXPRESSION_FACTORY(')'))
+  .andFollowedBy(SyntaxRule.separator(')'))
+  .map(
+    ([key, _sepStart, iterationVariable, _ofKEy, iterable, sepEnd]): SrcNode<
+      IterationAtomNode
+    > => {
+      return {
+        kind: 'IterationAtom',
+        iterationVariable: iterationVariable.data.identifier,
+        iterable,
+        location: key.location,
+        span: {
+          start: key.span.start,
+          end: sepEnd.span.end,
+        },
+      };
+    }
+  );
 
 const ASSIGNMENT_KEY = SyntaxRule.identifier().or(SyntaxRule.string());
 export const ASSIGNMENT_PATH_KET = ASSIGNMENT_KEY.followedBy(
