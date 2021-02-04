@@ -457,14 +457,33 @@ describe('map strict', () => {
       const input = 'if ((() => { const a = 1; return { foo: a + 2 }; })())';
 
       const source = new Source(input);
-      const condition = parseRule(map.common.STATEMENT_CONDITION, source, true);
+      const condition = parseRule(map.common.CONDITION_ATOM, source, true);
 
       expect(condition).toMatchObject({
-        kind: 'StatementCondition',
+        kind: 'ConditionAtom',
         expression: {
           kind: 'JessieExpression',
           expression: '(function () { var a = 1; return { foo: a + 2 }; })()',
           source: '(() => { const a = 1; return { foo: a + 2 }; })()',
+        },
+      });
+    });
+
+    it('should parse iteration jessie epxression', () => {
+      const input =
+        'foreach (x of (() => { const x = [1, 2, 3]; x.push(4); return x; })())';
+
+      const source = new Source(input);
+      const condition = parseRule(map.common.ITERATION_ATOM, source, true);
+
+      expect(condition).toMatchObject({
+        kind: 'IterationAtom',
+        iterationVariable: 'x',
+        iterable: {
+          kind: 'JessieExpression',
+          expression:
+            '(function () { var x = [1, 2, 3]; x.push(4); return x; })()',
+          source: '(() => { const x = [1, 2, 3]; x.push(4); return x; })()',
         },
       });
     });

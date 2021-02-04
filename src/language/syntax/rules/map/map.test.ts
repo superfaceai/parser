@@ -243,7 +243,7 @@ describe('strict map syntax rules', () => {
       );
     });
 
-    it('should parse statement condition', () => {
+    it('should parse condition atom', () => {
       const tokens = [
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'if' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '(' }),
@@ -257,16 +257,48 @@ describe('strict map syntax rules', () => {
       ];
       const stream = new ArrayLexerStream(tokens);
 
-      const rule = map.common.STATEMENT_CONDITION;
+      const rule = map.common.CONDITION_ATOM;
 
       expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
           {
-            kind: 'StatementCondition',
+            kind: 'ConditionAtom',
             expression: tesMatchJessie(tokens[2]),
           },
           tokens[0],
           tokens[3]
+        )
+      );
+    });
+
+    it('should parse iteration atom', () => {
+      const tokens = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'foreach' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '(' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'i' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'of' }),
+        tesTok({
+          kind: LexerTokenKind.JESSIE_SCRIPT,
+          script: '[1, 2, 3]',
+          sourceScript: '[1, 2, 3]',
+          sourceMap: '',
+        }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: ')' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = map.common.ITERATION_ATOM;
+
+      expect(rule.tryMatch(stream)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'IterationAtom',
+            iterationVariable: (tokens[2].data as IdentifierTokenData)
+              .identifier,
+            iterable: tesMatchJessie(tokens[4]),
+          },
+          tokens[0],
+          tokens[5]
         )
       );
     });
@@ -304,7 +336,7 @@ describe('strict map syntax rules', () => {
             terminateFlow: true,
             condition: tesMatch(
               {
-                kind: 'StatementCondition',
+                kind: 'ConditionAtom',
                 expression: tesMatchJessie(tokens[3]),
               },
               tokens[1],
@@ -352,7 +384,7 @@ describe('strict map syntax rules', () => {
             terminateFlow: true,
             condition: tesMatch(
               {
-                kind: 'StatementCondition',
+                kind: 'ConditionAtom',
                 expression: tesMatchJessie(tokens[3]),
               },
               tokens[1],
@@ -401,7 +433,7 @@ describe('strict map syntax rules', () => {
             terminateFlow: false,
             condition: tesMatch(
               {
-                kind: 'StatementCondition',
+                kind: 'ConditionAtom',
                 expression: tesMatchJessie(tokens[4]),
               },
               tokens[2],
@@ -450,7 +482,7 @@ describe('strict map syntax rules', () => {
             terminateFlow: false,
             condition: tesMatch(
               {
-                kind: 'StatementCondition',
+                kind: 'ConditionAtom',
                 expression: tesMatchJessie(tokens[4]),
               },
               tokens[2],
@@ -663,7 +695,7 @@ describe('strict map syntax rules', () => {
             kind: 'SetStatement',
             condition: tesMatch(
               {
-                kind: 'StatementCondition',
+                kind: 'ConditionAtom',
                 expression: tesMatchJessie(tokens[3]),
               },
               tokens[1],
@@ -1007,7 +1039,7 @@ describe('strict map syntax rules', () => {
           kind: 'CallStatement',
           condition: tesMatch(
             {
-              kind: 'StatementCondition',
+              kind: 'ConditionAtom',
               expression: tesMatchJessie(tokens[6]),
             },
             tokens[4],

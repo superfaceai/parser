@@ -358,7 +358,7 @@ describe('MapValidator', () => {
                         terminateFlow: false,
                         isError: false,
                         condition: {
-                          kind: 'StatementCondition',
+                          kind: 'ConditionAtom',
                           expression: {
                             kind: 'JessieExpression',
                             expression: 'input.text',
@@ -383,7 +383,7 @@ describe('MapValidator', () => {
                         terminateFlow: false,
                         isError: true,
                         condition: {
-                          kind: 'StatementCondition',
+                          kind: 'ConditionAtom',
                           expression: {
                             kind: 'JessieExpression',
                             expression: '!input.from',
@@ -481,7 +481,7 @@ describe('MapValidator', () => {
                         terminateFlow: false,
                         isError: true,
                         condition: {
-                          kind: 'StatementCondition',
+                          kind: 'ConditionAtom',
                           expression: {
                             kind: 'JessieExpression',
                             expression: '!input.from',
@@ -886,7 +886,7 @@ describe('MapValidator', () => {
                         terminateFlow: false,
                         isError: true,
                         condition: {
-                          kind: 'StatementCondition',
+                          kind: 'ConditionAtom',
                           expression: {
                             kind: 'JessieExpression',
                             expression: '!input.person',
@@ -943,7 +943,7 @@ describe('MapValidator', () => {
                         terminateFlow: false,
                         isError: true,
                         condition: {
-                          kind: 'StatementCondition',
+                          kind: 'ConditionAtom',
                           expression: {
                             kind: 'JessieExpression',
                             expression: '!input.person',
@@ -968,7 +968,7 @@ describe('MapValidator', () => {
                         terminateFlow: false,
                         isError: false,
                         condition: {
-                          kind: 'StatementCondition',
+                          kind: 'ConditionAtom',
                           expression: {
                             kind: 'JessieExpression',
                             expression: 'input.text',
@@ -1059,7 +1059,7 @@ describe('MapValidator', () => {
                         terminateFlow: false,
                         isError: true,
                         condition: {
-                          kind: 'StatementCondition',
+                          kind: 'ConditionAtom',
                           expression: {
                             kind: 'JessieExpression',
                             expression: '!input.some.person',
@@ -1116,7 +1116,7 @@ describe('MapValidator', () => {
                         terminateFlow: false,
                         isError: true,
                         condition: {
-                          kind: 'StatementCondition',
+                          kind: 'ConditionAtom',
                           expression: {
                             kind: 'JessieExpression',
                             expression: '!input.person',
@@ -1149,7 +1149,7 @@ describe('MapValidator', () => {
                         terminateFlow: false,
                         isError: false,
                         condition: {
-                          kind: 'StatementCondition',
+                          kind: 'ConditionAtom',
                           expression: {
                             kind: 'JessieExpression',
                             expression: 'input.text',
@@ -1250,7 +1250,7 @@ describe('MapValidator', () => {
                         terminateFlow: false,
                         isError: false,
                         condition: {
-                          kind: 'StatementCondition',
+                          kind: 'ConditionAtom',
                           expression: {
                             kind: 'JessieExpression',
                             expression: '!input.some.person',
@@ -1602,7 +1602,7 @@ describe('MapValidator', () => {
                         terminateFlow: false,
                         isError: true,
                         condition: {
-                          kind: 'StatementCondition',
+                          kind: 'ConditionAtom',
                           expression: {
                             kind: 'JessieExpression',
                             expression: '!input.person',
@@ -1659,7 +1659,7 @@ describe('MapValidator', () => {
                         terminateFlow: false,
                         isError: true,
                         condition: {
-                          kind: 'StatementCondition',
+                          kind: 'ConditionAtom',
                           expression: {
                             kind: 'JessieExpression',
                             expression: '!input.person',
@@ -1684,7 +1684,7 @@ describe('MapValidator', () => {
                         terminateFlow: false,
                         isError: false,
                         condition: {
-                          kind: 'StatementCondition',
+                          kind: 'ConditionAtom',
                           expression: {
                             kind: 'JessieExpression',
                             expression: 'input.text',
@@ -1775,7 +1775,7 @@ describe('MapValidator', () => {
                         terminateFlow: false,
                         isError: true,
                         condition: {
-                          kind: 'StatementCondition',
+                          kind: 'ConditionAtom',
                           expression: {
                             kind: 'JessieExpression',
                             expression: '!input.channel',
@@ -1823,7 +1823,7 @@ describe('MapValidator', () => {
                         terminateFlow: false,
                         isError: true,
                         condition: {
-                          kind: 'StatementCondition',
+                          kind: 'ConditionAtom',
                           expression: {
                             kind: 'JessieExpression',
                             expression: '!input.text',
@@ -1856,7 +1856,7 @@ describe('MapValidator', () => {
                         terminateFlow: false,
                         isError: false,
                         condition: {
-                          kind: 'StatementCondition',
+                          kind: 'ConditionAtom',
                           expression: {
                             kind: 'JessieExpression',
                             expression: 'input.text',
@@ -1957,7 +1957,7 @@ describe('MapValidator', () => {
                         terminateFlow: false,
                         isError: false,
                         condition: {
-                          kind: 'StatementCondition',
+                          kind: 'ConditionAtom',
                           expression: {
                             kind: 'JessieExpression',
                             expression: '!input.some.person',
