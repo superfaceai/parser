@@ -105,9 +105,10 @@ expect.extend({
   },
 });
 
-class TestSyntaxRule<R extends RuleResult<T>, T = unknown> extends SyntaxRule<
-  T
-> {
+class TestSyntaxRule<
+  R extends RuleResult<T>,
+  T = unknown
+> extends SyntaxRule<T> {
   constructor(public result?: R, public name?: string) {
     super();
   }
@@ -283,8 +284,8 @@ df'
         expect(rule.tryMatch(tokens)).toStrictEqual({
           ...match[0].result,
           optionalAttempts: new MatchAttempts(undefined, [
-            ...nomatch[0].result?.attempts.rules,
-            ...match[0].result?.optionalAttempts?.rules,
+            ...(nomatch[0].result?.attempts.rules ?? []),
+            ...(match[0].result?.optionalAttempts?.rules ?? []),
           ]),
         });
       });
@@ -294,8 +295,8 @@ df'
         expect(rule.tryMatch(tokens)).toStrictEqual({
           kind: 'nomatch',
           attempts: new MatchAttempts(undefined, [
-            ...nomatch[0].result?.attempts.rules,
-            ...nomatch[1].result?.attempts.rules,
+            ...(nomatch[0].result?.attempts.rules ?? []),
+            ...(nomatch[1].result?.attempts.rules ?? []),
           ]),
         });
       });
@@ -312,8 +313,8 @@ df'
         expect(rule.tryMatch(tokens)).toStrictEqual({
           kind: 'nomatch',
           attempts: new MatchAttempts(undefined, [
-            ...nomatch[0].result?.attempts.rules,
-            ...match[0].result?.optionalAttempts?.rules,
+            ...(nomatch[0].result?.attempts.rules ?? []),
+            ...(match[0].result?.optionalAttempts?.rules ?? []),
           ]),
         });
       });
@@ -324,8 +325,8 @@ df'
           kind: 'match',
           match: [match[0].result?.match, match[1].result?.match],
           optionalAttempts: new MatchAttempts(undefined, [
-            ...match[0].result?.optionalAttempts?.rules,
-            ...match[1].result?.optionalAttempts?.rules,
+            ...(match[0].result?.optionalAttempts?.rules ?? []),
+            ...(match[1].result?.optionalAttempts?.rules ?? []),
           ]),
         });
       });

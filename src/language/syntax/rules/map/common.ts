@@ -173,9 +173,14 @@ export const ITERATION_ATOM: SyntaxRuleSrc<IterationAtomNode> = SyntaxRule.ident
   .andFollowedBy(JESSIE_EXPRESSION_FACTORY(')'))
   .andFollowedBy(SyntaxRule.separator(')'))
   .map(
-    ([key, _sepStart, iterationVariable, _ofKEy, iterable, sepEnd]): SrcNode<
-      IterationAtomNode
-    > => {
+    ([
+      key,
+      _sepStart,
+      iterationVariable,
+      _ofKEy,
+      iterable,
+      sepEnd,
+    ]): SrcNode<IterationAtomNode> => {
       return {
         kind: 'IterationAtom',
         iterationVariable: iterationVariable.data.identifier,

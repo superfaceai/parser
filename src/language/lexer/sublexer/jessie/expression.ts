@@ -79,10 +79,13 @@ export function tryParseJessieScriptExpression(
     }
 
     // Look ahead for a termination token
+    // always break at highest level if EOF or single line comment is found
     if (
       depthCounter === 0 &&
       templateStringDepthCounter === 0 &&
-      termTokens.includes(token)
+      (termTokens.includes(token) ||
+        token === ts.SyntaxKind.EndOfFileToken ||
+        token === ts.SyntaxKind.SingleLineCommentTrivia)
     ) {
       break;
     }
