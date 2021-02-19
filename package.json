@@ -19,7 +19,6 @@
   },
   "scripts": {
     "watch": "yarn build:tsc && parcel serve lib/index.js --detailed-report",
-    "build:parcel": "yarn build:tsc && parcel build lib/index.js --detailed-report",
     "build:tsc": "tsc -p tsconfig.release.json",
     "build:simple": "tsc -p tsconfig.simplebuild.json",
     "build": "yarn build:simple",
@@ -44,7 +43,6 @@
     "eslint-plugin-jest": "^24.1.5",
     "eslint-plugin-simple-import-sort": "^7.0.0",
     "jest": "^26.6.3",
-    "parcel": "^2.0.0-beta.1",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
     "ts-jest": "^26.5.1"
