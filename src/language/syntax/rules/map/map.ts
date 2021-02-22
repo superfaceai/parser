@@ -167,9 +167,13 @@ const SET_STATEMENT_FULL: SyntaxRuleSrc<SetStatementNode> = SyntaxRule.identifie
   .andFollowedBy(SyntaxRule.repeat(SET_BLOCK_ASSIGNMENT))
   .andFollowedBy(SyntaxRule.separator('}'))
   .map(
-    ([key, maybeCondition, _sepStart, assignments, sepEnd]): SrcNode<
-      SetStatementNode
-    > => {
+    ([
+      key,
+      maybeCondition,
+      _sepStart,
+      assignments,
+      sepEnd,
+    ]): SrcNode<SetStatementNode> => {
       return {
         kind: 'SetStatement',
         condition: maybeCondition,
@@ -559,9 +563,13 @@ export const MAP_OUTCOME_STATEMENT: SyntaxRuleSrc<OutcomeStatementNode> = Syntax
   .andFollowedBy(SyntaxRule.optional(CONDITION_ATOM))
   .andFollowedBy(STATEMENT_RHS_VALUE)
   .map(
-    ([maybeReturn, keyMap, keyType, maybeCondition, value]): SrcNode<
-      OutcomeStatementNode
-    > => {
+    ([
+      maybeReturn,
+      keyMap,
+      keyType,
+      maybeCondition,
+      value,
+    ]): SrcNode<OutcomeStatementNode> => {
       return {
         kind: 'OutcomeStatement',
         isError: keyType.data.identifier === 'error',
@@ -632,9 +640,13 @@ export const MAP_DEFINITION: SyntaxRuleSrc<MapDefinitionNode> = documentedNode(
     .andFollowedBy(SyntaxRule.optional(SyntaxRule.repeat(MAP_SUBSTATEMENT)))
     .andFollowedBy(SyntaxRule.separator('}'))
     .map(
-      ([key, name, _sepStart, maybeStatements, sepEnd]): SrcNode<
-        MapDefinitionNode
-      > => {
+      ([
+        key,
+        name,
+        _sepStart,
+        maybeStatements,
+        sepEnd,
+      ]): SrcNode<MapDefinitionNode> => {
         return {
           kind: 'MapDefinition',
           name: name.data.identifier,
@@ -661,9 +673,13 @@ export const OPERATION_DEFINITION: SyntaxRuleSrc<OperationDefinitionNode> = docu
     )
     .andFollowedBy(SyntaxRule.separator('}'))
     .map(
-      ([key, name, _sepStart, maybeStatements, sepEnd]): SrcNode<
-        OperationDefinitionNode
-      > => {
+      ([
+        key,
+        name,
+        _sepStart,
+        maybeStatements,
+        sepEnd,
+      ]): SrcNode<OperationDefinitionNode> => {
         return {
           kind: 'OperationDefinition',
           name: name.data.identifier,

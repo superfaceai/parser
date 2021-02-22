@@ -174,6 +174,7 @@ describe('lexer', () => {
       for (const expected of expectedTokens) {
         const actual = lexer.advance();
 
+        /* eslint-disable jest/no-conditional-expect */
         if (typeof expected === 'object') {
           expect(actual).toHaveTokenData(expected);
         } else {
@@ -182,6 +183,7 @@ describe('lexer', () => {
             operator: expected,
           });
         }
+        /* eslint-enable jest/no-conditional-expect */
       }
     });
 
@@ -208,6 +210,7 @@ describe('lexer', () => {
       for (const expected of expectedTokens) {
         const actual = lexer.advance();
 
+        /* eslint-disable jest/no-conditional-expect */
         if (typeof expected === 'object') {
           expect(actual).toHaveTokenData(expected);
         } else {
@@ -216,6 +219,7 @@ describe('lexer', () => {
             literal: expected,
           });
         }
+        /* eslint-enable jest/no-conditional-expect */
       }
     });
 
@@ -251,6 +255,7 @@ describe('lexer', () => {
       for (const expected of expectedTokens) {
         const actual = lexer.advance();
 
+        /* eslint-disable jest/no-conditional-expect */
         if (typeof expected === 'object') {
           expect(actual).toHaveTokenData(expected);
         } else {
@@ -259,6 +264,7 @@ describe('lexer', () => {
             string: expected,
           });
         }
+        /* eslint-enable jest/no-conditional-expect */
       }
     });
 
@@ -287,6 +293,7 @@ describe('lexer', () => {
       for (const expected of expectedTokens) {
         const actual = lexer.advance();
 
+        /* eslint-disable jest/no-conditional-expect */
         if (typeof expected === 'object') {
           expect(actual).toHaveTokenData(expected);
         } else {
@@ -295,6 +302,7 @@ describe('lexer', () => {
             identifier: expected,
           });
         }
+        /* eslint-enable jest/no-conditional-expect */
       }
     });
 
@@ -321,6 +329,7 @@ describe('lexer', () => {
       for (const expected of expectedTokens) {
         const actual = lexer.advance();
 
+        /* eslint-disable jest/no-conditional-expect */
         if (typeof expected === 'object') {
           expect(actual).toHaveTokenData(expected);
         } else {
@@ -329,6 +338,7 @@ describe('lexer', () => {
             identifier: expected,
           });
         }
+        /* eslint-enable jest/no-conditional-expect */
       }
     });
 
@@ -602,6 +612,47 @@ ng2"
         kind: LexerTokenKind.OPERATOR,
         operator: ';',
       });
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.SEPARATOR,
+        separator: 'EOF',
+      });
+    });
+
+    test('jessie trailing comment', () => {
+      const lexer = new Lexer(
+        new Source('foo = "hello world" // greet the world')
+      );
+      lexer.tokenKindFilter[LexerTokenKind.COMMENT] = false;
+
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.SEPARATOR,
+        separator: 'SOF',
+      });
+
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.IDENTIFIER,
+        identifier: 'foo',
+      });
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.OPERATOR,
+        operator: '=',
+      });
+
+      expect(
+        lexer.advance({
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+        })
+      ).toHaveTokenData({
+        kind: LexerTokenKind.JESSIE_SCRIPT,
+        sourceMap: 'not checked',
+        sourceScript: 'not checked',
+        script: '"hello world"',
+      });
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.COMMENT,
+        comment: ' greet the world',
+      });
+
       expect(lexer.advance()).toHaveTokenData({
         kind: LexerTokenKind.SEPARATOR,
         separator: 'EOF',

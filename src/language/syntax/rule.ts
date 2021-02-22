@@ -461,7 +461,7 @@ export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
     super();
   }
 
-  static chainOr<R>(...rest: []): undefined;
+  static chainOr(...rest: []): undefined;
   static chainOr<R>(...rest: SyntaxRule<R>[]): SyntaxRule<R>;
   static chainOr<R>(...rest: SyntaxRule<R>[]): SyntaxRule<R> | undefined {
     if (rest.length === 0) {

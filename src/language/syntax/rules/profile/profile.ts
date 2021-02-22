@@ -204,9 +204,9 @@ export const LIST_DEFINITION: SyntaxRuleSrc<ListDefinitionNode> = SyntaxRule.sep
     }
   );
 
-const NON_UNION_TYPE: SyntaxRule<SrcNode<
-  Exclude<Type, UnionDefinitionNode>
->> = BASIC_TYPE.or(LIST_DEFINITION)
+const NON_UNION_TYPE: SyntaxRule<
+  SrcNode<Exclude<Type, UnionDefinitionNode>>
+> = BASIC_TYPE.or(LIST_DEFINITION)
   .followedBy(SyntaxRule.optional(SyntaxRule.operator('!')))
   .map(
     (matches): SrcNode<SrcNode<Exclude<Type, UnionDefinitionNode>>> => {
@@ -266,9 +266,12 @@ export const FIELD_DEFINITION: SyntaxRuleSrc<FieldDefinitionNode> = documentedNo
         .or(SyntaxRule.lookahead(SyntaxRule.newline()))
     )
     .map(
-      ([name, maybeRequired, maybeType, _maybeEnd]): SrcNode<
-        FieldDefinitionNode
-      > => {
+      ([
+        name,
+        maybeRequired,
+        maybeType,
+        _maybeEnd,
+      ]): SrcNode<FieldDefinitionNode> => {
         return {
           kind: 'FieldDefinition',
           fieldName: name.data.identifier,
@@ -359,9 +362,9 @@ function USECASE_SLOT_DEFINITION_FACTORY<T extends Type>(
   );
 }
 
-const USECASE_SAFETY: SyntaxRule<LexerTokenMatch<
-  IdentifierTokenData
->> = SyntaxRule.identifier('safe')
+const USECASE_SAFETY: SyntaxRule<
+  LexerTokenMatch<IdentifierTokenData>
+> = SyntaxRule.identifier('safe')
   .or(SyntaxRule.identifier('unsafe'))
   .or(SyntaxRule.identifier('idempotent'));
 
