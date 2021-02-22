@@ -5,20 +5,24 @@
     "downlevelIteration": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "lib": ["ES2017"],
-    "module": "ESNext",
-    "rootDir": "./src",
-    "outDir": "./lib",
+    "lib": [],
+    "module": "CommonJS",
+    "outDir": "./dist",
     "moduleResolution": "node",
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
+    "resolveJsonModule": true,
     "sourceMap": true,
     "strict": true,
     "strictPropertyInitialization": true,
     "target": "ES5",
-    "typeRoots": ["node_modules/@types"]
+    "typeRoots": [
+      "node_modules/@types"
+    ]
   },
-  "include": ["src/**/*.ts"]
+  "include": [
+    "src/**/*.ts"
+  ]
 }

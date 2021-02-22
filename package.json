@@ -18,10 +18,8 @@
     "registry": "https://npm.pkg.github.com/"
   },
   "scripts": {
-    "watch": "yarn build:tsc && parcel serve lib/index.js --detailed-report",
     "build:tsc": "tsc -p tsconfig.release.json",
-    "build:simple": "tsc -p tsconfig.simplebuild.json",
-    "build": "yarn build:simple",
+    "build": "yarn build:tsc",
     "prebuild": "yarn clean",
     "clean": "rimraf dist/ && rimraf lib/",
     "test": "jest",
