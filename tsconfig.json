@@ -7,6 +7,7 @@
     "forceConsistentCasingInFileNames": true,
     "lib": [],
     "module": "CommonJS",
+    "rootDir": "./src",
     "outDir": "./dist",
     "moduleResolution": "node",
     "noFallthroughCasesInSwitch": true,
