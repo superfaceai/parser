@@ -3,6 +3,7 @@ import {
   HttpCallStatementNode,
   HttpRequestNode,
   HttpResponseHandlerNode,
+  HttpSecurityRequirement,
   InlineCallNode,
   JessieExpressionNode,
   LiteralNode,
@@ -14,8 +15,12 @@ import {
   SetStatementNode,
 } from '@superfaceai/ast';
 
+import { LexerTokenKind } from '../../../lexer';
 import { JessieExpressionTerminationToken } from '../../../lexer/sublexer/jessie/expression';
-import { SyntaxRuleFeatureOr } from '../../features';
+import {
+  SyntaxRuleFeatureOr,
+  SyntaxRuleFeatureSubstitute,
+} from '../../features';
 import { SyntaxRule, SyntaxRuleMutable, SyntaxRuleOr } from '../../rule';
 import { documentedNode, SrcNode, SyntaxRuleSrc } from '../common';
 import {
@@ -232,102 +237,59 @@ export function CALL_STATEMENT_FACTORY(
 
 // HTTP STATEMENT //
 
-const HTTP_CALL_STATEMENT_SECURITY_APIKEY = SyntaxRule.identifier('apikey')
-  .followedBy(
-    SyntaxRule.sameLine(
-      SyntaxRule.identifier('header').or(SyntaxRule.identifier('query'))
-    )
-  )
-  .andFollowedBy(SyntaxRule.sameLine(SyntaxRule.separator('{')))
-  .andFollowedBy(
-    SyntaxRule.identifier('name')
-      .followedBy(SyntaxRule.operator('='))
-      .andFollowedBy(SyntaxRule.string())
-  )
-  .andFollowedBy(SyntaxRule.separator('}'))
-  .map(([key, placement, _sepStart, [_keyName, _op, name], sepEnd]) => {
-    let placementValue: 'query' | 'header';
-    switch (placement.data.identifier) {
-      case 'query':
-        placementValue = 'query';
-        break;
-
-      case 'header':
-        placementValue = 'header';
-        break;
-
-      default:
-        throw 'Unexpected apikey placement. This is an error in the syntax rule definition';
+const HTTP_CALL_STATEMENT_SECURITY_REQUIREMENT: SyntaxRuleSrc<{
+  id?: HttpSecurityRequirement['id'];
+  scheme?: HttpSecurityRequirement['scheme'];
+}> = SyntaxRule.identifier('security')
+  .followedBy(SyntaxRule.string().or(SyntaxRule.identifier('none')))
+  .andFollowedBy(SyntaxRule.lookahead(SyntaxRule.newline()))
+  .map(([key, id]) => {
+    let idString = undefined;
+    if (id.data.kind === LexerTokenKind.STRING) {
+      idString = id.data.string;
     }
 
     return {
-      security: {
-        scheme: 'apikey',
-        placement: placementValue,
-        name: name.data.string,
-      },
+      id: idString,
       location: key.location,
       span: {
         start: key.span.start,
-        end: sepEnd.span.end,
+        end: id.span.end,
       },
-    } as const;
+    };
   });
 
-const HTTP_CALL_STATEMENT_SECURITY_BASIC = SyntaxRule.identifier('basic').map(
-  match => {
-    return {
-      security: {
-        scheme: 'basic',
-      },
-      location: match.location,
-      span: match.span,
-    } as const;
-  }
-);
+const HTTP_CALL_STATEMENT_SECURITY_REQUIREMENTS = new SyntaxRuleFeatureSubstitute(
+  HTTP_CALL_STATEMENT_SECURITY_REQUIREMENT.map(s => [s]),
+  'multiple_security_schemes',
+  SyntaxRule.repeat(HTTP_CALL_STATEMENT_SECURITY_REQUIREMENT)
+).map(arr => {
+  const first = arr[0];
+  const last = arr[arr.length - 1];
 
-const HTTP_CALL_STATEMENT_SECURITY_BEARER = SyntaxRule.identifier('bearer').map(
-  match => {
-    return {
-      security: {
-        scheme: 'bearer',
-      },
-      location: match.location,
-      span: match.span,
-    } as const;
-  }
-);
+  const requirements: HttpSecurityRequirement[] = arr
+    .filter(elem => elem.id !== undefined)
+    .map(req => {
+      if (typeof req.id !== 'string') {
+        // .filter API is.. lacking
+        throw 'unreachable';
+      }
 
-const HTTP_CALL_STATEMENT_SECURITY_NONE = SyntaxRule.identifier('none').map(
-  match => {
-    return {
-      security: {
-        scheme: 'none',
-      },
-      location: match.location,
-      span: match.span,
-    } as const;
-  }
-);
+      return {
+        id: req.id,
+        scheme: req.scheme,
+      };
+    });
 
-const HTTP_CALL_STATEMENT_SECURITY = SyntaxRule.identifier('security')
-  .followedBy(
-    SyntaxRule.sameLine(
-      HTTP_CALL_STATEMENT_SECURITY_APIKEY.or(HTTP_CALL_STATEMENT_SECURITY_BASIC)
-        .or(HTTP_CALL_STATEMENT_SECURITY_BEARER)
-        .or(HTTP_CALL_STATEMENT_SECURITY_NONE)
-    )
-  )
-  .map(([key, security]) => {
-    return {
-      security: security.security,
-      location: key.location,
-      span: {
-        start: key.span.start,
-        end: security.span.end,
-      },
-    } as const;
-  });
+  return {
+    security: requirements,
+    location: first.location,
+    span: {
+      start: first.span.start,
+      end: last.span.end,
+    },
+  };
+});
 
 const HTTP_CALL_STATEMENT_REQUEST_QUERY_SLOT = SyntaxRule.identifier(
   'query'
@@ -417,7 +379,7 @@ export const HTTP_CALL_STATEMENT_REQUEST = SyntaxRule.identifier('request')
 
 const HTTP_REQUEST_OPTIONAL: SyntaxRule<
   SrcNode<HttpRequestNode> | undefined
-> = SyntaxRule.optional(HTTP_CALL_STATEMENT_SECURITY)
+> = SyntaxRule.optional(HTTP_CALL_STATEMENT_SECURITY_REQUIREMENTS)
   .followedBy(SyntaxRule.optional(HTTP_CALL_STATEMENT_REQUEST))
   .map(([maybeSecurity, maybeRequest]):
     | SrcNode<HttpRequestNode>
@@ -433,23 +395,20 @@ const HTTP_REQUEST_OPTIONAL: SyntaxRule<
           end: maybeRequest.span.end,
         },
       };
-    }
-
-    if (maybeSecurity !== undefined) {
+    } else if (maybeSecurity !== undefined) {
       return {
         kind: 'HttpRequest',
         ...maybeSecurity,
       };
-    }
-
-    if (maybeRequest !== undefined) {
+    } else if (maybeRequest !== undefined) {
       return {
         kind: 'HttpRequest',
         ...maybeRequest,
+        security: [],
       };
+    } else {
+      return undefined;
     }
-
-    return undefined;
   });
 
 function HTTP_CALL_STATEMENT_RESPONSE_HANDLER(

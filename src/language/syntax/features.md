@@ -63,3 +63,21 @@ http GET "url" {
 	request "application/json" "en-US" body = "something"
 }
 ```
+
+### `multiple_security_schemes`
+
+Allows multiple security schemes:
+
+```
+// normal
+http GET "url" {
+	security "my_token"
+}
+
+// multiple
+http GET "url" {
+	security "my_token"
+	security "my_apikey"
+	security "my_querykey"
+}
+```

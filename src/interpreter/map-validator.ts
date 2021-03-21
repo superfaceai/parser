@@ -229,7 +229,7 @@ export class MapValidator implements MapAstVisitor {
         context: {
           path: this.getPath(node),
           expected: version,
-          actual: node.profile.version,
+          actual: { major, minor },
         },
       });
     }

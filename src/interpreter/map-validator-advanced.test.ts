@@ -347,6 +347,7 @@ describe('MapValidator', () => {
                       },
                     ],
                   },
+                  security: [],
                 },
                 responseHandlers: [
                   {
@@ -446,6 +447,7 @@ describe('MapValidator', () => {
                       },
                     ],
                   },
+                  security: [],
                 },
                 responseHandlers: [
                   {
@@ -544,6 +546,7 @@ describe('MapValidator', () => {
                       },
                     ],
                   },
+                  security: [],
                 },
                 responseHandlers: [
                   {
@@ -875,6 +878,7 @@ describe('MapValidator', () => {
                       },
                     ],
                   },
+                  security: [],
                 },
                 responseHandlers: [
                   {
@@ -1048,6 +1052,7 @@ describe('MapValidator', () => {
                       },
                     ],
                   },
+                  security: [],
                 },
                 responseHandlers: [
                   {
@@ -1221,6 +1226,7 @@ describe('MapValidator', () => {
                       },
                     ],
                   },
+                  security: [],
                 },
                 responseHandlers: [
                   {
@@ -1591,6 +1597,7 @@ describe('MapValidator', () => {
                       },
                     ],
                   },
+                  security: [],
                 },
                 responseHandlers: [
                   {
@@ -1764,6 +1771,7 @@ describe('MapValidator', () => {
                       },
                     ],
                   },
+                  security: [],
                 },
                 responseHandlers: [
                   {
@@ -1928,6 +1936,7 @@ describe('MapValidator', () => {
                       },
                     ],
                   },
+                  security: [],
                 },
                 responseHandlers: [
                   {
@@ -2266,6 +2275,7 @@ describe('MapValidator', () => {
                       },
                     ],
                   },
+                  security: [],
                 },
                 responseHandlers: [
                   {
@@ -2372,6 +2382,7 @@ describe('MapValidator', () => {
                       },
                     ],
                   },
+                  security: [],
                 },
                 responseHandlers: [
                   {

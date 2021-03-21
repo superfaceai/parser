@@ -22,7 +22,6 @@ import {
   ObjectStructure,
   ProfileOutput,
   StructureType,
-  VersionStructure,
 } from './profile-output';
 import {
   isEnumStructure,
@@ -31,9 +30,15 @@ import {
   isPrimitiveStructure,
 } from './profile-output.utils';
 
-export function composeVersion(version: VersionStructure): string {
+export function composeVersion(version: {
+  major: number;
+  minor: number;
+  patch?: number;
+  label?: string;
+}): string {
   return (
-    `${version.major}.${version.minor}.${version.patch}` +
+    `${version.major}.${version.minor}` +
+    (version.patch ? `.${version.patch}` : '') +
     (version.label ? `-${version.label}` : '')
   );
 }
