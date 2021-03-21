@@ -23,6 +23,7 @@ import {
   PrimitiveLiteralNode,
   SetStatementNode,
 } from '@superfaceai/ast';
+import createDebug from 'debug';
 import * as ts from 'typescript';
 
 import { RETURN_CONSTRUCTS } from './constructs';
@@ -49,6 +50,8 @@ import {
   mergeVariables,
   validateObjectStructure,
 } from './utils';
+
+const debug = createDebug('superface-parser:map-validator');
 
 function assertUnreachable(node: never): never;
 function assertUnreachable(node: MapASTNode): never {
@@ -96,6 +99,8 @@ export class MapValidator implements MapAstVisitor {
   visit(node: LiteralNode | AssignmentNode): boolean;
   visit(node: MapASTNode): void;
   visit(node: MapASTNode): boolean | void {
+    debug('Visiting node: ' + node.kind);
+
     switch (node.kind) {
       case 'MapDocument':
         return this.visitMapDocumentNode(node);
