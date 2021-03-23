@@ -1,5 +1,16 @@
 ## [Unreleased]
 
+## [0.0.15] - 2021-03-23
+
+### Added
+* VERSION constant export
+* `multiple_security_requirements` parser feature
+
+### Changed
+* Map security requirements syntax
+
+## [0.0.14] - 2021-02-04
+
 ### Added
 * `call foreach` map rule
 
@@ -126,7 +137,10 @@
 * Documentation extraction from doc strings
 * Usecase result parsing as optional
 
-[Unreleased]: https://github.com/superfaceai/parser/compare/v0.0.11...HEAD
+[Unreleased]: https://github.com/superfaceai/parser/compare/v0.0.15...HEAD
+[0.0.15]: https://github.com/superfaceai/parser/compare/v0.0.14...v0.0.15
+[0.0.14]: https://github.com/superfaceai/parser/compare/v0.0.13...v0.0.14
+[0.0.13]: https://github.com/superfaceai/parser/compare/v0.0.12...v0.0.13
 [0.0.12]: https://github.com/superfaceai/parser/compare/v0.0.11...v0.0.12
 [0.0.11]: https://github.com/superfaceai/parser/compare/v0.0.10...v0.0.11
 [0.0.10]: https://github.com/superfaceai/parser/compare/v0.0.9...v0.0.10
