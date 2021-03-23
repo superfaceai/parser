@@ -36,6 +36,7 @@ export function parseEnvFeatures(): void {
     }
   });
 }
+parseEnvFeatures();
 
 export class SyntaxRuleFeatureSubstitute<B, E> extends SyntaxRule<B | E> {
   /** Remember the last execution feature state so we can correctly report it in errors even after features are toggled off. */
