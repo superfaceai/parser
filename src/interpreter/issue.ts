@@ -4,6 +4,7 @@ import {
   ObjectCollection,
   ObjectStructure,
   StructureType,
+  VersionStructure,
 } from './profile-output';
 
 export type ErrorContext = { path?: string[] };
@@ -22,14 +23,8 @@ export type ValidationIssue =
   | {
       kind: 'wrongProfileVersion';
       context: ErrorContext & {
-        expected: {
-          major: number;
-          minor: number;
-        };
-        actual: {
-          major: number;
-          minor: number;
-        };
+        expected: VersionStructure;
+        actual: VersionStructure;
       };
     }
   | {

@@ -199,7 +199,7 @@ export class MapValidator implements MapAstVisitor {
   }
 
   visitMapHeaderNode(node: MapHeaderNode): void {
-    const { scope, name, version } = this.profileOutput.header;
+    const { scope, name, version: profileVersion } = this.profileOutput.header;
 
     if (
       (scope && scope !== node.profile.scope) ||
@@ -227,14 +227,17 @@ export class MapValidator implements MapAstVisitor {
     }
 
     // map should be compatible with every patch version of a profile, therefore it should ignore patch version
-    const { major, minor } = node.profile.version;
-    if (major !== version.major || minor !== version.minor) {
+    const mapVersion = node.profile.version;
+    if (
+      mapVersion.major !== profileVersion.major ||
+      mapVersion.minor !== profileVersion.minor
+    ) {
       this.errors.push({
         kind: 'wrongProfileVersion',
         context: {
           path: this.getPath(node),
-          expected: version,
-          actual: { major, minor },
+          expected: profileVersion,
+          actual: mapVersion,
         },
       });
     }
