@@ -297,11 +297,9 @@
 								}
 							]
 						},
-						"security": {
-							"scheme": "apikey",
-							"placement": "header",
-							"name": "apikey-header"
-						}
+						"security": [{
+							"id": "my_apikey"
+						}]
 					},
 					"responseHandlers": [
 						{
@@ -442,9 +440,7 @@
 					"url": "/",
 					"request": {
 						"kind": "HttpRequest",
-						"security": {
-							"scheme": "none"
-						}
+						"security": []
 					}
 				}
 			]

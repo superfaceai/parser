@@ -444,7 +444,7 @@ describe('profile', () => {
 });
 
 const STRICT_MAP = fs
-  .readFileSync(join('fixtures', 'strict.map.slang'))
+  .readFileSync(join('fixtures', 'strict.map.suma'))
   .toString('utf-8');
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const STRICT_MAP_AST: Record<string, unknown> = JSON.parse(

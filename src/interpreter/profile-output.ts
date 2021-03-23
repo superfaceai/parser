@@ -108,13 +108,13 @@ export interface UseCaseStructure extends DocumentedStructure {
 }
 
 /**
- *  @interface VersionStructure - represents version of the profile
+ *  @interface VersionStructure - represents version of the profile or of map linking to a profile
  *  version = @1.0.0-rev100
  */
 export interface VersionStructure {
   major: number;
   minor: number;
-  patch: number;
+  patch?: number;
   label?: string;
 }
 

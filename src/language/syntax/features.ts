@@ -3,12 +3,14 @@ import { RuleResult, SyntaxRule, SyntaxRuleOr } from './rule';
 
 export type ParserFeature =
   | 'nested_object_literals'
-  | 'shorthand_http_request_slots';
+  | 'shorthand_http_request_slots'
+  | 'multiple_security_schemes';
 export const PARSER_FEATURES: {
   [P in ParserFeature]: boolean;
 } = {
   nested_object_literals: false,
   shorthand_http_request_slots: false,
+  multiple_security_schemes: false,
 };
 
 /**
@@ -40,8 +42,7 @@ export class SyntaxRuleFeatureSubstitute<B, E> extends SyntaxRule<B | E> {
   private lastExecutionFeatureState: boolean;
 
   /**
-   * If at runtime feature `feature` is enabled, acts as `enabled`, otherwise
-   * acts as `disabled`.
+   * If at runtime feature `feature` is enabled, acts as `enabled`, otherwise acts as `base`.
    */
   constructor(
     readonly base: SyntaxRule<B>,

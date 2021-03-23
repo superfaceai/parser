@@ -9016,6 +9016,7 @@ describe('MapValidator', () => {
                       },
                     ],
                   },
+                  security: [],
                 },
                 responseHandlers: [
                   {
@@ -9091,6 +9092,7 @@ describe('MapValidator', () => {
                       },
                     ],
                   },
+                  security: [],
                 },
                 responseHandlers: [
                   {
@@ -9701,7 +9703,7 @@ describe('MapValidator', () => {
       invalid(
         profileAst,
         [mapAst],
-        'MapHeader - Wrong Profile Version: expected 1.0.0, but got 2.0.0',
+        'MapHeader - Wrong Profile Version: profile is 1.0.0, but map requests 2.0',
         ''
       );
     });

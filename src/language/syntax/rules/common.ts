@@ -16,11 +16,12 @@ export type SrcNodeLocationInfo = {
 };
 
 // Node that has `span` and `location` non-optional.
-export type SrcNode<N extends ASTNodeBase> = N & {
-  span: NonNullable<N['span']>;
-  location: NonNullable<N['location']>;
+export type SrcNode<N> = N & {
+  span: NonNullable<ASTNodeBase['span']>;
+  location: NonNullable<ASTNodeBase['location']>;
 };
-export type SyntaxRuleSrc<N extends ASTNodeBase> = SyntaxRule<SrcNode<N>>;
+/** Syntax rule returning `N` with `SrcNode` properties `location` and `span`. */
+export type SyntaxRuleSrc<N> = SyntaxRule<SrcNode<N>>;
 
 export function documentedNode<N extends SrcNode<DocumentedNode & ASTNodeBase>>(
   rule: SyntaxRule<N>

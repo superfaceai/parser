@@ -6,9 +6,12 @@
 ### Changed
 * Map validator uses `MapAstVisitor` from ast package
 * Profile io validator uses `ProfileAstVisitor` from ast package
+* Map security requirements syntax
+* Updated ast dependency to `v0.0.22`
 
 ### Fixed
 * Allow enum inside list in Profile IO Analyzer
+* Map validator version error reporting with new version nodes
 
 ## [0.0.11] - 2021-01-19
 
