@@ -30,6 +30,12 @@ Use semver for the version tag. It must be in format of `v<major>.<minor>.<patch
 
 Github Actions workflow will pick up the release and publish it as one of the [packages](https://github.com/superfaceai/parser/packages).
 
+## Contributing
+
+**Please open an issue first if you want to make larger changes**
+
+Feel free to contribute! Please follow the [Contribution Guide](CONTRIBUTION_GUIDE.md).
+
 ## Licensing
 
 Licenses of `node_modules` are checked during push CI/CD for every commit. Only the following licenses are allowed:
