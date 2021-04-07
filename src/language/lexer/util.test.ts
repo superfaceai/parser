@@ -1,8 +1,6 @@
 import {
-  checkKeywordLiteral,
   countStarting,
   countStartingNumbersRadix,
-  countStartingWithNewlines,
   isAny,
   isBinaryNumber,
   isDecimalNumber,
@@ -18,6 +16,7 @@ import {
   isValidIdentifierChar,
   isValidIdentifierStartChar,
   isWhitespace,
+  tryKeywordLiteral,
 } from './util';
 
 describe('util', () => {
@@ -79,7 +78,7 @@ describe('util', () => {
       expect(countStartingNumbersRadix('9324test', 10)).toEqual(4);
       expect(countStartingNumbersRadix('0AfFtest', 16)).toEqual(4);
       expect(() => countStartingNumbersRadix('test', 12)).toThrow(
-        'Radix ${radix} is not supported (supported: 2, 8, 10, 16).'
+        'Radix 12 is not supported (supported: 2, 8, 10, 16).'
       );
     });
   });
@@ -124,17 +123,6 @@ describe('util', () => {
     });
   });
 
-  describe('countStartingWithNewlines', () => {
-    it('counts starting characters with newlines', () => {
-      const predicate = (_: number) => isDecimalNumber(_) || isNewline(_);
-      expect(countStartingWithNewlines(predicate, '\n\n\t95')).toEqual({
-        count: 2,
-        newlines: 2,
-        lastNewlineOffset: 1,
-      });
-    });
-  });
-
   describe('isStringLiteralChar', () => {
     it('checks if input is string literal char', () => {
       expect(isStringLiteralChar(34)).toEqual(true);
@@ -171,18 +159,18 @@ describe('util', () => {
     });
   });
 
-  describe('checkKeywordLiteral', () => {
-    it('checks keyword literal without predicate', () => {
-      expect(checkKeywordLiteral('testABC', 'test', 'someRet')).toBeUndefined();
+  describe('tryKeywordLiteral', () => {
+    it('tries keyword literal without predicate', () => {
+      expect(tryKeywordLiteral('testABC', 'test', 'someRet')).toBeUndefined();
     });
 
     it('checks keyword literal without starting string', () => {
-      expect(checkKeywordLiteral('ABC', 'test', 'someRet')).toBeUndefined();
+      expect(tryKeywordLiteral('ABC', 'test', 'someRet')).toBeUndefined();
     });
 
     it('checks keyword literal with predicate', () => {
       expect(
-        checkKeywordLiteral('testABC', 'test', 'someRet', isLetter)
+        tryKeywordLiteral('testABC', 'test', 'someRet', isLetter)
       ).toEqual({ length: 4, value: 'someRet' });
     });
   });

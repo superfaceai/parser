@@ -13,14 +13,7 @@ export const PARSER_FEATURES: {
   multiple_security_schemes: false,
 };
 
-/**
- * Returns an array of all features.
- */
-export function allFeatures(): ParserFeature[] {
-  return Object.keys(PARSER_FEATURES) as ParserFeature[];
-}
-
-function isFeature(input: string): input is ParserFeature {
+export function isFeature(input: string): input is ParserFeature {
   return input in PARSER_FEATURES;
 }
 export function parseEnvFeatures(): void {
@@ -35,6 +28,13 @@ export function parseEnvFeatures(): void {
       PARSER_FEATURES[feature] = !disable;
     }
   });
+}
+
+/**
+ * Returns an array of all features.
+ */
+export function allFeatures(): ParserFeature[] {
+  return Object.keys(PARSER_FEATURES) as ParserFeature[];
 }
 
 export class SyntaxRuleFeatureSubstitute<B, E> extends SyntaxRule<B | E> {

@@ -22,14 +22,14 @@ export function tryParseNumberLiteral(
   const prefixSlice = slice.slice(prefixLength); // strip the + or -
 
   // Parse the base prefix
-  const keywordLiteralBase = util.checkKeywordLiteral(
+  const keywordLiteralBase = util.tryKeywordLiteral(
     prefixSlice,
     '0x',
     16,
     util.isAny
   ) ??
-    util.checkKeywordLiteral(prefixSlice, '0b', 2, util.isAny) ??
-    util.checkKeywordLiteral(prefixSlice, '0o', 8, util.isAny) ?? {
+    util.tryKeywordLiteral(prefixSlice, '0b', 2, util.isAny) ??
+    util.tryKeywordLiteral(prefixSlice, '0o', 8, util.isAny) ?? {
       value: 10,
       length: 0,
     };
