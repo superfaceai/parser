@@ -70,7 +70,7 @@ export function countStartingNumbersRadix(str: string, radix: number): number {
       return countStarting(isHexadecimalNumber, str);
 
     default:
-      throw 'Radix ${radix} is not supported (supported: 2, 8, 10, 16).';
+      throw `Radix ${radix} is not supported (supported: 2, 8, 10, 16).`;
   }
 }
 
@@ -100,45 +100,6 @@ export function isNewline(char: number): boolean {
   return char === 10;
 }
 
-/**
- * Same as count starting, but also counts number of newlines counted and returns
- * the offset of last counted newline.
- */
-export function countStartingWithNewlines(
-  predicate: (_: number) => boolean,
-  str: string
-): { count: number; newlines: number; lastNewlineOffset?: number } {
-  let newlines = 0;
-  let lastNewlineOffset = undefined;
-  let position = 0;
-
-  // Use a closure that mutates environment
-  // Its hacky but it avoid duplicating the body of `countStarting`
-  // In general, this would be a short-circuiting fold over the input string.
-  const count = countStarting(char => {
-    // Returning false ends `countStarting`.
-    if (!predicate(char)) {
-      return false;
-    }
-
-    // Newline passed the predicate so count it in.
-    if (isNewline(char)) {
-      newlines += 1;
-      lastNewlineOffset = position;
-    }
-
-    position += 1;
-
-    return true;
-  }, str);
-
-  return {
-    count,
-    newlines,
-    lastNewlineOffset,
-  };
-}
-
 export function isStringLiteralChar(char: number): boolean {
   // ", '
   return char === 34 || char === 39;
@@ -164,12 +125,12 @@ export function isNotValidIdentifierChar(char: number): boolean {
 }
 
 /**
- * Checks if the following characters match the specified keyword and are followed
+ * Tries parsing the following characters to match the specified keyword and be followed
  * by a character matching an optional predicate.
  *
  * If the predicate is not specified, the default predicate is `isNotValidIdentifierChar`
  */
-export function checkKeywordLiteral<T>(
+export function tryKeywordLiteral<T>(
   str: string,
   keyword: string,
   ret: T,
