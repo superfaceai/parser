@@ -1,5 +1,15 @@
 ## [Unreleased]
 
+### Added
+* Automatic feature parsing from environment variables
+
+### Changed
+* Renamed `checkKeywordLiteral` to `tryKeywordLiteral`
+* Removed unused `countStartingWithNewlines`
+
+### Fixed
+* Fixed error produced by `countStartingNumbersRadix` to use string template
+
 ## [0.0.15] - 2021-03-23
 
 ### Added

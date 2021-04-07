@@ -1,3 +1,5 @@
+import { isNewline } from './lexer/util';
+
 /**
  * Human-readable location of a token inside source code.
  *
@@ -43,7 +45,7 @@ export function computeEndLocation(
   const charArray = Array.from(slice);
   const [newlines, newlineOffset] = charArray.reduce(
     (acc: [newlines: number, offset: number | undefined], char, index) => {
-      if (char === '\n') {
+      if (isNewline(char.charCodeAt(0))) {
         acc[0] += 1;
         acc[1] = index;
       }

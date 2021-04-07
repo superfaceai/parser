@@ -19,7 +19,7 @@ function tryParseScannerRules<T>(
 ): { value: T; length: number } | undefined {
   let result = undefined;
   for (const [key, [word, predicate]] of Object.entries(rules)) {
-    result = util.checkKeywordLiteral<T>(slice, key, word, predicate);
+    result = util.tryKeywordLiteral<T>(slice, key, word, predicate);
     if (result) {
       break;
     }
