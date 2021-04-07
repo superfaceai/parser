@@ -24,10 +24,9 @@ Follow these steps:
 
 1. **Fork & Clone** the repository  
 2. **Setup** the Superface Parser
-   - Install packages with `yarn install` or `npm install`
-   - Build with `yarn build` or `npm build`
-   - Run tests with `yarn test` or `npm test`
-   - Lint code with `yarn lint:fix` or `npm lint:fix`
+   - Create `.npmrc` with following line `@superfaceai:registry=https://npm.pkg.github.com`
+   - Authenticate to github npm package registry `npm login --registry=https://npm.pkg.github.com`
+   - Install the package by calling `yarn add @superfaceai/parser`
 3. **Commit** changes to your own branch by convention. See https://www.conventionalcommits.org/en/v1.0.0/
 4. **Push** your work back up to your fork  
 5. Submit a **Pull Request** so that we can review your changes
