@@ -27,7 +27,7 @@ Follow these steps:
    - Create `.npmrc` with following line `@superfaceai:registry=https://npm.pkg.github.com`
    - Authenticate to github npm package registry `npm login --registry=https://npm.pkg.github.com`
    - Install the package by calling `yarn add @superfaceai/parser`
-3. **Update** [CHANGELOG](CHANGELOG). See https://keepachangelog.com/en/1.0.0/
+3. **Update** [CHANGELOG](CHANGELOG.md). See https://keepachangelog.com/en/1.0.0/
 4. **Commit** changes to your own branch by convention. See https://www.conventionalcommits.org/en/v1.0.0/
 5. **Push** your work back up to your fork  
 6. Submit a **Pull Request** so that we can review your changes
