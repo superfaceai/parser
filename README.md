@@ -52,7 +52,7 @@ Now the repository is ready for code changes.
 
 The `package.json` also contains scripts (runnable by calling `yarn <script-name>` or `npm run <script-name>`):
 - `test` - run all tests
-- `lint` - lint the code (use `lint --fix` to run autofix)
+- `lint` - lint the code (use `lint:fix` to run autofix)
 - `format` - check the code formatting (use `format:fix` to autoformat)
 - `prepush` - run `test`, `lint` and `format` checks. This should run without errors before you push anything to git.
 
