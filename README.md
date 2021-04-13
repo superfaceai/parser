@@ -1,6 +1,6 @@
 # Parser
 
-![superface logo](https://github.com/superfaceai/parser/blob/chore/add-banner/docs/LogoGreen.svg)
+![superface logo](https://github.com/superfaceai/parser/blob/master/docs/LogoGreen.svg)
 
 ## Install
 
