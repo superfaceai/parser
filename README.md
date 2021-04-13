@@ -1,4 +1,6 @@
-# Superface Parser
+# Parser
+
+![superface logo](https://github.com/superfaceai/parser/blob/master/docs/LogoGreen.svg)
 
 Superface Parser compiles Superface profiles and maps into representation that can be interpreter using the Superface SDK.
 
@@ -7,6 +9,7 @@ Superface Parser compiles Superface profiles and maps into representation that c
 - [Install](#install)
 - [Usage](#usage)
 - [Development](#development)
+- [Support](#support)
 - [Publishing](#publishing)
 - [Maintainers](#maintainers)
 - [Contributing](#contributing)
@@ -57,6 +60,10 @@ The `package.json` also contains scripts (runnable by calling `yarn <script-name
 - `prepush` - run `test`, `lint` and `format` checks. This should run without errors before you push anything to git.
 
 Lastly, to build a local artifact run `yarn build` or `npm run build`.
+
+## Support
+
+If you need any additional support, have any questions or you just want to talk you can do that through our [documentation page](https://developer.superface.dev). 
 
 ## Publishing
 
