@@ -22,6 +22,10 @@ After doing this, you should be able to install the package by calling:
 yarn add @superfaceai/parser
 ```
 
+## Support
+
+If you need any additional support, have any questions or you just want to talk you can do that through our [documentation page](https://developer.superface.dev). 
+
 ## Publishing a new version
 
 Package publishing is done through GitHub release functionality.
