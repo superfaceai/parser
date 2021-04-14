@@ -2,6 +2,21 @@
 
 ![superface logo](https://github.com/superfaceai/parser/blob/master/docs/LogoGreen.svg)
 
+Superface Parser compiles Superface profiles and maps into representation that can be interpreter using the Superface SDK.
+
+## Table of Contents
+
+- [Background](#background)
+- [Install](#install)
+- [Usage](#usage)
+- [Security](#security)
+- [Support](#support)
+- [Development](#development)
+- [Publishing](#publishing)
+- [Maintainers](#maintainers)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Background
  Superface (super-interface) is a higher-order API, an abstraction on top of the modern APIs like GraphQL and REST. Superface is one interface to discover, connect, and query any capabilities available via conventional APIs. 
 
@@ -15,30 +30,61 @@
  
 ## Install
 
-To install the package, first create `.npmrc` file in your project root and put the following line into it.
+To install this package, first add the github superface repository to your npm config. Use your github name as your login and generate a personal access token with at least the `repo` and `read:packages` permissions in Github to use as password:
 
-```
-@superfaceai:registry=https://npm.pkg.github.com
-```
-
-Then authenticate to github npm package registry. Use your github name as your login and generate a personal access token with at least the `read:packages` permission in Github to use as password:
-
-```
-npm login --registry=https://npm.pkg.github.com
+```shell
+npm login --scope=@superfaceai --registry=https://npm.pkg.github.com
 ```
 
-After doing this, you should be able to install the package by calling:
+Then install the parser into one of your projects:
 
-```
+```shell
 yarn add @superfaceai/parser
 ```
+
+## Usage
+
+```ts
+const { basename } = require('path');
+const { readFileSync } = require('fs');
+const { inspect } = require('util');
+const { Source, parseProfile } = require('@superfaceai/parser');
+
+const path = process.argv[2];
+const content = readFileSync(path, 'utf-8');
+const source = new Source(content, basename(path));
+const result = parseProfile(source);
+
+console.log(inspect(result));
+```
+
 ## Security
 
 Superface is not man-in-the-middle so it does not require any access to secrets that are needed to communicate with provider API. Superface CLI only prepares super.json file with authorization fields in form of environment variable. You just set correct variables and communicate directly with provider API.
 
 You can find more information in [SDK repository](https://github.com/superfaceai/sdk-js/blob/master/SECURITY.md).
 
-## Publishing a new version
+## Support
+
+If you need any additional support, have any questions or you just want to talk you can do that through our [documentation page](https://developer.superface.dev). 
+
+## Development
+
+When developing, start with cloning the repository using `git clone https://github.com/superfaceai/parser.git` (or `git clone git@github.com:superfaceai/parser.git` if you have repository access).
+
+After cloning, the dependencies must be downloaded using `yarn install` or `npm install`.
+
+Now the repository is ready for code changes.
+
+The `package.json` also contains scripts (runnable by calling `yarn <script-name>` or `npm run <script-name>`):
+- `test` - run all tests
+- `lint` - lint the code (use `lint:fix` to run autofix)
+- `format` - check the code formatting (use `format:fix` to autoformat)
+- `prepush` - run `test`, `lint` and `format` checks. This should run without errors before you push anything to git.
+
+Lastly, to build a local artifact run `yarn build` or `npm run build`.
+
+## Publishing
 
 Package publishing is done through GitHub release functionality.
 
@@ -47,6 +93,11 @@ Package publishing is done through GitHub release functionality.
 Use semver for the version tag. It must be in format of `v<major>.<minor>.<patch>`.
 
 Github Actions workflow will pick up the release and publish it as one of the [packages](https://github.com/superfaceai/parser/packages).
+
+## Maintainers
+
+- [@Lukáš Valenta](https://github.com/lukas-valenta)
+- [@Edward](https://github.com/TheEdward162)
 
 ## Contributing
 
@@ -70,8 +121,9 @@ Licenses of `node_modules` are checked during push CI/CD for every commit. Only 
 - Unlicense
 - UNLICENSED
 
+Note: If editing the README, please conform to the [standard-readme](https://github.com/RichardLitt/standard-readme) specification.
+
 ## License
 
 The Superface Parser is licensed under the [MIT](LICENSE).
 © 2021 Superface
-
