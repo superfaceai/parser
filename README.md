@@ -6,15 +6,28 @@ Superface Parser compiles Superface profiles and maps into representation that c
 
 ## Table of Contents
 
+- [Background](#background)
 - [Install](#install)
 - [Usage](#usage)
-- [Development](#development)
+- [Security](#security)
 - [Support](#support)
+- [Development](#development)
 - [Publishing](#publishing)
 - [Maintainers](#maintainers)
 - [Contributing](#contributing)
 - [License](#license)
 
+## Background
+ Superface (super-interface) is a higher-order API, an abstraction on top of the modern APIs like GraphQL and REST. Superface is one interface to discover, connect, and query any capabilities available via conventional APIs. 
+
+ Through its focus on application-level semantics, Superface decouples the clients from servers, enabling fully autonomous evolution. As such it minimizes the code base as well as errors and downtimes while providing unmatched resiliency and redundancy. 
+
+ Superface allows for switching capability providers without development at a runtime in milliseconds. Furthermore, Superface decentralizes the composition and aggregation, and thus creates an Autonomous Integration Mesh.
+
+ Motivation behind Superface is nicely described in this [video](https://www.youtube.com/watch?v=BCvq3NXFb94) from APIdays conference.
+
+ You can get more information at https://superface.ai and https://developer.superface.dev.
+ 
 ## Install
 
 To install this package, first add the github superface repository to your npm config. Use your github name as your login and generate a personal access token with at least the `repo` and `read:packages` permissions in Github to use as password:
@@ -45,6 +58,16 @@ const result = parseProfile(source);
 console.log(inspect(result));
 ```
 
+## Security
+
+Superface is not man-in-the-middle so it does not require any access to secrets that are needed to communicate with provider API. Superface CLI only prepares super.json file with authorization fields in form of environment variable. You just set correct variables and communicate directly with provider API.
+
+You can find more information in [SDK repository](https://github.com/superfaceai/sdk-js/blob/master/SECURITY.md).
+
+## Support
+
+If you need any additional support, have any questions or you just want to talk you can do that through our [documentation page](https://developer.superface.dev). 
+
 ## Development
 
 When developing, start with cloning the repository using `git clone https://github.com/superfaceai/parser.git` (or `git clone git@github.com:superfaceai/parser.git` if you have repository access).
@@ -60,10 +83,6 @@ The `package.json` also contains scripts (runnable by calling `yarn <script-name
 - `prepush` - run `test`, `lint` and `format` checks. This should run without errors before you push anything to git.
 
 Lastly, to build a local artifact run `yarn build` or `npm run build`.
-
-## Support
-
-If you need any additional support, have any questions or you just want to talk you can do that through our [documentation page](https://developer.superface.dev). 
 
 ## Publishing
 
