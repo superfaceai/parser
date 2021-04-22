@@ -18,25 +18,20 @@ Superface Parser compiles Superface profiles and maps into representation that c
 - [License](#license)
 
 ## Background
- Superface (super-interface) is a higher-order API, an abstraction on top of the modern APIs like GraphQL and REST. Superface is one interface to discover, connect, and query any capabilities available via conventional APIs. 
 
- Through its focus on application-level semantics, Superface decouples the clients from servers, enabling fully autonomous evolution. As such it minimizes the code base as well as errors and downtimes while providing unmatched resiliency and redundancy. 
+Superface (super-interface) is a higher-order API, an abstraction on top of the modern APIs like GraphQL and REST. Superface is one interface to discover, connect, and query any capabilities available via conventional APIs. 
 
- Superface allows for switching capability providers without development at a runtime in milliseconds. Furthermore, Superface decentralizes the composition and aggregation, and thus creates an Autonomous Integration Mesh.
+Through its focus on application-level semantics, Superface decouples the clients from servers, enabling fully autonomous evolution. As such it minimizes the code base as well as errors and downtimes while providing unmatched resiliency and redundancy. 
 
- Motivation behind Superface is nicely described in this [video](https://www.youtube.com/watch?v=BCvq3NXFb94) from APIdays conference.
+Superface allows for switching capability providers without development at a runtime in milliseconds. Furthermore, Superface decentralizes the composition and aggregation, and thus creates an Autonomous Integration Mesh.
 
- You can get more information at https://superface.ai and https://developer.superface.dev.
+Motivation behind Superface is nicely described in this [video](https://www.youtube.com/watch?v=BCvq3NXFb94) from APIdays conference.
+
+You can get more information at https://superface.ai and https://developer.superface.dev.
  
 ## Install
 
-To install this package, first add the github superface repository to your npm config. Use your github name as your login and generate a personal access token with at least the `repo` and `read:packages` permissions in Github to use as password:
-
-```shell
-npm login --scope=@superfaceai --registry=https://npm.pkg.github.com
-```
-
-Then install the parser into one of your projects:
+Install the parser into one of your projects:
 
 ```shell
 yarn add @superfaceai/parser
@@ -92,7 +87,7 @@ Package publishing is done through GitHub release functionality.
 
 Use semver for the version tag. It must be in format of `v<major>.<minor>.<patch>`.
 
-Github Actions workflow will pick up the release and publish it as one of the [packages](https://github.com/superfaceai/parser/packages).
+Github Actions workflow will pick up the release and publish it as one of the [packages](https://www.npmjs.com/package/@superfaceai/parser).
 
 ## Maintainers
 

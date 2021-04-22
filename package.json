@@ -14,9 +14,6 @@
   "files": [
     "dist/**/*"
   ],
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
-  },
   "scripts": {
     "build:tsc": "tsc -p tsconfig.release.json",
     "build": "yarn build:tsc",
