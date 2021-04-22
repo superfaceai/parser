@@ -1,6 +1,6 @@
 # Parser
 
-![superface logo](https://github.com/superfaceai/parser/blob/master/docs/LogoGreen.svg)
+<img src="https://github.com/superfaceai/parser/blob/master/docs/LogoGreen.png" alt="superface logo" width="150" height="150">
 
 Superface Parser compiles Superface profiles and maps into representation that can be interpreter using the Superface SDK.
 
