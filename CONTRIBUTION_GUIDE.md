@@ -24,8 +24,6 @@ Follow these steps:
 
 1. **Fork & Clone** the repository  
 2. **Setup** the Superface Parser
-   - Create `.npmrc` with following line `@superfaceai:registry=https://npm.pkg.github.com`
-   - Authenticate to github npm package registry `npm login --registry=https://npm.pkg.github.com`
    - Install packages with `yarn install` or `npm install`
    - Build with `yarn build` or `npm run build`
    - Run tests with `yarn test` or `npm test`
