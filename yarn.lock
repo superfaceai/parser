@@ -539,10 +539,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@superfaceai/ast@^0.0.22":
-  version "0.0.22"
-  resolved "https://npm.pkg.github.com/download/@superfaceai/ast/0.0.22/32dd1accfce252f3a3e4d84fe702c0c2a927dbf329e6a62aacc44d52e7db3e15#becfa4a20a9639e13f8b48b776509a44be09ba2e"
-  integrity sha512-3cRkhl9RFyPmIcwS7fJZ3l0NaBWCW4FlMM9f/wt+SUAs9M0pn3TZbY2QZTe0jw+tZhKm76w1y/UD4b87PuIaFw==
+"@superfaceai/ast@0.0.23-beta.3":
+  version "0.0.23-beta.3"
+  resolved "https://registry.yarnpkg.com/@superfaceai/ast/-/ast-0.0.23-beta.3.tgz#e6fc32001739745154d71f7963eceabebe4a171f"
+  integrity sha512-nUzO9SZoM1uH74to2uL9Oi7rVU7f+NQezUnR7ZmopIkDYeftoQQKPF8YdYjM0lILiBe40klKWQeAiiI2KQ+FIw==
 
 "@types/babel__core@^7.0.0", "@types/babel__core@^7.1.7":
   version "7.1.14"
@@ -4377,10 +4377,10 @@ typedarray-to-buffer@^3.1.5:
   dependencies:
     is-typedarray "^1.0.0"
 
-typescript@^4.1.5:
-  version "4.2.4"
-  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.2.4.tgz#8610b59747de028fda898a8aef0e103f156d0961"
-  integrity sha512-V+evlYHZnQkaz8TRBuxTA92yZBPotr5H+WhQ7bD3hZUndx5tGOa1fuCgeSjxAzM1RiN5IzvadIXTVefuuwZCRg==
+typescript@~4.1:
+  version "4.1.5"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-4.1.5.tgz#123a3b214aaff3be32926f0d8f1f6e704eb89a72"
+  integrity sha512-6OSu9PTIzmn9TCDiovULTnET6BgXtDYL4Gg4szY+cGsc3JP1dQL8qvE8kShTRx1NIw4Q9IBHlwODjkjWEtMUyA==
 
 unbox-primitive@^1.0.0:
   version "1.0.1"
