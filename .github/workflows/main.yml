@@ -13,8 +13,6 @@ jobs:
           registry-url: https://registry.npmjs.org/
           scope: "@superfaceai"
           node-version: "14"
-        # env:
-        #   NODE_AUTH_TOKEN: ${{ secrets.SUPERFACE_BOT_PAT }}
 
       - name: Checkout
         uses: actions/checkout@v2.3.4
