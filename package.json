@@ -1,6 +1,6 @@
 {
   "name": "@superfaceai/parser",
-  "version": "0.0.14",
+  "version": "0.0.16",
   "description": "Level 5 autonomous, self-driving API client, https://superface.ai",
   "repository": "https://github.com/superfaceai/parser.git",
   "source": "lib/index.js",
@@ -14,9 +14,6 @@
   "files": [
     "dist/**/*"
   ],
-  "publishConfig": {
-    "registry": "https://npm.pkg.github.com/"
-  },
   "scripts": {
     "build:tsc": "tsc -p tsconfig.release.json",
     "build": "yarn build:tsc",
@@ -46,10 +43,10 @@
     "ts-jest": "^26.5.1"
   },
   "dependencies": {
-    "@superfaceai/ast": "^0.0.22",
+    "@superfaceai/ast": "0.0.23-beta.3",
     "@types/debug": "^4.1.5",
     "debug": "^4.3.1",
-    "typescript": "^4.1.5"
+    "typescript": "~4.1"
   },
   "targets": {
     "types": false,
