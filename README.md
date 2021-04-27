@@ -1,5 +1,7 @@
 # Parser
 
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/superfaceai/parser/CI)
+
 <img src="https://github.com/superfaceai/parser/blob/main/docs/LogoGreen.png" alt="superface logo" width="150" height="150">
 
 Superface Parser compiles Superface profiles and maps into representation that can be interpreter using the Superface SDK.
