@@ -1,6 +1,6 @@
 # Parser
 
-<img src="https://github.com/superfaceai/parser/blob/master/docs/LogoGreen.png" alt="superface logo" width="150" height="150">
+<img src="https://github.com/superfaceai/parser/blob/main/docs/LogoGreen.png" alt="superface logo" width="150" height="150">
 
 Superface Parser compiles Superface profiles and maps into representation that can be interpreter using the Superface SDK.
 
@@ -57,7 +57,7 @@ console.log(inspect(result));
 
 Superface is not man-in-the-middle so it does not require any access to secrets that are needed to communicate with provider API. Superface CLI only prepares super.json file with authorization fields in form of environment variable. You just set correct variables and communicate directly with provider API.
 
-You can find more information in [SDK repository](https://github.com/superfaceai/sdk-js/blob/master/SECURITY.md).
+You can find more information in [SDK repository](https://github.com/superfaceai/one-sdk-js/blob/main/SECURITY.md).
 
 ## Support
 
