@@ -12,7 +12,6 @@ Superface Parser compiles Superface profiles and maps into representation that c
 - [Security](#security)
 - [Support](#support)
 - [Development](#development)
-- [Publishing](#publishing)
 - [Maintainers](#maintainers)
 - [Contributing](#contributing)
 - [License](#license)
@@ -78,16 +77,6 @@ The `package.json` also contains scripts (runnable by calling `yarn <script-name
 - `prepush` - run `test`, `lint` and `format` checks. This should run without errors before you push anything to git.
 
 Lastly, to build a local artifact run `yarn build` or `npm run build`.
-
-## Publishing
-
-Package publishing is done through GitHub release functionality.
-
-[Draft a new release](https://github.com/superfaceai/parser/releases/new) to publish a new version of the package.
-
-Use semver for the version tag. It must be in format of `v<major>.<minor>.<patch>`.
-
-Github Actions workflow will pick up the release and publish it as one of the [packages](https://www.npmjs.com/package/@superfaceai/parser).
 
 ## Maintainers
 
