@@ -1,6 +1,9 @@
 # Parser
 
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/superfaceai/parser/CI)
+![NPM](https://img.shields.io/npm/v/@superfaceai/parser)
+[![NPM](https://img.shields.io/npm/l/@superfaceai/parser)](LICENSE)
+![TypeScript](https://img.shields.io/badge/%3C%2F%3E-Typescript-blue)
 
 <img src="https://github.com/superfaceai/parser/blob/main/docs/LogoGreen.png" alt="superface logo" width="150" height="150">
 
