@@ -1,8 +1,4 @@
-import {
-  LexerContext,
-  LexerToken,
-  LexerTokenStream,
-} from '../lexer';
+import { LexerContext, LexerToken, LexerTokenStream } from '../lexer';
 import {
   DEFAULT_TOKEN_KIND_FILTER,
   LexerTokenKindFilter,

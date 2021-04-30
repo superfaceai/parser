@@ -20,7 +20,8 @@ export const DEFAULT_TOKEN_KIND_FILTER: LexerTokenKindFilter = {
   [LexerTokenKind.UNKNOWN]: false,
 };
 
-export interface LexerTokenStream<SavedState = unknown> extends Generator<LexerToken, undefined, LexerContext | undefined> {
+export interface LexerTokenStream<SavedState = unknown>
+  extends Generator<LexerToken, undefined, LexerContext | undefined> {
   tokenKindFilter: LexerTokenKindFilter;
 
   peek(
@@ -62,10 +63,7 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
   /** Token kinds to filter from the stream. */
   tokenKindFilter: LexerTokenKindFilter;
 
-  constructor(
-    readonly source: Source,
-    tokenKindFilter?: LexerTokenKindFilter
-  ) {
+  constructor(readonly source: Source, tokenKindFilter?: LexerTokenKindFilter) {
     this.sublexers = {
       [LexerContextType.DEFAULT]: tryParseDefault,
       [LexerContextType.JESSIE_SCRIPT_EXPRESSION]: tryParseJessieScriptExpression,

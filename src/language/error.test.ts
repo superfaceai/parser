@@ -39,16 +39,18 @@ function toMatchSyntaxError(
   sourceInfo: string,
   ...messageLines: string[]
 ) {
-  let message = context.utils.matcherHint('toMatchSyntaxError', undefined, detail, {
-    isNot: context.isNot,
-    promise: context.promise,
-  }) + '\n\n';
+  let message =
+    context.utils.matcherHint('toMatchSyntaxError', undefined, detail, {
+      isNot: context.isNot,
+      promise: context.promise,
+    }) + '\n\n';
 
   if (!(err instanceof SyntaxError)) {
     message += 'Object is not an instance of SyntaxError';
+
     return {
       pass: false,
-      message: () => message
+      message: () => message,
     };
   }
 
@@ -58,14 +60,13 @@ function toMatchSyntaxError(
       return true;
     }
 
-    message += 
+    message +=
       ` at line ${index + 1}\n\n` +
       `Expected: ${context.utils.printExpected(needle)}\n` +
-      `Received: ${context.utils.printReceived(formatLines[index])}\n`
-    ;
+      `Received: ${context.utils.printReceived(formatLines[index])}\n`;
 
     return false;
-  }
+  };
 
   if (!testLine(0, `SyntaxError: ${detail}`)) {
     return { pass: false, message: () => message };
@@ -93,7 +94,8 @@ function toMatchSyntaxError(
     }
   }
 
-  message += "Expected to not match a SyntaxError with given message lines";
+  message += 'Expected to not match a SyntaxError with given message lines';
+
   return { pass: true, message: () => message };
 }
 
@@ -122,12 +124,13 @@ expect.extend({
 
     return {
       pass: false,
-      message: () => this.utils.matcherHint('toMatchSyntaxError', undefined, detail, {
-        isNot: this.isNot,
-        promise: this.promise,
-      }) + "\n\nExpected fn to throw."
+      message: () =>
+        this.utils.matcherHint('toMatchSyntaxError', undefined, detail, {
+          isNot: this.isNot,
+          promise: this.promise,
+        }) + '\n\nExpected fn to throw.',
     };
-  }
+  },
 });
 
 class TestSyntaxRule<
@@ -224,9 +227,7 @@ describe('langauge syntax errors', () => {
     it('should report error from parseProfile', () => {
       const source = new Source('name: "http://superface.ai/profile/test"');
 
-      expect(
-        () => parseProfile(source)
-      ).toThrowSyntaxError(
+      expect(() => parseProfile(source)).toThrowSyntaxError(
         'Expected `=` but found `:`',
         '[input]:1:5',
         '1 | name: "http://superface.ai/profile/test"',

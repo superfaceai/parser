@@ -605,55 +605,51 @@ describe('map strict', () => {
     `;
 
     const source = new Source(input);
-    
+
     const map = parseMap(source);
-    expect(
-      map
-    ).toMatchObject(
-      {
-        kind: 'MapDocument',
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            statements: [
-              {
-                kind: 'SetStatement',
-                assignments: [
-                  {
-                    kind: 'Assignment',
-                    key: ['foo'],
-                    value: {
-                      kind: 'JessieExpression',
-                      expression: '"Hello " + world',
-                      source: '`Hello ${world}`'
-                    }
-                  }
-                ]
-              },
-              {
-                kind: 'HttpCallStatement',
-                request: {
-                  kind: 'HttpRequest',
-                  query: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['bar', 'baz'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: '"Farewell " + world',
-                          source: '`Farewell ${world}`'
-                        }
-                      }
-                    ]
-                  }
+    expect(map).toMatchObject({
+      kind: 'MapDocument',
+      definitions: [
+        {
+          kind: 'MapDefinition',
+          statements: [
+            {
+              kind: 'SetStatement',
+              assignments: [
+                {
+                  kind: 'Assignment',
+                  key: ['foo'],
+                  value: {
+                    kind: 'JessieExpression',
+                    expression: '"Hello " + world',
+                    source: '`Hello ${world}`',
+                  },
                 },
-              }
-            ]
-          }
-        ]
-      }
-    )
+              ],
+            },
+            {
+              kind: 'HttpCallStatement',
+              request: {
+                kind: 'HttpRequest',
+                query: {
+                  kind: 'ObjectLiteral',
+                  fields: [
+                    {
+                      kind: 'Assignment',
+                      key: ['bar', 'baz'],
+                      value: {
+                        kind: 'JessieExpression',
+                        expression: '"Farewell " + world',
+                        source: '`Farewell ${world}`',
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      ],
+    });
   });
 });

@@ -54,8 +54,7 @@ export function terminatorLookahead<R>(
     .followedBy(
       SyntaxRule.lookahead(SyntaxRuleOr.chainOr(...terminatorLookahead))
     )
-    .map(([lit, _lookahead]) => lit)
-  ;
+    .map(([lit, _lookahead]) => lit);
 }
 
 export function consumeLocalTerminators<R>(

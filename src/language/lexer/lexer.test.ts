@@ -23,7 +23,7 @@ import {
 // Declare custom matcher for sake of Typescript
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
-  export namespace jest {
+  namespace jest {
     interface Matchers<R> {
       toHaveTokenData(data: LexerTokenData): R;
 
@@ -48,10 +48,11 @@ expect.extend({
     };
 
     let pass = true;
-    let message = this.utils.matcherHint('toHaveTokenData', undefined, undefined, {
-      isNot: this.isNot,
-      promise: this.promise,
-    }) + "\n\n";
+    let message =
+      this.utils.matcherHint('toHaveTokenData', undefined, undefined, {
+        isNot: this.isNot,
+        promise: this.promise,
+      }) + '\n\n';
 
     if (actual.data.kind !== data.kind) {
       pass = false;
@@ -119,13 +120,15 @@ expect.extend({
   },
 
   toReturnError(actual: LexerToken, needle?: string) {
-    let message = this.utils.matcherHint('toYieldUnknownWithError', undefined, undefined, {
-      isNot: this.isNot,
-      promise: this.promise,
-    }) + '\n\n';
-    
+    let message =
+      this.utils.matcherHint('toYieldUnknownWithError', undefined, undefined, {
+        isNot: this.isNot,
+        promise: this.promise,
+      }) + '\n\n';
+
     if (actual.data.kind !== LexerTokenKind.UNKNOWN) {
       message += 'Expected UNKNOWN token';
+
       return { pass: false, message: () => message };
     }
 
@@ -133,17 +136,21 @@ expect.extend({
 
     if (needle === undefined) {
       message += 'Expected a token that is not UNKNOWN';
+
       return { pass: true, message: () => message };
     }
 
     if (err.message.includes(needle)) {
-      message += 'Expected a token that is not UNKNOWN or error that does not match the needle';
+      message +=
+        'Expected a token that is not UNKNOWN or error that does not match the needle';
+
       return { pass: true, message: () => message };
     }
 
     message += 'Needle does not match error';
+
     return { pass: false, message: () => message };
-  }
+  },
 });
 
 describe('lexer', () => {
