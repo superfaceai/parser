@@ -111,7 +111,7 @@ function transformBlockStringValue(string: string): string {
 /**
  * Tries to parse a string literal token at current position.
  *
- * Returns `undefined` if the current position cannot contain a string literal.
+ * Returns nomatch if the current position cannot contain a string literal.
  *
  * Returns an error if parsing fails.
  */
@@ -120,7 +120,10 @@ export function tryParseStringLiteral(
 ): ParseResult<StringTokenData> {
   const firstChar = slice.charCodeAt(0);
   if (!util.isStringLiteralChar(firstChar)) {
-    return undefined;
+    return {
+      kind: 'nomatch',
+      tokenKind: LexerTokenKind.STRING
+    };
   }
 
   let startingQuoteChars = util.countStarting(
@@ -131,7 +134,7 @@ export function tryParseStringLiteral(
   // Special case where the string is empty ('' or "")
   if (startingQuoteChars === 2) {
     return {
-      isError: false,
+      kind: 'match',
       data: {
         kind: LexerTokenKind.STRING,
         string: '',
@@ -142,7 +145,7 @@ export function tryParseStringLiteral(
   // Special case where a triple-quoted string is empty ('''''' or """""")
   if (startingQuoteChars >= 6) {
     return {
-      isError: false,
+      kind: 'match',
       data: {
         kind: LexerTokenKind.STRING,
         string: '',
@@ -189,16 +192,20 @@ export function tryParseStringLiteral(
 
     // Now we hit either:
     // * Quote chars
-    // * Escape chars (only in line strings)
+    // * Escape chars
     // * EOF
     const nextChar = restSlice.charCodeAt(0);
     if (isNaN(nextChar)) {
       return {
-        isError: true,
-        kind: LexerTokenKind.STRING,
-        relativeSpan: { start: 0, end: eatenChars },
-        detail: 'Unexpected EOF',
-        category: SyntaxErrorCategory.LEXER,
+        kind: 'error',
+        tokenKind: LexerTokenKind.STRING,
+        errors: [
+          {
+            relativeSpan: { start: 0, end: eatenChars },
+            detail: 'Unexpected EOF',
+            category: SyntaxErrorCategory.LEXER,
+          }
+        ]
       };
     } else if (util.isStringLiteralEscapeChar(nextChar)) {
       // Eat the backslash
@@ -207,11 +214,15 @@ export function tryParseStringLiteral(
       const escapeResult = resolveStringLiteralEscape(restSlice);
       if (escapeResult === undefined) {
         return {
-          isError: true,
-          kind: LexerTokenKind.STRING,
-          relativeSpan: { start: 0, end: eatenChars + 1 },
-          detail: 'Invalid escape sequence',
-          category: SyntaxErrorCategory.LEXER,
+          kind: 'error',
+          tokenKind: LexerTokenKind.STRING,
+          errors: [
+            {
+              relativeSpan: { start: 0, end: eatenChars + 1 },
+              detail: 'Invalid escape sequence',
+              category: SyntaxErrorCategory.LEXER,
+            }
+          ]
         };
       }
 
@@ -241,7 +252,7 @@ export function tryParseStringLiteral(
   }
 
   return {
-    isError: false,
+    kind: 'match',
     data: {
       kind: LexerTokenKind.STRING,
       string: resultString,

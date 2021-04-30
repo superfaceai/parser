@@ -1,5 +1,5 @@
 import { SyntaxError, SyntaxErrorCategory } from '../error';
-import { computeEndLocation, Location, Source } from '../source';
+import { computeEndLocation, Location, Source, Span } from '../source';
 import { LexerContext, LexerContextType, Sublexer } from './context';
 import { tryParseDefault } from './sublexer/default';
 import { tryParseJessieScriptExpression } from './sublexer/jessie';
@@ -245,16 +245,69 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
         break;
     }
 
-    const parsedTokenSpan = {
-      start: start + (tokenParseResult?.relativeSpan.start ?? 0),
-      end: start + (tokenParseResult?.relativeSpan.end ?? 1),
-    };
-
     // Didn't parse as any known token or produced an error
-    if (tokenParseResult === undefined || tokenParseResult.isError) {
-      const category = tokenParseResult?.category ?? SyntaxErrorCategory.LEXER;
-      const detail = tokenParseResult?.detail ?? 'Could not match any token';
-      const hint = tokenParseResult?.hint;
+    if (tokenParseResult.kind === 'nomatch') {
+      const parsedTokenSpan = {
+        start,
+        end: start + 1,
+      };
+
+      const error = new SyntaxError(
+        this.source,
+        location,
+        parsedTokenSpan,
+        SyntaxErrorCategory.LEXER,
+        'Could not match any token'
+      );
+
+      return new LexerToken(
+        {
+          kind: LexerTokenKind.UNKNOWN,
+          error,
+        },
+        location,
+        parsedTokenSpan
+      );
+    }
+
+    // Produced an error
+    if (tokenParseResult.kind === 'error') {
+      let category: SyntaxErrorCategory;
+      let detail: string | undefined;
+      let hint: string | undefined;
+      let relativeSpan: Span;
+
+      // Single-error results are easy
+      if (tokenParseResult.errors.length === 1) {
+        const error = tokenParseResult.errors[0];
+
+        category = error.category;
+        detail = error.detail;
+        hint = error.hint;
+        relativeSpan = error.relativeSpan;
+      } else {
+        // multi-error results combine all errors and hints into one, the span is the one that convers all the errors
+        category = SyntaxErrorCategory.LEXER;
+        detail = tokenParseResult.errors.map(
+          err => err.detail ?? ''
+        ).join(';');
+        hint = tokenParseResult.errors.map(
+          err => err.hint ?? ''
+        ).join(';');
+        relativeSpan = tokenParseResult.errors.map(err => err.relativeSpan).reduce(
+          (acc, curr) => {
+            return {
+              start: Math.min(acc.start, curr.start),
+              end: Math.max(acc.end, curr.end)
+            }
+          }
+        );
+      }
+
+      const parsedTokenSpan = {
+        start: start + relativeSpan.start,
+        end: start + relativeSpan.end,
+      };
 
       const error = new SyntaxError(
         this.source,
@@ -275,6 +328,10 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
       );
     }
 
+    const parsedTokenSpan = {
+      start: start + tokenParseResult.relativeSpan.start,
+      end: start + tokenParseResult.relativeSpan.end,
+    };
     // All is well
     return new LexerToken(tokenParseResult.data, location, parsedTokenSpan);
   }

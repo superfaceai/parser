@@ -31,7 +31,7 @@ function tryParseScannerRules<T>(
 /**
  * Tries to parse a separator token at current position.
  *
- * Returns `undefined` if the current position cannot contain a separator.
+ * Returns nomatch if the current position cannot contain a separator.
  */
 export function tryParseSeparator(
   slice: string
@@ -39,7 +39,7 @@ export function tryParseSeparator(
   // Handle EOF
   if (slice.length === 0) {
     return {
-      isError: false,
+      kind: 'match',
       data: {
         kind: LexerTokenKind.SEPARATOR,
         separator: 'EOF',
@@ -50,11 +50,14 @@ export function tryParseSeparator(
 
   const parsed = tryParseScannerRules(slice, SEPARATORS);
   if (parsed === undefined) {
-    return undefined;
+    return {
+      kind: 'nomatch',
+      tokenKind: LexerTokenKind.SEPARATOR
+    };
   }
 
   return {
-    isError: false,
+    kind: 'match',
     data: {
       kind: LexerTokenKind.SEPARATOR,
       separator: parsed.value,
@@ -66,18 +69,21 @@ export function tryParseSeparator(
 /**
  * Tries to parse an operator token at current position.
  *
- * Returns `undefined` if the current position cannot contain an operator.
+ * Returns nomatch if the current position cannot contain an operator.
  */
 export function tryParseOperator(
   slice: string
 ): ParseResult<OperatorTokenData> {
   const parsed = tryParseScannerRules(slice, OPERATORS);
   if (parsed === undefined) {
-    return undefined;
+    return {
+      kind: 'nomatch',
+      tokenKind: LexerTokenKind.OPERATOR
+    };
   }
 
   return {
-    isError: false,
+    kind: 'match',
     data: {
       kind: LexerTokenKind.OPERATOR,
       operator: parsed.value,
@@ -91,11 +97,14 @@ export function tryParseBooleanLiteral(
 ): ParseResult<LiteralTokenData> {
   const parsed = tryParseScannerRules(slice, LITERALS_BOOL);
   if (parsed === undefined) {
-    return undefined;
+    return {
+      kind: 'nomatch',
+      tokenKind: LexerTokenKind.LITERAL
+    };
   }
 
   return {
-    isError: false,
+    kind: 'match',
     data: {
       kind: LexerTokenKind.LITERAL,
       literal: parsed.value,
@@ -107,22 +116,28 @@ export function tryParseBooleanLiteral(
 /**
  * Tries to parse an identifier token at current position.
  *
- * Returns `undefined` if the current position cannot contain an identifier.
+ * Returns nomatch if the current position cannot contain an identifier.
  */
 export function tryParseIdentifier(
   slice: string
 ): ParseResult<IdentifierTokenData> {
   if (!util.isValidIdentifierStartChar(slice.charCodeAt(0))) {
-    return undefined;
+    return {
+      kind: 'nomatch',
+      tokenKind: LexerTokenKind.IDENTIFIER
+    };
   }
 
   const identLength = util.countStartingIdentifierChars(slice);
   if (identLength === 0) {
-    return undefined;
+    return {
+      kind: 'nomatch',
+      tokenKind: LexerTokenKind.IDENTIFIER
+    };
   }
 
   return {
-    isError: false,
+    kind: 'match',
     data: {
       kind: LexerTokenKind.IDENTIFIER,
       identifier: slice.slice(0, identLength),
@@ -134,12 +149,15 @@ export function tryParseIdentifier(
 /**
  * Tries to parse a comment token at current position.
  *
- * Returns `undefined` if the current position cannot contain a comment.
+ * Returns nomatch if the current position cannot contain a comment.
  */
 export function tryParseComment(slice: string): ParseResult<CommentTokenData> {
   const prefix = tryParseScannerRules(slice, { '//': ['//', util.isAny] });
   if (prefix === undefined) {
-    return undefined;
+    return {
+      kind: 'nomatch',
+      tokenKind: LexerTokenKind.COMMENT
+    };
   }
 
   const commentSlice = slice.slice(prefix.length);
@@ -149,7 +167,7 @@ export function tryParseComment(slice: string): ParseResult<CommentTokenData> {
   );
 
   return {
-    isError: false,
+    kind: 'match',
     data: {
       kind: LexerTokenKind.COMMENT,
       comment: commentSlice.slice(0, bodyLength),
