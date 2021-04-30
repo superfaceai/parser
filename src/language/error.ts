@@ -200,6 +200,30 @@ export class SyntaxError {
     source: Source,
     result: RuleResultNoMatch
   ): SyntaxError {
+    let actual = '<NONE>';
+    if (result.attempts.token !== undefined) {
+      const fmt = formatTokenData(result.attempts.token.data);
+      switch (result.attempts.token.data.kind) {
+        case LexerTokenKind.SEPARATOR:
+        case LexerTokenKind.OPERATOR:
+        case LexerTokenKind.LITERAL:
+        case LexerTokenKind.IDENTIFIER:
+          actual = '`' + fmt.data + '`';
+          break;
+
+        case LexerTokenKind.STRING:
+          actual = '"' + fmt.data + '"';
+          break;
+
+        case LexerTokenKind.UNKNOWN:
+          return result.attempts.token.data.error;
+
+        default:
+          actual = fmt.kind;
+          break;
+      }
+    }
+
     const location = result.attempts.token?.location ?? { line: 0, column: 0 };
     const span = result.attempts.token?.span ?? { start: 0, end: 0 };
 
@@ -216,27 +240,6 @@ export class SyntaxError {
         return true;
       })
       .join(' or ');
-
-    let actual = '<NONE>';
-    if (result.attempts.token !== undefined) {
-      const fmt = formatTokenData(result.attempts.token.data);
-      switch (result.attempts.token.data.kind) {
-        case LexerTokenKind.SEPARATOR:
-        case LexerTokenKind.OPERATOR:
-        case LexerTokenKind.LITERAL:
-        case LexerTokenKind.IDENTIFIER:
-          actual = '`' + fmt.data + '`';
-          break;
-
-        case LexerTokenKind.STRING:
-          actual = '"' + fmt.data + '"';
-          break;
-
-        default:
-          actual = fmt.kind;
-          break;
-      }
-    }
 
     return new SyntaxError(
       source,
