@@ -122,7 +122,7 @@ export function tryParseStringLiteral(
   if (!util.isStringLiteralChar(firstChar)) {
     return {
       kind: 'nomatch',
-      tokenKind: LexerTokenKind.STRING
+      tokenKind: LexerTokenKind.STRING,
     };
   }
 
@@ -204,8 +204,8 @@ export function tryParseStringLiteral(
             relativeSpan: { start: 0, end: eatenChars },
             detail: 'Unexpected EOF',
             category: SyntaxErrorCategory.LEXER,
-          }
-        ]
+          },
+        ],
       };
     } else if (util.isStringLiteralEscapeChar(nextChar)) {
       // Eat the backslash
@@ -221,8 +221,8 @@ export function tryParseStringLiteral(
               relativeSpan: { start: 0, end: eatenChars + 1 },
               detail: 'Invalid escape sequence',
               category: SyntaxErrorCategory.LEXER,
-            }
-          ]
+            },
+          ],
         };
       }
 

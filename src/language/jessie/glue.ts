@@ -14,7 +14,12 @@ import {
  */
 export function validateAndTranspile(
   input: string
-): { kind: 'success', output: string, sourceMap: string } | { kind: 'failure', errors: (JessieSyntaxProtoError | ForbiddenConstructProtoError)[] } {
+):
+  | { kind: 'success'; output: string; sourceMap: string }
+  | {
+      kind: 'failure';
+      errors: (JessieSyntaxProtoError | ForbiddenConstructProtoError)[];
+    } {
   const { output, sourceMap, syntaxProtoError } = transpileScript(input, true);
 
   if (syntaxProtoError) {

@@ -4,6 +4,68 @@ import { validateAndTranspile } from '../../../jessie';
 import { JessieSublexerTokenData, LexerTokenKind } from '../../token';
 import { ParseResult } from '../result';
 
+function processScriptText(
+  scriptText: string
+): ParseResult<JessieSublexerTokenData> {
+  const SCRIPT_WRAP = {
+    start: 'let __jessieValue = ',
+    end: ';',
+    transpiled: {
+      start: 'var __jessieValue = ',
+      end: ';',
+      varName: '__jessieValue',
+    },
+  };
+
+  // Diagnose the script text, put it in a position where an expression would be required
+  const transRes = validateAndTranspile(
+    SCRIPT_WRAP.start + scriptText + SCRIPT_WRAP.end
+  );
+  if (transRes.kind === 'failure') {
+    return {
+      kind: 'error',
+      tokenKind: LexerTokenKind.JESSIE_SCRIPT,
+      // map the errors to get the correct spans
+      errors: transRes.errors.map(err => {
+        return {
+          detail: err.detail,
+          hint: err.hint,
+          category: err.category,
+          relativeSpan: {
+            start: err.relativeSpan.start - SCRIPT_WRAP.start.length,
+            end: err.relativeSpan.end - SCRIPT_WRAP.start.length,
+          },
+        };
+      }),
+    };
+  }
+
+  // With some syntax the transpiler creates a polyfill for the function
+  // For example for the spread operator `...`
+  // Here we detect that case and wrap the output in an immediatelly invoked function expression
+  let scriptOutput = transRes.output;
+  if (!transRes.output.startsWith(SCRIPT_WRAP.transpiled.start)) {
+    scriptOutput = `(function() {\n${scriptOutput}\nreturn ${SCRIPT_WRAP.transpiled.varName};\n})()`;
+  } else {
+    // strip the prefix and postfix added by the processing here (to force expression position)
+    scriptOutput = scriptOutput.slice(
+      SCRIPT_WRAP.transpiled.start.length,
+      scriptOutput.length - SCRIPT_WRAP.transpiled.end.length
+    );
+  }
+
+  return {
+    kind: 'match',
+    data: {
+      kind: LexerTokenKind.JESSIE_SCRIPT,
+      script: scriptOutput,
+      sourceScript: scriptText,
+      sourceMap: transRes.sourceMap,
+    },
+    relativeSpan: { start: 0, end: scriptText.length },
+  };
+}
+
 // Static SCANNER to avoid reinitializing it, same thing is done inside TS codebase.
 const SCANNER = ts.createScanner(
   ts.ScriptTarget.Latest,
@@ -37,7 +99,7 @@ const FALLBACK_TERMINATOR_TOKENS: ReadonlyArray<JessieExpressionTerminationToken
 /** Tokens that are always terminator token */
 const HARD_TERMINATOR_TOKENS: ReadonlyArray<ts.SyntaxKind> = [
   ts.SyntaxKind.EndOfFileToken,
-  ts.SyntaxKind.SingleLineCommentTrivia
+  ts.SyntaxKind.SingleLineCommentTrivia,
 ];
 
 const NESTED_OPEN_TOKENS: ReadonlyArray<ts.SyntaxKind> = [
@@ -60,7 +122,9 @@ export function tryParseJessieScriptExpression(
   if (termTokensMut === undefined || termTokensMut.length === 0) {
     termTokensMut = FALLBACK_TERMINATOR_TOKENS;
   }
-  const termTokens = termTokensMut.map(tok => TERMINATION_TOKEN_TO_TS_TOKEN[tok]);
+  const termTokens = termTokensMut.map(
+    tok => TERMINATION_TOKEN_TO_TS_TOKEN[tok]
+  );
 
   // Set the scanner text thus reusing the old scanner instance
   SCANNER.setText(slice);
@@ -114,68 +178,4 @@ export function tryParseJessieScriptExpression(
   const scriptText = slice.slice(0, lastTokenEnd);
 
   return processScriptText(scriptText);
-}
-
-function processScriptText(
-  scriptText: string
-): ParseResult<JessieSublexerTokenData> {
-  const SCRIPT_WRAP = {
-    start: 'let __jessieValue = ',
-    end: ';',
-    transpiled: {
-      start: 'var __jessieValue = ',
-      end: ';',
-      varName: '__jessieValue'
-    },
-  };
-
-  // Diagnose the script text, put it in a position where an expression would be required
-  const transRes = validateAndTranspile(
-    SCRIPT_WRAP.start + scriptText + SCRIPT_WRAP.end
-  );
-  if (transRes.kind === 'failure') {
-    return {
-      kind: 'error',
-      tokenKind: LexerTokenKind.JESSIE_SCRIPT,
-      // map the errors to get the correct spans
-      errors: transRes.errors.map(
-        err => {
-          return {
-            detail: err.detail,
-            hint: err.hint,
-            category: err.category,
-            relativeSpan: {
-              start: err.relativeSpan.start - SCRIPT_WRAP.start.length,
-              end: err.relativeSpan.end - SCRIPT_WRAP.start.length
-            }
-          }
-        }
-      ),
-    };
-  }
-
-  // With some syntax the transpiler creates a polyfill for the function
-  // For example for the spread operator `...`
-  // Here we detect that case and wrap the output in an immediatelly invoked function expression
-  let scriptOutput = transRes.output;
-  if (!transRes.output.startsWith(SCRIPT_WRAP.transpiled.start)) {
-    scriptOutput = `(function() {\n${scriptOutput}\nreturn ${SCRIPT_WRAP.transpiled.varName};\n})()`;
-  } else {
-    // strip the prefix and postfix added by the processing here (to force expression position)
-    scriptOutput = scriptOutput.slice(
-      SCRIPT_WRAP.transpiled.start.length,
-      scriptOutput.length - SCRIPT_WRAP.transpiled.end.length
-    );
-  }
-
-  return {
-    kind: 'match',
-    data: {
-      kind: LexerTokenKind.JESSIE_SCRIPT,
-      script: scriptOutput,
-      sourceScript: scriptText,
-      sourceMap: transRes.sourceMap,
-    },
-    relativeSpan: { start: 0, end: scriptText.length },
-  };
 }

@@ -22,7 +22,7 @@ type ParseResultError<E extends ProtoError> = {
   readonly errors: E[];
 };
 
-export type ParseResult<T extends LexerTokenData, E extends ProtoError = ProtoError> =
-  | ParseResultMatch<T>
-  | ParseResultNomatch
-  | ParseResultError<E>;
+export type ParseResult<
+  T extends LexerTokenData,
+  E extends ProtoError = ProtoError
+> = ParseResultMatch<T> | ParseResultNomatch | ParseResultError<E>;

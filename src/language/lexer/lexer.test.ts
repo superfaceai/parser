@@ -722,7 +722,7 @@ ng2"
       expect(
         lexer.advance({
           type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
-          terminationTokens: ['\n']
+          terminationTokens: ['\n'],
         })
       ).toHaveTokenData({
         kind: LexerTokenKind.JESSIE_SCRIPT,
@@ -743,14 +743,14 @@ ng2"
       expect(
         lexer.advance({
           type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
-          terminationTokens: ['\n']
+          terminationTokens: ['\n'],
         })
       ).toMatchObject({
         data: {
           kind: LexerTokenKind.JESSIE_SCRIPT,
           sourceScript: '[...foo, 4, 5, 6]',
-          script: expect.stringContaining('__spreadArrays(foo, [4, 5, 6])')
-        }
+          script: expect.stringContaining('__spreadArrays(foo, [4, 5, 6])'),
+        },
       });
 
       // foo = [...foo, 7, 8, 9]
@@ -765,14 +765,14 @@ ng2"
       expect(
         lexer.advance({
           type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
-          terminationTokens: ['\n']
+          terminationTokens: ['\n'],
         })
       ).toMatchObject({
         data: {
           kind: LexerTokenKind.JESSIE_SCRIPT,
           sourceScript: '[...foo, 7, 8, 9]',
-          script: expect.stringContaining('__spreadArrays(foo, [7, 8, 9])')
-        }
+          script: expect.stringContaining('__spreadArrays(foo, [7, 8, 9])'),
+        },
       });
 
       expect(lexer.advance()).toHaveTokenData({

@@ -52,7 +52,7 @@ export function tryParseSeparator(
   if (parsed === undefined) {
     return {
       kind: 'nomatch',
-      tokenKind: LexerTokenKind.SEPARATOR
+      tokenKind: LexerTokenKind.SEPARATOR,
     };
   }
 
@@ -78,7 +78,7 @@ export function tryParseOperator(
   if (parsed === undefined) {
     return {
       kind: 'nomatch',
-      tokenKind: LexerTokenKind.OPERATOR
+      tokenKind: LexerTokenKind.OPERATOR,
     };
   }
 
@@ -99,7 +99,7 @@ export function tryParseBooleanLiteral(
   if (parsed === undefined) {
     return {
       kind: 'nomatch',
-      tokenKind: LexerTokenKind.LITERAL
+      tokenKind: LexerTokenKind.LITERAL,
     };
   }
 
@@ -124,7 +124,7 @@ export function tryParseIdentifier(
   if (!util.isValidIdentifierStartChar(slice.charCodeAt(0))) {
     return {
       kind: 'nomatch',
-      tokenKind: LexerTokenKind.IDENTIFIER
+      tokenKind: LexerTokenKind.IDENTIFIER,
     };
   }
 
@@ -132,7 +132,7 @@ export function tryParseIdentifier(
   if (identLength === 0) {
     return {
       kind: 'nomatch',
-      tokenKind: LexerTokenKind.IDENTIFIER
+      tokenKind: LexerTokenKind.IDENTIFIER,
     };
   }
 
@@ -156,7 +156,7 @@ export function tryParseComment(slice: string): ParseResult<CommentTokenData> {
   if (prefix === undefined) {
     return {
       kind: 'nomatch',
-      tokenKind: LexerTokenKind.COMMENT
+      tokenKind: LexerTokenKind.COMMENT,
     };
   }
 

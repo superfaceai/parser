@@ -57,7 +57,7 @@ export function tryParseNewline(slice: string): ParseResult<NewlineTokenData> {
   } else {
     return {
       kind: 'nomatch',
-      tokenKind: LexerTokenKind.NEWLINE
+      tokenKind: LexerTokenKind.NEWLINE,
     };
   }
 }

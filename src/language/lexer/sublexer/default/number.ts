@@ -50,11 +50,12 @@ export function tryParseNumberLiteral(
         tokenKind: LexerTokenKind.LITERAL,
         errors: [
           {
-            detail: 'Expected a number following a sign or an integer base prefix',
+            detail:
+              'Expected a number following a sign or an integer base prefix',
             category: SyntaxErrorCategory.LEXER,
             relativeSpan: { start: 0, end: prefixLength + 1 },
-          }
-        ]
+          },
+        ],
       };
     } else {
       return { kind: 'nomatch', tokenKind: LexerTokenKind.LITERAL };

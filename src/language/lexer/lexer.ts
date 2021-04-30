@@ -288,20 +288,16 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
       } else {
         // multi-error results combine all errors and hints into one, the span is the one that convers all the errors
         category = SyntaxErrorCategory.LEXER;
-        detail = tokenParseResult.errors.map(
-          err => err.detail ?? ''
-        ).join(';');
-        hint = tokenParseResult.errors.map(
-          err => err.hint ?? ''
-        ).join(';');
-        relativeSpan = tokenParseResult.errors.map(err => err.relativeSpan).reduce(
-          (acc, curr) => {
+        detail = tokenParseResult.errors.map(err => err.detail ?? '').join(';');
+        hint = tokenParseResult.errors.map(err => err.hint ?? '').join(';');
+        relativeSpan = tokenParseResult.errors
+          .map(err => err.relativeSpan)
+          .reduce((acc, curr) => {
             return {
               start: Math.min(acc.start, curr.start),
-              end: Math.max(acc.end, curr.end)
-            }
-          }
-        );
+              end: Math.max(acc.end, curr.end),
+            };
+          });
       }
 
       const parsedTokenSpan = {
@@ -332,6 +328,7 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
       start: start + tokenParseResult.relativeSpan.start,
       end: start + tokenParseResult.relativeSpan.end,
     };
+
     // All is well
     return new LexerToken(tokenParseResult.data, location, parsedTokenSpan);
   }
