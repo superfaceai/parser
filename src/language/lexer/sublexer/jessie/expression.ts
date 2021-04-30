@@ -113,22 +113,23 @@ export function tryParseJessieScriptExpression(
   }
   const scriptText = slice.slice(0, lastTokenEnd);
 
-  // Diagnose the script text, but put it in a position where an expression would be required
-  return diagnoseScriptText(scriptText);
+  return processScriptText(scriptText);
 }
 
-function diagnoseScriptText(
+function processScriptText(
   scriptText: string
 ): ParseResult<JessieSublexerTokenData> {
   const SCRIPT_WRAP = {
-    start: 'let x = ',
+    start: 'let __jessieValue = ',
     end: ';',
     transpiled: {
-      start: 'var x = ',
+      start: 'var __jessieValue = ',
       end: ';',
+      varName: '__jessieValue'
     },
   };
 
+  // Diagnose the script text, put it in a position where an expression would be required
   const transRes = validateAndTranspile(
     SCRIPT_WRAP.start + scriptText + SCRIPT_WRAP.end
   );
@@ -153,16 +154,25 @@ function diagnoseScriptText(
     };
   }
 
-  // slice out the script wrap
-  const script = transRes.output.slice(
-    SCRIPT_WRAP.transpiled.start.length,
-    transRes.output.length - SCRIPT_WRAP.transpiled.end.length
-  );
+  // With some syntax the transpiler creates a polyfill for the function
+  // For example for the spread operator `...`
+  // Here we detect that case and wrap the output in an immediatelly invoked function expression
+  let scriptOutput = transRes.output;
+  if (!transRes.output.startsWith(SCRIPT_WRAP.transpiled.start)) {
+    scriptOutput = `(function() {\n${scriptOutput}\nreturn ${SCRIPT_WRAP.transpiled.varName};\n})()`;
+  } else {
+    // strip the prefix and postfix added by the processing here (to force expression position)
+    scriptOutput = scriptOutput.slice(
+      SCRIPT_WRAP.transpiled.start.length,
+      scriptOutput.length - SCRIPT_WRAP.transpiled.end.length
+    );
+  }
+
   return {
     kind: 'match',
     data: {
       kind: LexerTokenKind.JESSIE_SCRIPT,
-      script,
+      script: scriptOutput,
       sourceScript: scriptText,
       sourceMap: transRes.sourceMap,
     },

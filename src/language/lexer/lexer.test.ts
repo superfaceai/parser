@@ -697,6 +697,89 @@ ng2"
         separator: 'EOF',
       });
     });
+
+    test('jessie spread operator', () => {
+      const lexer = new Lexer(
+        new Source(
+          'foo = [1, 2, 3]\nfoo = [...foo, 4, 5, 6]\nfoo = [...foo, 7, 8, 9]\n'
+        )
+      );
+
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.SEPARATOR,
+        separator: 'SOF',
+      });
+
+      // foo = [1, 2, 3]
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.IDENTIFIER,
+        identifier: 'foo',
+      });
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.OPERATOR,
+        operator: '=',
+      });
+      expect(
+        lexer.advance({
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+          terminationTokens: ['\n']
+        })
+      ).toHaveTokenData({
+        kind: LexerTokenKind.JESSIE_SCRIPT,
+        sourceMap: 'not checked',
+        sourceScript: 'not checked',
+        script: '[1, 2, 3]',
+      });
+
+      // foo = [...foo, 4, 5, 6]
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.IDENTIFIER,
+        identifier: 'foo',
+      });
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.OPERATOR,
+        operator: '=',
+      });
+      expect(
+        lexer.advance({
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+          terminationTokens: ['\n']
+        })
+      ).toMatchObject({
+        data: {
+          kind: LexerTokenKind.JESSIE_SCRIPT,
+          sourceScript: '[...foo, 4, 5, 6]',
+          script: expect.stringContaining('__spreadArrays(foo, [4, 5, 6])')
+        }
+      });
+
+      // foo = [...foo, 7, 8, 9]
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.IDENTIFIER,
+        identifier: 'foo',
+      });
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.OPERATOR,
+        operator: '=',
+      });
+      expect(
+        lexer.advance({
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+          terminationTokens: ['\n']
+        })
+      ).toMatchObject({
+        data: {
+          kind: LexerTokenKind.JESSIE_SCRIPT,
+          sourceScript: '[...foo, 7, 8, 9]',
+          script: expect.stringContaining('__spreadArrays(foo, [7, 8, 9])')
+        }
+      });
+
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.SEPARATOR,
+        separator: 'EOF',
+      });
+    });
   });
 
   describe('invalid', () => {
