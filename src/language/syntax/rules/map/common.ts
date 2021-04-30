@@ -39,6 +39,9 @@ const TERMINATOR_LOOKAHEAD: Record<
   ';': SyntaxRule.operator(';'),
   '\n': SyntaxRule.newline(),
 };
+/**
+ * Ensures that the `rule` is followed by at least one of the specified terminators.
+ */
 export function terminatorLookahead<R>(
   rule: SyntaxRule<R>,
   ...terminators: ReadonlyArray<JessieExpressionTerminationToken>
@@ -52,7 +55,7 @@ export function terminatorLookahead<R>(
       SyntaxRule.lookahead(SyntaxRuleOr.chainOr(...terminatorLookahead))
     )
     .map(([lit, _lookahead]) => lit)
-    .peekUnknown();
+  ;
 }
 
 export function consumeLocalTerminators<R>(
@@ -161,8 +164,7 @@ export const CONDITION_ATOM: SyntaxRuleSrc<ConditionAtomNode> = SyntaxRule.ident
         },
       };
     }
-  )
-  .peekUnknown();
+  );
 
 export const ITERATION_ATOM: SyntaxRuleSrc<IterationAtomNode> = SyntaxRule.identifier(
   'foreach'

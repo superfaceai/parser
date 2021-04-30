@@ -160,13 +160,13 @@ function generateErrorVisualization(
 
 export const enum SyntaxErrorCategory {
   /** Lexer token error */
-  LEXER,
+  LEXER = 'Lexer',
   /** Parser rule error */
-  PARSER,
+  PARSER = 'Parser',
   /** Jessie syntax error */
-  JESSIE_SYNTAX,
+  JESSIE_SYNTAX = 'Jessie syntax',
   /** Jessie forbidden construct error */
-  JESSIE_FORBIDDEN_CONSTRUCT,
+  JESSIE_VALIDATION = 'Jessie validation',
 }
 
 export type ProtoError = {
@@ -258,7 +258,7 @@ export class SyntaxError {
     let categoryInfo = '';
     switch (this.category) {
       case SyntaxErrorCategory.JESSIE_SYNTAX:
-      case SyntaxErrorCategory.JESSIE_FORBIDDEN_CONSTRUCT:
+      case SyntaxErrorCategory.JESSIE_VALIDATION:
         categoryInfo = 'Error in script syntax: ';
         break;
     }

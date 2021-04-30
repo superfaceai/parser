@@ -43,7 +43,7 @@ function constructDebugVisualTree(root: ts.Node): string {
 
 export type ForbiddenConstructProtoError = ProtoError & {
   detail: string;
-  category: SyntaxErrorCategory.JESSIE_FORBIDDEN_CONSTRUCT;
+  category: SyntaxErrorCategory.JESSIE_VALIDATION;
 };
 export function validateScript(input: string): ForbiddenConstructProtoError[] {
   const errors: ForbiddenConstructProtoError[] = [];
@@ -68,7 +68,7 @@ export function validateScript(input: string): ForbiddenConstructProtoError[] {
           detail: `${ts.SyntaxKind[node.kind]} construct is not supported`,
           hint: rule.hint(input, node),
           relativeSpan: { start: node.pos, end: node.end },
-          category: SyntaxErrorCategory.JESSIE_FORBIDDEN_CONSTRUCT,
+          category: SyntaxErrorCategory.JESSIE_VALIDATION,
         });
       }
     }
@@ -78,7 +78,7 @@ export function validateScript(input: string): ForbiddenConstructProtoError[] {
       errors.push({
         detail: `${ts.SyntaxKind[node.kind]} construct is not supported`,
         relativeSpan: { start: node.pos, end: node.end },
-        category: SyntaxErrorCategory.JESSIE_FORBIDDEN_CONSTRUCT,
+        category: SyntaxErrorCategory.JESSIE_VALIDATION,
       });
     }
 

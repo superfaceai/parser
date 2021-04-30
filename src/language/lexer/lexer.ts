@@ -20,21 +20,18 @@ export const DEFAULT_TOKEN_KIND_FILTER: LexerTokenKindFilter = {
   [LexerTokenKind.UNKNOWN]: false,
 };
 
-export type LexerSavedState = [LexerToken, boolean];
-export interface LexerTokenStream
-  extends Generator<LexerToken, undefined, LexerContext | undefined> {
+export interface LexerTokenStream<SavedState = unknown> extends Generator<LexerToken, undefined, LexerContext | undefined> {
   tokenKindFilter: LexerTokenKindFilter;
-  emitUnknown: boolean;
 
   peek(
     ...context: [] | [LexerContext | undefined]
   ): IteratorResult<LexerToken, undefined>;
 
   /** Saves the stream state to be restored later. */
-  save(): LexerSavedState;
+  save(): SavedState;
 
   /** Roll back the state of the stream to the given saved state. */
-  rollback(token: LexerSavedState): void;
+  rollback(token: SavedState): void;
 }
 
 /**
@@ -51,7 +48,7 @@ export interface LexerTokenStream
  * The advance function also accepts an optional `context` parameter which can be used to control the lexer context
  * for the next token.
  */
-export class Lexer implements LexerTokenStream {
+export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
   private readonly sublexers: {
     [C in LexerContextType]: Sublexer<C>;
   };
@@ -65,13 +62,9 @@ export class Lexer implements LexerTokenStream {
   /** Token kinds to filter from the stream. */
   tokenKindFilter: LexerTokenKindFilter;
 
-  /** Whether to emit the `UNKNOWN` token instead of throwing syntax error. */
-  emitUnknown: boolean;
-
   constructor(
     readonly source: Source,
-    tokenKindFilter?: LexerTokenKindFilter,
-    emitUnknown?: boolean
+    tokenKindFilter?: LexerTokenKindFilter
   ) {
     this.sublexers = {
       [LexerContextType.DEFAULT]: tryParseDefault,
@@ -88,7 +81,6 @@ export class Lexer implements LexerTokenStream {
     );
 
     this.tokenKindFilter = tokenKindFilter ?? DEFAULT_TOKEN_KIND_FILTER;
-    this.emitUnknown = emitUnknown ?? false;
   }
 
   /** Advances the lexer returning the current token. */
@@ -187,7 +179,7 @@ export class Lexer implements LexerTokenStream {
   }
 
   /** Saves the lexer state to be restored later. */
-  save(): LexerSavedState {
+  save(): [LexerToken, boolean] {
     return [this.currentToken, this.fileSeparatorYielded];
   }
 
@@ -196,7 +188,7 @@ export class Lexer implements LexerTokenStream {
    *
    * The lexer will continue from this state forward.
    */
-  rollback(state: LexerSavedState): void {
+  rollback(state: [LexerToken, boolean]): void {
     this.currentToken = state[0];
     this.fileSeparatorYielded = state[1];
   }
@@ -275,18 +267,14 @@ export class Lexer implements LexerTokenStream {
         hint
       );
 
-      if (this.emitUnknown) {
-        return new LexerToken(
-          {
-            kind: LexerTokenKind.UNKNOWN,
-            error,
-          },
-          location,
-          parsedTokenSpan
-        );
-      }
-
-      throw error;
+      return new LexerToken(
+        {
+          kind: LexerTokenKind.UNKNOWN,
+          error,
+        },
+        location,
+        parsedTokenSpan
+      );
     }
 
     // All is well

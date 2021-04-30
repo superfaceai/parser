@@ -3,9 +3,22 @@ import { MapDocumentNode, ProfileDocumentNode } from '@superfaceai/ast';
 import { SyntaxError } from '../error';
 import { Lexer } from '../lexer/lexer';
 import { Source } from '../source';
-import { SyntaxRule } from './rule';
+import { RuleResult, SyntaxRule } from './rule';
 import * as map from './rules/map';
 import { profile } from './rules/profile';
+
+function parseRuleResult<N>(
+  rule: SyntaxRule<N>,
+  source: Source,
+  skipSOF?: boolean
+): RuleResult<N> {
+  const lexer = new Lexer(source);
+  if (skipSOF === true) {
+    lexer.next();
+  }
+
+  return rule.tryMatch(lexer);
+}
 
 /**
  * Attempts to match `rule` onto `source`.
@@ -18,12 +31,7 @@ export function parseRule<N>(
   source: Source,
   skipSOF?: boolean
 ): N {
-  const lexer = new Lexer(source);
-  if (skipSOF === true) {
-    lexer.next();
-  }
-
-  const result = rule.tryMatch(lexer);
+  const result = parseRuleResult(rule, source, skipSOF);
 
   if (result.kind === 'nomatch') {
     const error = SyntaxError.fromSyntaxRuleNoMatch(source, result);

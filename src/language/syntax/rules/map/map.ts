@@ -150,7 +150,7 @@ export const OBJECT_LITERAL: SyntaxRuleSrc<ObjectLiteralNode> = SyntaxRule.separ
   );
 OBJECT_LITERAL_MUT.rule = OBJECT_LITERAL;
 
-export const STATEMENT_RHS_VALUE: SyntaxRuleSrc<LiteralNode> = OBJECT_LITERAL.peekUnknown().or(
+export const STATEMENT_RHS_VALUE: SyntaxRuleSrc<LiteralNode> = OBJECT_LITERAL.or(
   consumeLocalTerminators(
     RHS_EXPRESSION_FACTORY('\n', ';', '}'),
     '\n',
