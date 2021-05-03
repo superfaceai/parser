@@ -214,10 +214,6 @@ export abstract class SyntaxRule<T> {
       .map(([_, r]) => r);
   }
 
-  peekUnknown(): SyntaxRulePeekUnknown<T> {
-    return new SyntaxRulePeekUnknown(this);
-  }
-
   debug(): SyntaxRule<T> {
     return new SyntaxRuleDebugLog(this);
   }
@@ -635,14 +631,9 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
   }
 
   tryMatch(tokens: LexerTokenStream): RuleResult<undefined> {
-    const originalEmitUnknown = tokens.emitUnknown;
-    tokens.emitUnknown = true;
     const save = tokens.save();
-
     const result = this.rule.tryMatch(tokens);
-
     tokens.rollback(save);
-    tokens.emitUnknown = originalEmitUnknown;
 
     // Handle inversion
     if (this.invert) {
@@ -671,39 +662,6 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
 
   [Symbol.toStringTag](): string {
     return (this.invert ? 'not ' : '') + this.rule.toString();
-  }
-}
-
-/** Peeks the first token with the `emitUnknown` flag enabled and returns nomatch in case it is unknown.
- *
- * This rule is used in optional rules where the candidates use different lexer contexts and might fail on unknown
- * tokens even though the following candidate would match.
- */
-export class SyntaxRulePeekUnknown<R> extends SyntaxRule<R> {
-  constructor(readonly rule: SyntaxRule<R>) {
-    super();
-  }
-
-  tryMatch(tokens: LexerTokenStream): RuleResult<R> {
-    const originalEmitUnknown = tokens.emitUnknown;
-    tokens.emitUnknown = true;
-
-    const peekedToken = tokens.peek().value;
-
-    tokens.emitUnknown = originalEmitUnknown;
-
-    if (peekedToken?.data.kind === LexerTokenKind.UNKNOWN) {
-      return {
-        kind: 'nomatch',
-        attempts: new MatchAttempts(peekedToken, [this.rule]),
-      };
-    }
-
-    return this.rule.tryMatch(tokens);
-  }
-
-  [Symbol.toStringTag](): string {
-    return this.rule.toString();
   }
 }
 
@@ -816,23 +774,18 @@ export class SyntaxRuleDebugLog<R> extends SyntaxRule<R> {
   }
 
   tryMatch(tokens: LexerTokenStream): RuleResult<R> {
-    const emitUnknown = tokens.emitUnknown;
-    tokens.emitUnknown = true;
     const nextToken = tokens.peek();
-    tokens.emitUnknown = emitUnknown;
 
     let result;
     try {
       result = this.rule.tryMatch(tokens);
     } catch (err) {
       console.debug(
-        'With unknown:',
-        emitUnknown,
         '\nRule:',
         this.rule,
         '\nException:',
         err,
-        '\nToken:',
+        '\nFirst token:',
         nextToken
       );
       throw err;
@@ -840,8 +793,6 @@ export class SyntaxRuleDebugLog<R> extends SyntaxRule<R> {
 
     if (result.kind === 'nomatch') {
       console.debug(
-        'With unknown:',
-        emitUnknown,
         '\nRule:',
         this.rule,
         '\nAttempts:',
@@ -851,8 +802,6 @@ export class SyntaxRuleDebugLog<R> extends SyntaxRule<R> {
       );
     } else {
       console.debug(
-        'With unknown:',
-        emitUnknown,
         '\nRule:',
         this.rule,
         '\nMatch:',

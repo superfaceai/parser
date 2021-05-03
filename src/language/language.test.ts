@@ -585,4 +585,71 @@ describe('map strict', () => {
     const map = parseMap(source);
     expect(map).toMatchObject(STRICT_MAP_AST);
   });
+
+  it('should parse javascript string templates', () => {
+    const input = `
+    profile = "example/profile@0.1"
+    provider = "example-provider"
+
+    map Foo {
+      foo = \`Hello \${world}\`
+
+      http GET "test" {
+        request {
+          query {
+            bar.baz = \`Farewell \${world}\`
+          }
+        }
+      }
+    }
+    `;
+
+    const source = new Source(input);
+
+    const map = parseMap(source);
+    expect(map).toMatchObject({
+      kind: 'MapDocument',
+      definitions: [
+        {
+          kind: 'MapDefinition',
+          statements: [
+            {
+              kind: 'SetStatement',
+              assignments: [
+                {
+                  kind: 'Assignment',
+                  key: ['foo'],
+                  value: {
+                    kind: 'JessieExpression',
+                    expression: '"Hello " + world',
+                    source: '`Hello ${world}`',
+                  },
+                },
+              ],
+            },
+            {
+              kind: 'HttpCallStatement',
+              request: {
+                kind: 'HttpRequest',
+                query: {
+                  kind: 'ObjectLiteral',
+                  fields: [
+                    {
+                      kind: 'Assignment',
+                      key: ['bar', 'baz'],
+                      value: {
+                        kind: 'JessieExpression',
+                        expression: '"Farewell " + world',
+                        source: '`Farewell ${world}`',
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          ],
+        },
+      ],
+    });
+  });
 });

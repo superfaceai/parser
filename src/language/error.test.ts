@@ -1,5 +1,6 @@
 import { SyntaxError } from './error';
 import { Lexer, LexerTokenStream } from './lexer/lexer';
+import { UnknownTokenData } from './lexer/token';
 import { Source } from './source';
 import { parseProfile, parseRule } from './syntax/parser';
 import {
@@ -16,91 +17,118 @@ declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
     interface Matchers<R> {
+      toMatchSyntaxError(
+        detail: string,
+        sourceInfo: string,
+        ...messageLines: string[]
+      ): R;
+
       toThrowSyntaxError(
         detail: string,
         sourceInfo: string,
-        ...lines: string[]
+        ...messageLines: string[]
       ): R;
     }
   }
 }
+
+function toMatchSyntaxError(
+  context: jest.MatcherContext,
+  err: unknown,
+  detail: string,
+  sourceInfo: string,
+  ...messageLines: string[]
+) {
+  let message =
+    context.utils.matcherHint('toMatchSyntaxError', undefined, detail, {
+      isNot: context.isNot,
+      promise: context.promise,
+    }) + '\n\n';
+
+  if (!(err instanceof SyntaxError)) {
+    message += 'Object is not an instance of SyntaxError';
+
+    return {
+      pass: false,
+      message: () => message,
+    };
+  }
+
+  const formatLines = err.format().split('\n');
+  const testLine = (index: number, needle: string): boolean => {
+    if (formatLines[index].includes(needle)) {
+      return true;
+    }
+
+    message +=
+      ` at line ${index + 1}\n\n` +
+      `Expected: ${context.utils.printExpected(needle)}\n` +
+      `Received: ${context.utils.printReceived(formatLines[index])}\n`;
+
+    return false;
+  };
+
+  if (!testLine(0, `SyntaxError: ${detail}`)) {
+    return { pass: false, message: () => message };
+  }
+  if (!testLine(1, ` --> ${sourceInfo}`)) {
+    return { pass: false, message: () => message };
+  }
+
+  let i = 0;
+  for (; i < messageLines.length; i++) {
+    if (!testLine(i + 2, messageLines[i])) {
+      return { pass: false, message: () => message };
+    }
+  }
+
+  // If there are any trailing non-empty lines, report this as non-pass
+  if (i < formatLines.length - 2) {
+    const missedLines = formatLines.slice(i + 2);
+    if (missedLines.find(value => value.trim() !== '') !== undefined) {
+      message +=
+        'Found more lines than expected:' +
+        missedLines.map((l: string) => `\n${l}`).join('');
+
+      return { pass: false, message: () => message };
+    }
+  }
+
+  message += 'Expected to not match a SyntaxError with given message lines';
+
+  return { pass: true, message: () => message };
+}
+
 // Add the actual custom matcher
 expect.extend({
+  toMatchSyntaxError(
+    err: unknown,
+    detail: string,
+    sourceInfo: string,
+    ...messageLines: string[]
+  ) {
+    return toMatchSyntaxError(this, err, detail, sourceInfo, ...messageLines);
+  },
+
   toThrowSyntaxError(
     fn: () => unknown,
     detail: string,
     sourceInfo: string,
-    ...lines: string[]
+    ...messageLines: string[]
   ) {
     try {
       fn();
     } catch (err) {
-      let pass = true;
-      let message = 'Expected not to throw or not to match exception';
-
-      if (!(err instanceof SyntaxError)) {
-        return {
-          pass: false,
-          message: (): string =>
-            this.utils.matcherHint('toThrowSyntaxError', undefined, detail, {
-              isNot: this.isNot,
-              promise: this.promise,
-            }) + "\n\nFunction didn't throw a SyntaxError object",
-        };
-      }
-      const formatLines = err.format().split('\n');
-
-      const testMatch = (index: number, needle: string): boolean => {
-        if (!formatLines[index].includes(needle)) {
-          pass = false;
-          message =
-            this.utils.matcherHint('toThrowSyntaxError', undefined, detail, {
-              isNot: this.isNot,
-              promise: this.promise,
-            }) +
-            ` at line ${index + 1}\n\n` +
-            `Expected: ${this.utils.printExpected(needle)}\n` +
-            `Received: ${this.utils.printReceived(formatLines[index])}\n`;
-        }
-
-        return pass;
-      };
-
-      if (
-        !testMatch(0, `SyntaxError: ${detail}`) ||
-        !testMatch(1, ` --> ${sourceInfo}`)
-      ) {
-        return { pass, message: (): string => message };
-      }
-
-      let i = 0;
-      for (; i < lines.length; i++) {
-        if (!testMatch(i + 2, lines[i])) {
-          return { pass, message: (): string => message };
-        }
-      }
-
-      // If there are any trailing non-empty lines, report this as non-pass
-      if (i < formatLines.length - 2) {
-        const missedLines = formatLines.slice(i + 2);
-        if (missedLines.find(value => value.trim() !== '') !== undefined) {
-          pass = false;
-          message =
-            'Found more lines than expected:' +
-            missedLines.map((l: string) => `\n${l}`).join('');
-        }
-      }
-
-      return {
-        pass,
-        message: (): string => message,
-      };
+      return toMatchSyntaxError(this, err, detail, sourceInfo, ...messageLines);
     }
 
-    // If `fn` doesn't throw
     return {
       pass: false,
-      message: (): string => `Expected to throw "${detail}"`,
+      message: () =>
+        this.utils.matcherHint('toMatchSyntaxError', undefined, detail, {
+          isNot: this.isNot,
+          promise: this.promise,
+        }) + '\n\nExpected fn to throw.',
     };
   },
 });
@@ -134,7 +162,9 @@ describe('langauge syntax errors', () => {
       lexer.advance();
       lexer.advance();
 
-      expect(() => lexer.advance()).toThrowSyntaxError(
+      expect(
+        (lexer.advance().data as UnknownTokenData).error
+      ).toMatchSyntaxError(
         'Expected a number following a sign or an integer base prefix',
         '[input]:2:2',
         '1 | before',
@@ -148,7 +178,9 @@ describe('langauge syntax errors', () => {
 
       lexer.advance();
 
-      expect(() => lexer.advance()).toThrowSyntaxError(
+      expect(
+        (lexer.advance().data as UnknownTokenData).error
+      ).toMatchSyntaxError(
         'Expected a number following a sign or an integer base prefix',
         '[input]:1:2',
         '1 | \t0xx',
@@ -163,7 +195,9 @@ describe('langauge syntax errors', () => {
       lexer.advance();
       lexer.advance();
 
-      expect(() => lexer.advance()).toThrowSyntaxError(
+      expect(
+        (lexer.advance().data as UnknownTokenData).error
+      ).toMatchSyntaxError(
         'Expected a number following a sign or an integer base prefix',
         '[input]:2:2',
         '1 | before',
@@ -178,7 +212,9 @@ describe('langauge syntax errors', () => {
 
       lexer.advance();
 
-      expect(() => lexer.advance()).toThrowSyntaxError(
+      expect(
+        (lexer.advance().data as UnknownTokenData).error
+      ).toMatchSyntaxError(
         'Expected a number following a sign or an integer base prefix',
         '[input]:1:2',
         '1 | \t0xx',

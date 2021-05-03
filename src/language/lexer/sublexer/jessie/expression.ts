@@ -1,9 +1,70 @@
 import * as ts from 'typescript';
 
-import { SyntaxErrorCategory } from '../../../error';
 import { validateAndTranspile } from '../../../jessie';
 import { JessieSublexerTokenData, LexerTokenKind } from '../../token';
 import { ParseResult } from '../result';
+
+function processScriptText(
+  scriptText: string
+): ParseResult<JessieSublexerTokenData> {
+  const SCRIPT_WRAP = {
+    start: 'let __jessieValue = ',
+    end: ';',
+    transpiled: {
+      start: 'var __jessieValue = ',
+      end: ';',
+      varName: '__jessieValue',
+    },
+  };
+
+  // Diagnose the script text, put it in a position where an expression would be required
+  const transRes = validateAndTranspile(
+    SCRIPT_WRAP.start + scriptText + SCRIPT_WRAP.end
+  );
+  if (transRes.kind === 'failure') {
+    return {
+      kind: 'error',
+      tokenKind: LexerTokenKind.JESSIE_SCRIPT,
+      // map the errors to get the correct spans
+      errors: transRes.errors.map(err => {
+        return {
+          detail: err.detail,
+          hint: err.hint,
+          category: err.category,
+          relativeSpan: {
+            start: err.relativeSpan.start - SCRIPT_WRAP.start.length,
+            end: err.relativeSpan.end - SCRIPT_WRAP.start.length,
+          },
+        };
+      }),
+    };
+  }
+
+  // With some syntax the transpiler creates a polyfill for the function
+  // For example for the spread operator `...`
+  // Here we detect that case and wrap the output in an immediatelly invoked function expression
+  let scriptOutput = transRes.output;
+  if (!transRes.output.startsWith(SCRIPT_WRAP.transpiled.start)) {
+    scriptOutput = `(function() {\n${scriptOutput}\nreturn ${SCRIPT_WRAP.transpiled.varName};\n})()`;
+  } else {
+    // strip the prefix and postfix added by the processing here (to force expression position)
+    scriptOutput = scriptOutput.slice(
+      SCRIPT_WRAP.transpiled.start.length,
+      scriptOutput.length - SCRIPT_WRAP.transpiled.end.length
+    );
+  }
+
+  return {
+    kind: 'match',
+    data: {
+      kind: LexerTokenKind.JESSIE_SCRIPT,
+      script: scriptOutput,
+      sourceScript: scriptText,
+      sourceMap: transRes.sourceMap,
+    },
+    relativeSpan: { start: 0, end: scriptText.length },
+  };
+}
 
 // Static SCANNER to avoid reinitializing it, same thing is done inside TS codebase.
 const SCANNER = ts.createScanner(
@@ -12,6 +73,7 @@ const SCANNER = ts.createScanner(
   ts.LanguageVariant.Standard
 );
 
+/** Supported Jessie termination tokens */
 export type JessieExpressionTerminationToken =
   | ';'
   | ')'
@@ -29,21 +91,40 @@ const TERMINATION_TOKEN_TO_TS_TOKEN: {
   ',': ts.SyntaxKind.CommaToken,
   '\n': ts.SyntaxKind.NewLineTrivia,
 };
+
+/** empty statements are not supported in jessie, so ; is a good fallback */
 const FALLBACK_TERMINATOR_TOKENS: ReadonlyArray<JessieExpressionTerminationToken> = [
   ';',
+];
+/** Tokens that are always terminator token */
+const HARD_TERMINATOR_TOKENS: ReadonlyArray<ts.SyntaxKind> = [
+  ts.SyntaxKind.EndOfFileToken,
+  ts.SyntaxKind.SingleLineCommentTrivia,
+];
+
+const NESTED_OPEN_TOKENS: ReadonlyArray<ts.SyntaxKind> = [
+  ts.SyntaxKind.OpenBraceToken, // {
+  ts.SyntaxKind.OpenBracketToken, // [
+  ts.SyntaxKind.OpenParenToken, // (
+];
+const NESTED_CLOSE_TOKENS: ReadonlyArray<ts.SyntaxKind> = [
+  ts.SyntaxKind.CloseBraceToken, // }
+  ts.SyntaxKind.CloseBracketToken, // ]
+  ts.SyntaxKind.CloseParenToken, // )
 ];
 
 export function tryParseJessieScriptExpression(
   slice: string,
   terminationTokens?: ReadonlyArray<JessieExpressionTerminationToken>
 ): ParseResult<JessieSublexerTokenData> {
-  const termTokens = (terminationTokens === undefined ||
-  terminationTokens.length === 0
-    ? FALLBACK_TERMINATOR_TOKENS
-    : terminationTokens
-  ).map(tok => TERMINATION_TOKEN_TO_TS_TOKEN[tok]);
-  // slang comments start with #
-  termTokens.push(ts.SyntaxKind.PrivateIdentifier);
+  // need at least one terminator token, so we always fall back to something
+  let termTokensMut = terminationTokens;
+  if (termTokensMut === undefined || termTokensMut.length === 0) {
+    termTokensMut = FALLBACK_TERMINATOR_TOKENS;
+  }
+  const termTokens = termTokensMut.map(
+    tok => TERMINATION_TOKEN_TO_TS_TOKEN[tok]
+  );
 
   // Set the scanner text thus reusing the old scanner instance
   SCANNER.setText(slice);
@@ -58,7 +139,6 @@ export function tryParseJessieScriptExpression(
   // Stores position after last valid token.
   let lastTokenEnd = 0;
   for (;;) {
-    // Termination checks
     let token = SCANNER.scan();
 
     if (templateStringDepthCounter > 0) {
@@ -79,86 +159,23 @@ export function tryParseJessieScriptExpression(
     }
 
     // Look ahead for a termination token
-    // always break at highest level if EOF or single line comment is found
     if (
       depthCounter === 0 &&
       templateStringDepthCounter === 0 &&
-      (termTokens.includes(token) ||
-        token === ts.SyntaxKind.EndOfFileToken ||
-        token === ts.SyntaxKind.SingleLineCommentTrivia)
+      (termTokens.includes(token) || HARD_TERMINATOR_TOKENS.includes(token))
     ) {
       break;
     }
 
-    // Unexpected EOF
-    if (token === ts.SyntaxKind.EndOfFileToken) {
-      return {
-        isError: true,
-        kind: LexerTokenKind.JESSIE_SCRIPT,
-        relativeSpan: { start: 0, end: lastTokenEnd },
-        detail: 'Unexpected EOF',
-        category: SyntaxErrorCategory.JESSIE_SYNTAX,
-      };
-    }
-
     lastTokenEnd = SCANNER.getTextPos();
     // Count bracket depth
-    switch (token) {
-      case ts.SyntaxKind.OpenBraceToken: // {
-      case ts.SyntaxKind.OpenBracketToken: // [
-      case ts.SyntaxKind.OpenParenToken: // (
-        depthCounter += 1;
-        break;
-
-      case ts.SyntaxKind.CloseBraceToken: // }
-      case ts.SyntaxKind.CloseBracketToken: // ]
-      case ts.SyntaxKind.CloseParenToken: // )
-        depthCounter -= 1;
-        break;
-
-      // Ignore others
+    if (NESTED_OPEN_TOKENS.includes(token)) {
+      depthCounter += 1;
+    } else if (NESTED_CLOSE_TOKENS.includes(token)) {
+      depthCounter -= 1;
     }
   }
   const scriptText = slice.slice(0, lastTokenEnd);
 
-  // Diagnose the script text, but put it in a position where an expression would be required
-  const SCRIPT_WRAP = {
-    start: 'let x = ',
-    end: ';',
-    transpiled: {
-      start: 'var x = ',
-      end: ';',
-    },
-  };
-
-  const transRes = validateAndTranspile(
-    SCRIPT_WRAP.start + scriptText + SCRIPT_WRAP.end
-  );
-  if (!('category' in transRes)) {
-    return {
-      isError: false,
-      data: {
-        kind: LexerTokenKind.JESSIE_SCRIPT,
-        script: transRes.output.slice(
-          SCRIPT_WRAP.transpiled.start.length,
-          transRes.output.length - SCRIPT_WRAP.transpiled.end.length
-        ),
-        sourceScript: scriptText,
-        sourceMap: transRes.sourceMap,
-      },
-      relativeSpan: { start: 0, end: scriptText.length },
-    };
-  } else {
-    return {
-      isError: true,
-      kind: LexerTokenKind.JESSIE_SCRIPT,
-      detail: transRes.detail,
-      hint: transRes.hint,
-      category: transRes.category,
-      relativeSpan: {
-        start: transRes.relativeSpan.start - SCRIPT_WRAP.start.length,
-        end: transRes.relativeSpan.end - SCRIPT_WRAP.start.length,
-      },
-    };
-  }
+  return processScriptText(scriptText);
 }

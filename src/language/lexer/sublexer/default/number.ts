@@ -46,14 +46,19 @@ export function tryParseNumberLiteral(
   if (startingNumbers === 0) {
     if (prefixLength !== 0) {
       return {
-        isError: true,
-        kind: LexerTokenKind.LITERAL,
-        detail: 'Expected a number following a sign or an integer base prefix',
-        category: SyntaxErrorCategory.LEXER,
-        relativeSpan: { start: 0, end: prefixLength + 1 },
+        kind: 'error',
+        tokenKind: LexerTokenKind.LITERAL,
+        errors: [
+          {
+            detail:
+              'Expected a number following a sign or an integer base prefix',
+            category: SyntaxErrorCategory.LEXER,
+            relativeSpan: { start: 0, end: prefixLength + 1 },
+          },
+        ],
       };
     } else {
-      return undefined;
+      return { kind: 'nomatch', tokenKind: LexerTokenKind.LITERAL };
     }
   }
   numberLength += startingNumbers;
@@ -92,7 +97,7 @@ export function tryParseNumberLiteral(
   }
 
   return {
-    isError: false,
+    kind: 'match',
     data: {
       kind: LexerTokenKind.LITERAL,
       literal: numberValue,

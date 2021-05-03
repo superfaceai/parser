@@ -1,5 +1,16 @@
 ## [Unreleased]
 
+### Added
+* Added support for returning multiple errors from Lexer parsing
+
+### Changed
+* Changed internal handling of persing errors and result types
+* Better generics for Lexer interface
+
+### Fixed
+* Fixed template string RHS parsing
+* Fixed jessie transpilation when polyfill is generated
+
 ## [0.0.16] - 2021-04-26
 
 ### Added

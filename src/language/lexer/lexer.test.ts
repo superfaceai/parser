@@ -26,6 +26,8 @@ declare global {
   namespace jest {
     interface Matchers<R> {
       toHaveTokenData(data: LexerTokenData): R;
+
+      toReturnError(needle?: string): R;
     }
   }
 }
@@ -46,11 +48,15 @@ expect.extend({
     };
 
     let pass = true;
-    let message: string;
+    let message =
+      this.utils.matcherHint('toHaveTokenData', undefined, undefined, {
+        isNot: this.isNot,
+        promise: this.promise,
+      }) + '\n\n';
 
     if (actual.data.kind !== data.kind) {
       pass = false;
-      message = errorMessage();
+      message += errorMessage();
     } else {
       switch (data.kind) {
         case LexerTokenKind.SEPARATOR:
@@ -58,27 +64,27 @@ expect.extend({
             (actual.data as SeparatorTokenData).separator !== data.separator
           ) {
             pass = false;
-            message = errorMessage();
+            message += errorMessage();
           }
           break;
         case LexerTokenKind.OPERATOR:
           if ((actual.data as OperatorTokenData).operator !== data.operator) {
             pass = false;
-            message = errorMessage();
+            message += errorMessage();
           }
           break;
 
         case LexerTokenKind.LITERAL:
           if ((actual.data as LiteralTokenData).literal !== data.literal) {
             pass = false;
-            message = errorMessage();
+            message += errorMessage();
           }
           break;
 
         case LexerTokenKind.STRING:
           if ((actual.data as StringTokenData).string !== data.string) {
             pass = false;
-            message = errorMessage();
+            message += errorMessage();
           }
           break;
 
@@ -87,21 +93,21 @@ expect.extend({
             (actual.data as IdentifierTokenData).identifier !== data.identifier
           ) {
             pass = false;
-            message = errorMessage();
+            message += errorMessage();
           }
           break;
 
         case LexerTokenKind.COMMENT:
           if ((actual.data as CommentTokenData).comment !== data.comment) {
             pass = false;
-            message = errorMessage();
+            message += errorMessage();
           }
           break;
 
         case LexerTokenKind.JESSIE_SCRIPT:
           if ((actual.data as JessieScriptTokenData).script !== data.script) {
             pass = false;
-            message = errorMessage();
+            message += errorMessage();
           }
           break;
       }
@@ -111,6 +117,39 @@ expect.extend({
       pass,
       message: (): string => message,
     };
+  },
+
+  toReturnError(actual: LexerToken, needle?: string) {
+    let message =
+      this.utils.matcherHint('toYieldUnknownWithError', undefined, undefined, {
+        isNot: this.isNot,
+        promise: this.promise,
+      }) + '\n\n';
+
+    if (actual.data.kind !== LexerTokenKind.UNKNOWN) {
+      message += 'Expected UNKNOWN token';
+
+      return { pass: false, message: () => message };
+    }
+
+    const err = actual.data.error;
+
+    if (needle === undefined) {
+      message += 'Expected a token that is not UNKNOWN';
+
+      return { pass: true, message: () => message };
+    }
+
+    if (err.message.includes(needle)) {
+      message +=
+        'Expected a token that is not UNKNOWN or error that does not match the needle';
+
+      return { pass: true, message: () => message };
+    }
+
+    message += 'Needle does not match error';
+
+    return { pass: false, message: () => message };
   },
 });
 
@@ -658,6 +697,89 @@ ng2"
         separator: 'EOF',
       });
     });
+
+    test('jessie spread operator', () => {
+      const lexer = new Lexer(
+        new Source(
+          'foo = [1, 2, 3]\nfoo = [...foo, 4, 5, 6]\nfoo = [...foo, 7, 8, 9]\n'
+        )
+      );
+
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.SEPARATOR,
+        separator: 'SOF',
+      });
+
+      // foo = [1, 2, 3]
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.IDENTIFIER,
+        identifier: 'foo',
+      });
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.OPERATOR,
+        operator: '=',
+      });
+      expect(
+        lexer.advance({
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+          terminationTokens: ['\n'],
+        })
+      ).toHaveTokenData({
+        kind: LexerTokenKind.JESSIE_SCRIPT,
+        sourceMap: 'not checked',
+        sourceScript: 'not checked',
+        script: '[1, 2, 3]',
+      });
+
+      // foo = [...foo, 4, 5, 6]
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.IDENTIFIER,
+        identifier: 'foo',
+      });
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.OPERATOR,
+        operator: '=',
+      });
+      expect(
+        lexer.advance({
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+          terminationTokens: ['\n'],
+        })
+      ).toMatchObject({
+        data: {
+          kind: LexerTokenKind.JESSIE_SCRIPT,
+          sourceScript: '[...foo, 4, 5, 6]',
+          script: expect.stringContaining('__spreadArrays(foo, [4, 5, 6])'),
+        },
+      });
+
+      // foo = [...foo, 7, 8, 9]
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.IDENTIFIER,
+        identifier: 'foo',
+      });
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.OPERATOR,
+        operator: '=',
+      });
+      expect(
+        lexer.advance({
+          type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
+          terminationTokens: ['\n'],
+        })
+      ).toMatchObject({
+        data: {
+          kind: LexerTokenKind.JESSIE_SCRIPT,
+          sourceScript: '[...foo, 7, 8, 9]',
+          script: expect.stringContaining('__spreadArrays(foo, [7, 8, 9])'),
+        },
+      });
+
+      expect(lexer.advance()).toHaveTokenData({
+        kind: LexerTokenKind.SEPARATOR,
+        separator: 'EOF',
+      });
+    });
   });
 
   describe('invalid', () => {
@@ -665,7 +787,7 @@ ng2"
       const lexer = new Lexer(new Source('0xx'));
       lexer.advance(); // skip SOF
 
-      expect(() => lexer.advance()).toThrow(
+      expect(lexer.advance()).toReturnError(
         'Expected a number following a sign or an integer base prefix'
       );
     });
@@ -674,14 +796,14 @@ ng2"
       const lexerMinus = new Lexer(new Source('-'));
       lexerMinus.advance(); // skip SOF
 
-      expect(() => lexerMinus.advance()).toThrow(
+      expect(lexerMinus.advance()).toReturnError(
         'Expected a number following a sign or an integer base prefix'
       );
 
       const lexerPlus = new Lexer(new Source('+'));
       lexerPlus.advance(); // skip SOF
 
-      expect(() => lexerPlus.advance()).toThrow(
+      expect(lexerPlus.advance()).toReturnError(
         'Expected a number following a sign or an integer base prefix'
       );
     });
@@ -690,21 +812,21 @@ ng2"
       const lexer = new Lexer(new Source('"asdf'));
       lexer.advance(); // skip SOF
 
-      expect(() => lexer.advance()).toThrow('Unexpected EOF');
+      expect(lexer.advance()).toReturnError('Unexpected EOF');
     });
 
     test('block string literal', () => {
       const lexer = new Lexer(new Source("'''asdf''"));
       lexer.advance(); // skip SOF
 
-      expect(() => lexer.advance()).toThrow('Unexpected EOF');
+      expect(lexer.advance()).toReturnError('Unexpected EOF');
     });
 
     test('string escape sequence', () => {
       const lexer = new Lexer(new Source('"asdf \\x"'));
       lexer.advance(); // skip SOF
 
-      expect(() => lexer.advance()).toThrow('Invalid escape sequence');
+      expect(lexer.advance()).toReturnError('Invalid escape sequence');
     });
 
     test('identifiers starting with a number', () => {
@@ -725,12 +847,12 @@ ng2"
 
       lexer.advance(); // SOF
 
-      expect(() =>
+      expect(
         lexer.advance({
           type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
           terminationTokens: [';'],
         })
-      ).toThrowError('Expression expected.');
+      ).toReturnError('Expression expected.');
     });
 
     test('non-Jessie construct in jessie context', () => {
@@ -738,12 +860,12 @@ ng2"
 
       lexer.advance(); // SOF
 
-      expect(() =>
+      expect(
         lexer.advance({
           type: LexerContextType.JESSIE_SCRIPT_EXPRESSION,
           terminationTokens: ['}'],
         })
-      ).toThrowError('FunctionExpression construct is not supported');
+      ).toReturnError('FunctionExpression construct is not supported');
     });
   });
 
@@ -824,19 +946,5 @@ ng2"
       [LexerTokenKind.NEWLINE]: true,
     };
     expect(lexer.next().value).toMatchObject({ data: { literal: 5 } });
-  });
-
-  it('should respect the allowUnknown flag', () => {
-    let lexer = new Lexer(new Source('+'));
-    lexer.next(); // SOF
-
-    expect(() => lexer.next()).toThrow();
-
-    lexer = new Lexer(new Source('+'), undefined, true);
-    lexer.next(); // SOF
-
-    expect(lexer.next().value).toMatchObject({
-      data: { kind: LexerTokenKind.UNKNOWN },
-    });
   });
 });

@@ -1,5 +1,5 @@
 import { SyntaxError, SyntaxErrorCategory } from '../error';
-import { computeEndLocation, Location, Source } from '../source';
+import { computeEndLocation, Location, Source, Span } from '../source';
 import { LexerContext, LexerContextType, Sublexer } from './context';
 import { tryParseDefault } from './sublexer/default';
 import { tryParseJessieScriptExpression } from './sublexer/jessie';
@@ -20,21 +20,19 @@ export const DEFAULT_TOKEN_KIND_FILTER: LexerTokenKindFilter = {
   [LexerTokenKind.UNKNOWN]: false,
 };
 
-export type LexerSavedState = [LexerToken, boolean];
-export interface LexerTokenStream
+export interface LexerTokenStream<SavedState = unknown>
   extends Generator<LexerToken, undefined, LexerContext | undefined> {
   tokenKindFilter: LexerTokenKindFilter;
-  emitUnknown: boolean;
 
   peek(
     ...context: [] | [LexerContext | undefined]
   ): IteratorResult<LexerToken, undefined>;
 
   /** Saves the stream state to be restored later. */
-  save(): LexerSavedState;
+  save(): SavedState;
 
   /** Roll back the state of the stream to the given saved state. */
-  rollback(token: LexerSavedState): void;
+  rollback(token: SavedState): void;
 }
 
 /**
@@ -51,7 +49,7 @@ export interface LexerTokenStream
  * The advance function also accepts an optional `context` parameter which can be used to control the lexer context
  * for the next token.
  */
-export class Lexer implements LexerTokenStream {
+export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
   private readonly sublexers: {
     [C in LexerContextType]: Sublexer<C>;
   };
@@ -65,14 +63,7 @@ export class Lexer implements LexerTokenStream {
   /** Token kinds to filter from the stream. */
   tokenKindFilter: LexerTokenKindFilter;
 
-  /** Whether to emit the `UNKNOWN` token instead of throwing syntax error. */
-  emitUnknown: boolean;
-
-  constructor(
-    readonly source: Source,
-    tokenKindFilter?: LexerTokenKindFilter,
-    emitUnknown?: boolean
-  ) {
+  constructor(readonly source: Source, tokenKindFilter?: LexerTokenKindFilter) {
     this.sublexers = {
       [LexerContextType.DEFAULT]: tryParseDefault,
       [LexerContextType.JESSIE_SCRIPT_EXPRESSION]: tryParseJessieScriptExpression,
@@ -88,7 +79,6 @@ export class Lexer implements LexerTokenStream {
     );
 
     this.tokenKindFilter = tokenKindFilter ?? DEFAULT_TOKEN_KIND_FILTER;
-    this.emitUnknown = emitUnknown ?? false;
   }
 
   /** Advances the lexer returning the current token. */
@@ -187,7 +177,7 @@ export class Lexer implements LexerTokenStream {
   }
 
   /** Saves the lexer state to be restored later. */
-  save(): LexerSavedState {
+  save(): [LexerToken, boolean] {
     return [this.currentToken, this.fileSeparatorYielded];
   }
 
@@ -196,7 +186,7 @@ export class Lexer implements LexerTokenStream {
    *
    * The lexer will continue from this state forward.
    */
-  rollback(state: LexerSavedState): void {
+  rollback(state: [LexerToken, boolean]): void {
     this.currentToken = state[0];
     this.fileSeparatorYielded = state[1];
   }
@@ -255,16 +245,65 @@ export class Lexer implements LexerTokenStream {
         break;
     }
 
-    const parsedTokenSpan = {
-      start: start + (tokenParseResult?.relativeSpan.start ?? 0),
-      end: start + (tokenParseResult?.relativeSpan.end ?? 1),
-    };
-
     // Didn't parse as any known token or produced an error
-    if (tokenParseResult === undefined || tokenParseResult.isError) {
-      const category = tokenParseResult?.category ?? SyntaxErrorCategory.LEXER;
-      const detail = tokenParseResult?.detail ?? 'Could not match any token';
-      const hint = tokenParseResult?.hint;
+    if (tokenParseResult.kind === 'nomatch') {
+      const parsedTokenSpan = {
+        start,
+        end: start + 1,
+      };
+
+      const error = new SyntaxError(
+        this.source,
+        location,
+        parsedTokenSpan,
+        SyntaxErrorCategory.LEXER,
+        'Could not match any token'
+      );
+
+      return new LexerToken(
+        {
+          kind: LexerTokenKind.UNKNOWN,
+          error,
+        },
+        location,
+        parsedTokenSpan
+      );
+    }
+
+    // Produced an error
+    if (tokenParseResult.kind === 'error') {
+      let category: SyntaxErrorCategory;
+      let detail: string | undefined;
+      let hint: string | undefined;
+      let relativeSpan: Span;
+
+      // Single-error results are easy
+      if (tokenParseResult.errors.length === 1) {
+        const error = tokenParseResult.errors[0];
+
+        category = error.category;
+        detail = error.detail;
+        hint = error.hint;
+        relativeSpan = error.relativeSpan;
+      } else {
+        // multi-error results combine all errors and hints into one, the span is the one that convers all the errors
+        category = SyntaxErrorCategory.LEXER;
+        detail = tokenParseResult.errors.map(err => err.detail ?? '').join(';');
+        hint = tokenParseResult.errors.map(err => err.hint ?? '').join(';');
+        relativeSpan = tokenParseResult.errors
+          .map(err => err.relativeSpan)
+          .reduce((acc, curr) => {
+            return {
+              start: Math.min(acc.start, curr.start),
+              end: Math.max(acc.end, curr.end),
+            };
+          });
+      }
+
+      const parsedTokenSpan = {
+        start: start + relativeSpan.start,
+        end: start + relativeSpan.end,
+      };
 
       const error = new SyntaxError(
         this.source,
@@ -275,19 +314,20 @@ export class Lexer implements LexerTokenStream {
         hint
       );
 
-      if (this.emitUnknown) {
-        return new LexerToken(
-          {
-            kind: LexerTokenKind.UNKNOWN,
-            error,
-          },
-          location,
-          parsedTokenSpan
-        );
-      }
-
-      throw error;
+      return new LexerToken(
+        {
+          kind: LexerTokenKind.UNKNOWN,
+          error,
+        },
+        location,
+        parsedTokenSpan
+      );
     }
+
+    const parsedTokenSpan = {
+      start: start + tokenParseResult.relativeSpan.start,
+      end: start + tokenParseResult.relativeSpan.end,
+    };
 
     // All is well
     return new LexerToken(tokenParseResult.data, location, parsedTokenSpan);

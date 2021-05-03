@@ -1,12 +1,6 @@
-import {
-  LexerContext,
-  LexerToken,
-  LexerTokenKind,
-  LexerTokenStream,
-} from '../lexer';
+import { LexerContext, LexerToken, LexerTokenStream } from '../lexer';
 import {
   DEFAULT_TOKEN_KIND_FILTER,
-  LexerSavedState,
   LexerTokenKindFilter,
 } from '../lexer/lexer';
 
@@ -15,7 +9,7 @@ import {
  *
  * This is mostly used in tests.
  */
-export class ArrayLexerStream implements LexerTokenStream {
+export class ArrayLexerStream implements LexerTokenStream<number> {
   private index: number;
 
   tokenKindFilter: LexerTokenKindFilter;
@@ -58,26 +52,12 @@ export class ArrayLexerStream implements LexerTokenStream {
     return result;
   }
 
-  save(): LexerSavedState {
-    if (this.index > 0) {
-      return [this.array[this.index - 1], false];
-    } else {
-      return [
-        new LexerToken(
-          {
-            kind: LexerTokenKind.SEPARATOR,
-            separator: 'SOF',
-          },
-          { line: 0, column: 0 },
-          { start: -1, end: -1 }
-        ),
-        false,
-      ];
-    }
+  save(): number {
+    return this.index;
   }
 
-  rollback(state: LexerSavedState): void {
-    this.index = this.array.indexOf(state[0]) + 1;
+  rollback(state: number): void {
+    this.index = state;
   }
 
   return(value: undefined): IteratorResult<LexerToken, undefined> {

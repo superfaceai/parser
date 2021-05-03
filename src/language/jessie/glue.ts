@@ -7,8 +7,6 @@ import {
   validateScript,
 } from './validator/validator';
 
-type Success = { output: string; sourceMap: string };
-
 /**
  * Validates and transpiles Jessie script.
  *
@@ -16,17 +14,22 @@ type Success = { output: string; sourceMap: string };
  */
 export function validateAndTranspile(
   input: string
-): Success | JessieSyntaxProtoError | ForbiddenConstructProtoError {
+):
+  | { kind: 'success'; output: string; sourceMap: string }
+  | {
+      kind: 'failure';
+      errors: (JessieSyntaxProtoError | ForbiddenConstructProtoError)[];
+    } {
   const { output, sourceMap, syntaxProtoError } = transpileScript(input, true);
 
   if (syntaxProtoError) {
-    return syntaxProtoError;
+    return { kind: 'failure', errors: [syntaxProtoError] };
   }
 
   const subsetErrors = validateScript(input);
   if (subsetErrors.length > 0) {
-    return subsetErrors[0]; // TODO
+    return { kind: 'failure', errors: subsetErrors };
   }
 
-  return { output, sourceMap };
+  return { kind: 'success', output, sourceMap };
 }
