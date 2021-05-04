@@ -1,5 +1,7 @@
 ## [Unreleased]
 
+## [0.0.17] - 2021-05-04
+
 ### Added
 * Added support for returning multiple errors from Lexer parsing
 
