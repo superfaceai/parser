@@ -1,4 +1,4 @@
-import { Source } from '../source';
+import { Location, Source, Span } from '../source';
 import { LexerContext, LexerContextType } from './context';
 import { DEFAULT_TOKEN_KIND_FILTER, Lexer } from './lexer';
 import {
@@ -866,6 +866,96 @@ ng2"
           terminationTokens: ['}'],
         })
       ).toReturnError('FunctionExpression construct is not supported');
+    });
+  });
+
+  describe('metadata', () => {
+    it('should yield correct span for tokens', () => {
+      const lexer = new Lexer(
+        new Source(
+          `the tokens
+          and their spans // some comments
+          and 1 number`
+        ),
+        {
+          [LexerTokenKind.COMMENT]: false,
+          [LexerTokenKind.NEWLINE]: false,
+          [LexerTokenKind.IDENTIFIER]: false,
+          [LexerTokenKind.LITERAL]: false,
+          [LexerTokenKind.OPERATOR]: false,
+          [LexerTokenKind.SEPARATOR]: false,
+          [LexerTokenKind.STRING]: false,
+          [LexerTokenKind.JESSIE_SCRIPT]: false,
+          [LexerTokenKind.UNKNOWN]: false,
+        }
+      );
+
+      const expected: Span[] = [
+        { start: 0, end: 0 }, // SOF
+        { start: 0, end: 3 }, // the
+        { start: 4, end: 10 }, // tokens
+        { start: 10, end: 11 }, // newline
+        { start: 21, end: 24 }, // and
+        { start: 25, end: 30 }, // their
+        { start: 31, end: 36 }, // spans
+        { start: 37, end: 53 }, // comment
+        { start: 53, end: 54 }, // newline
+        { start: 64, end: 67 }, // and
+        { start: 68, end: 69 }, // 1
+        { start: 70, end: 76 }, // number
+        { start: 76, end: 76 }, // EOF
+      ];
+
+      const actual = [];
+      for (let i = 0; i < expected.length; i += 1) {
+        actual.push(lexer.advance().span);
+      }
+
+      expect(actual).toStrictEqual(expected);
+    });
+
+    it('should yield correct location for tokens', () => {
+      const lexer = new Lexer(
+        new Source(
+          `the tokens
+          and their spans // some comments
+          and 1 number`
+        ),
+        {
+          [LexerTokenKind.COMMENT]: false,
+          [LexerTokenKind.NEWLINE]: false,
+          [LexerTokenKind.IDENTIFIER]: false,
+          [LexerTokenKind.LITERAL]: false,
+          [LexerTokenKind.OPERATOR]: false,
+          [LexerTokenKind.SEPARATOR]: false,
+          [LexerTokenKind.STRING]: false,
+          [LexerTokenKind.JESSIE_SCRIPT]: false,
+          [LexerTokenKind.UNKNOWN]: false,
+        }
+      );
+
+      const expected: Location[] = [
+        { line: 1, column: 1 }, // SOF
+        { line: 1, column: 1 }, // the
+        { line: 1, column: 5 }, // tokens
+        { line: 1, column: 11 }, // newline
+        { line: 2, column: 11 }, // and
+        { line: 2, column: 15 }, // their
+        { line: 2, column: 21 }, // spans
+        { line: 2, column: 27 }, // comment
+        { line: 2, column: 43 }, // newline
+        { line: 3, column: 11 }, // and
+        { line: 3, column: 15 }, // 1
+        { line: 3, column: 17 }, // number
+        { line: 3, column: 23 }, // EOF
+      ];
+
+      const actual = [];
+      for (let i = 0; i < expected.length; i += 1) {
+        actual.push(lexer.advance().location);
+      }
+
+      expect(actual).toStrictEqual(expected);
     });
   });
 

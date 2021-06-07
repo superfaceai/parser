@@ -1,5 +1,14 @@
 ## [Unreleased]
 
+### Added
+* Added an explicit hint to ShorthandPropertyAssignment Jessie construct error
+
+### Changed
+* Changed how MatchAttemts merge works to preserve expected behavior
+
+### Fixed
+* Fixed Jessie errors (and other lexer errors) not reporting correct location
+
 ## [0.0.17] - 2021-05-04
 
 ### Added

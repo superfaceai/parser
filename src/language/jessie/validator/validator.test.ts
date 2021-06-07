@@ -245,45 +245,22 @@ describe('validator', () => {
     ])('Valid scripts: %s', (_name, script) => {
       expect(script).toBeValidScript();
     });
-  });
-  describe('constructDebugVisualTree', () => {
-    let consoleDebugSpy: jest.SpyInstance;
-    const originalLogLevel = process.env.LOG_LEVEL;
 
-    beforeAll(() => {
-      process.env.LOG_LEVEL = 'debug';
-    });
+    it('returns correct error', () => {
+      const script = 'Object.keys(something).map(name => ({ name, foo: foo }))';
 
-    afterAll(() => {
-      process.env.LOG_LEVEL = originalLogLevel;
-    });
+      const errors = validateScript(script);
 
-    beforeEach(() => {
-      consoleDebugSpy = jest
-        .spyOn(console, 'debug')
-        .mockImplementation(() => undefined);
-    });
-
-    afterEach(() => {
-      jest.resetAllMocks();
-    });
-
-    it('constructs debug tree from empty statement', () => {
-      validateScript(';');
-
-      expect(consoleDebugSpy).toHaveBeenCalledTimes(1);
-      expect(consoleDebugSpy).toHaveBeenCalledWith(
-        'NODE SourceFile ";"\n\tNODE EmptyStatement ";" [S]\n\tNODE EndOfFileToken ""\n'
-      );
-    });
-
-    it('constructs debug tree from non strict equality', () => {
-      validateScript('1 == 1 && 1 != 2');
-
-      expect(consoleDebugSpy).toHaveBeenCalledTimes(1);
-      expect(consoleDebugSpy).toHaveBeenCalledWith(
-        'NODE SourceFile "1 == 1 && 1 != 2"\n\tNODE ExpressionStatement "1 == 1 && 1 != 2"\n\t\tNODE BinaryExpression "1 == 1 && 1 != 2"\n\t\t\tNODE BinaryExpression "1 == 1"\n\t\t\t\tNODE FirstLiteralToken "1"\n\t\t\t\tNODE EqualsEqualsToken "==" [R]\n\t\t\t\tNODE FirstLiteralToken "1"\n\t\t\tNODE AmpersandAmpersandToken "&&"\n\t\t\tNODE BinaryExpression "1 != 2"\n\t\t\t\tNODE FirstLiteralToken "1"\n\t\t\t\tNODE ExclamationEqualsToken "!=" [R]\n\t\t\t\tNODE FirstLiteralToken "2"\n\tNODE EndOfFileToken ""\n'
-      );
+      expect(errors.length).toBe(1);
+      expect(errors[0]).toStrictEqual({
+        category: 'Jessie validation',
+        detail: 'ShorthandPropertyAssignment construct is not supported',
+        hint: 'Use `{ name: name, foo: foo }` instead',
+        relativeSpan: {
+          start: 38,
+          end: 42,
+        },
+      });
     });
   });
 });

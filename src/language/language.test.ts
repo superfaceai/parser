@@ -2,7 +2,12 @@ import fs from 'fs';
 import { join } from 'path';
 
 import { Source } from './source';
-import { parseMap, parseProfile, parseRule } from './syntax/parser';
+import {
+  parseMap,
+  parseProfile,
+  parseRule,
+  parseRuleResult,
+} from './syntax/parser';
 import { SyntaxRule } from './syntax/rule';
 import * as map from './syntax/rules/map';
 import { profile as profileRules } from './syntax/rules/profile';
@@ -576,6 +581,31 @@ describe('map strict', () => {
           },
         },
       ]);
+    });
+
+    it('should error with correct span with error in jessie', () => {
+      const input = `{
+        foo = 1
+        bar   =   Object.keys(t).map(name => ({   name, foo: foo }))
+      }`;
+
+      const source = new Source(input);
+
+      const result = parseRuleResult(map.OBJECT_LITERAL, source, true);
+
+      expect(result.kind).toBe('failure');
+      if (result.kind === 'success') {
+        throw 'unreachable';
+      }
+
+      expect(result.error.span).toStrictEqual({
+        start: 68,
+        end: 72,
+      });
+      expect(result.error.location).toStrictEqual({
+        line: 3,
+        column: 51,
+      });
     });
   });
 

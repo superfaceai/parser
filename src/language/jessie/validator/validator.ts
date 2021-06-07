@@ -8,9 +8,13 @@ function constructDebugVisualTree(root: ts.Node): string {
   let debugDepth = 0;
 
   function nodeVisitor<T extends ts.Node>(node: T): void {
-    const nodeCode = node.getText().replace('\r\n', ' ').trim();
+    const nodeCode = node.getFullText();
     const treeIndent = ''.padStart(debugDepth, '\t');
-    debugTree += `${treeIndent}NODE ${ts.SyntaxKind[node.kind]} "${nodeCode}"`;
+    debugTree += `${treeIndent}NODE kind: ${ts.SyntaxKind[node.kind]}, full: [${
+      node.pos
+    }, ${
+      node.end
+    }], text: [${node.getStart()}, ${node.getEnd()}] - "${nodeCode}"`;
 
     // Go over forbidden constructs and check if any of them applies
     let anyRuleBroken = false;
@@ -22,10 +26,8 @@ function constructDebugVisualTree(root: ts.Node): string {
     }
     if (anyRuleBroken) {
       debugTree += ' [R]';
-    }
-
-    // If none of the rules applied, but the syntax is not valid anyway, add an error without a hint
-    if (!anyRuleBroken && !ALLOWED_SYNTAX.includes(node.kind)) {
+    } else if (!ALLOWED_SYNTAX.includes(node.kind)) {
+      // If none of the rules applied, but the syntax is not valid anyway, add an error without a hint
       debugTree += ' [S]';
     }
 
@@ -67,7 +69,7 @@ export function validateScript(input: string): ForbiddenConstructProtoError[] {
         errors.push({
           detail: `${ts.SyntaxKind[node.kind]} construct is not supported`,
           hint: rule.hint(input, node),
-          relativeSpan: { start: node.pos, end: node.end },
+          relativeSpan: { start: node.getStart(), end: node.getEnd() },
           category: SyntaxErrorCategory.JESSIE_VALIDATION,
         });
       }
@@ -77,7 +79,7 @@ export function validateScript(input: string): ForbiddenConstructProtoError[] {
     if (!anyRuleBroken && !ALLOWED_SYNTAX.includes(node.kind)) {
       errors.push({
         detail: `${ts.SyntaxKind[node.kind]} construct is not supported`,
-        relativeSpan: { start: node.pos, end: node.end },
+        relativeSpan: { start: node.getStart(), end: node.getEnd() },
         category: SyntaxErrorCategory.JESSIE_VALIDATION,
       });
     }
