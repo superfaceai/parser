@@ -43,22 +43,34 @@ export class MatchAttempts {
       return this;
     }
 
-    // Both equal or both undefined
-    if (this.token?.span.start === other.token?.span.start) {
-      // merge
+    // resolve undefined
+    if (this.token === undefined && other.token === undefined) {
       return new MatchAttempts(this.token, [...this.rules, ...other.rules]);
     }
-
     // undefined is treated as greater than defined
     if (this.token === undefined) {
       return this;
-    } else if (
-      other.token === undefined ||
-      other.token.span.start > this.token.span.start
-    ) {
+    } else if (other.token === undefined) {
       return other;
-    } else {
+    }
+
+    // if the tokens are of UNKNOWN variant then we compare their error spans instead
+    const thisSpan =
+      this.token.data.kind === LexerTokenKind.UNKNOWN
+        ? this.token.data.error.span
+        : this.token.span;
+    const otherSpan =
+      other.token.data.kind === LexerTokenKind.UNKNOWN
+        ? other.token.data.error.span
+        : other.token.span;
+
+    if (thisSpan.start === otherSpan.start) {
+      return new MatchAttempts(this.token, [...this.rules, ...other.rules]);
+    }
+    if (thisSpan.start > otherSpan.start) {
       return this;
+    } else {
+      return other;
     }
   }
 }

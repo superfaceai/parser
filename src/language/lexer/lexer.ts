@@ -245,9 +245,17 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
         break;
     }
 
+    // For errors, there are two spans and two locations here:
+    // * the location of the token which produced this error during lexing
+    // * the location of the error within that token
+    //
+    // the entire span of the token is unknown, as the error has happened along the way
+    // but we know it covers the error span at least
+
     // Didn't parse as any known token or produced an error
     if (tokenParseResult.kind === 'nomatch') {
-      const parsedTokenSpan = {
+      // here we couldn't match anything, so the token span and the error span (and location) is the same
+      const tokenSpan = {
         start,
         end: start + 1,
       };
@@ -255,7 +263,7 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
       const error = new SyntaxError(
         this.source,
         location,
-        parsedTokenSpan,
+        tokenSpan,
         SyntaxErrorCategory.LEXER,
         'Could not match any token'
       );
@@ -266,7 +274,7 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
           error,
         },
         location,
-        parsedTokenSpan
+        tokenSpan
       );
     }
 
@@ -286,10 +294,12 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
         hint = error.hint;
         relativeSpan = error.relativeSpan;
       } else {
-        // multi-error results combine all errors and hints into one, the span is the one that convers all the errors
+        // multi-error results combine all errors and hints into one, the span is the one that covers all the errors
         category = SyntaxErrorCategory.LEXER;
-        detail = tokenParseResult.errors.map(err => err.detail ?? '').join(';');
-        hint = tokenParseResult.errors.map(err => err.hint ?? '').join(';');
+        detail = tokenParseResult.errors
+          .map(err => err.detail ?? '')
+          .join('; ');
+        hint = tokenParseResult.errors.map(err => err.hint ?? '').join('; ');
         relativeSpan = tokenParseResult.errors
           .map(err => err.relativeSpan)
           .reduce((acc, curr) => {
@@ -300,15 +310,25 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
           });
       }
 
-      const parsedTokenSpan = {
-        start: start + relativeSpan.start,
+      // here the error span and the token span (and location) are different
+      const tokenSpan = {
+        start: start,
         end: start + relativeSpan.end,
       };
 
+      const errorSpan = {
+        start: start + relativeSpan.start,
+        end: start + relativeSpan.end,
+      };
+      const errorLocation = computeEndLocation(
+        this.source.body.slice(tokenSpan.start, errorSpan.start),
+        location
+      );
+
       const error = new SyntaxError(
         this.source,
-        location,
-        parsedTokenSpan,
+        errorLocation,
+        errorSpan,
         category,
         detail,
         hint
@@ -320,7 +340,7 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
           error,
         },
         location,
-        parsedTokenSpan
+        tokenSpan
       );
     }
 

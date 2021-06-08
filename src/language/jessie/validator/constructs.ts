@@ -34,7 +34,9 @@ export const FORBIDDEN_CONSTRUCTS: {
       hint: (source: string, node: ts.FunctionDeclaration): string => {
         let name;
         if (node.name) {
-          name = source.substring(node.name.pos, node.name.end).trim();
+          name = source
+            .substring(node.name.getStart(), node.name.getEnd())
+            .trim();
         } else {
           name = 'anon';
         }
@@ -50,9 +52,11 @@ export const FORBIDDEN_CONSTRUCTS: {
     {
       hint: (source: string, node: ts.BinaryOperatorToken): string => {
         const parent = node.parent as ts.BinaryExpression;
-        const left = source.substring(parent.left.pos, parent.left.end).trim();
+        const left = source
+          .substring(parent.left.getStart(), parent.left.getEnd())
+          .trim();
         const right = source
-          .substring(parent.right.pos, parent.right.end)
+          .substring(parent.right.getStart(), parent.right.getEnd())
           .trim();
 
         return `Use \`${left} === ${right}\` instead`;
@@ -63,9 +67,11 @@ export const FORBIDDEN_CONSTRUCTS: {
     {
       hint: (source: string, node: ts.BinaryOperatorToken): string => {
         const parent = node.parent as ts.BinaryExpression;
-        const left = source.substring(parent.left.pos, parent.left.end).trim();
+        const left = source
+          .substring(parent.left.getStart(), parent.left.getEnd())
+          .trim();
         const right = source
-          .substring(parent.right.pos, parent.right.end)
+          .substring(parent.right.getStart(), parent.right.getEnd())
           .trim();
 
         return `Use \`${left} !== ${right}\` instead`;
@@ -78,7 +84,7 @@ export const FORBIDDEN_CONSTRUCTS: {
         node.operator === ts.SyntaxKind.PlusPlusToken,
       hint: (source: string, node: ts.PrefixUnaryExpression): string => {
         const operand = source
-          .substring(node.operand.pos, node.operand.end)
+          .substring(node.operand.getStart(), node.operand.getEnd())
           .trim();
 
         return `Use \`${operand} += 1\` or \`${operand}++\` instead`;
@@ -89,10 +95,29 @@ export const FORBIDDEN_CONSTRUCTS: {
         node.operator === ts.SyntaxKind.MinusMinusToken,
       hint: (source: string, node: ts.PrefixUnaryExpression): string => {
         const operand = source
-          .substring(node.operand.pos, node.operand.end)
+          .substring(node.operand.getStart(), node.operand.getEnd())
           .trim();
 
         return `Use \`${operand} -= 1\` or \`${operand}--\` instead`;
+      },
+    },
+  ],
+  [ts.SyntaxKind.ShorthandPropertyAssignment]: [
+    {
+      hint: (source: string, node: ts.ShorthandPropertyAssignment): string => {
+        const beforeText = source.substring(
+          node.parent.getStart(),
+          node.name.getStart()
+        );
+        const afterText = source.substring(
+          node.name.getEnd(),
+          node.parent.getEnd()
+        );
+        const propertyName = source
+          .substring(node.name.getStart(), node.name.getEnd())
+          .trim();
+
+        return `Use \`${beforeText}${propertyName}: ${propertyName}${afterText}\` instead`;
       },
     },
   ],
