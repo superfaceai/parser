@@ -303,7 +303,7 @@ export const getProfileUsecases = (
   profile: ProfileDocumentNode
 ): UseCaseInfo[] => {
   return profile.definitions
-    .filter(d => isUseCaseDefinitionNode(d))
+    .filter(definitioin => isUseCaseDefinitionNode(definitioin))
     .map(definitioin => {
       const node = definitioin as UseCaseDefinitionNode;
 
