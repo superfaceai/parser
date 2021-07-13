@@ -59,9 +59,8 @@ export function formatIssues(issues?: ValidationIssue[]): string {
 
       switch (issue.kind) {
         case 'wrongScope':
-          return `${location} - Wrong Scope: expected ${
-            issue.context.expected ?? 'no scope in profile'
-          }, but got ${issue.context.actual ?? 'no scope in map'}`;
+          return `${location} - Wrong Scope: expected ${issue.context.expected ?? 'no scope in profile'
+            }, but got ${issue.context.actual ?? 'no scope in map'}`;
 
         case 'wrongProfileName':
           return `${location} - Wrong Profile Name: expected ${issue.context.expected}, but got ${issue.context.actual}`;
@@ -182,9 +181,8 @@ export function formatIssues(issues?: ValidationIssue[]): string {
             actual = issue.context.actual;
           }
 
-          return `${location} - Wrong Variable Structure: variable ${
-            issue.context.name
-          } expected ${expected}, but got ${actual.toString()}`;
+          return `${location} - Wrong Variable Structure: variable ${issue.context.name
+            } expected ${expected}, but got ${actual.toString()}`;
 
         default:
           throw new Error('Invalid issue!');
@@ -304,8 +302,8 @@ export const getProfileUsecases = (
 ): UseCaseInfo[] => {
   return profile.definitions
     .filter(d => isUseCaseDefinitionNode(d))
-    .map(d => {
-      const node = d as UseCaseDefinitionNode;
+    .map(definitioin => {
+      const node = definitioin as UseCaseDefinitionNode;
 
       return { name: node.useCaseName, safety: node.safety };
     });
