@@ -303,9 +303,7 @@ export const getProfileUsecases = (
 ): UseCaseInfo[] => {
   return profile.definitions
     .filter(isUseCaseDefinitionNode)
-    .map(definitioin => {
-      return { name: definitioin.useCaseName, safety: definitioin.safety };
-    });
+    .map(definition => ({ name: definition.useCaseName, safety: definition.safety }));
 };
 
 export const getProfileOutput = (
