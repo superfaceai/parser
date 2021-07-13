@@ -11,6 +11,7 @@ import {
   OperationDefinitionNode,
   OutcomeStatementNode,
   ProfileDocumentNode,
+  UseCaseDefinitionNode,
 } from '@superfaceai/ast';
 import * as ts from 'typescript';
 
@@ -294,20 +295,20 @@ export const mergeVariables = (
   return result;
 };
 
+export type UseCaseInfo = {
+  name: string;
+  safety?: 'safe' | 'unsafe' | 'idempotent';
+};
 export const getProfileUsecases = (
   profile: ProfileDocumentNode
-): { name: string; safety?: 'safe' | 'unsafe' | 'idempotent' }[] => {
-  const usecases: {
-    name: string;
-    safety?: 'safe' | 'unsafe' | 'idempotent';
-  }[] = [];
-  profile.definitions.forEach(d => {
-    if (isUseCaseDefinitionNode(d)) {
-      usecases.push({ name: d.useCaseName, safety: d.safety });
-    }
-  });
+): UseCaseInfo[] => {
+  return profile.definitions
+    .filter(d => isUseCaseDefinitionNode(d))
+    .map(d => {
+      const node = d as UseCaseDefinitionNode;
 
-  return usecases;
+      return { name: node.useCaseName, safety: node.safety };
+    });
 };
 
 export const getProfileOutput = (
