@@ -11,7 +11,6 @@ import {
   OperationDefinitionNode,
   OutcomeStatementNode,
   ProfileDocumentNode,
-  UseCaseDefinitionNode,
 } from '@superfaceai/ast';
 import * as ts from 'typescript';
 
@@ -303,11 +302,9 @@ export const getProfileUsecases = (
   profile: ProfileDocumentNode
 ): UseCaseInfo[] => {
   return profile.definitions
-    .filter(definitioin => isUseCaseDefinitionNode(definitioin))
+    .filter(isUseCaseDefinitionNode)
     .map(definitioin => {
-      const node = definitioin as UseCaseDefinitionNode;
-
-      return { name: node.useCaseName, safety: node.safety };
+      return { name: definitioin.useCaseName, safety: definitioin.safety };
     });
 };
 
