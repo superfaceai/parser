@@ -4,6 +4,7 @@ import {
   isObjectLiteralNode,
   isOutcomeStatementNode,
   isPrimitiveLiteralNode,
+  isUseCaseDefinitionNode,
   LiteralNode,
   MapASTNode,
   MapDefinitionNode,
@@ -291,6 +292,22 @@ export const mergeVariables = (
   }
 
   return result;
+};
+
+export const getProfileUsecases = (
+  profile: ProfileDocumentNode
+): { name: string; safety?: 'safe' | 'unsafe' | 'idempotent' }[] => {
+  const usecases: {
+    name: string;
+    safety?: 'safe' | 'unsafe' | 'idempotent';
+  }[] = [];
+  profile.definitions.forEach(d => {
+    if (isUseCaseDefinitionNode(d)) {
+      usecases.push({ name: d.useCaseName, safety: d.safety });
+    }
+  });
+
+  return usecases;
 };
 
 export const getProfileOutput = (
