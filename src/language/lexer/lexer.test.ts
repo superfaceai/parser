@@ -749,7 +749,7 @@ ng2"
         data: {
           kind: LexerTokenKind.JESSIE_SCRIPT,
           sourceScript: '[...foo, 4, 5, 6]',
-          script: expect.stringContaining('__spreadArrays(foo, [4, 5, 6])'),
+          script: expect.stringContaining('__spreadArray'),
         },
       });
 
@@ -771,7 +771,7 @@ ng2"
         data: {
           kind: LexerTokenKind.JESSIE_SCRIPT,
           sourceScript: '[...foo, 7, 8, 9]',
-          script: expect.stringContaining('__spreadArrays(foo, [7, 8, 9])'),
+          script: expect.stringContaining('__spreadArray'),
         },
       });
 

@@ -457,7 +457,9 @@ export const USECASE_DEFINITION: SyntaxRuleSrc<UseCaseDefinitionNode> = document
 const PROFILE_NAME = SyntaxRule.identifier('name')
   .followedBy(SyntaxRuleSeparator.operator('='))
   .andFollowedBy(
-    SyntaxRule.string().andThen(name => {
+    SyntaxRule.string().andThen<
+      SrcNode<{ scope?: string, name: string }>
+    >(name => {
       const parseNameResult = parseDocumentId(name.data.string);
       // profiles can't have version specified in the name
       if (
@@ -496,7 +498,9 @@ const PROFILE_NAME = SyntaxRule.identifier('name')
 const PROFILE_VERSION = SyntaxRule.identifier('version')
   .followedBy(SyntaxRuleSeparator.operator('='))
   .andFollowedBy(
-    SyntaxRule.string().andThen(version => {
+    SyntaxRule.string().andThen<
+      SrcNode<{ major: number, minor: number, patch: number, label?: string }>
+    >(version => {
       const parseVersionResult = parseVersion(version.data.string);
       if (parseVersionResult.kind !== 'parsed') {
         return { kind: 'nomatch' };

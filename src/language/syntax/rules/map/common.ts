@@ -10,6 +10,7 @@ import {
   OperationDefinitionNode,
   PrimitiveLiteralNode,
 } from '@superfaceai/ast';
+import { DocumentVersion } from '../../../../common';
 
 import {
   isValidDocumentIdentifier,
@@ -239,7 +240,9 @@ export function ASSIGNMENT_FACTORY(
 const PROFILE_ID = SyntaxRule.identifier('profile')
   .followedBy(SyntaxRuleSeparator.operator('='))
   .andFollowedBy(
-    SyntaxRule.string().andThen(id => {
+    SyntaxRule.string().andThen<
+      SrcNode<{ scope?: string, name: string, version: DocumentVersion }>
+    >(id => {
       const parseIdResult = parseProfileId(id.data.string);
       // must link to a profile
       if (parseIdResult.kind !== 'parsed') {
@@ -276,7 +279,9 @@ const PROFILE_ID = SyntaxRule.identifier('profile')
 const PROVIDER_ID = SyntaxRule.identifier('provider')
   .followedBy(SyntaxRuleSeparator.operator('='))
   .andFollowedBy(
-    SyntaxRule.string().andThen(provider => {
+    SyntaxRule.string().andThen<
+      SrcNode<{ provider: string }>
+    >(provider => {
       if (!isValidDocumentIdentifier(provider.data.string)) {
         return {
           kind: 'nomatch',
@@ -307,7 +312,9 @@ const PROVIDER_ID = SyntaxRule.identifier('provider')
 export const MAP_VARIANT = SyntaxRule.identifier('variant')
   .followedBy(SyntaxRuleSeparator.operator('='))
   .andFollowedBy(
-    SyntaxRule.string().andThen(variant => {
+    SyntaxRule.string().andThen<
+      LexerTokenMatch<StringTokenData>
+    >(variant => {
       if (!isValidDocumentIdentifier(variant.data.string)) {
         return {
           kind: 'nomatch',

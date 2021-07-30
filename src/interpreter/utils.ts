@@ -242,38 +242,37 @@ export function compareStructure(
   return { isValid: false };
 }
 
-function isErrorOutcome(node: MapASTNode): node is OutcomeStatementNode {
-  return isOutcomeStatementNode(node) && node.isError;
-}
-
-function isResultOutcome(node: MapASTNode): node is OutcomeStatementNode {
-  return isOutcomeStatementNode(node) && !node.isError;
-}
-
 export function getOutcomes(
   node: MapDefinitionNode | OperationDefinitionNode,
-  isError?: boolean
+  isErrorFilter?: boolean
 ): OutcomeStatementNode[] {
-  let filterFunction = isOutcomeStatementNode;
-  if (isError !== undefined) {
-    filterFunction = isError ? isErrorOutcome : isResultOutcome;
-  }
+  const filterFunction = (input: unknown): input is OutcomeStatementNode => {
+    if (!isOutcomeStatementNode(input)) {
+      return false;
+    }
 
-  const outcomes = node.statements.filter(filterFunction);
+    if (isErrorFilter !== undefined && input.isError !== isErrorFilter) {
+      return false;
+    }
 
-  node.statements
-    .filter(isCallStatementNode)
-    .forEach(callStatement =>
-      outcomes.concat(callStatement.statements.filter(filterFunction))
-    );
+    return true;
+  };
 
-  node.statements
-    .filter(isHttpCallStatementNode)
-    .forEach(httpCall =>
-      httpCall.responseHandlers.forEach(responseHandler =>
-        outcomes.concat(responseHandler.statements.filter(filterFunction))
+  const outcomes = node.statements.filter(filterFunction).concat(
+    node.statements
+      .filter(isCallStatementNode)
+      .flatMap(
+        callStatement => callStatement.statements.filter(filterFunction)
       )
-    );
+  ).concat(
+    node.statements
+      .filter(isHttpCallStatementNode)
+      .flatMap(
+        httpCall => httpCall.responseHandlers.flatMap(
+          responseHandler => responseHandler.statements.filter(filterFunction)
+        )
+      )
+  );
 
   return outcomes;
 }
