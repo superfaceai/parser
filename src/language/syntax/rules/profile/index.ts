@@ -1,3 +1,2 @@
-import * as profile from './profile';
+export * from './profile';
 
-export { profile };

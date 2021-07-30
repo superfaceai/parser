@@ -9,8 +9,8 @@ import {
   parseRuleResult,
 } from './syntax/parser';
 import { SyntaxRule } from './syntax/rule';
-import * as map from './syntax/rules/map';
-import { profile as profileRules } from './syntax/rules/profile';
+import * as mapRules from './syntax/rules/map';
+import * as profileRules from './syntax/rules/profile';
 
 describe('profile', () => {
   it('should parse constructs.profile', () => {
@@ -462,7 +462,7 @@ describe('map strict', () => {
       const input = 'if ((() => { const a = 1; return { foo: a + 2 }; })())';
 
       const source = new Source(input);
-      const condition = parseRule(map.common.CONDITION_ATOM, source, true);
+      const condition = parseRule(mapRules.CONDITION_ATOM, source, true);
 
       expect(condition).toMatchObject({
         kind: 'ConditionAtom',
@@ -479,7 +479,7 @@ describe('map strict', () => {
         'foreach (x of (() => { const x = [1, 2, 3]; x.push(4); return x; })())';
 
       const source = new Source(input);
-      const condition = parseRule(map.common.ITERATION_ATOM, source, true);
+      const condition = parseRule(mapRules.ITERATION_ATOM, source, true);
 
       expect(condition).toMatchObject({
         kind: 'IterationAtom',
@@ -502,7 +502,7 @@ describe('map strict', () => {
 
       const source = new Source(input);
 
-      const objectStrict = parseRule(map.OBJECT_LITERAL, source, true);
+      const objectStrict = parseRule(mapRules.OBJECT_LITERAL, source, true);
       expect(objectStrict).toMatchObject({
         kind: 'ObjectLiteral',
         fields: [
@@ -541,7 +541,7 @@ describe('map strict', () => {
       const source = new Source(input);
 
       const args = parseRule(
-        SyntaxRule.repeat(map.ARGUMENT_LIST_ASSIGNMENT),
+        SyntaxRule.repeat(mapRules.ARGUMENT_LIST_ASSIGNMENT),
         source,
         true
       );
@@ -591,7 +591,7 @@ describe('map strict', () => {
 
       const source = new Source(input);
 
-      const result = parseRuleResult(map.OBJECT_LITERAL, source, true);
+      const result = parseRuleResult(mapRules.OBJECT_LITERAL, source, true);
 
       expect(result.kind).toBe('failure');
       if (result.kind === 'success') {

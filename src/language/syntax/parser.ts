@@ -4,8 +4,8 @@ import { SyntaxError } from '../error';
 import { Lexer } from '../lexer/lexer';
 import { Source } from '../source';
 import { SyntaxRule } from './rule';
-import * as map from './rules/map';
-import { profile } from './rules/profile';
+import * as mapRules from './rules/map';
+import * as profileRules from './rules/profile';
 
 export function parseRuleResult<N>(
   rule: SyntaxRule<N>,
@@ -40,6 +40,8 @@ export function parseRuleResult<N>(
  *
  * If `skipSOF === true`, the first token of the newly created lexer token stream (the SOF token)
  * is skipped.
+ * 
+ * Internally this function calls `parseRuleResult` and throws the error.
  */
 export function parseRule<N>(
   rule: SyntaxRule<N>,
@@ -55,13 +57,16 @@ export function parseRule<N>(
   return result.value;
 }
 
+/**
+ * Equivalent to calling `parseRule(profileRules.PROFILE_DOCUMENT, source)`
+ */
 export function parseProfile(source: Source): ProfileDocumentNode {
-  return parseRule(profile.PROFILE_DOCUMENT, source);
+  return parseRule(profileRules.PROFILE_DOCUMENT, source);
 }
 
 /**
- * Attempts to parse the source using rules that strictly adhere to the specification.
+ * Equivalent to calling `parseRule(mapRules.MAP_DOCUMENT, source);`
  */
 export function parseMap(source: Source): MapDocumentNode {
-  return parseRule(map.MAP_DOCUMENT, source);
+  return parseRule(mapRules.MAP_DOCUMENT, source);
 }

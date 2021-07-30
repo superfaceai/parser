@@ -13,7 +13,7 @@ import { Location, Source, Span } from '../../../source';
 import { allFeatures, PARSER_FEATURES, ParserFeature } from '../../features';
 import { RuleResult, SyntaxRule } from '../../rule';
 import { ArrayLexerStream } from '../../util';
-import * as map from './index';
+import * as mapRules from './index';
 
 // Declare custom matcher for sake of Typescript
 declare global {
@@ -238,7 +238,7 @@ describe('strict map syntax rules', () => {
           tokens[7]
         ),
         stream,
-        map.OBJECT_LITERAL,
+        mapRules.OBJECT_LITERAL,
         ...allFeatures()
       );
     });
@@ -257,7 +257,7 @@ describe('strict map syntax rules', () => {
       ];
       const stream = new ArrayLexerStream(tokens);
 
-      const rule = map.common.CONDITION_ATOM;
+      const rule = mapRules.CONDITION_ATOM;
 
       expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
@@ -287,7 +287,7 @@ describe('strict map syntax rules', () => {
       ];
       const stream = new ArrayLexerStream(tokens);
 
-      const rule = map.common.ITERATION_ATOM;
+      const rule = mapRules.ITERATION_ATOM;
 
       expect(rule.tryMatch(stream)).toBeAMatch(
         tesMatch(
@@ -348,7 +348,7 @@ describe('strict map syntax rules', () => {
           tokens[5]
         ),
         stream,
-        map.OPERATION_OUTCOME_STATEMENT,
+        mapRules.OPERATION_OUTCOME_STATEMENT,
         ...allFeatures()
       );
     });
@@ -396,7 +396,7 @@ describe('strict map syntax rules', () => {
           tokens[5]
         ),
         stream,
-        map.OPERATION_OUTCOME_STATEMENT,
+        mapRules.OPERATION_OUTCOME_STATEMENT,
         ...allFeatures()
       );
     });
@@ -445,7 +445,7 @@ describe('strict map syntax rules', () => {
           tokens[6]
         ),
         stream,
-        map.MAP_OUTCOME_STATEMENT,
+        mapRules.MAP_OUTCOME_STATEMENT,
         ...allFeatures()
       );
     });
@@ -494,7 +494,7 @@ describe('strict map syntax rules', () => {
           tokens[6]
         ),
         stream,
-        map.MAP_OUTCOME_STATEMENT,
+        mapRules.MAP_OUTCOME_STATEMENT,
         ...allFeatures()
       );
     });
@@ -536,7 +536,7 @@ describe('strict map syntax rules', () => {
           tokens[6]
         ),
         stream,
-        map.SET_BLOCK_ASSIGNMENT,
+        mapRules.SET_BLOCK_ASSIGNMENT,
         ...allFeatures()
       );
     });
@@ -573,7 +573,7 @@ describe('strict map syntax rules', () => {
           tokens[4]
         ),
         stream,
-        map.ARGUMENT_LIST_ASSIGNMENT,
+        mapRules.ARGUMENT_LIST_ASSIGNMENT,
         ...allFeatures()
       );
     });
@@ -613,7 +613,7 @@ describe('strict map syntax rules', () => {
           tokens[6]
         ),
         stream,
-        map.OBJECT_LITERAL_ASSIGNMENT,
+        mapRules.OBJECT_LITERAL_ASSIGNMENT,
         ...allFeatures()
       );
     });
@@ -655,7 +655,7 @@ describe('strict map syntax rules', () => {
           tokens[2]
         ),
         stream,
-        map.SET_STATEMENT,
+        mapRules.SET_STATEMENT,
         ...allFeatures()
       );
     });
@@ -717,7 +717,7 @@ describe('strict map syntax rules', () => {
           tokens[9]
         ),
         stream,
-        map.SET_STATEMENT,
+        mapRules.SET_STATEMENT,
         ...allFeatures()
       );
     });
@@ -745,7 +745,7 @@ describe('strict map syntax rules', () => {
           tokens[4]
         ),
         stream,
-        map.MAP_SUBSTATEMENT,
+        mapRules.MAP_SUBSTATEMENT,
         ...allFeatures()
       );
     });
@@ -932,7 +932,7 @@ describe('strict map syntax rules', () => {
       expectAllToBeAMatch(
         expected,
         stream,
-        [map.MAP_SUBSTATEMENT, map.OPERATION_SUBSTATEMENT],
+        [mapRules.MAP_SUBSTATEMENT, mapRules.OPERATION_SUBSTATEMENT],
         ...allFeatures()
       );
     });
@@ -1002,7 +1002,7 @@ describe('strict map syntax rules', () => {
       expectAllToBeAMatch(
         expected,
         stream,
-        [map.HTTP_REQUEST_VARIABLES_BLOCK],
+        [mapRules.HTTP_REQUEST_VARIABLES_BLOCK],
         ...allFeatures()
       );
     });
@@ -1051,7 +1051,7 @@ describe('strict map syntax rules', () => {
       expectAllToBeAMatch(
         expected,
         stream,
-        [map.MAP_SUBSTATEMENT, map.OPERATION_SUBSTATEMENT],
+        [mapRules.MAP_SUBSTATEMENT, mapRules.OPERATION_SUBSTATEMENT],
         ...allFeatures()
       );
     });
@@ -1096,7 +1096,7 @@ describe('strict map syntax rules', () => {
           tokens[5]
         ),
         stream,
-        map.SET_STATEMENT,
+        mapRules.SET_STATEMENT,
         ...allFeatures()
       );
     });
@@ -1148,7 +1148,7 @@ describe('strict map syntax rules', () => {
           tokens[8]
         ),
         stream,
-        map.common.MAP_HEADER,
+        mapRules.MAP_HEADER,
         ...allFeatures()
       );
     });
@@ -1232,7 +1232,7 @@ describe('strict map syntax rules', () => {
           tokens[14]
         ),
         stream,
-        map.MAP_DOCUMENT,
+        mapRules.MAP_DOCUMENT,
         ...allFeatures()
       );
     });
@@ -1325,7 +1325,7 @@ describe('extended map syntax rules', () => {
         tokens[11]
       ),
       stream,
-      map.SET_STATEMENT,
+      mapRules.SET_STATEMENT,
       'nested_object_literals'
     );
   });
@@ -1381,7 +1381,7 @@ describe('extended map syntax rules', () => {
         tokensA[5]
       ),
       streamA,
-      map.HTTP_CALL_STATEMENT_REQUEST,
+      mapRules.HTTP_CALL_STATEMENT_REQUEST,
       'shorthand_http_request_slots'
     );
 
@@ -1404,7 +1404,7 @@ describe('extended map syntax rules', () => {
         tokensB[5]
       ),
       streamB,
-      map.HTTP_CALL_STATEMENT_REQUEST,
+      mapRules.HTTP_CALL_STATEMENT_REQUEST,
       'shorthand_http_request_slots'
     );
 
@@ -1426,7 +1426,7 @@ describe('extended map syntax rules', () => {
         tokensC[5]
       ),
       streamC,
-      map.HTTP_CALL_STATEMENT_REQUEST,
+      mapRules.HTTP_CALL_STATEMENT_REQUEST,
       'shorthand_http_request_slots'
     );
   });
@@ -1478,7 +1478,7 @@ describe('extended map syntax rules', () => {
         tokens[13]
       ),
       stream,
-      [map.MAP_SUBSTATEMENT, map.OPERATION_SUBSTATEMENT],
+      [mapRules.MAP_SUBSTATEMENT, mapRules.OPERATION_SUBSTATEMENT],
       'multiple_security_schemes'
     );
   });
