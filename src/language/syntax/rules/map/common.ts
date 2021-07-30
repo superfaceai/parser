@@ -27,7 +27,7 @@ import {
   SyntaxRuleOr,
   SyntaxRuleSeparator,
 } from '../../rule';
-import { documentedNode, SrcNode, SyntaxRuleSrc } from '../common';
+import { documentedNode, LocationInfo, WithLocationInfo } from '../common';
 
 const TERMINATOR_LOOKAHEAD: Record<
   JessieExpressionTerminationToken,
@@ -86,10 +86,10 @@ export function consumeLocalTerminators<R>(
     .map(([lit, _op]) => lit);
 }
 
-export const PRIMITIVE_LITERAL: SyntaxRuleSrc<PrimitiveLiteralNode> = SyntaxRule.literal()
+export const PRIMITIVE_LITERAL: SyntaxRule<WithLocationInfo<PrimitiveLiteralNode>> = SyntaxRule.literal()
   .or(SyntaxRule.string())
   .map(
-    (match): SrcNode<PrimitiveLiteralNode> => {
+    (match): WithLocationInfo<PrimitiveLiteralNode> => {
       const value =
         match.data.kind === LexerTokenKind.LITERAL
           ? match.data.literal
@@ -128,9 +128,9 @@ export function mapAssignmentPath(
 
 export function JESSIE_EXPRESSION_FACTORY(
   ...terminators: ReadonlyArray<JessieExpressionTerminationToken>
-): SyntaxRuleSrc<JessieExpressionNode> {
+): SyntaxRule<WithLocationInfo<JessieExpressionNode>> {
   return SyntaxRule.jessie(terminators).map(
-    (expression): SrcNode<JessieExpressionNode> => {
+    (expression): WithLocationInfo<JessieExpressionNode> => {
       return {
         kind: 'JessieExpression',
         expression: expression.data.script,
@@ -146,14 +146,14 @@ export function JESSIE_EXPRESSION_FACTORY(
 /**
  * if (<jessie>)
  */
-export const CONDITION_ATOM: SyntaxRuleSrc<ConditionAtomNode> = SyntaxRule.identifier(
+export const CONDITION_ATOM: SyntaxRule<WithLocationInfo<ConditionAtomNode>> = SyntaxRule.identifier(
   'if'
 )
   .followedBy(SyntaxRule.separator('('))
   .andFollowedBy(JESSIE_EXPRESSION_FACTORY(')'))
   .andFollowedBy(SyntaxRule.separator(')'))
   .map(
-    ([key, _sepStart, expression, sepEnd]): SrcNode<ConditionAtomNode> => {
+    ([key, _sepStart, expression, sepEnd]): WithLocationInfo<ConditionAtomNode> => {
       return {
         kind: 'ConditionAtom',
         expression,
@@ -166,7 +166,7 @@ export const CONDITION_ATOM: SyntaxRuleSrc<ConditionAtomNode> = SyntaxRule.ident
     }
   );
 
-export const ITERATION_ATOM: SyntaxRuleSrc<IterationAtomNode> = SyntaxRule.identifier(
+export const ITERATION_ATOM: SyntaxRule<WithLocationInfo<IterationAtomNode>> = SyntaxRule.identifier(
   'foreach'
 )
   .followedBy(SyntaxRule.separator('('))
@@ -182,7 +182,7 @@ export const ITERATION_ATOM: SyntaxRuleSrc<IterationAtomNode> = SyntaxRule.ident
       _ofKEy,
       iterable,
       sepEnd,
-    ]): SrcNode<IterationAtomNode> => {
+    ]): WithLocationInfo<IterationAtomNode> => {
       return {
         kind: 'IterationAtom',
         iterationVariable: iterationVariable.data.identifier,
@@ -216,13 +216,13 @@ export const ASSIGNMENT_PATH_KET = ASSIGNMENT_KEY.followedBy(
 export function ASSIGNMENT_FACTORY(
   rhsFactory: (
     ...terminators: ReadonlyArray<JessieExpressionTerminationToken>
-  ) => SyntaxRuleSrc<LiteralNode>,
+  ) => SyntaxRule<WithLocationInfo<LiteralNode>>,
   ...terminators: ReadonlyArray<JessieExpressionTerminationToken>
-): SyntaxRuleSrc<AssignmentNode> {
+): SyntaxRule<WithLocationInfo<AssignmentNode>> {
   return ASSIGNMENT_PATH_KET.followedBy(
     consumeLocalTerminators(rhsFactory(...terminators), ...terminators)
   ).map(
-    ([path, value]): SrcNode<AssignmentNode> => {
+    ([path, value]): WithLocationInfo<AssignmentNode> => {
       return {
         kind: 'Assignment',
         key: mapAssignmentPath(path),
@@ -241,7 +241,7 @@ const PROFILE_ID = SyntaxRule.identifier('profile')
   .followedBy(SyntaxRuleSeparator.operator('='))
   .andFollowedBy(
     SyntaxRule.string().andThen<
-      SrcNode<{ scope?: string, name: string, version: DocumentVersion }>
+      { scope?: string, name: string, version: DocumentVersion } & LocationInfo
     >(id => {
       const parseIdResult = parseProfileId(id.data.string);
       // must link to a profile
@@ -280,7 +280,7 @@ const PROVIDER_ID = SyntaxRule.identifier('provider')
   .followedBy(SyntaxRuleSeparator.operator('='))
   .andFollowedBy(
     SyntaxRule.string().andThen<
-      SrcNode<{ provider: string }>
+      { provider: string } & LocationInfo
     >(provider => {
       if (!isValidDocumentIdentifier(provider.data.string)) {
         return {
@@ -338,11 +338,11 @@ export const MAP_VARIANT = SyntaxRule.identifier('variant')
     };
   });
 
-export const MAP_HEADER: SyntaxRuleSrc<MapHeaderNode> = documentedNode(
+export const MAP_HEADER: SyntaxRule<WithLocationInfo<MapHeaderNode>> = documentedNode(
   PROFILE_ID.followedBy(PROVIDER_ID)
     .andFollowedBy(SyntaxRule.optional(MAP_VARIANT))
     .map(
-      ([profile, provider, maybeVariant]): SrcNode<MapHeaderNode> => {
+      ([profile, provider, maybeVariant]): WithLocationInfo<MapHeaderNode> => {
         return {
           kind: 'MapHeader',
           profile: {
@@ -368,10 +368,10 @@ export const MAP_HEADER: SyntaxRuleSrc<MapHeaderNode> = documentedNode(
 );
 
 export function MAP_DOCUMENT_FACTORY(
-  mapDocumentDefinition: SyntaxRuleSrc<
-    MapDefinitionNode | OperationDefinitionNode
+  mapDocumentDefinition: SyntaxRule<
+    WithLocationInfo<MapDefinitionNode | OperationDefinitionNode>
   >
-): SyntaxRuleSrc<MapDocumentNode> {
+): SyntaxRule<WithLocationInfo<MapDocumentNode>> {
   return SyntaxRule.separator('SOF')
     .followedBy(MAP_HEADER)
     .andFollowedBy(
@@ -379,7 +379,7 @@ export function MAP_DOCUMENT_FACTORY(
     )
     .andFollowedBy(SyntaxRule.separator('EOF'))
     .map(
-      ([_SOF, header, definitions, _EOF]): SrcNode<MapDocumentNode> => {
+      ([_SOF, header, definitions, _EOF]): WithLocationInfo<MapDocumentNode> => {
         return {
           kind: 'MapDocument',
           header,

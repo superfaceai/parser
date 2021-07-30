@@ -10,20 +10,16 @@ import { extractDocumentation } from '../util';
 // HELPER RULES //
 
 export type ASTNodeBase = ProfileASTNodeBase | MapASTNodeBase;
-export type SrcNodeLocationInfo = {
+export type LocationInfo = {
   span: NonNullable<ASTNodeBase['span']>;
   location: NonNullable<ASTNodeBase['location']>;
 };
 
-// Node that has `span` and `location` non-optional.
-export type SrcNode<N> = N & {
-  span: NonNullable<ASTNodeBase['span']>;
-  location: NonNullable<ASTNodeBase['location']>;
-};
-/** Syntax rule returning `N` with `SrcNode` properties `location` and `span`. */
-export type SyntaxRuleSrc<N> = SyntaxRule<SrcNode<N>>;
+export type WithLocationInfo<N> = N extends ASTNodeBase
+  ? { [k in keyof N]: WithLocationInfo<N[k]> } & LocationInfo
+  : { [k in keyof N]: WithLocationInfo<N[k]> };
 
-export function documentedNode<N extends SrcNode<DocumentedNode & ASTNodeBase>>(
+export function documentedNode<N extends WithLocationInfo<DocumentedNode & ASTNodeBase>>(
   rule: SyntaxRule<N>
 ): SyntaxRule<N> {
   return SyntaxRule.optional(SyntaxRule.string())

@@ -58,14 +58,14 @@ export function parseRule<N>(
 }
 
 /**
- * Equivalent to calling `parseRule(profileRules.PROFILE_DOCUMENT, source)`
+ * Equivalent to calling `parseRule(profileRules.PROFILE_DOCUMENT, source)` but isn't required to return location info.
  */
 export function parseProfile(source: Source): ProfileDocumentNode {
   return parseRule(profileRules.PROFILE_DOCUMENT, source);
 }
 
 /**
- * Equivalent to calling `parseRule(mapRules.MAP_DOCUMENT, source);`
+ * Equivalent to calling `parseRule(mapRules.MAP_DOCUMENT, source);` but isn't required to return location info.
  */
 export function parseMap(source: Source): MapDocumentNode {
   return parseRule(mapRules.MAP_DOCUMENT, source);
