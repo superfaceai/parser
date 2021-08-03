@@ -28,8 +28,10 @@ expect.extend({
 
     if (result.kind !== 'match') {
       pass = false;
-      message = SyntaxError.fromSyntaxRuleNoMatch(new Source(''), result)
-        .message;
+      message = SyntaxError.fromSyntaxRuleNoMatch(
+        new Source(''),
+        result
+      ).message;
     } else if (match !== undefined) {
       if (!this.equals(result.match, match)) {
         pass = false;
@@ -1169,8 +1171,9 @@ describe('profile syntax rules', () => {
                           tesMatch(
                             {
                               kind: 'FieldDefinition',
-                              fieldName: (tokens[12]
-                                .data as IdentifierTokenData).identifier,
+                              fieldName: (
+                                tokens[12].data as IdentifierTokenData
+                              ).identifier,
                               required: false,
                               type: tesMatch(
                                 {

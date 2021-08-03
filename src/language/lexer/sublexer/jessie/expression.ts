@@ -93,9 +93,8 @@ const TERMINATION_TOKEN_TO_TS_TOKEN: {
 };
 
 /** empty statements are not supported in jessie, so ; is a good fallback */
-const FALLBACK_TERMINATOR_TOKENS: ReadonlyArray<JessieExpressionTerminationToken> = [
-  ';',
-];
+const FALLBACK_TERMINATOR_TOKENS: ReadonlyArray<JessieExpressionTerminationToken> =
+  [';'];
 /** Tokens that are always terminator token */
 const HARD_TERMINATOR_TOKENS: ReadonlyArray<ts.SyntaxKind> = [
   ts.SyntaxKind.EndOfFileToken,

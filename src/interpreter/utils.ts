@@ -258,21 +258,24 @@ export function getOutcomes(
     return true;
   };
 
-  const outcomes = node.statements.filter(filterFunction).concat(
-    node.statements
-      .filter(isCallStatementNode)
-      .flatMap(
-        callStatement => callStatement.statements.filter(filterFunction)
-      )
-  ).concat(
-    node.statements
-      .filter(isHttpCallStatementNode)
-      .flatMap(
-        httpCall => httpCall.responseHandlers.flatMap(
-          responseHandler => responseHandler.statements.filter(filterFunction)
+  const outcomes = node.statements
+    .filter(filterFunction)
+    .concat(
+      node.statements
+        .filter(isCallStatementNode)
+        .flatMap(callStatement =>
+          callStatement.statements.filter(filterFunction)
         )
-      )
-  );
+    )
+    .concat(
+      node.statements
+        .filter(isHttpCallStatementNode)
+        .flatMap(httpCall =>
+          httpCall.responseHandlers.flatMap(responseHandler =>
+            responseHandler.statements.filter(filterFunction)
+          )
+        )
+    );
 
   return outcomes;
 }
@@ -302,7 +305,10 @@ export const getProfileUsecases = (
 ): UseCaseInfo[] => {
   return profile.definitions
     .filter(isUseCaseDefinitionNode)
-    .map(definition => ({ name: definition.useCaseName, safety: definition.safety }));
+    .map(definition => ({
+      name: definition.useCaseName,
+      safety: definition.safety,
+    }));
 };
 
 export const getProfileOutput = (

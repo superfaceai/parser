@@ -1292,8 +1292,9 @@ describe('extended map syntax rules', () => {
                                     value: tesMatch(
                                       {
                                         kind: 'PrimitiveLiteral',
-                                        value: (tokens[8]
-                                          .data as LiteralTokenData).literal,
+                                        value: (
+                                          tokens[8].data as LiteralTokenData
+                                        ).literal,
                                       },
                                       tokens[8]
                                     ),

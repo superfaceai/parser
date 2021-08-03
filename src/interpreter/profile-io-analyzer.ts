@@ -58,15 +58,11 @@ function assertUnreachable(node: ProfileASTNode): never {
 }
 
 export class ProfileIOAnalyzer implements ProfileAstVisitor {
-  private namedFields: Record<
-    string,
-    NamedFieldDefinitionNode | undefined
-  > = {};
+  private namedFields: Record<string, NamedFieldDefinitionNode | undefined> =
+    {};
 
-  private namedModels: Record<
-    string,
-    NamedModelDefinitionNode | undefined
-  > = {};
+  private namedModels: Record<string, NamedModelDefinitionNode | undefined> =
+    {};
 
   private fields: Record<string, StructureType> = {};
   private models: Record<string, StructureType> = {};

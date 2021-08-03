@@ -169,9 +169,9 @@ describe('util', () => {
     });
 
     it('checks keyword literal with predicate', () => {
-      expect(
-        tryKeywordLiteral('testABC', 'test', 'someRet', isLetter)
-      ).toEqual({ length: 4, value: 'someRet' });
+      expect(tryKeywordLiteral('testABC', 'test', 'someRet', isLetter)).toEqual(
+        { length: 4, value: 'someRet' }
+      );
     });
   });
 });

@@ -40,7 +40,7 @@ export function parseRuleResult<N>(
  *
  * If `skipSOF === true`, the first token of the newly created lexer token stream (the SOF token)
  * is skipped.
- * 
+ *
  * Internally this function calls `parseRuleResult` and throws the error.
  */
 export function parseRule<N>(

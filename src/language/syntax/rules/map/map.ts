@@ -90,16 +90,17 @@ const CALL_STATEMENT_HEAD = SyntaxRule.identifier('call')
     }
   );
 
-export const INLINE_CALL: SyntaxRule<WithLocationInfo<InlineCallNode>> = CALL_STATEMENT_HEAD.map(
-  (head): WithLocationInfo<InlineCallNode> => {
+export const INLINE_CALL: SyntaxRule<WithLocationInfo<InlineCallNode>> =
+  CALL_STATEMENT_HEAD.map((head): WithLocationInfo<InlineCallNode> => {
     return {
       kind: 'InlineCall',
       ...head,
     };
-  }
-);
+  });
 
-const OBJECT_LITERAL_MUT = new SyntaxRuleMutable<WithLocationInfo<ObjectLiteralNode>>();
+const OBJECT_LITERAL_MUT = new SyntaxRuleMutable<
+  WithLocationInfo<ObjectLiteralNode>
+>();
 export const SET_BLOCK_ASSIGNMENT = ASSIGNMENT_FACTORY(
   (...terminators) =>
     new SyntaxRuleFeatureOr(
@@ -130,82 +131,85 @@ export const OBJECT_LITERAL_ASSIGNMENT = ASSIGNMENT_FACTORY(
 
 // ATOMS //
 
-export const OBJECT_LITERAL: SyntaxRule<WithLocationInfo<ObjectLiteralNode>> = SyntaxRule.separator(
-  '{'
-)
-  .followedBy(SyntaxRule.optional(SyntaxRule.repeat(OBJECT_LITERAL_ASSIGNMENT)))
-  .andFollowedBy(SyntaxRule.separator('}'))
-  .map(
-    ([sepStart, maybeFields, sepEnd]): WithLocationInfo<ObjectLiteralNode> => {
-      return {
-        kind: 'ObjectLiteral',
-        fields: maybeFields ?? [],
-        location: sepStart.location,
-        span: {
-          start: sepStart.span.start,
-          end: sepEnd.span.end,
-        },
-      };
-    }
-  );
+export const OBJECT_LITERAL: SyntaxRule<WithLocationInfo<ObjectLiteralNode>> =
+  SyntaxRule.separator('{')
+    .followedBy(
+      SyntaxRule.optional(SyntaxRule.repeat(OBJECT_LITERAL_ASSIGNMENT))
+    )
+    .andFollowedBy(SyntaxRule.separator('}'))
+    .map(
+      ([
+        sepStart,
+        maybeFields,
+        sepEnd,
+      ]): WithLocationInfo<ObjectLiteralNode> => {
+        return {
+          kind: 'ObjectLiteral',
+          fields: maybeFields ?? [],
+          location: sepStart.location,
+          span: {
+            start: sepStart.span.start,
+            end: sepEnd.span.end,
+          },
+        };
+      }
+    );
 OBJECT_LITERAL_MUT.rule = OBJECT_LITERAL;
 
-export const STATEMENT_RHS_VALUE: SyntaxRule<WithLocationInfo<LiteralNode>> = OBJECT_LITERAL.or(
-  consumeLocalTerminators(
-    RHS_EXPRESSION_FACTORY('\n', ';', '}'),
-    '\n',
-    ';',
-    '}'
-  )
-);
+export const STATEMENT_RHS_VALUE: SyntaxRule<WithLocationInfo<LiteralNode>> =
+  OBJECT_LITERAL.or(
+    consumeLocalTerminators(
+      RHS_EXPRESSION_FACTORY('\n', ';', '}'),
+      '\n',
+      ';',
+      '}'
+    )
+  );
 
 // SET STATEMENTS //
 
 /**
  * set <?condition> { <...assignment> }
  */
-const SET_STATEMENT_FULL: SyntaxRule<WithLocationInfo<SetStatementNode>> = SyntaxRule.identifier(
-  'set'
-)
-  .followedBy(SyntaxRule.optional(CONDITION_ATOM))
-  .andFollowedBy(SyntaxRule.separator('{'))
-  .andFollowedBy(SyntaxRule.repeat(SET_BLOCK_ASSIGNMENT))
-  .andFollowedBy(SyntaxRule.separator('}'))
-  .map(
-    ([
-      key,
-      maybeCondition,
-      _sepStart,
-      assignments,
-      sepEnd,
-    ]): WithLocationInfo<SetStatementNode> => {
-      return {
-        kind: 'SetStatement',
-        condition: maybeCondition,
+const SET_STATEMENT_FULL: SyntaxRule<WithLocationInfo<SetStatementNode>> =
+  SyntaxRule.identifier('set')
+    .followedBy(SyntaxRule.optional(CONDITION_ATOM))
+    .andFollowedBy(SyntaxRule.separator('{'))
+    .andFollowedBy(SyntaxRule.repeat(SET_BLOCK_ASSIGNMENT))
+    .andFollowedBy(SyntaxRule.separator('}'))
+    .map(
+      ([
+        key,
+        maybeCondition,
+        _sepStart,
         assignments,
-        location: key.location,
-        span: {
-          start: key.span.start,
-          end: sepEnd.span.end,
-        },
-      };
-    }
-  );
+        sepEnd,
+      ]): WithLocationInfo<SetStatementNode> => {
+        return {
+          kind: 'SetStatement',
+          condition: maybeCondition,
+          assignments,
+          location: key.location,
+          span: {
+            start: key.span.start,
+            end: sepEnd.span.end,
+          },
+        };
+      }
+    );
 
-const SET_STATEMENT_RAW: SyntaxRule<WithLocationInfo<SetStatementNode>> = SET_BLOCK_ASSIGNMENT.map(
-  (assignment): WithLocationInfo<SetStatementNode> => {
+const SET_STATEMENT_RAW: SyntaxRule<WithLocationInfo<SetStatementNode>> =
+  SET_BLOCK_ASSIGNMENT.map((assignment): WithLocationInfo<SetStatementNode> => {
     return {
       kind: 'SetStatement',
       assignments: [assignment],
       location: assignment.location,
       span: assignment.span,
     };
-  }
-);
+  });
 
-export const SET_STATEMENT: SyntaxRule<WithLocationInfo<SetStatementNode>> = SET_STATEMENT_FULL.or(
-  SET_STATEMENT_RAW
-);
+export const SET_STATEMENT: SyntaxRule<WithLocationInfo<SetStatementNode>> =
+  SET_STATEMENT_FULL.or(SET_STATEMENT_RAW);
 
 // CALL STATEMENT //
 
@@ -221,7 +225,12 @@ export function CALL_STATEMENT_FACTORY(
     )
     .andFollowedBy(SyntaxRule.separator('}'))
     .map(
-      ([head, _sepStart, statements, sepEnd]): WithLocationInfo<CallStatementNode> => {
+      ([
+        head,
+        _sepStart,
+        statements,
+        sepEnd,
+      ]): WithLocationInfo<CallStatementNode> => {
         return {
           kind: 'CallStatement',
           ...head,
@@ -238,7 +247,10 @@ export function CALL_STATEMENT_FACTORY(
 // HTTP STATEMENT //
 
 const HTTP_CALL_STATEMENT_SECURITY_REQUIREMENT: SyntaxRule<
-  { id?: HttpSecurityRequirement['id'], scheme?: HttpSecurityRequirement['scheme'] } & LocationInfo
+  {
+    id?: HttpSecurityRequirement['id'];
+    scheme?: HttpSecurityRequirement['scheme'];
+  } & LocationInfo
 > = SyntaxRule.identifier('security')
   .followedBy(SyntaxRule.string().or(SyntaxRule.identifier('none')))
   .andFollowedBy(SyntaxRule.lookahead(SyntaxRule.newline()))
@@ -258,37 +270,38 @@ const HTTP_CALL_STATEMENT_SECURITY_REQUIREMENT: SyntaxRule<
     };
   });
 
-const HTTP_CALL_STATEMENT_SECURITY_REQUIREMENTS = new SyntaxRuleFeatureSubstitute(
-  HTTP_CALL_STATEMENT_SECURITY_REQUIREMENT.map(s => [s]),
-  'multiple_security_schemes',
-  SyntaxRule.repeat(HTTP_CALL_STATEMENT_SECURITY_REQUIREMENT)
-).map(arr => {
-  const first = arr[0];
-  const last = arr[arr.length - 1];
+const HTTP_CALL_STATEMENT_SECURITY_REQUIREMENTS =
+  new SyntaxRuleFeatureSubstitute(
+    HTTP_CALL_STATEMENT_SECURITY_REQUIREMENT.map(s => [s]),
+    'multiple_security_schemes',
+    SyntaxRule.repeat(HTTP_CALL_STATEMENT_SECURITY_REQUIREMENT)
+  ).map(arr => {
+    const first = arr[0];
+    const last = arr[arr.length - 1];
 
-  const requirements: HttpSecurityRequirement[] = arr
-    .filter(elem => elem.id !== undefined)
-    .map(req => {
-      if (typeof req.id !== 'string') {
-        // .filter API is.. lacking
-        throw 'unreachable';
-      }
+    const requirements: HttpSecurityRequirement[] = arr
+      .filter(elem => elem.id !== undefined)
+      .map(req => {
+        if (typeof req.id !== 'string') {
+          // .filter API is.. lacking
+          throw 'unreachable';
+        }
 
-      return {
-        id: req.id,
-        scheme: req.scheme,
-      };
-    });
+        return {
+          id: req.id,
+          scheme: req.scheme,
+        };
+      });
 
-  return {
-    security: requirements,
-    location: first.location,
-    span: {
-      start: first.span.start,
-      end: last.span.end,
-    },
-  };
-});
+    return {
+      security: requirements,
+      location: first.location,
+      span: {
+        start: first.span.start,
+        end: last.span.end,
+      },
+    };
+  });
 
 const HTTP_CALL_STATEMENT_REQUEST_QUERY_SLOT = SyntaxRule.identifier(
   'query'
@@ -380,35 +393,37 @@ const HTTP_REQUEST_OPTIONAL: SyntaxRule<
   WithLocationInfo<HttpRequestNode> | undefined
 > = SyntaxRule.optional(HTTP_CALL_STATEMENT_SECURITY_REQUIREMENTS)
   .followedBy(SyntaxRule.optional(HTTP_CALL_STATEMENT_REQUEST))
-  .map(([maybeSecurity, maybeRequest]):
-    | WithLocationInfo<HttpRequestNode>
-    | undefined => {
-    if (maybeSecurity !== undefined && maybeRequest !== undefined) {
-      return {
-        kind: 'HttpRequest',
-        ...maybeRequest,
-        ...maybeSecurity,
-        location: maybeSecurity.location,
-        span: {
-          start: maybeSecurity.span.start,
-          end: maybeRequest.span.end,
-        },
-      };
-    } else if (maybeSecurity !== undefined) {
-      return {
-        kind: 'HttpRequest',
-        ...maybeSecurity,
-      };
-    } else if (maybeRequest !== undefined) {
-      return {
-        kind: 'HttpRequest',
-        ...maybeRequest,
-        security: [],
-      };
-    } else {
-      return undefined;
+  .map(
+    ([maybeSecurity, maybeRequest]):
+      | WithLocationInfo<HttpRequestNode>
+      | undefined => {
+      if (maybeSecurity !== undefined && maybeRequest !== undefined) {
+        return {
+          kind: 'HttpRequest',
+          ...maybeRequest,
+          ...maybeSecurity,
+          location: maybeSecurity.location,
+          span: {
+            start: maybeSecurity.span.start,
+            end: maybeRequest.span.end,
+          },
+        };
+      } else if (maybeSecurity !== undefined) {
+        return {
+          kind: 'HttpRequest',
+          ...maybeSecurity,
+        };
+      } else if (maybeRequest !== undefined) {
+        return {
+          kind: 'HttpRequest',
+          ...maybeRequest,
+          security: [],
+        };
+      } else {
+        return undefined;
+      }
     }
-  });
+  );
 
 function HTTP_CALL_STATEMENT_RESPONSE_HANDLER(
   substatementRule: SyntaxRule<WithLocationInfo<OutcomeStatementNode>>
@@ -511,9 +526,9 @@ export function HTTP_CALL_STATEMENT_FACTORY(
 /**
  * return? map result/error <?condition> <value>;
  */
-export const MAP_OUTCOME_STATEMENT: SyntaxRule<WithLocationInfo<OutcomeStatementNode>> = SyntaxRule.optional(
-  SyntaxRule.identifier('return')
-)
+export const MAP_OUTCOME_STATEMENT: SyntaxRule<
+  WithLocationInfo<OutcomeStatementNode>
+> = SyntaxRule.optional(SyntaxRule.identifier('return'))
   .followedBy(SyntaxRule.identifier('map'))
   .andFollowedBy(
     SyntaxRule.identifier('result').or(SyntaxRule.identifier('error'))
@@ -546,14 +561,18 @@ export const MAP_OUTCOME_STATEMENT: SyntaxRule<WithLocationInfo<OutcomeStatement
 /**
  * return/fail <?condition> <value>;
  */
-export const OPERATION_OUTCOME_STATEMENT: SyntaxRule<WithLocationInfo<OutcomeStatementNode>> = SyntaxRule.identifier(
-  'return'
-)
+export const OPERATION_OUTCOME_STATEMENT: SyntaxRule<
+  WithLocationInfo<OutcomeStatementNode>
+> = SyntaxRule.identifier('return')
   .or(SyntaxRule.identifier('fail'))
   .followedBy(SyntaxRule.optional(CONDITION_ATOM))
   .andFollowedBy(STATEMENT_RHS_VALUE)
   .map(
-    ([keyType, maybeCondition, value]): WithLocationInfo<OutcomeStatementNode> => {
+    ([
+      keyType,
+      maybeCondition,
+      value,
+    ]): WithLocationInfo<OutcomeStatementNode> => {
       return {
         kind: 'OutcomeStatement',
         isError: keyType.data.identifier === 'fail',
@@ -571,12 +590,14 @@ export const OPERATION_OUTCOME_STATEMENT: SyntaxRule<WithLocationInfo<OutcomeSta
 
 function DEFINITION_SUBSTATEMENTS_FACTORY(
   substatements: SyntaxRule<WithLocationInfo<OutcomeStatementNode>>
-): SyntaxRule<WithLocationInfo<
-  | OutcomeStatementNode
-  | CallStatementNode
-  | HttpCallStatementNode
-  | SetStatementNode
->> {
+): SyntaxRule<
+  WithLocationInfo<
+    | OutcomeStatementNode
+    | CallStatementNode
+    | HttpCallStatementNode
+    | SetStatementNode
+  >
+> {
   return substatements
     .or(CALL_STATEMENT_FACTORY(substatements))
     .or(HTTP_CALL_STATEMENT_FACTORY(substatements))
@@ -591,38 +612,41 @@ export const OPERATION_SUBSTATEMENT = DEFINITION_SUBSTATEMENTS_FACTORY(
 
 // MAP DEFINITION //
 
-export const MAP_DEFINITION: SyntaxRule<WithLocationInfo<MapDefinitionNode>> = documentedNode(
-  SyntaxRule.identifier('map')
-    .followedBy(SyntaxRule.identifier())
-    .andFollowedBy(SyntaxRule.separator('{'))
-    .andFollowedBy(SyntaxRule.optional(SyntaxRule.repeat(MAP_SUBSTATEMENT)))
-    .andFollowedBy(SyntaxRule.separator('}'))
-    .map(
-      ([
-        key,
-        name,
-        _sepStart,
-        maybeStatements,
-        sepEnd,
-      ]): WithLocationInfo<MapDefinitionNode> => {
-        return {
-          kind: 'MapDefinition',
-          name: name.data.identifier,
-          usecaseName: name.data.identifier,
-          statements: maybeStatements ?? [],
-          location: key.location,
-          span: {
-            start: key.span.start,
-            end: sepEnd.span.end,
-          },
-        };
-      }
-    )
-);
+export const MAP_DEFINITION: SyntaxRule<WithLocationInfo<MapDefinitionNode>> =
+  documentedNode(
+    SyntaxRule.identifier('map')
+      .followedBy(SyntaxRule.identifier())
+      .andFollowedBy(SyntaxRule.separator('{'))
+      .andFollowedBy(SyntaxRule.optional(SyntaxRule.repeat(MAP_SUBSTATEMENT)))
+      .andFollowedBy(SyntaxRule.separator('}'))
+      .map(
+        ([
+          key,
+          name,
+          _sepStart,
+          maybeStatements,
+          sepEnd,
+        ]): WithLocationInfo<MapDefinitionNode> => {
+          return {
+            kind: 'MapDefinition',
+            name: name.data.identifier,
+            usecaseName: name.data.identifier,
+            statements: maybeStatements ?? [],
+            location: key.location,
+            span: {
+              start: key.span.start,
+              end: sepEnd.span.end,
+            },
+          };
+        }
+      )
+  );
 
 // OPERATION DEFINITION //
 
-export const OPERATION_DEFINITION: SyntaxRule<WithLocationInfo<OperationDefinitionNode>> = documentedNode(
+export const OPERATION_DEFINITION: SyntaxRule<
+  WithLocationInfo<OperationDefinitionNode>
+> = documentedNode(
   SyntaxRule.identifier('operation')
     .followedBy(SyntaxRule.identifier())
     .andFollowedBy(SyntaxRule.separator('{'))
