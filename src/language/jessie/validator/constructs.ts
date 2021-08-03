@@ -200,7 +200,7 @@ export const ALLOWED_SYNTAX: ts.SyntaxKind[] = [
   // ts.SyntaxKind.BarEqualsToken, // |=
   // ts.SyntaxKind.CaretEqualsToken, // ^=
   ts.SyntaxKind.Identifier, // asdf
-  // ts.SyntaxKind.PrivateIdentifier, // ????
+  // ts.SyntaxKind.PrivateIdentifier, // #foo
   // ts.SyntaxKind.BreakKeyword, // break
   // ts.SyntaxKind.CaseKeyword, // case
   // ts.SyntaxKind.CatchKeyword, // catch
@@ -279,7 +279,7 @@ export const ALLOWED_SYNTAX: ts.SyntaxKind[] = [
   // ts.SyntaxKind.QualifiedName,
   // ts.SyntaxKind.ComputedPropertyName,
   // ts.SyntaxKind.TypeParameter, // (arg: type, arg2: type2)
-  ts.SyntaxKind.Parameter, // (arg, arg2)
+  ts.SyntaxKind.Parameter, // (param1, param2)
   // ts.SyntaxKind.Decorator, // @decorator
   // ts.SyntaxKind.PropertySignature,
   // ts.SyntaxKind.PropertyDeclaration,
@@ -336,7 +336,7 @@ export const ALLOWED_SYNTAX: ts.SyntaxKind[] = [
   ts.SyntaxKind.ConditionalExpression, // expr ? expr : expr
   ts.SyntaxKind.TemplateExpression, // `asdf ${expr} asdf`
   // ts.SyntaxKind.YieldExpression, // yield expr
-  ts.SyntaxKind.SpreadElement,
+  ts.SyntaxKind.SpreadElement, // ...elem
   // ts.SyntaxKind.ClassExpression, // class ident { expr* }
   // ts.SyntaxKind.OmittedExpression,
   // ts.SyntaxKind.ExpressionWithTypeArguments,
@@ -404,9 +404,9 @@ export const ALLOWED_SYNTAX: ts.SyntaxKind[] = [
   ts.SyntaxKind.DefaultClause,
   // ts.SyntaxKind.HeritageClause,
   // ts.SyntaxKind.CatchClause,
-  ts.SyntaxKind.PropertyAssignment,
+  ts.SyntaxKind.PropertyAssignment, // { prop1: ass1, prop2: ass2 }
   // ts.SyntaxKind.ShorthandPropertyAssignment,
-  ts.SyntaxKind.SpreadAssignment,
+  ts.SyntaxKind.SpreadAssignment, // { ...ass1, ...ass2, c: 1 }
   // ts.SyntaxKind.EnumMember,
   // ts.SyntaxKind.UnparsedPrologue,
   // ts.SyntaxKind.UnparsedPrepend,

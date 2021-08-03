@@ -1,5 +1,6 @@
-import { MatchAttempts, Source } from '..';
+import { Source } from '..';
 import { SyntaxError } from '../error';
+import { MatchAttempts } from '../syntax/rule';
 import {
   formatTokenData,
   formatTokenKind,
@@ -37,10 +38,10 @@ describe('token', () => {
           new Source('mock-content', 'mock/path'),
           {
             kind: 'nomatch',
-            attempts: ({
+            attempts: {
               token: undefined,
               rules: [],
-            } as unknown) as MatchAttempts,
+            } as unknown as MatchAttempts,
           }
         ),
       };

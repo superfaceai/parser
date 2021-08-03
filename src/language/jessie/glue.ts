@@ -12,9 +12,7 @@ import {
  *
  * This functions combines the transpiler and validator in a more efficient way
  */
-export function validateAndTranspile(
-  input: string
-):
+export function validateAndTranspile(input: string):
   | { kind: 'success'; output: string; sourceMap: string }
   | {
       kind: 'failure';

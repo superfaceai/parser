@@ -252,11 +252,8 @@ export class SyntaxError {
 
   format(): string {
     // Generate the lines
-    const {
-      visualization,
-      maxLineNumberLog,
-      sourceLocation,
-    } = generateErrorVisualization(this.source, this.span, this.location);
+    const { visualization, maxLineNumberLog, sourceLocation } =
+      generateErrorVisualization(this.source, this.span, this.location);
 
     let categoryInfo = '';
     switch (this.category) {

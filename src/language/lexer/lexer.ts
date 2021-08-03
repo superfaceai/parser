@@ -66,7 +66,8 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
   constructor(readonly source: Source, tokenKindFilter?: LexerTokenKindFilter) {
     this.sublexers = {
       [LexerContextType.DEFAULT]: tryParseDefault,
-      [LexerContextType.JESSIE_SCRIPT_EXPRESSION]: tryParseJessieScriptExpression,
+      [LexerContextType.JESSIE_SCRIPT_EXPRESSION]:
+        tryParseJessieScriptExpression,
     };
 
     this.currentToken = new LexerToken(
@@ -191,9 +192,7 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
     this.fileSeparatorYielded = state[1];
   }
 
-  private computeNextTokenPosition(
-    lastToken: LexerToken
-  ): {
+  private computeNextTokenPosition(lastToken: LexerToken): {
     start: number;
     location: Location;
   } {

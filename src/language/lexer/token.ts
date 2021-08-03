@@ -139,9 +139,10 @@ export function formatTokenKind(kind: LexerTokenKind): string {
       return 'jessie script';
   }
 }
-export function formatTokenData(
-  data: LexerTokenData
-): { kind: string; data: string } {
+export function formatTokenData(data: LexerTokenData): {
+  kind: string;
+  data: string;
+} {
   const kind = formatTokenKind(data.kind);
   switch (data.kind) {
     case LexerTokenKind.UNKNOWN:

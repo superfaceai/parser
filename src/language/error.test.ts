@@ -10,7 +10,7 @@ import {
   RuleResultNoMatch,
   SyntaxRule,
 } from './syntax/rule';
-import { profile } from './syntax/rules/profile';
+import * as profileRules from './syntax/rules/profile';
 
 // Declare custom matcher for sake of Typescript
 declare global {
@@ -239,7 +239,7 @@ describe('langauge syntax errors', () => {
       const source = new Source('!');
 
       expect(() =>
-        parseRule(profile.PRIMITIVE_TYPE_NAME, source, true)
+        parseRule(profileRules.PRIMITIVE_TYPE_NAME, source, true)
       ).toThrowSyntaxError(
         'Expected `boolean` or `number` or `string` but found `!`',
         '[input]:1:1',
@@ -256,7 +256,7 @@ df'
 }`);
 
       expect(() =>
-        parseRule(profile.ENUM_DEFINITION, tokens, true)
+        parseRule(profileRules.ENUM_DEFINITION, tokens, true)
       ).toThrowSyntaxError(
         'Expected `}` or identifier or string or `,` but found `!`',
         '[input]:4:1',
