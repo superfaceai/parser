@@ -48,8 +48,8 @@ Explicitly allowed nodes are:
 
 #### Spreading
 
-- objects: `const a = [1, 2, 3]`
-- arrays: `const b = [...a, 4, 5]`
+- objects: `const a = { ...{ a: 1, b: 2 }, c: 3, d: 4 }`
+- arrays: `const b = [...[1, 2, 3], 4, 5]`
 
 #### Functions
 
@@ -73,4 +73,4 @@ Explicitly allowed nodes are:
 
 - if/else: `if (true) {} else {}`
 - switch/case: `switch (1) { case 1: break; case 2: break; default: break; }`
-- ternaty: `(true || false) ? 1 : 2`
+- ternary: `(true || false) ? 1 : 2`
