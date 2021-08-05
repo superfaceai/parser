@@ -1,5 +1,6 @@
-import { CallStatementNode, HttpCallStatementNode, OutcomeStatementNode, SetStatementNode } from "@superfaceai/ast";
-import { getOutcomes } from "./utils";
+import { CallStatementNode, HttpCallStatementNode, OutcomeStatementNode, SetStatementNode } from '@superfaceai/ast';
+
+import { getOutcomes } from './utils';
 
 describe('getOutcomes', () => {
   const OUTCOMES: OutcomeStatementNode[] = [
