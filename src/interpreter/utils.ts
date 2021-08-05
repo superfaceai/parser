@@ -40,6 +40,144 @@ export function composeVersion(version: VersionStructure): string {
   );
 }
 
+export function formatIssueContext(issue: ValidationIssue): string {
+  let expected;
+  let actual;
+
+  switch (issue.kind) {
+    case 'wrongScope':
+      return `Wrong Scope: expected ${
+        issue.context.expected ?? 'no scope in profile'
+      }, but got ${issue.context.actual ?? 'no scope in map'}`;
+
+    case 'wrongProfileName':
+      return `Wrong Profile Name: expected ${issue.context.expected}, but got ${issue.context.actual}`;
+
+    case 'wrongProfileVersion':
+      return `Wrong Profile Version: profile is ${composeVersion(
+        issue.context.expected
+      )}, but map requests ${composeVersion(issue.context.actual)}`;
+
+    case 'mapNotFound':
+      return `Map not found: ${issue.context.expected}`;
+
+    case 'extraMapsFound':
+      return `Extra Maps Found: ${issue.context.expected.join(
+        ','
+      )}, but got ${issue.context.actual.join(', ')}`;
+
+    case 'resultNotDefined':
+      return `Result not defined`;
+
+    case 'errorNotDefined':
+      return `Error not defined`;
+
+    case 'resultNotFound':
+      if (isPrimitiveLiteralNode(issue.context.actualResult)) {
+        actual = issue.context.actualResult.value;
+      } else {
+        actual = issue.context.actualResult.kind;
+      }
+
+      return `Result Not Found: returning "${actual.toString()}", but there is no result defined in usecase`;
+
+    case 'errorNotFound':
+      if (isPrimitiveLiteralNode(issue.context.actualError)) {
+        actual = issue.context.actualError.value;
+      } else {
+        actual = issue.context.actualError.kind;
+      }
+
+      return `Error Not Found: returning "${actual.toString()}", but there is no error defined in usecase`;
+
+    case 'inputNotFound':
+      return `Input Not Found: ${issue.context.actual} - there is no input defined in usecase`;
+
+    case 'wrongObjectStructure':
+      expected = Object.keys(issue.context.expected).join(', ');
+      actual =
+        typeof issue.context.actual === 'string'
+          ? issue.context.actual
+          : issue.context.actual.map(val => val.key.join('.')).join(', ');
+
+      return `Wrong Object Structure: expected ${expected}, but got ${actual}`;
+
+    case 'wrongStructure':
+      if (isPrimitiveStructure(issue.context.expected)) {
+        expected = issue.context.expected.type;
+      } else if (isNonNullStructure(issue.context.expected)) {
+        if (isPrimitiveStructure(issue.context.expected.value)) {
+          expected = issue.context.expected.value.type;
+        } else {
+          expected = issue.context.expected.value.kind;
+        }
+      } else if (isEnumStructure(issue.context.expected)) {
+        expected = issue.context.expected.enums
+          .map(enumValue => enumValue.value)
+          .join(' or ');
+      } else {
+        expected = issue.context.expected.kind;
+      }
+
+      if (typeof issue.context.actual !== 'string') {
+        if (issue.context.actual.kind === 'PrimitiveLiteral') {
+          actual = issue.context.actual.value;
+        } else {
+          actual = issue.context.actual.kind;
+        }
+      } else {
+        actual = issue.context.actual;
+      }
+
+      return `Wrong Structure: expected ${expected}, but got "${actual.toString()}"`;
+
+    case 'missingRequired':
+      return `Missing required field`;
+
+    case 'wrongInput':
+      if (!issue.context.expected.fields) {
+        throw new Error('This should not happen!');
+      }
+      expected = Object.keys(issue.context.expected.fields).join(', ');
+
+      return `Wrong Input Structure: expected ${expected}, but got ${issue.context.actual}`;
+
+    case 'wrongVariableStructure':
+      if (isPrimitiveStructure(issue.context.expected)) {
+        expected = issue.context.expected.type;
+      } else if (isNonNullStructure(issue.context.expected)) {
+        if (isPrimitiveStructure(issue.context.expected.value)) {
+          expected = issue.context.expected.value.type;
+        } else {
+          expected = issue.context.expected.value.kind;
+        }
+      } else if (isEnumStructure(issue.context.expected)) {
+        expected = issue.context.expected.enums
+          .map(enumValue => enumValue.value)
+          .join(' or ');
+      } else {
+        expected = issue.context.expected.kind;
+      }
+
+      if (typeof issue.context.actual !== 'string') {
+        if (isPrimitiveLiteralNode(issue.context.actual)) {
+          actual = issue.context.actual.value;
+        } else {
+          actual = issue.context.actual.kind;
+        }
+      } else {
+        actual = issue.context.actual;
+      }
+
+      return `Wrong Variable Structure: variable ${
+        issue.context.name
+      } expected ${expected}, but got ${actual.toString()}`;
+
+    default:
+      throw new Error('Invalid issue!');
+  }
+}
+
 export function formatIssues(issues?: ValidationIssue[]): string {
   if (!issues) {
     return 'Unknown issue';
@@ -53,141 +191,7 @@ export function formatIssues(issues?: ValidationIssue[]): string {
           : ''
         : '';
 
-      let expected;
-      let actual;
-
-      switch (issue.kind) {
-        case 'wrongScope':
-          return `${location} - Wrong Scope: expected ${
-            issue.context.expected ?? 'no scope in profile'
-          }, but got ${issue.context.actual ?? 'no scope in map'}`;
-
-        case 'wrongProfileName':
-          return `${location} - Wrong Profile Name: expected ${issue.context.expected}, but got ${issue.context.actual}`;
-
-        case 'wrongProfileVersion':
-          return `${location} - Wrong Profile Version: profile is ${composeVersion(
-            issue.context.expected
-          )}, but map requests ${composeVersion(issue.context.actual)}`;
-
-        case 'mapNotFound':
-          return `${location} - Map not found: ${issue.context.expected}`;
-
-        case 'extraMapsFound':
-          return `${location} - Extra Maps Found: ${issue.context.expected.join(
-            ','
-          )}, but got ${issue.context.actual.join(', ')}`;
-
-        case 'resultNotDefined':
-          return `${location} - Result not defined`;
-
-        case 'errorNotDefined':
-          return `${location} - Error not defined`;
-
-        case 'resultNotFound':
-          if (isPrimitiveLiteralNode(issue.context.actualResult)) {
-            actual = issue.context.actualResult.value;
-          } else {
-            actual = issue.context.actualResult.kind;
-          }
-
-          return `${location} - Result Not Found: returning "${actual.toString()}", but there is no result defined in usecase`;
-
-        case 'errorNotFound':
-          if (isPrimitiveLiteralNode(issue.context.actualError)) {
-            actual = issue.context.actualError.value;
-          } else {
-            actual = issue.context.actualError.kind;
-          }
-
-          return `${location} - Error Not Found: returning "${actual.toString()}", but there is no error defined in usecase`;
-
-        case 'inputNotFound':
-          return `${location} - Input Not Found: ${issue.context.actual} - there is no input defined in usecase`;
-
-        case 'wrongObjectStructure':
-          expected = Object.keys(issue.context.expected).join(', ');
-          actual =
-            typeof issue.context.actual === 'string'
-              ? issue.context.actual
-              : issue.context.actual.map(val => val.key.join('.')).join(', ');
-
-          return `${location} - Wrong Object Structure: expected ${expected}, but got ${actual}`;
-
-        case 'wrongStructure':
-          if (isPrimitiveStructure(issue.context.expected)) {
-            expected = issue.context.expected.type;
-          } else if (isNonNullStructure(issue.context.expected)) {
-            if (isPrimitiveStructure(issue.context.expected.value)) {
-              expected = issue.context.expected.value.type;
-            } else {
-              expected = issue.context.expected.value.kind;
-            }
-          } else if (isEnumStructure(issue.context.expected)) {
-            expected = issue.context.expected.enums
-              .map(enumValue => enumValue.value)
-              .join(' or ');
-          } else {
-            expected = issue.context.expected.kind;
-          }
-
-          if (typeof issue.context.actual !== 'string') {
-            if (issue.context.actual.kind === 'PrimitiveLiteral') {
-              actual = issue.context.actual.value;
-            } else {
-              actual = issue.context.actual.kind;
-            }
-          } else {
-            actual = issue.context.actual;
-          }
-
-          return `${location} - Wrong Structure: expected ${expected}, but got "${actual.toString()}"`;
-
-        case 'missingRequired':
-          return `${location} - Missing required field`;
-
-        case 'wrongInput':
-          if (!issue.context.expected.fields) {
-            throw new Error('This should not happen!');
-          }
-          expected = Object.keys(issue.context.expected.fields).join(', ');
-
-          return `${location} - Wrong Input Structure: expected ${expected}, but got ${issue.context.actual}`;
-
-        case 'wrongVariableStructure':
-          if (isPrimitiveStructure(issue.context.expected)) {
-            expected = issue.context.expected.type;
-          } else if (isNonNullStructure(issue.context.expected)) {
-            if (isPrimitiveStructure(issue.context.expected.value)) {
-              expected = issue.context.expected.value.type;
-            } else {
-              expected = issue.context.expected.value.kind;
-            }
-          } else if (isEnumStructure(issue.context.expected)) {
-            expected = issue.context.expected.enums
-              .map(enumValue => enumValue.value)
-              .join(' or ');
-          } else {
-            expected = issue.context.expected.kind;
-          }
-
-          if (typeof issue.context.actual !== 'string') {
-            if (isPrimitiveLiteralNode(issue.context.actual)) {
-              actual = issue.context.actual.value;
-            } else {
-              actual = issue.context.actual.kind;
-            }
-          } else {
-            actual = issue.context.actual;
-          }
-
-          return `${location} - Wrong Variable Structure: variable ${
-            issue.context.name
-          } expected ${expected}, but got ${actual.toString()}`;
-
-        default:
-          throw new Error('Invalid issue!');
-      }
+      return `${location} - ${formatIssueContext(issue)}`;
     })
     .join('\n');
 }
@@ -246,7 +250,7 @@ export function getOutcomes(
   node: MapDefinitionNode | OperationDefinitionNode,
   isErrorFilter?: boolean
 ): OutcomeStatementNode[] {
-  const filterFunction = (input: unknown): input is OutcomeStatementNode => {
+  const filterFunction = (input: MapASTNode): input is OutcomeStatementNode => {
     if (!isOutcomeStatementNode(input)) {
       return false;
     }
