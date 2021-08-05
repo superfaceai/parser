@@ -246,7 +246,7 @@ export function getOutcomes(
   node: MapDefinitionNode | OperationDefinitionNode,
   isErrorFilter?: boolean
 ): OutcomeStatementNode[] {
-  const filterFunction = (input: unknown): input is OutcomeStatementNode => {
+  const filterFunction = (input: MapASTNode): input is OutcomeStatementNode => {
     if (!isOutcomeStatementNode(input)) {
       return false;
     }
