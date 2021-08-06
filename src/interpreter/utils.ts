@@ -67,10 +67,10 @@ export function formatIssueContext(issue: ValidationIssue): string {
       )}, but got ${issue.context.actual.join(', ')}`;
 
     case 'resultNotDefined':
-      return `Result not defined`;
+      return 'Result not defined';
 
     case 'errorNotDefined':
-      return `Error not defined`;
+      return 'Error not defined';
 
     case 'resultNotFound':
       if (isPrimitiveLiteralNode(issue.context.actualResult)) {
@@ -132,7 +132,7 @@ export function formatIssueContext(issue: ValidationIssue): string {
       return `Wrong Structure: expected ${expected}, but got "${actual.toString()}"`;
 
     case 'missingRequired':
-      return `Missing required field`;
+      return 'Missing required field';
 
     case 'wrongInput':
       if (!issue.context.expected.fields) {
