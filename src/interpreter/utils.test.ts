@@ -1,4 +1,9 @@
-import { CallStatementNode, HttpCallStatementNode, OutcomeStatementNode, SetStatementNode } from '@superfaceai/ast';
+import {
+  CallStatementNode,
+  HttpCallStatementNode,
+  OutcomeStatementNode,
+  SetStatementNode,
+} from '@superfaceai/ast';
 
 import { getOutcomes } from './utils';
 
@@ -8,26 +13,26 @@ describe('getOutcomes', () => {
       kind: 'OutcomeStatement',
       isError: true,
       terminateFlow: false,
-      value: { kind: 'PrimitiveLiteral', value: 1 }
+      value: { kind: 'PrimitiveLiteral', value: 1 },
     },
     {
       kind: 'OutcomeStatement',
       isError: false,
       terminateFlow: false,
-      value: { kind: 'PrimitiveLiteral', value: 2 }
+      value: { kind: 'PrimitiveLiteral', value: 2 },
     },
     {
       kind: 'OutcomeStatement',
       isError: true,
       terminateFlow: false,
-      value: { kind: 'PrimitiveLiteral', value: 3 }
+      value: { kind: 'PrimitiveLiteral', value: 3 },
     },
     {
       kind: 'OutcomeStatement',
       isError: false,
       terminateFlow: false,
-      value: { kind: 'PrimitiveLiteral', value: 4 }
-    }
+      value: { kind: 'PrimitiveLiteral', value: 4 },
+    },
   ];
   const NESTED: [HttpCallStatementNode, CallStatementNode] = [
     {
@@ -37,42 +42,30 @@ describe('getOutcomes', () => {
       responseHandlers: [
         {
           kind: 'HttpResponseHandler',
-          statements: [
-            OUTCOMES[2]
-          ]
-        }
-      ]
+          statements: [OUTCOMES[2]],
+        },
+      ],
     },
     {
       kind: 'CallStatement',
       operationName: 'op',
       arguments: [],
-      statements: [
-        OUTCOMES[3]
-      ]
-    }
+      statements: [OUTCOMES[3]],
+    },
   ];
   const OTHER: SetStatementNode = {
     kind: 'SetStatement',
-    assignments: []
+    assignments: [],
   };
 
   it('returns all outcomes', () => {
-    const outcomes = getOutcomes(
-      {
-        kind: 'MapDefinition',
-        name: 'd',
-        usecaseName: 'd',
-        statements: [
-          OUTCOMES[0],
-          OUTCOMES[1],
-          NESTED[0],
-          NESTED[1],
-          OTHER
-        ]
-      }
-    );
-    
+    const outcomes = getOutcomes({
+      kind: 'MapDefinition',
+      name: 'd',
+      usecaseName: 'd',
+      statements: [OUTCOMES[0], OUTCOMES[1], NESTED[0], NESTED[1], OTHER],
+    });
+
     expect(outcomes).toHaveLength(4);
     expect(outcomes).toContain(OUTCOMES[0]);
     expect(outcomes).toContain(OUTCOMES[1]);
@@ -86,17 +79,11 @@ describe('getOutcomes', () => {
         kind: 'MapDefinition',
         name: 'd',
         usecaseName: 'd',
-        statements: [
-          OUTCOMES[0],
-          OUTCOMES[1],
-          NESTED[0],
-          NESTED[1],
-          OTHER
-        ]
+        statements: [OUTCOMES[0], OUTCOMES[1], NESTED[0], NESTED[1], OTHER],
       },
       true
     );
-    
+
     expect(outcomes).toHaveLength(2);
     expect(outcomes).toContain(OUTCOMES[0]);
     expect(outcomes).toContain(OUTCOMES[2]);
@@ -108,17 +95,11 @@ describe('getOutcomes', () => {
         kind: 'MapDefinition',
         name: 'd',
         usecaseName: 'd',
-        statements: [
-          OUTCOMES[0],
-          OUTCOMES[1],
-          NESTED[0],
-          NESTED[1],
-          OTHER
-        ]
+        statements: [OUTCOMES[0], OUTCOMES[1], NESTED[0], NESTED[1], OTHER],
       },
       false
     );
-    
+
     expect(outcomes).toHaveLength(2);
     expect(outcomes).toContain(OUTCOMES[1]);
     expect(outcomes).toContain(OUTCOMES[3]);
