@@ -13,7 +13,6 @@ export type ParseResult<T> =
 const VERSION_DELIMITER = '@';
 const PART_DELIMITER = '.';
 const SCOPE_DELIMITER = '/';
-const PREFIX_DELIMITER = '!';
 const LABEL_DELIMITER = '-';
 
 const ID_NAME_RE = /^[a-z][a-z0-9_-]*$/;
@@ -24,7 +23,7 @@ export function isValidDocumentIdentifier(str: string): boolean {
   return ID_NAME_RE.test(str);
 }
 
-const PROVIDER_ID_RE = /^(unverified!)?[a-z][a-z_-]*$/;
+const PROVIDER_ID_RE = /^[a-z][a-z_-]*$/;
 /**
  * Checks wheter the identifier is valid with prefix
  */
@@ -129,28 +128,11 @@ export function parseDocumentId(id: string): ParseResult<DocumentId> {
   const version = parsedVersion?.value;
 
   const middle = id.split(PART_DELIMITER);
-  for (const part of middle) {
-    let prefix: string | null;
-    let id: string | null;
-
-    [prefix, id] = splitLimit(part, PREFIX_DELIMITER, 1);
-
-    if (!id) {
-      id = prefix;
-      prefix = null;
-    }
-
-    if (prefix && !isValidDocumentIdentifier(prefix)) {
+  for (const m of middle) {
+    if (!isValidDocumentIdentifier(m)) {
       return {
         kind: 'error',
-        message: `"${prefix}" is not valid `,
-      };
-    }
-
-    if (!isValidDocumentIdentifier(id)) {
-      return {
-        kind: 'error',
-        message: `"${id}" is not a valid lowercase identifier`,
+        message: `"${m}" is not a valid lowercase identifier`,
       };
     }
   }

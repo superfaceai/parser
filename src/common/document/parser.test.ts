@@ -94,25 +94,25 @@ describe('document name parsing', () => {
   });
 
   it('parses partial map name with unverified provider', () => {
-    const id = 'my-profile.unverified!x_provider';
+    const id = 'my-profile.unverified-x_provider';
 
     expect(parseDocumentId(id)).toEqual({
       kind: 'parsed',
       value: {
-        middle: ['my-profile', 'unverified!x_provider'],
+        middle: ['my-profile', 'unverified-x_provider'],
       },
     });
   });
 
   it('parses full map name with unverified provider', () => {
-    const id = 'our_scope/my-profile.unverified!x_provider.v4riant@1.2-rev567';
+    const id = 'our_scope/my-profile.unverified-x_provider.v4riant@1.2-rev567';
 
     expect(parseMapId(id)).toEqual({
       kind: 'parsed',
       value: {
         scope: 'our_scope',
         name: 'my-profile',
-        provider: 'unverified!x_provider',
+        provider: 'unverified-x_provider',
         variant: 'v4riant',
         version: {
           major: 1,
