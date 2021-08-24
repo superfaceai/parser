@@ -10,6 +10,12 @@ export type ParseResult<T> =
   | { kind: 'parsed'; value: T }
   | { kind: 'error'; message: string };
 
+const VERSION_DELIMITER = '@';
+const PART_DELIMITER = '.';
+const SCOPE_DELIMITER = '/';
+const PREFIX_DELIMITER = '!';
+const LABEL_DELIMITER = '-';
+
 const ID_NAME_RE = /^[a-z][a-z0-9_-]*$/;
 /**
  * Checks whether the identififer is a lowercase identififer as required for document ids in the spec.
@@ -35,7 +41,7 @@ function parseVersionNumber(str: string): number | undefined {
  * Parses version in format `major.minor.patch-label`
  */
 export function parseVersion(version: string): ParseResult<DocumentVersion> {
-  const [restVersion, label] = splitLimit(version, '-', 1);
+  const [restVersion, label] = splitLimit(version, LABEL_DELIMITER, 1);
   const [majorStr, minorStr, patchStr] = splitLimit(restVersion, '.', 2);
 
   const major = parseVersionNumber(majorStr);
@@ -83,7 +89,7 @@ export function parseVersion(version: string): ParseResult<DocumentVersion> {
 export function parseDocumentId(id: string): ParseResult<DocumentId> {
   // parse scope first
   let scope: string | undefined;
-  const [splitScope, scopeRestId] = splitLimit(id, '/', 1);
+  const [splitScope, scopeRestId] = splitLimit(id, SCOPE_DELIMITER, 1);
   if (scopeRestId !== undefined) {
     scope = splitScope;
     if (!isValidDocumentIdentifier(scope)) {
@@ -98,7 +104,7 @@ export function parseDocumentId(id: string): ParseResult<DocumentId> {
   }
 
   let parsedVersion;
-  const [versionRestId, splitVersion] = splitLimit(id, '@', 1);
+  const [versionRestId, splitVersion] = splitLimit(id, VERSION_DELIMITER, 1);
   if (splitVersion !== undefined) {
     parsedVersion = parseVersion(splitVersion);
 
@@ -114,12 +120,29 @@ export function parseDocumentId(id: string): ParseResult<DocumentId> {
   }
   const version = parsedVersion?.value;
 
-  const middle = id.split('.');
-  for (const m of middle) {
-    if (!isValidDocumentIdentifier(m)) {
+  const middle = id.split(PART_DELIMITER);
+  for (const part of middle) {
+    let prefix: string | null;
+    let id: string | null;
+
+    [prefix, id] = splitLimit(part, PREFIX_DELIMITER, 1);
+
+    if (!id) {
+      id = prefix;
+      prefix = null;
+    }
+
+    if (prefix && !isValidDocumentIdentifier(prefix)) {
       return {
         kind: 'error',
-        message: `"${m}" is not a valid lowercase identifier`,
+        message: `"${prefix}" is not valid `,
+      };
+    }
+
+    if (!isValidDocumentIdentifier(id)) {
+      return {
+        kind: 'error',
+        message: `"${id}" is not a valid lowercase identifier`,
       };
     }
   }
@@ -145,7 +168,9 @@ export function parseProfileId(id: string): ParseResult<ProfileDocumentId> {
   if (base.middle.length !== 1) {
     return {
       kind: 'error',
-      message: `"${base.middle.join('.')}" is not a valid lowercase identifier`,
+      message: `"${base.middle.join(
+        PART_DELIMITER
+      )}" is not a valid lowercase identifier`,
     };
   }
 
