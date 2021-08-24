@@ -24,6 +24,14 @@ export function isValidDocumentIdentifier(str: string): boolean {
   return ID_NAME_RE.test(str);
 }
 
+const PROVIDER_ID_RE = /^(unverified!)?[a-z][a-z_-]*$/;
+/**
+ * Checks wheter the identifier is valid with prefix
+ */
+export function isValidProviderIdentifier(str: string): boolean {
+  return PROVIDER_ID_RE.test(str);
+}
+
 const VERSION_NUMBER_RE = /^[0-9]+$/;
 /**
  * Parses a singular version number or returns undefined.
@@ -233,10 +241,10 @@ export function parseMapId(id: string): ParseResult<MapDocumentId> {
 
   // parse name portion
   const [name, provider, variant] = base.middle;
-  if (provider === undefined) {
+  if (!isValidProviderIdentifier(provider)) {
     return {
       kind: 'error',
-      message: 'provider is not a valid lowercase identifier',
+      message: `"${provider}" is not a valid lowercase identifier`,
     };
   }
 

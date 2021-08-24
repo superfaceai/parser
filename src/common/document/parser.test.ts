@@ -75,14 +75,14 @@ describe('document name parsing', () => {
   });
 
   it('parses full map name', () => {
-    const id = 'our_scope/my-profile.x_prov1der.v4riant@1.2-rev567';
+    const id = 'our_scope/my-profile.x_provider.v4riant@1.2-rev567';
 
     expect(parseMapId(id)).toEqual({
       kind: 'parsed',
       value: {
         scope: 'our_scope',
         name: 'my-profile',
-        provider: 'x_prov1der',
+        provider: 'x_provider',
         variant: 'v4riant',
         version: {
           major: 1,
@@ -147,6 +147,24 @@ describe('document name parsing', () => {
     expect(parseProfileId(id)).toStrictEqual({
       kind: 'error',
       message: '"" is not a valid lowercase identifier',
+    });
+  });
+
+  it('returns an error for provider with number', () => {
+    const id = 'scope/profile.prov1der@1.0.0';
+
+    expect(parseMapId(id)).toStrictEqual({
+      kind: 'error',
+      message: '"prov1der" is not a valid lowercase identifier',
+    });
+  });
+
+  it('returns an error for unknow provider prefix is used', () => {
+    const id = 'scope/profile.myprefix!provider@1.0.0';
+
+    expect(parseMapId(id)).toStrictEqual({
+      kind: 'error',
+      message: '"myprefix!provider" is not a valid lowercase identifier',
     });
   });
 
