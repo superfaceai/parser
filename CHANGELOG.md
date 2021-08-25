@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.21] - 2021-08-25
 ### Added
 - Extracted `formatIssueContext` function
 
@@ -178,7 +179,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation extraction from doc strings
 - Usecase result parsing as optional
 
-[Unreleased]: https://github.com/superfaceai/parser/compare/v0.0.20...HEAD
+[Unreleased]: https://github.com/superfaceai/parser/compare/v0.0.21...HEAD
+[0.0.21]: https://github.com/superfaceai/parser/compare/v0.0.20...v0.0.21
 [0.0.20]: https://github.com/superfaceai/parser/compare/v0.0.20-beta.0...v0.0.20
 [0.0.20-beta.0]: https://github.com/superfaceai/parser/compare/v0.0.19...v0.0.20-beta.0
 [0.0.19]: https://github.com/superfaceai/parser/compare/v0.0.18...v0.0.19
