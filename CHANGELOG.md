@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Extracted `formatIssueContext` function
 
+### Fixed
+- Fixed referencing variables in jessie expressions
+
 ## [0.0.20] - 2021-08-03
 
 ## [0.0.20-beta.0] - 2021-08-03
