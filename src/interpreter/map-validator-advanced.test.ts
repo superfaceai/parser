@@ -2474,5 +2474,368 @@ describe('MapValidator', () => {
         'OutcomeStatement - Error Not Found: returning "ObjectLiteral", but there is no error defined in usecase\nObjectLiteral - Wrong Object Structure: expected deliveryStatus, but got status, some.key\nObjectLiteral - Wrong Object Structure: expected deliveryStatus, but got status'
       );
     });
+    describe('swapi get character information', () => {
+      const profileAst: ProfileDocumentNode = {
+        kind: 'ProfileDocument',
+        header: {
+          kind: 'ProfileHeader',
+          scope: 'starwars',
+          name: 'character-information',
+          version: {
+            major: 1,
+            minor: 0,
+            patch: 3,
+          },
+
+          title: 'Star Wars Character Information',
+          description: 'Retrive information about Star Wars characters.',
+        },
+        definitions: [
+          {
+            kind: 'UseCaseDefinition',
+            useCaseName: 'RetrieveCharacterInformation',
+            safety: 'safe',
+            input: {
+              kind: 'UseCaseSlotDefinition',
+              type: {
+                kind: 'ObjectDefinition',
+                fields: [
+                  {
+                    kind: 'FieldDefinition',
+                    fieldName: 'characterName',
+                    required: false,
+                  },
+                ],
+              },
+            },
+            result: {
+              kind: 'UseCaseSlotDefinition',
+              type: {
+                kind: 'ObjectDefinition',
+                fields: [
+                  {
+                    kind: 'FieldDefinition',
+                    fieldName: 'height',
+                    required: false,
+                  },
+                  {
+                    kind: 'FieldDefinition',
+                    fieldName: 'weight',
+                    required: false,
+                  },
+                  {
+                    kind: 'FieldDefinition',
+                    fieldName: 'yearOfBirth',
+                    required: false,
+                  },
+                ],
+              },
+            },
+            error: {
+              kind: 'UseCaseSlotDefinition',
+              type: {
+                kind: 'ObjectDefinition',
+                fields: [
+                  {
+                    kind: 'FieldDefinition',
+                    fieldName: 'message',
+                    required: false,
+                  },
+                  {
+                    kind: 'FieldDefinition',
+                    fieldName: 'characters',
+                    required: false,
+                  },
+                ],
+              },
+            },
+
+            title: 'Retrieve Character Info',
+            description: 'Retrieve information about a Star Wars character.',
+          },
+          {
+            kind: 'NamedFieldDefinition',
+            fieldName: 'characterName',
+            type: {
+              kind: 'PrimitiveTypeName',
+              name: 'string',
+            },
+
+            title: 'Character name',
+            description:
+              'The character name to use when looking up character information',
+          },
+          {
+            kind: 'NamedFieldDefinition',
+            fieldName: 'height',
+            type: {
+              kind: 'PrimitiveTypeName',
+              name: 'string',
+            },
+
+            title: 'Height',
+            description: 'The height of the character',
+          },
+          {
+            kind: 'NamedFieldDefinition',
+            fieldName: 'weight',
+            type: {
+              kind: 'PrimitiveTypeName',
+              name: 'string',
+            },
+
+            title: 'Weight',
+            description: 'The weight of the character',
+          },
+          {
+            kind: 'NamedFieldDefinition',
+            fieldName: 'yearOfBirth',
+            type: {
+              kind: 'PrimitiveTypeName',
+              name: 'string',
+            },
+
+            title: 'Year of birth',
+            description: 'The year of birth of the character',
+          },
+          {
+            kind: 'NamedFieldDefinition',
+            fieldName: 'message',
+            type: {
+              kind: 'PrimitiveTypeName',
+              name: 'string',
+            },
+
+            title: 'Message',
+            description:
+              'The message for when an error occurs looking up character information',
+          },
+          {
+            kind: 'NamedFieldDefinition',
+            fieldName: 'characters',
+            type: {
+              kind: 'ListDefinition',
+              elementType: {
+                kind: 'PrimitiveTypeName',
+                name: 'string',
+              },
+            },
+
+            title: 'Characters',
+            description:
+              'List of characters which might correspond to entered character name.',
+          },
+        ],
+      };
+
+      const mapAst: MapASTNode = {
+        kind: 'MapDocument',
+        header: {
+          kind: 'MapHeader',
+          profile: {
+            scope: 'starwars',
+            name: 'character-information',
+            version: {
+              major: 1,
+              minor: 0,
+              patch: 0,
+            },
+          },
+          provider: 'swapi',
+        },
+        definitions: [
+          {
+            kind: 'MapDefinition',
+            name: 'RetrieveCharacterInformation',
+            usecaseName: 'RetrieveCharacterInformation',
+            statements: [
+              {
+                kind: 'HttpCallStatement',
+                method: 'GET',
+                url: '/people/',
+                request: {
+                  kind: 'HttpRequest',
+                  query: {
+                    kind: 'ObjectLiteral',
+                    fields: [
+                      {
+                        kind: 'Assignment',
+                        key: ['search'],
+                        value: {
+                          kind: 'JessieExpression',
+                          expression: 'input.characterName',
+                          source: 'input.characterName',
+                          sourceMap: 'AAAA,IAAI,aAAa,GAAG,KAAK,CAAC,aAAa,CAAC',
+                        },
+                      },
+                    ],
+                  },
+
+                  security: [],
+                },
+                responseHandlers: [
+                  {
+                    kind: 'HttpResponseHandler',
+                    statusCode: 200,
+                    contentType: 'application/json',
+                    statements: [
+                      {
+                        kind: 'OutcomeStatement',
+                        isError: true,
+                        terminateFlow: true,
+                        condition: {
+                          kind: 'ConditionAtom',
+                          expression: {
+                            kind: 'JessieExpression',
+                            expression: 'body.count === 0',
+                            source: 'body.count === 0',
+                            sourceMap:
+                              'AAAA,IAAI,aAAa,GAAG,IAAI,CAAC,KAAK,KAAK,CAAC,CAAC',
+                          },
+                        },
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['message'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value: 'No character found',
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: 'SetStatement',
+                        assignments: [
+                          {
+                            kind: 'Assignment',
+                            key: ['entries'],
+                            value: {
+                              kind: 'JessieExpression',
+                              expression:
+                                'body.results.filter(function (result) { return result.name.toLowerCase() === input.characterName.toLowerCase(); })',
+                              source:
+                                'body.results.filter(result => result.name.toLowerCase() === input.characterName.toLowerCase())',
+                              sourceMap:
+                                'AAAA,IAAI,aAAa,GAAG,IAAI,CAAC,OAAO,CAAC,MAAM,CAAC,UAAA,MAAM,IAAI,OAAA,MAAM,CAAC,IAAI,CAAC,WAAW,EAAE,KAAK,KAAK,CAAC,aAAa,CAAC,WAAW,EAAE,EAA/D,CAA+D,CAAC,CAAC',
+                            },
+                          },
+                        ],
+                      },
+                      {
+                        kind: 'OutcomeStatement',
+                        isError: true,
+                        terminateFlow: true,
+                        condition: {
+                          kind: 'ConditionAtom',
+                          expression: {
+                            kind: 'JessieExpression',
+                            expression: 'entries.length === 0',
+                            source: 'entries.length === 0',
+                            sourceMap:
+                              'AAAA,IAAI,aAAa,GAAG,OAAO,CAAC,MAAM,KAAK,CAAC,CAAC',
+                          },
+                        },
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['message'],
+                              value: {
+                                kind: 'PrimitiveLiteral',
+                                value:
+                                  'Specified character name is incorrect, did you mean to enter one of following?',
+                              },
+                            },
+                            {
+                              kind: 'Assignment',
+                              key: ['characters'],
+                              value: {
+                                kind: 'JessieExpression',
+                                expression:
+                                  'body.results.map(function (result) { return result.name; })',
+                                source:
+                                  'body.results.map(result => result.name)',
+                                sourceMap:
+                                  'AAAA,IAAI,aAAa,GAAG,IAAI,CAAC,OAAO,CAAC,GAAG,CAAC,UAAA,MAAM,IAAI,OAAA,MAAM,CAAC,IAAI,EAAX,CAAW,CAAC,CAAC',
+                              },
+                            },
+                          ],
+                        },
+                      },
+                      {
+                        kind: 'SetStatement',
+                        assignments: [
+                          {
+                            kind: 'Assignment',
+                            key: ['character'],
+                            value: {
+                              kind: 'JessieExpression',
+                              expression: 'entries[0]',
+                              source: 'entries[0]',
+                              sourceMap:
+                                'AAAA,IAAI,aAAa,GAAG,OAAO,CAAC,CAAC,CAAC,CAAC',
+                            },
+                          },
+                        ],
+                      },
+                      {
+                        kind: 'OutcomeStatement',
+                        isError: false,
+                        terminateFlow: false,
+                        value: {
+                          kind: 'ObjectLiteral',
+                          fields: [
+                            {
+                              kind: 'Assignment',
+                              key: ['height'],
+                              value: {
+                                kind: 'JessieExpression',
+                                expression: 'character.height',
+                                source: 'character.height',
+                                sourceMap:
+                                  'AAAA,IAAI,aAAa,GAAG,SAAS,CAAC,MAAM,CAAC',
+                              },
+                            },
+                            {
+                              kind: 'Assignment',
+                              key: ['weight'],
+                              value: {
+                                kind: 'JessieExpression',
+                                expression: 'character.mass',
+                                source: 'character.mass',
+                                sourceMap:
+                                  'AAAA,IAAI,aAAa,GAAG,SAAS,CAAC,IAAI,CAAC',
+                              },
+                            },
+                            {
+                              kind: 'Assignment',
+                              key: ['yearOfBirth'],
+                              value: {
+                                kind: 'JessieExpression',
+                                expression: 'character.birth_year',
+                                source: 'character.birth_year',
+                                sourceMap:
+                                  'AAAA,IAAI,aAAa,GAAG,SAAS,CAAC,UAAU,CAAC',
+                              },
+                            },
+                          ],
+                        },
+                      },
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      };
+
+      valid(profileAst, [mapAst]);
+    });
   });
 });
