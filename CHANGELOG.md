@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Updated ast dependecy to `0.0.29`
+
 ## [0.0.21] - 2021-08-25
 ### Added
 - Extracted `formatIssueContext` function
