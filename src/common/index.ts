@@ -1,3 +1,2 @@
-export * from './document/interfaces';
-export * from './document/parser';
+export * from './document';
 export * from './split';

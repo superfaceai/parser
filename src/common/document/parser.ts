@@ -89,7 +89,7 @@ export function parseDocumentId(id: string): ParseResult<DocumentId> {
     if (!isValidDocumentIdentifier(scope)) {
       return {
         kind: 'error',
-        message: 'scope is not a valid lowercase identifier',
+        message: `${scope} is not a valid lowercase identifier`,
       };
     }
 

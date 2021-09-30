@@ -98,11 +98,11 @@ describe('document name parsing', () => {
 
     expect(parseDocumentId(id)).toStrictEqual({
       kind: 'error',
-      message: 'scope is not a valid lowercase identifier',
+      message: 'SCOPE is not a valid lowercase identifier',
     });
     expect(parseProfileId(id)).toStrictEqual({
       kind: 'error',
-      message: 'scope is not a valid lowercase identifier',
+      message: 'SCOPE is not a valid lowercase identifier',
     });
   });
 
