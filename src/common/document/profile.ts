@@ -113,22 +113,22 @@ export class ProfileId {
     public readonly name: string
   ) {}
 
-  //TODO: not sure how to act if we don't have a version set default 1.0.0, err. or parameter backup: string to be used if we dont have a class instance version?
-  get withVersion(): string {
-    if (!this.version) {
-      throw new Error(
-        `Unable to return version of profile ${this.withoutVersion} - missing version`
-      );
-    }
-
-    return this.withoutVersion + `@${this.version.toString() || ''}`;
-  }
-
+  /**
+   * Returns profile id without version
+   */
   get withoutVersion(): string {
     return this.scope ? `${this.scope}/${this.name}` : this.name;
   }
 
+  /**
+   * Stringified profile id with version if version is defined
+   * @returns stringified profile id
+   */
   toString(): string {
+    if (this.version) {
+      return this.withoutVersion + `@${this.version.toString() || ''}`;
+    }
+
     return this.withoutVersion;
   }
 }
