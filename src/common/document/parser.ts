@@ -22,7 +22,7 @@ const VERSION_NUMBER_RE = /^[0-9]+$/;
 /**
  * Parses a singular version number or returns undefined.
  */
-function parseVersionNumber(str: string): number | undefined {
+export function parseVersionNumber(str: string): number | undefined {
   const value = str.trim();
   if (!VERSION_NUMBER_RE.test(value)) {
     return undefined;
@@ -34,6 +34,7 @@ function parseVersionNumber(str: string): number | undefined {
 /**
  * Parses version in format `major.minor.patch-label`
  */
+//TODO: this could be part of DocumentVersion class
 export function parseVersion(version: string): ParseResult<DocumentVersion> {
   const [restVersion, label] = splitLimit(version, '-', 1);
   const [majorStr, minorStr, patchStr] = splitLimit(restVersion, '.', 2);

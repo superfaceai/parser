@@ -1,37 +1,134 @@
-import { parseDocumentId } from './parser';
+import { splitLimit } from '../split';
+import { parseProfileId, parseVersionNumber } from './parser';
+
+/**
+ * Class representing profile version, every property except label is required
+ * Defeerence between this class and DocumenVersion is in optionality of properties - DocumentVersion is more abstract structire
+ */
+export class ProfileVersion {
+  public static fromString(input: string): ProfileVersion {
+    const [restVersion, label] = splitLimit(input, '-', 1);
+    const [majorStr, minorStr, patchStr] = splitLimit(restVersion, '.', 2);
+
+    const major = parseVersionNumber(majorStr);
+    if (major === undefined) {
+      throw new Error(
+        `Invalid profile version: ${input} - major component is not a valid number`
+      );
+    }
+    const minor = parseVersionNumber(minorStr);
+    if (minor === undefined) {
+      throw new Error(
+        `Invalid profile version: ${input} - minor component is not a valid number`
+      );
+    }
+    const patch = parseVersionNumber(patchStr);
+    if (patch === undefined) {
+      throw new Error(
+        `Invalid profile version: ${input} - patch component is not a valid number`
+      );
+    }
+
+    return new ProfileVersion(major, minor, patch, label);
+  }
+
+  public static fromParameters(params: {
+    major: number;
+    minor: number;
+    patch: number;
+    label?: string;
+  }): ProfileVersion {
+    return new ProfileVersion(
+      params.major,
+      params.minor,
+      params.patch,
+      params.label
+    );
+  }
+
+  toString(): string {
+    return `${this.major}.${this.minor}.${this.patch}-${this.label ?? ''}`;
+  }
+
+  private constructor(
+    public readonly major: number,
+    public readonly minor: number,
+    public readonly patch: number,
+    public readonly label?: string
+  ) {}
+}
 
 export class ProfileId {
-  public readonly scope?: string;
-  public readonly name: string;
-  public readonly id: string;
-
+  /**
+   * Creates instance of ProfileId from string
+   * @param profileId string in format {scope/}{name}{@major.minor.path-label} where scope,label and entire version is optional
+   * @returns instance of ProfileId
+   */
   public static fromId(profileId: string): ProfileId {
-    const parsed = parseDocumentId(profileId);
+    const parsed = parseProfileId(profileId);
     if (parsed.kind === 'error') {
       throw new Error(`Invalid profile id: ${parsed.message}`);
     }
 
-    return ProfileId.fromScopeName(parsed.value.scope, parsed.value.middle[0]);
+    let version: ProfileVersion | undefined = undefined;
+    if (parsed.value.version) {
+      if (!parsed.value.version.minor) {
+        throw new Error(
+          `Invalid profile id: ${profileId} - minor version is required`
+        );
+      }
+
+      if (!parsed.value.version.patch) {
+        throw new Error(
+          `Invalid profile id: ${profileId} - patch version is required`
+        );
+      }
+
+      version = ProfileVersion.fromParameters({
+        major: parsed.value.version.major,
+        minor: parsed.value.version.minor,
+        patch: parsed.value.version.patch,
+        label: parsed.value.version.label,
+      });
+    }
+
+    return ProfileId.fromScopeName(
+      parsed.value.scope,
+      version,
+      parsed.value.name
+    );
   }
 
   public static fromScopeName(
     scope: string | undefined,
+    version: ProfileVersion | undefined,
     name: string
   ): ProfileId {
-    return new ProfileId(scope, name);
+    return new ProfileId(scope, version, name);
   }
 
-  private constructor(scope: string | undefined, name: string) {
-    this.scope = scope;
-    this.name = name;
-    this.id = scope ? `${scope}/${name}` : name;
+  private constructor(
+    public readonly scope: string | undefined,
+    public readonly version: ProfileVersion | undefined,
+    public readonly name: string
+  ) {}
+
+  //TODO: not sure how to act if we don't have a version set default 1.0.0, err. or parameter backup: string to be used if we dont have a class instance version?
+  get withVersion(): string {
+    if (!this.version) {
+      throw new Error(
+        `Unable to return version of profile ${this.withoutVersion} - missing version`
+      );
+    }
+
+    return this.withoutVersion + `@${this.version.toString() || ''}`;
   }
 
-  withVersion(version?: string): string {
-    return `${this.id}${version ? `@${version}` : ''}`;
+  get withoutVersion(): string {
+    return this.scope ? `${this.scope}/${this.name}` : this.name;
   }
 
   toString(): string {
-    return this.id;
+    return this.withoutVersion;
   }
 }
