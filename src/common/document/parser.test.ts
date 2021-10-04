@@ -1,9 +1,4 @@
-import {
-  parseDocumentId,
-  parseMapId,
-  parseProfileId,
-  parseVersion,
-} from './parser';
+import { parseDocumentId, parseMapId, parseProfileId } from './parser';
 
 describe('document name parsing', () => {
   it('parses partial profile name', () => {
@@ -141,22 +136,6 @@ describe('document name parsing', () => {
       kind: 'error',
       message:
         'revision label must be in format `revN` where N is a non-negative integer',
-    });
-  });
-
-  it('returns an error for invalid version - 1.x1', () => {
-    const version = '1.x1';
-    expect(parseVersion(version)).toStrictEqual({
-      kind: 'error',
-      message: 'minor component is not a valid number',
-    });
-  });
-
-  it('returns an error for invalid version - 1.2.3.4', () => {
-    const version = '1.2.3.4';
-    expect(parseVersion(version)).toStrictEqual({
-      kind: 'error',
-      message: 'patch component is not a valid number',
     });
   });
 });
