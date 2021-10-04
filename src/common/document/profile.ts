@@ -5,7 +5,7 @@ import { parseDocumentId, tryParseVersionNumber, VersionRange } from '.';
 //TODO: move version stuff to verstion.ts??
 /**
  * Class representing profile version, every property except label is required
- * Defeerence between this class and VersionRange is in optionality of properties - VersionRange is more abstract structire
+ * Difference between this class and VersionRange is in optionality of properties - VersionRange is a more abstract structure
  */
 export class ProfileVersion {
   public static fromVersionRange(input: VersionRange): ProfileVersion {

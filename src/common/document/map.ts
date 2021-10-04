@@ -5,7 +5,7 @@ import { VersionRange } from './version';
 
 /**
  * Class representing map version, every property except patch and label is required
- * Defeerence between this class and DocumenVersion is in optionality of properties - DocumentVersion is more abstract structire
+ * Difference between this class and VersionRange is in optionality of properties - VersionRange is a more abstract structure
  */
 export class MapVersion {
   public static fromVersionRange(input: VersionRange): MapVersion {
