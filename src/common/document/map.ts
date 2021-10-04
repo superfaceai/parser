@@ -1,6 +1,6 @@
 import { splitLimit } from '@superfaceai/ast';
 
-import { tryParseVersionNumber } from './parser';
+import { parseRevisionLabel, tryParseVersionNumber } from './parser';
 import { VersionRange } from './version';
 
 /**
@@ -11,11 +11,25 @@ export class MapVersion {
   public static fromVersionRange(input: VersionRange): MapVersion {
     if (input.minor === undefined) {
       throw new Error(
-        `Invalid profile version: ${input.toString()} - minor version is required`
+        `Invalid map version: ${input.toString()} - minor version is required`
       );
     }
 
-    return new MapVersion(input.major, input.minor, input.patch, input.label);
+    let revision = undefined;
+    if (input.label) {
+      const parseResult = parseRevisionLabel(input.label);
+      if (parseResult.kind === 'error') {
+        throw new Error(
+          `Invalid map version: ${input.toString()} - revision has error: ${
+            parseResult.message
+          }`
+        );
+      }
+
+      revision = parseResult.value;
+    }
+
+    return new MapVersion(input.major, input.minor, revision);
   }
 
   public static fromString(input: string): MapVersion {
@@ -44,44 +58,40 @@ export class MapVersion {
       }
     }
 
-    return new MapVersion(major, minor, patch, label);
+    let revision = undefined;
+    if (label) {
+      const parseResult = parseRevisionLabel(label);
+      if (parseResult.kind === 'error') {
+        throw new Error(
+          `Invalid map version: ${input.toString()} - revision has error: ${
+            parseResult.message
+          }`
+        );
+      }
+      revision = parseResult.value;
+    }
+
+    return new MapVersion(major, minor, revision);
   }
 
   public static fromParameters(params: {
     major: number;
     minor: number;
-    //TODO: get rid of patch?
-    patch?: number;
-    //TODO: revision instead of label?
-    label?: string;
+    revision?: number;
   }): MapVersion {
-    return new MapVersion(
-      params.major,
-      params.minor,
-      params.patch,
-      params.label
-    );
+    return new MapVersion(params.major, params.minor, params.revision);
   }
 
   toString(): string {
-    let str = `${this.major}.${this.minor}`;
+    const str = `${this.major}.${this.minor}`;
 
-    if (this.patch !== undefined) {
-      str += `.${this.patch}`;
-    }
-
-    return this.label ? `${str}-${this.label}` : str;
+    return this.revision !== undefined ? `${str}-rev${this.revision}` : str;
   }
 
   private constructor(
     public readonly major: number,
     public readonly minor: number,
-    //TODO get rid of patch??
-
-    public readonly patch?: number,
-    //TODO use revision??
-
-    public readonly label?: string
+    public readonly revision?: number
   ) {}
 }
 
@@ -91,13 +101,7 @@ export class MapVersion {
 export const DEFAULT_MAP_VERSION = MapVersion.fromParameters({
   major: 1,
   minor: 0,
-  patch: 0,
 });
-
-/**
- * Represents default value of mapp version in string format
- */
-export const DEFAULT_MAP_VERSION_STR = '1.0.';
 
 /**
  * Class representing map id
@@ -144,16 +148,12 @@ export class MapId {
     this.variant = variant;
   }
 
-  //TODO: do we want acces mapId WITHOUT the version??
   toString(): string {
     let id = `${this.profile.id}.${this.provider}`;
     if (this.variant) {
       id += `.${this.variant}`;
     }
-    let version = `${this.version.major}.${this.version.minor}`;
-    version += this.version.patch !== undefined ? `.${this.version.patch}` : '';
-    version += this.version.label !== undefined ? `-${this.version.label}` : '';
 
-    return id + `@${version}`;
+    return id + `@${this.version.toString()}`;
   }
 }

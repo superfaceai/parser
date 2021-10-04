@@ -507,24 +507,23 @@ const PROFILE_VERSION = SyntaxRule.identifier('version')
         label?: string;
       } & LocationInfo
     >(version => {
-      const parsedVersion = VersionRange.fromString(version.data.string);
-      //TODO: nomatch on version err?
+      try {
+        const parsedVersion = VersionRange.fromString(version.data.string);
 
-      // if (parseVersionResult.kind !== 'parsed') {
-      //   return { kind: 'nomatch' };
-      // }
-
-      return {
-        kind: 'match',
-        value: {
-          major: parsedVersion.major,
-          minor: parsedVersion.minor ?? 0,
-          patch: parsedVersion.patch ?? 0,
-          label: parsedVersion.label,
-          location: version.location,
-          span: version.span,
-        },
-      };
+        return {
+          kind: 'match',
+          value: {
+            major: parsedVersion.major,
+            minor: parsedVersion.minor ?? 0,
+            patch: parsedVersion.patch ?? 0,
+            label: parsedVersion.label,
+            location: version.location,
+            span: version.span,
+          },
+        };
+      } catch (error) {
+        return { kind: 'nomatch' };
+      }
     }, 'semver version')
   )
   .map(([keyword, _op, version]) => {

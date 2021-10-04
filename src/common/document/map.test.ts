@@ -10,15 +10,14 @@ describe('MapId helper', () => {
             major: 1,
             minor: 0,
             patch: 0,
-            label: 'label',
+            label: 'rev2',
           })
         )
       ).toEqual(
         MapVersion.fromParameters({
           major: 1,
           minor: 0,
-          patch: 0,
-          label: 'label',
+          revision: 2,
         })
       );
       expect(
@@ -33,23 +32,6 @@ describe('MapId helper', () => {
         MapVersion.fromParameters({
           major: 1,
           minor: 2,
-          patch: 3,
-          label: undefined,
-        })
-      );
-      expect(
-        MapVersion.fromVersionRange(
-          VersionRange.fromParameters({
-            major: 1,
-            minor: 2,
-          })
-        )
-      ).toEqual(
-        MapVersion.fromParameters({
-          major: 1,
-          minor: 2,
-          patch: undefined,
-          label: undefined,
         })
       );
     });
@@ -61,43 +43,57 @@ describe('MapId helper', () => {
           })
         )
       ).toThrowError(
-        new Error('Invalid profile version: 1 - minor version is required')
+        new Error('Invalid map version: 1 - minor version is required')
+      );
+      expect(() =>
+        MapVersion.fromVersionRange(
+          VersionRange.fromParameters({
+            major: 1,
+            minor: 2,
+            patch: 4,
+            label: '78',
+          })
+        )
+      ).toThrowError(
+        new Error(
+          'Invalid map version: 1.2.4-78 - revision has error: revision label must be in format `revN`'
+        )
       );
     });
   });
 
   describe('when creating MapVersion from string', () => {
     it('creates correct object', () => {
-      expect(MapVersion.fromString('1.0.0-label')).toEqual(
+      expect(MapVersion.fromString('1.0.0-rev0')).toEqual(
         MapVersion.fromParameters({
           major: 1,
           minor: 0,
-          patch: 0,
-          label: 'label',
+          revision: 0,
+        })
+      );
+      expect(MapVersion.fromString('1.0-rev0')).toEqual(
+        MapVersion.fromParameters({
+          major: 1,
+          minor: 0,
+          revision: 0,
         })
       );
       expect(MapVersion.fromString('1.2.3')).toEqual(
         MapVersion.fromParameters({
           major: 1,
           minor: 2,
-          patch: 3,
-          label: undefined,
         })
       );
       expect(MapVersion.fromString('1.2.')).toEqual(
         MapVersion.fromParameters({
           major: 1,
           minor: 2,
-          patch: undefined,
-          label: undefined,
         })
       );
       expect(MapVersion.fromString('1.2')).toEqual(
         MapVersion.fromParameters({
           major: 1,
           minor: 2,
-          patch: undefined,
-          label: undefined,
         })
       );
     });
@@ -142,6 +138,11 @@ describe('MapId helper', () => {
           'Invalid map version:  - major component:  is not a valid number'
         )
       );
+      expect(() => MapVersion.fromString('1.2-rev')).toThrowError(
+        new Error(
+          'Invalid map version: 1.2-rev - revision has error: revision label must be in format `revN` where N is a non-negative integer'
+        )
+      );
     });
   });
 
@@ -151,24 +152,13 @@ describe('MapId helper', () => {
         MapVersion.fromParameters({
           major: 1,
           minor: 0,
-          patch: 0,
-          label: 'label',
+          revision: 0,
         }).toString()
-      ).toEqual('1.0.0-label');
+      ).toEqual('1.0-rev0');
       expect(
         MapVersion.fromParameters({
           major: 1,
           minor: 2,
-          patch: 3,
-          label: undefined,
-        }).toString()
-      ).toEqual('1.2.3');
-      expect(
-        MapVersion.fromParameters({
-          major: 1,
-          minor: 2,
-          patch: undefined,
-          label: undefined,
         }).toString()
       ).toEqual('1.2');
     });
@@ -192,11 +182,11 @@ describe('MapId helper', () => {
             name: 'test',
             scope: 'scope',
           },
-          version: MapVersion.fromString('1.2.3-test'),
+          version: MapVersion.fromString('1.2-rev4'),
           provider: 'provider',
           variant: 'bugfix',
         }).toString()
-      ).toEqual('scope/test.provider.bugfix@1.2.3-test');
+      ).toEqual('scope/test.provider.bugfix@1.2-rev4');
     });
   });
 
@@ -220,11 +210,11 @@ describe('MapId helper', () => {
             name: 'test',
             scope: 'scope',
           },
-          version: MapVersion.fromString('1.9.8-test'),
+          version: MapVersion.fromString('1.9.9'),
           provider: 'provider',
           variant: 'bugfix',
         }).toString()
-      ).toEqual('scope/test.provider.bugfix@1.9.8-test');
+      ).toEqual('scope/test.provider.bugfix@1.9');
     });
   });
 });

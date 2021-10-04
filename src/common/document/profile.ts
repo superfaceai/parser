@@ -93,11 +93,6 @@ export const DEFAULT_PROFILE_VERSION = ProfileVersion.fromParameters({
   patch: 0,
 });
 
-/**
- * Represents default value of profile version in string format
- */
-export const DEFAULT_PROFILE_VERSION_STR = '1.0.0';
-
 export class ProfileId {
   /**
    * Creates instance of ProfileId from string
