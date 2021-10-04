@@ -1,31 +1,55 @@
-import { splitLimit } from '../split';
-import { parseProfileId, parseVersionNumber } from './parser';
+import { splitLimit } from '@superfaceai/ast';
 
+import { parseDocumentId, tryParseVersionNumber, VersionRange } from '.';
+
+//TODO: move version stuff to verstion.ts??
 /**
  * Class representing profile version, every property except label is required
- * Defeerence between this class and DocumenVersion is in optionality of properties - DocumentVersion is more abstract structire
+ * Defeerence between this class and VersionRange is in optionality of properties - VersionRange is more abstract structire
  */
 export class ProfileVersion {
+  public static fromVersionRange(input: VersionRange): ProfileVersion {
+    if (input.minor === undefined) {
+      throw new Error(
+        `Invalid profile version: ${input.toString()} - minor version is required`
+      );
+    }
+
+    if (input.patch === undefined) {
+      throw new Error(
+        `Invalid profile version: ${input.toString()} - patch version is required`
+      );
+    }
+
+    return new ProfileVersion(
+      input.major,
+      input.minor,
+      input.patch,
+      input.label
+    );
+  }
+
   public static fromString(input: string): ProfileVersion {
     const [restVersion, label] = splitLimit(input, '-', 1);
     const [majorStr, minorStr, patchStr] = splitLimit(restVersion, '.', 2);
 
-    const major = parseVersionNumber(majorStr);
+    const major = tryParseVersionNumber(majorStr);
     if (major === undefined) {
       throw new Error(
-        `Invalid profile version: ${input} - major component is not a valid number`
+        `Invalid profile version: ${input} - major component: ${majorStr} is not a valid number`
       );
     }
-    const minor = parseVersionNumber(minorStr);
+    const minor = tryParseVersionNumber(minorStr);
     if (minor === undefined) {
       throw new Error(
-        `Invalid profile version: ${input} - minor component is not a valid number`
+        `Invalid profile version: ${input} - minor component: ${minorStr} is not a valid number`
       );
     }
-    const patch = parseVersionNumber(patchStr);
+    const patch = tryParseVersionNumber(patchStr);
+
     if (patch === undefined) {
       throw new Error(
-        `Invalid profile version: ${input} - patch component is not a valid number`
+        `Invalid profile version: ${input} - patch component: ${patchStr} is not a valid number`
       );
     }
 
@@ -47,7 +71,9 @@ export class ProfileVersion {
   }
 
   toString(): string {
-    return `${this.major}.${this.minor}.${this.patch}-${this.label ?? ''}`;
+    const str = `${this.major}.${this.minor}.${this.patch}`;
+
+    return this.label ? `${str}-${this.label}` : str;
   }
 
   private constructor(
@@ -58,44 +84,50 @@ export class ProfileVersion {
   ) {}
 }
 
+/**
+ * Represents default value of profile version in ProfileId instance
+ */
+export const DEFAULT_PROFILE_VERSION = ProfileVersion.fromParameters({
+  major: 1,
+  minor: 0,
+  patch: 0,
+});
+
+/**
+ * Represents default value of profile version in string format
+ */
+export const DEFAULT_PROFILE_VERSION_STR = '1.0.0';
+
 export class ProfileId {
   /**
    * Creates instance of ProfileId from string
    * @param profileId string in format {scope/}{name}{@major.minor.path-label} where scope,label and entire version is optional
+   * @param versionString optional string representation of profile version, useful when creating ProfileId from two separate strings
    * @returns instance of ProfileId
    */
-  public static fromId(profileId: string): ProfileId {
-    const parsed = parseProfileId(profileId);
+  public static fromId(profileId: string, versionString?: string): ProfileId {
+    const parsed = parseDocumentId(profileId);
     if (parsed.kind === 'error') {
       throw new Error(`Invalid profile id: ${parsed.message}`);
+    }
+    //Name is required
+    if (parsed.value.middle.length !== 1) {
+      throw new Error(
+        `"${parsed.value.middle.join('.')}" is not a valid lowercase identifier`
+      );
     }
 
     let version: ProfileVersion | undefined = undefined;
     if (parsed.value.version) {
-      if (!parsed.value.version.minor) {
-        throw new Error(
-          `Invalid profile id: ${profileId} - minor version is required`
-        );
-      }
-
-      if (!parsed.value.version.patch) {
-        throw new Error(
-          `Invalid profile id: ${profileId} - patch version is required`
-        );
-      }
-
-      version = ProfileVersion.fromParameters({
-        major: parsed.value.version.major,
-        minor: parsed.value.version.minor,
-        patch: parsed.value.version.patch,
-        label: parsed.value.version.label,
-      });
+      version = ProfileVersion.fromVersionRange(parsed.value.version);
+    } else if (versionString) {
+      version = ProfileVersion.fromString(versionString);
     }
 
     return ProfileId.fromScopeName(
       parsed.value.scope,
       version,
-      parsed.value.name
+      parsed.value.middle[0]
     );
   }
 
@@ -126,7 +158,7 @@ export class ProfileId {
    */
   toString(): string {
     if (this.version) {
-      return this.withoutVersion + `@${this.version.toString() || ''}`;
+      return this.withoutVersion + `@${this.version.toString()}`;
     }
 
     return this.withoutVersion;
