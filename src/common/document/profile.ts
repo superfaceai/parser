@@ -119,19 +119,15 @@ export class ProfileId {
       version = ProfileVersion.fromString(versionString);
     }
 
-    return ProfileId.fromScopeName(
-      parsed.value.scope,
-      version,
-      parsed.value.middle[0]
-    );
+    return new ProfileId(parsed.value.scope, version, parsed.value.middle[0]);
   }
 
-  public static fromScopeName(
-    scope: string | undefined,
-    version: ProfileVersion | undefined,
-    name: string
-  ): ProfileId {
-    return new ProfileId(scope, version, name);
+  public static fromParameters(params: {
+    scope?: string;
+    version?: ProfileVersion;
+    name: string;
+  }): ProfileId {
+    return new ProfileId(params.scope, params.version, params.name);
   }
 
   private constructor(

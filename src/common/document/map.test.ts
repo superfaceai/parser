@@ -1,3 +1,4 @@
+import { ProfileId, ProfileVersion } from '.';
 import { MapId, MapVersion } from './map';
 import { VersionRange } from './version';
 
@@ -64,13 +65,6 @@ describe('MapId helper', () => {
 
   describe('when creating MapVersion from string', () => {
     it('creates correct object', () => {
-      expect(MapVersion.fromString('1.0.0-rev0')).toEqual(
-        MapVersion.fromParameters({
-          major: 1,
-          minor: 0,
-          revision: 0,
-        })
-      );
       expect(MapVersion.fromString('1.0-rev0')).toEqual(
         MapVersion.fromParameters({
           major: 1,
@@ -78,16 +72,11 @@ describe('MapId helper', () => {
           revision: 0,
         })
       );
-      expect(MapVersion.fromString('1.2.3')).toEqual(
+      expect(MapVersion.fromString('1.0-rev123')).toEqual(
         MapVersion.fromParameters({
           major: 1,
-          minor: 2,
-        })
-      );
-      expect(MapVersion.fromString('1.2.')).toEqual(
-        MapVersion.fromParameters({
-          major: 1,
-          minor: 2,
+          minor: 0,
+          revision: 123,
         })
       );
       expect(MapVersion.fromString('1.2')).toEqual(
@@ -99,17 +88,12 @@ describe('MapId helper', () => {
     });
 
     it('throws error', () => {
-      expect(() => MapVersion.fromString('1.0.L')).toThrowError(
+      expect(() => MapVersion.fromString('1.L')).toThrowError(
         new Error(
-          'Invalid map version: 1.0.L - patch component: L is not a valid number'
+          'Invalid map version: 1.L - minor component: L is not a valid number'
         )
       );
 
-      expect(() => MapVersion.fromString('1.L.0')).toThrowError(
-        new Error(
-          'Invalid map version: 1.L.0 - minor component: L is not a valid number'
-        )
-      );
       expect(() => MapVersion.fromString('1.')).toThrowError(
         new Error(
           'Invalid map version: 1. - minor component:  is not a valid number'
@@ -159,18 +143,26 @@ describe('MapId helper', () => {
         MapVersion.fromParameters({
           major: 1,
           minor: 2,
+          revision: 1000,
+        }).toString()
+      ).toEqual('1.2-rev1000');
+      expect(
+        MapVersion.fromParameters({
+          major: 1,
+          minor: 2,
         }).toString()
       ).toEqual('1.2');
     });
   });
 
-  describe('when creating MapId from name', () => {
+  describe('when creating MapId from parameters', () => {
     it('creates correct object', () => {
       expect(
         MapId.fromParameters({
-          profile: {
+          profile: ProfileId.fromParameters({
             name: 'test',
-          },
+            version: ProfileVersion.fromString('1.0.0'),
+          }),
           version: MapVersion.fromString('1.0'),
           provider: 'provider',
         }).toString()
@@ -178,15 +170,66 @@ describe('MapId helper', () => {
 
       expect(
         MapId.fromParameters({
-          profile: {
+          profile: ProfileId.fromParameters({
             name: 'test',
             scope: 'scope',
-          },
+            version: ProfileVersion.fromString('1.2.3'),
+          }),
           version: MapVersion.fromString('1.2-rev4'),
           provider: 'provider',
           variant: 'bugfix',
         }).toString()
       ).toEqual('scope/test.provider.bugfix@1.2-rev4');
+    });
+    it('throws error', () => {
+      expect(() =>
+        MapId.fromParameters({
+          profile: ProfileId.fromParameters({
+            name: 'test',
+            scope: 'scope',
+            version: ProfileVersion.fromString('1.7.8'),
+          }),
+          version: MapVersion.fromString('1.2-rev4'),
+          provider: 'provider',
+          variant: 'bugfix',
+        })
+      ).toThrowError(
+        new Error(
+          'Invalid map id - minor component of map version: 2 and minor component of profile version: 7 does not match'
+        )
+      );
+
+      expect(() =>
+        MapId.fromParameters({
+          profile: ProfileId.fromParameters({
+            name: 'test',
+            scope: 'scope',
+          }),
+          version: MapVersion.fromString('1.2-rev4'),
+          provider: 'provider',
+          variant: 'bugfix',
+        })
+      ).toThrowError(
+        new Error(
+          'Invalid map id - map version: 1.2-rev4 and undefined profile version does not match'
+        )
+      );
+      expect(() =>
+        MapId.fromParameters({
+          profile: ProfileId.fromParameters({
+            name: 'test',
+            scope: 'scope',
+            version: ProfileVersion.fromString('1.7.0'),
+          }),
+          version: MapVersion.fromString('2.2-rev4'),
+          provider: 'provider',
+          variant: 'bugfix',
+        })
+      ).toThrowError(
+        new Error(
+          'Invalid map id - major component of map version: 2 and major component of profile version: 1 does not match'
+        )
+      );
     });
   });
 
@@ -194,10 +237,11 @@ describe('MapId helper', () => {
     it('returns correct id', () => {
       expect(
         MapId.fromParameters({
-          profile: {
+          profile: ProfileId.fromParameters({
             name: 'test',
             scope: 'scope',
-          },
+            version: ProfileVersion.fromString('1.9.0-test'),
+          }),
           version: MapVersion.fromString('1.9'),
           provider: 'provider',
           variant: 'bugfix',
@@ -206,15 +250,16 @@ describe('MapId helper', () => {
 
       expect(
         MapId.fromParameters({
-          profile: {
+          profile: ProfileId.fromParameters({
             name: 'test',
             scope: 'scope',
-          },
-          version: MapVersion.fromString('1.9.9'),
+            version: ProfileVersion.fromString('1.9.0'),
+          }),
+          version: MapVersion.fromString('1.9-rev8'),
           provider: 'provider',
           variant: 'bugfix',
         }).toString()
-      ).toEqual('scope/test.provider.bugfix@1.9');
+      ).toEqual('scope/test.provider.bugfix@1.9-rev8');
     });
   });
 });

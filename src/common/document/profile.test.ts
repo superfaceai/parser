@@ -188,19 +188,27 @@ describe('Profile helper', () => {
   describe('when creating ProfileId from name', () => {
     it('creates correct object', () => {
       expect(
-        ProfileId.fromScopeName(undefined, undefined, 'test').toString()
+        ProfileId.fromParameters({
+          scope: undefined,
+          version: undefined,
+          name: 'test',
+        }).toString()
       ).toEqual('test');
 
       expect(
-        ProfileId.fromScopeName('scope', undefined, 'test').toString()
+        ProfileId.fromParameters({
+          scope: 'scope',
+          version: undefined,
+          name: 'test',
+        }).toString()
       ).toEqual('scope/test');
 
       expect(
-        ProfileId.fromScopeName(
-          'scope',
-          DEFAULT_PROFILE_VERSION,
-          'test'
-        ).toString()
+        ProfileId.fromParameters({
+          scope: 'scope',
+          version: DEFAULT_PROFILE_VERSION,
+          name: 'test',
+        }).toString()
       ).toEqual('scope/test@1.0.0');
     });
   });
@@ -208,13 +216,19 @@ describe('Profile helper', () => {
   describe('when getting ProfileId id without version', () => {
     it('returns correct id', () => {
       expect(
-        ProfileId.fromScopeName(undefined, DEFAULT_PROFILE_VERSION, 'test')
-          .withoutVersion
+        ProfileId.fromParameters({
+          scope: undefined,
+          version: DEFAULT_PROFILE_VERSION,
+          name: 'test',
+        }).withoutVersion
       ).toEqual('test');
 
       expect(
-        ProfileId.fromScopeName('scope', DEFAULT_PROFILE_VERSION, 'test')
-          .withoutVersion
+        ProfileId.fromParameters({
+          scope: 'scope',
+          version: DEFAULT_PROFILE_VERSION,
+          name: 'test',
+        }).withoutVersion
       ).toEqual('scope/test');
     });
   });

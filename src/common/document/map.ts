@@ -1,5 +1,6 @@
 import { splitLimit } from '@superfaceai/ast';
 
+import { ProfileId } from '.';
 import { parseRevisionLabel, tryParseVersionNumber } from './parser';
 import { VersionRange } from './version';
 
@@ -34,9 +35,8 @@ export class MapVersion {
 
   public static fromString(input: string): MapVersion {
     const [restVersion, label] = splitLimit(input, '-', 1);
-    const [majorStr, minorStr, patchStr] = splitLimit(restVersion, '.', 2);
+    const [majorStr, minorStr] = splitLimit(restVersion, '.', 1);
 
-    let patch;
     const major = tryParseVersionNumber(majorStr);
     if (major === undefined) {
       throw new Error(
@@ -48,14 +48,6 @@ export class MapVersion {
       throw new Error(
         `Invalid map version: ${input} - minor component: ${minorStr} is not a valid number`
       );
-    }
-    if (patchStr) {
-      patch = tryParseVersionNumber(patchStr);
-      if (patch === undefined) {
-        throw new Error(
-          `Invalid map version: ${input} - patch component: ${patchStr} is not a valid number`
-        );
-      }
     }
 
     let revision = undefined;
@@ -107,8 +99,7 @@ export const DEFAULT_MAP_VERSION = MapVersion.fromParameters({
  * Class representing map id
  */
 export class MapId {
-  public readonly profile: { scope?: string; name: string; id: string };
-  //TODO: do we want to update DocumentVersion to something similar to ProfileVersion class? It would problably decrease the confucion
+  public readonly profile: ProfileId;
   //In map id version has to contain major and minor property, others are optional
   public readonly version: MapVersion;
   public readonly provider: string;
@@ -117,10 +108,7 @@ export class MapId {
   //TODO: fromId
 
   public static fromParameters(params: {
-    profile: {
-      name: string;
-      scope?: string;
-    };
+    profile: ProfileId;
     version: MapVersion;
     provider: string;
     variant?: string;
@@ -134,22 +122,35 @@ export class MapId {
   }
 
   private constructor(
-    profile: { scope?: string; name: string },
+    profile: ProfileId,
     version: MapVersion,
     provider: string,
     variant?: string
   ) {
-    this.profile = {
-      ...profile,
-      id: profile.scope ? `${profile.scope}/${profile.name}` : profile.name,
-    };
+    if (!profile.version) {
+      throw new Error(
+        `Invalid map id - map version: ${version.toString()} and undefined profile version does not match`
+      );
+    }
+    if (profile.version.major !== version.major) {
+      throw new Error(
+        `Invalid map id - major component of map version: ${version.major} and major component of profile version: ${profile.version.major} does not match`
+      );
+    }
+    if (profile.version.minor !== version.minor) {
+      throw new Error(
+        `Invalid map id - minor component of map version: ${version.minor} and minor component of profile version: ${profile.version.minor} does not match`
+      );
+    }
+
+    this.profile = profile;
     this.version = version;
     this.provider = provider;
     this.variant = variant;
   }
 
   toString(): string {
-    let id = `${this.profile.id}.${this.provider}`;
+    let id = `${this.profile.withoutVersion}.${this.provider}`;
     if (this.variant) {
       id += `.${this.variant}`;
     }
