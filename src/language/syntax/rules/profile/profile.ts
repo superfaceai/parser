@@ -17,10 +17,8 @@ import {
   UseCaseSlotDefinitionNode,
 } from '@superfaceai/ast';
 
-import {
-  parseDocumentId,
-  parseVersion,
-} from '../../../../common/document/parser';
+import { VersionRange } from '../../../..';
+import { parseDocumentId } from '../../../../common/document/parser';
 import { IdentifierTokenData, LexerTokenKind } from '../../../lexer/token';
 import {
   LexerTokenMatch,
@@ -509,11 +507,12 @@ const PROFILE_VERSION = SyntaxRule.identifier('version')
         label?: string;
       } & LocationInfo
     >(version => {
-      const parseVersionResult = parseVersion(version.data.string);
-      if (parseVersionResult.kind !== 'parsed') {
-        return { kind: 'nomatch' };
-      }
-      const parsedVersion = parseVersionResult.value;
+      const parsedVersion = VersionRange.fromString(version.data.string);
+      //TODO: nomatch on version err?
+
+      // if (parseVersionResult.kind !== 'parsed') {
+      //   return { kind: 'nomatch' };
+      // }
 
       return {
         kind: 'match',
