@@ -4,7 +4,12 @@ import {
   LexerTokenKind,
   StringTokenData,
 } from '../lexer/token';
-import { LexerTokenMatch, MatchAttempts, SyntaxRule } from './rule';
+import {
+  LexerTokenMatch,
+  MatchAttempts,
+  SyntaxRule,
+  SyntaxRuleLookahead,
+} from './rule';
 import { ArrayLexerStream } from './util';
 
 // Ensures that token spans are correctly ordered in delcaration order
@@ -462,7 +467,7 @@ describe('syntax rule factory', () => {
       ];
       const stream = new ArrayLexerStream(tokens);
 
-      const rule = SyntaxRule.lookahead(SyntaxRule.string());
+      const rule = new SyntaxRuleLookahead(SyntaxRule.string());
 
       expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
@@ -478,7 +483,7 @@ describe('syntax rule factory', () => {
       ];
       const stream = new ArrayLexerStream(tokens);
 
-      const rule = SyntaxRule.lookahead(SyntaxRule.literal(), 'invert');
+      const rule = new SyntaxRuleLookahead(SyntaxRule.literal(), true);
 
       expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',

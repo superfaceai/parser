@@ -1,7 +1,11 @@
 import * as ts from 'typescript';
 
 import { validateAndTranspile } from '../../../jessie';
-import { JessieSublexerTokenData, LexerTokenKind } from '../../token';
+import {
+  JessieSublexerTokenData,
+  LexerTokenKind,
+  TerminationTokens,
+} from '../../token';
 import { ParseResult } from '../result';
 
 function processScriptText(
@@ -73,16 +77,8 @@ const SCANNER = ts.createScanner(
   ts.LanguageVariant.Standard
 );
 
-/** Supported Jessie termination tokens */
-export type JessieExpressionTerminationToken =
-  | ';'
-  | ')'
-  | '}'
-  | ']'
-  | ','
-  | '\n';
 const TERMINATION_TOKEN_TO_TS_TOKEN: {
-  [T in JessieExpressionTerminationToken]: ts.SyntaxKind;
+  [T in TerminationTokens]: ts.SyntaxKind;
 } = {
   ';': ts.SyntaxKind.SemicolonToken,
   ')': ts.SyntaxKind.CloseParenToken,
@@ -93,8 +89,7 @@ const TERMINATION_TOKEN_TO_TS_TOKEN: {
 };
 
 /** empty statements are not supported in jessie, so ; is a good fallback */
-const FALLBACK_TERMINATOR_TOKENS: ReadonlyArray<JessieExpressionTerminationToken> =
-  [';'];
+const FALLBACK_TERMINATOR_TOKENS: ReadonlyArray<TerminationTokens> = [';'];
 /** Tokens that are always terminator token */
 const HARD_TERMINATOR_TOKENS: ReadonlyArray<ts.SyntaxKind> = [
   ts.SyntaxKind.EndOfFileToken,
@@ -114,7 +109,7 @@ const NESTED_CLOSE_TOKENS: ReadonlyArray<ts.SyntaxKind> = [
 
 export function tryParseJessieScriptExpression(
   slice: string,
-  terminationTokens?: ReadonlyArray<JessieExpressionTerminationToken>
+  terminationTokens?: ReadonlyArray<TerminationTokens>
 ): ParseResult<JessieSublexerTokenData> {
   // need at least one terminator token, so we always fall back to something
   let termTokensMut = terminationTokens;

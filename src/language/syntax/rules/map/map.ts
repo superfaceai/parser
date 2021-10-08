@@ -1,4 +1,5 @@
 import {
+  AssignmentNode,
   CallStatementNode,
   HttpCallStatementNode,
   HttpRequestNode,
@@ -16,23 +17,28 @@ import {
 } from '@superfaceai/ast';
 
 import { LexerTokenKind } from '../../../lexer';
-import { JessieExpressionTerminationToken } from '../../../lexer/sublexer/jessie/expression';
+import { TerminationTokens } from '../../../lexer/token';
 import {
   SyntaxRuleFeatureOr,
   SyntaxRuleFeatureSubstitute,
 } from '../../features';
 import { SyntaxRule, SyntaxRuleMutable, SyntaxRuleOr } from '../../rule';
-import { documentedNode, LocationInfo, WithLocationInfo } from '../common';
 import {
-  ASSIGNMENT_FACTORY,
+  documentedNode,
+  LocationInfo,
+  WithLocationInfo,
+  TERMINATOR_TOKEN_FACTORY,
+  mapAssignmentPath,
+  ASSIGNMENT_PATH_KEY,
+  expectTerminated,
+} from '../common';
+import {
   CONDITION_ATOM,
-  consumeLocalTerminators,
   ITERATION_ATOM,
   JESSIE_EXPRESSION_FACTORY,
   MAP_DOCUMENT_FACTORY,
   MAYBE_CONTENT_TYPE,
   PRIMITIVE_LITERAL,
-  terminatorLookahead,
 } from './common';
 
 // ASSIGNMENTS //
@@ -40,21 +46,45 @@ import {
 /**
  * Factory for matching rhs expressions (after '=').
  */
-export function RHS_EXPRESSION_FACTORY(
-  ...terminators: ReadonlyArray<JessieExpressionTerminationToken>
-): SyntaxRule<WithLocationInfo<PrimitiveLiteralNode | JessieExpressionNode>> {
-  return terminatorLookahead(PRIMITIVE_LITERAL, ...terminators).or(
-    JESSIE_EXPRESSION_FACTORY(...terminators)
+function RHS_EXPRESSION_FACTORY<T>(
+  nonJessieAttempt: SyntaxRule<WithLocationInfo<T>>,
+  ...terminators: ReadonlyArray<TerminationTokens>
+): SyntaxRule<WithLocationInfo<T> | WithLocationInfo<JessieExpressionNode>> {
+  return nonJessieAttempt
+    .lookahead(TERMINATOR_TOKEN_FACTORY(...terminators))
+    .or(JESSIE_EXPRESSION_FACTORY(...terminators))
+    .skip(
+      SyntaxRule.optional(
+        TERMINATOR_TOKEN_FACTORY(
+          ...terminators.filter(ter => ter === ',' || ter === ';')
+        )
+      )
+    );
+}
+
+function ASSIGNMENT_FACTORY(
+  rhs: SyntaxRule<WithLocationInfo<LiteralNode>>
+): SyntaxRule<WithLocationInfo<AssignmentNode>> {
+  return ASSIGNMENT_PATH_KEY.followedBy(rhs).map(
+    ([path, value]): WithLocationInfo<AssignmentNode> => {
+      return {
+        kind: 'Assignment',
+        key: mapAssignmentPath(path),
+        value,
+        location: path[0].location,
+        span: {
+          start: path[0].span.start,
+          end: value.span.end,
+        },
+      };
+    }
   );
 }
 
 export const ARGUMENT_LIST_ASSIGNMENT = ASSIGNMENT_FACTORY(
-  (...terminators) =>
-    SyntaxRule.operator('=')
-      .followedBy(RHS_EXPRESSION_FACTORY(...terminators))
-      .map(([_op, value]) => value),
-  ',',
-  ')'
+  SyntaxRule.operator('=').forgetFollowedBy(
+    RHS_EXPRESSION_FACTORY<PrimitiveLiteralNode>(PRIMITIVE_LITERAL, ',', ')')
+  )
 );
 
 const CALL_STATEMENT_HEAD = SyntaxRule.identifier('call')
@@ -98,73 +128,58 @@ export const INLINE_CALL: SyntaxRule<WithLocationInfo<InlineCallNode>> =
     };
   });
 
+// ATOMS //
+
 const OBJECT_LITERAL_MUT = new SyntaxRuleMutable<
   WithLocationInfo<ObjectLiteralNode>
 >();
-export const SET_BLOCK_ASSIGNMENT = ASSIGNMENT_FACTORY(
-  (...terminators) =>
-    new SyntaxRuleFeatureOr(
-      SyntaxRule.operator('=')
-        .followedBy(INLINE_CALL.or(RHS_EXPRESSION_FACTORY(...terminators)))
-        .map(([_op, value]) => value),
-      'nested_object_literals',
-      OBJECT_LITERAL_MUT
-    ),
-  '\n',
-  ';',
-  '}'
-);
-
 export const OBJECT_LITERAL_ASSIGNMENT = ASSIGNMENT_FACTORY(
-  (...terminators) =>
-    new SyntaxRuleFeatureOr(
-      SyntaxRule.operator('=')
-        .followedBy(INLINE_CALL.or(RHS_EXPRESSION_FACTORY(...terminators)))
-        .map(([_op, value]) => value),
-      'nested_object_literals',
-      OBJECT_LITERAL_MUT
+  new SyntaxRuleFeatureOr(
+    SyntaxRule.operator('=').forgetFollowedBy(
+      RHS_EXPRESSION_FACTORY<PrimitiveLiteralNode | InlineCallNode>(
+        INLINE_CALL.or(PRIMITIVE_LITERAL),
+        '\n',
+        ',',
+        '}'
+      )
     ),
-  '\n',
-  ',',
-  '}'
+    'nested_object_literals',
+    expectTerminated(OBJECT_LITERAL_MUT, '\n', ',', '}')
+  )
 );
 
-// ATOMS //
-
-export const OBJECT_LITERAL: SyntaxRule<WithLocationInfo<ObjectLiteralNode>> =
-  SyntaxRule.separator('{')
-    .followedBy(
-      SyntaxRule.optional(SyntaxRule.repeat(OBJECT_LITERAL_ASSIGNMENT))
-    )
-    .andFollowedBy(SyntaxRule.separator('}'))
-    .map(
-      ([
-        sepStart,
-        maybeFields,
-        sepEnd,
-      ]): WithLocationInfo<ObjectLiteralNode> => {
-        return {
-          kind: 'ObjectLiteral',
-          fields: maybeFields ?? [],
-          location: sepStart.location,
-          span: {
-            start: sepStart.span.start,
-            end: sepEnd.span.end,
-          },
-        };
-      }
-    );
+export const OBJECT_LITERAL = SyntaxRule.separator('{')
+  .followedBy(SyntaxRule.optional(SyntaxRule.repeat(OBJECT_LITERAL_ASSIGNMENT)))
+  .andFollowedBy(SyntaxRule.separator('}'))
+  .map(
+    ([sepStart, maybeFields, sepEnd]): WithLocationInfo<ObjectLiteralNode> => {
+      return {
+        kind: 'ObjectLiteral',
+        fields: maybeFields ?? [],
+        location: sepStart.location,
+        span: {
+          start: sepStart.span.start,
+          end: sepEnd.span.end,
+        },
+      };
+    }
+  );
 OBJECT_LITERAL_MUT.rule = OBJECT_LITERAL;
 
-export const STATEMENT_RHS_VALUE: SyntaxRule<WithLocationInfo<LiteralNode>> =
-  OBJECT_LITERAL.or(
-    consumeLocalTerminators(
-      RHS_EXPRESSION_FACTORY('\n', ';', '}'),
-      '\n',
-      ';',
-      '}'
-    )
-  );
+export const SET_BLOCK_ASSIGNMENT = ASSIGNMENT_FACTORY(
+  new SyntaxRuleFeatureOr(
+    SyntaxRule.operator('=').forgetFollowedBy(
+      RHS_EXPRESSION_FACTORY<PrimitiveLiteralNode | InlineCallNode>(
+        INLINE_CALL.or(PRIMITIVE_LITERAL),
+        '\n',
+        ';',
+        '}'
+      )
+    ),
+    'nested_object_literals',
+    expectTerminated(OBJECT_LITERAL, '\n', ';', '}')
+  )
+);
 
 // SET STATEMENTS //
 
@@ -253,7 +268,7 @@ const HTTP_CALL_STATEMENT_SECURITY_REQUIREMENT: SyntaxRule<
   } & LocationInfo
 > = SyntaxRule.identifier('security')
   .followedBy(SyntaxRule.string().or(SyntaxRule.identifier('none')))
-  .andFollowedBy(SyntaxRule.lookahead(SyntaxRule.newline()))
+  .lookahead(SyntaxRule.newline())
   .map(([key, id]) => {
     let idString = undefined;
     if (id.data.kind === LexerTokenKind.STRING) {
@@ -303,19 +318,26 @@ const HTTP_CALL_STATEMENT_SECURITY_REQUIREMENTS =
     };
   });
 
+const HTTP_CALL_STATEMENT_REQUEST_SLOT_LITERAL = SyntaxRule.sameLine(
+  OBJECT_LITERAL
+).lookahead(TERMINATOR_TOKEN_FACTORY('\n', '}'));
 const HTTP_CALL_STATEMENT_REQUEST_QUERY_SLOT = SyntaxRule.identifier(
   'query'
-).followedBy(SyntaxRule.sameLine(OBJECT_LITERAL));
+).followedBy(HTTP_CALL_STATEMENT_REQUEST_SLOT_LITERAL);
 const HTTP_CALL_STATEMENT_REQUEST_HEADERS_SLOT = SyntaxRule.identifier(
   'headers'
-).followedBy(SyntaxRule.sameLine(OBJECT_LITERAL));
+).followedBy(HTTP_CALL_STATEMENT_REQUEST_SLOT_LITERAL);
 const HTTP_CALL_STATEMENT_REQUEST_BODY_SLOT = SyntaxRule.identifier(
   'body'
 ).followedBy(
-  SyntaxRule.sameLine(OBJECT_LITERAL).or(
-    SyntaxRule.operator('=')
-      .followedBy(INLINE_CALL.or(RHS_EXPRESSION_FACTORY('\n', '}')))
-      .map(([_op, value]) => value)
+  HTTP_CALL_STATEMENT_REQUEST_SLOT_LITERAL.or(
+    SyntaxRule.operator('=').forgetFollowedBy(
+      RHS_EXPRESSION_FACTORY<InlineCallNode | PrimitiveLiteralNode>(
+        INLINE_CALL.or(PRIMITIVE_LITERAL),
+        '\n',
+        '}'
+      )
+    )
   )
 );
 
@@ -523,6 +545,13 @@ export function HTTP_CALL_STATEMENT_FACTORY(
 
 // CONTEXTUAL STATEMENTS //
 
+const OUTCOME_VALUE: SyntaxRule<WithLocationInfo<LiteralNode>> =
+  RHS_EXPRESSION_FACTORY<ObjectLiteralNode | PrimitiveLiteralNode>(
+    OBJECT_LITERAL.or(PRIMITIVE_LITERAL),
+    '\n',
+    ';',
+    '}'
+  );
 /**
  * return? map result/error <?condition> <value>;
  */
@@ -534,7 +563,7 @@ export const MAP_OUTCOME_STATEMENT: SyntaxRule<
     SyntaxRule.identifier('result').or(SyntaxRule.identifier('error'))
   )
   .andFollowedBy(SyntaxRule.optional(CONDITION_ATOM))
-  .andFollowedBy(STATEMENT_RHS_VALUE)
+  .andFollowedBy(OUTCOME_VALUE)
   .map(
     ([
       maybeReturn,
@@ -566,7 +595,7 @@ export const OPERATION_OUTCOME_STATEMENT: SyntaxRule<
 > = SyntaxRule.identifier('return')
   .or(SyntaxRule.identifier('fail'))
   .followedBy(SyntaxRule.optional(CONDITION_ATOM))
-  .andFollowedBy(STATEMENT_RHS_VALUE)
+  .andFollowedBy(OUTCOME_VALUE)
   .map(
     ([
       keyType,

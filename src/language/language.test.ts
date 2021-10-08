@@ -446,6 +446,40 @@ describe('profile', () => {
       },
     });
   });
+
+  it('should parse profile with examples', () => {
+    const input = `
+    usecase Foo {
+      input { f! string! }
+      result number
+      error enum {
+        FORBIDDEN_WORD
+      }
+
+      example success-example {
+        input {
+          f = "hello"
+        }
+        result 5
+        async result undefined
+      }
+
+      example error-example {
+        input "evil"
+        error FORBIDDEN_WORD
+      }
+
+      example {
+        result 0
+      }
+    }
+    `;
+
+    const source = new Source(input);
+    const usecase = parseRule(profileRules.USECASE_DEFINITION, source, true);
+
+    expect(usecase).toMatchObject({});
+  });
 });
 
 const STRICT_MAP = fs
