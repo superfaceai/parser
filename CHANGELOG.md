@@ -6,10 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- Unfixed @superfaceai dependency versions
 
 ## [0.0.22] - 2021-09-22
 ### Changed
-- Updated ast dependecy to `0.0.29`
+- Updated ast dependency to `0.0.29`
 
 ## [0.0.21] - 2021-08-25
 ### Added
