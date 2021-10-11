@@ -456,21 +456,21 @@ describe('profile', () => {
         FORBIDDEN_WORD
       }
 
-      example success-example {
+      example success_example {
         input {
           f = "hello"
         }
         result 5
-        async result undefined
+        // TODO: do we want this? async result undefined
       }
 
-      example error-example {
+      example error_example {
         input "evil"
-        error FORBIDDEN_WORD
+        error "FORBIDDEN_WORD"
       }
 
       example {
-        result 0
+        result [0, 1, 2]
       }
     }
     `;
@@ -478,7 +478,77 @@ describe('profile', () => {
     const source = new Source(input);
     const usecase = parseRule(profileRules.USECASE_DEFINITION, source, true);
 
-    expect(usecase).toMatchObject({});
+    expect(usecase).toMatchObject({
+      kind: 'UseCaseDefinition',
+      useCaseName: 'Foo',
+      input: { kind: 'UseCaseSlotDefinition' },
+      result: { kind: 'UseCaseSlotDefinition' },
+      error: { kind: 'UseCaseSlotDefinition' },
+      examples: [
+        {
+          value: {
+            kind: 'UseCaseExample',
+            exampleName: 'success_example',
+            input: {
+              value: {
+                kind: 'ComlinkObjectLiteral',
+                fields: [
+                  {
+                    kind: 'ComlinkAssignment',
+                    key: ['f'],
+                    value: {
+                      kind: 'ComlinkPrimitiveLiteral',
+                      value: 'hello',
+                    },
+                  },
+                ],
+              },
+            },
+            result: {
+              value: {
+                kind: 'ComlinkPrimitiveLiteral',
+                value: 5,
+              },
+            },
+          },
+        },
+        {
+          value: {
+            kind: 'UseCaseExample',
+            exampleName: 'error_example',
+            input: {
+              value: {
+                kind: 'ComlinkPrimitiveLiteral',
+                value: 'evil',
+              },
+            },
+            error: {
+              value: {
+                kind: 'ComlinkPrimitiveLiteral',
+                value: 'FORBIDDEN_WORD',
+              },
+            },
+          },
+        },
+        {
+          value: {
+            kind: 'UseCaseExample',
+            exampleName: undefined,
+            input: undefined,
+            result: {
+              value: {
+                kind: 'ComlinkListLiteral',
+                items: [
+                  { kind: 'ComlinkPrimitiveLiteral', value: 0 },
+                  { kind: 'ComlinkPrimitiveLiteral', value: 1 },
+                  { kind: 'ComlinkPrimitiveLiteral', value: 2 },
+                ],
+              },
+            },
+          },
+        },
+      ],
+    });
   });
 });
 

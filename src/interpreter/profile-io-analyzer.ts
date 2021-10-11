@@ -125,9 +125,9 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
       case 'UseCaseSlotDefinition':
         return this.visitUseCaseSlotDefinition(node);
       case 'UseCaseExample':
-      case 'PrimitiveLiteralExample':
-      case 'ListLiteralExample':
-      case 'ObjectLiteralExample':
+      case 'ComlinkPrimitiveLiteral':
+      case 'ComlinkListLiteral':
+      case 'ComlinkObjectLiteral':
         throw 'TODO: Not implemented';
       default:
         assertUnreachable(node);

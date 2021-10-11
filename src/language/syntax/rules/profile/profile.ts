@@ -362,7 +362,7 @@ function SLOT_FACTORY<T>(
         location: names[0].location,
         span: {
           start: names[0].span.start,
-          end: names[0].span.end,
+          end: value.span.end,
         },
       };
     });
@@ -419,16 +419,6 @@ const USECASE_EXAMPLE: SyntaxRule<WithLocationInfo<UseCaseExampleNode>> =
         maybeError,
         sepEnd,
       ]) => {
-        const firstNode =
-          maybeName ??
-          sepStart ??
-          maybeInput ??
-          maybeResult ??
-          maybeAsyncResult ??
-          maybeAsyncResult ??
-          maybeError ??
-          sepEnd;
-
         if (
           maybeError !== undefined &&
           (maybeResult !== undefined || maybeAsyncResult !== undefined)
@@ -436,13 +426,16 @@ const USECASE_EXAMPLE: SyntaxRule<WithLocationInfo<UseCaseExampleNode>> =
           return { kind: 'nomatch' };
         }
 
+        const firstNode = maybeName ?? sepStart;
+
         const value: WithLocationInfo<UseCaseExampleNode> = {
           kind: 'UseCaseExample',
           exampleName: maybeName?.data.identifier,
-          input: maybeInput?.value,
-          result: maybeResult?.value,
-          asyncResult: maybeAsyncResult?.value,
-          error: maybeError?.value,
+          // TODO: implement the transformation - waiting on ast
+          input: maybeInput as any,
+          result: maybeResult as any,
+          asyncResult: maybeAsyncResult as any,
+          error: maybeError as any,
           location: firstNode.location,
           span: {
             start: firstNode.span.start,
@@ -455,8 +448,8 @@ const USECASE_EXAMPLE: SyntaxRule<WithLocationInfo<UseCaseExampleNode>> =
     );
 
 const USECASE_EXAMPLE_SLOT: SyntaxRule<any> = documentedNode(
-  SLOT_FACTORY(['example'], USECASE_EXAMPLE).map(_slot => {
-    return undefined as any;
+  SLOT_FACTORY(['example'], USECASE_EXAMPLE).map(slot => {
+    return slot as any;
   })
 );
 

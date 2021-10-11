@@ -3,6 +3,7 @@ import {
   MapASTNodeBase,
   ProfileASTNodeBase,
 } from '@superfaceai/ast';
+
 import {
   IdentifierTokenData,
   LexerTokenKind,
@@ -12,7 +13,6 @@ import {
   StringTokenData,
   TerminationTokens,
 } from '../../lexer/token';
-
 import { LexerTokenMatch, SyntaxRule, SyntaxRuleOr } from '../rule';
 import { extractDocumentation } from '../util';
 

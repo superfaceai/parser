@@ -24,13 +24,13 @@ import {
 } from '../../features';
 import { SyntaxRule, SyntaxRuleMutable, SyntaxRuleOr } from '../../rule';
 import {
-  documentedNode,
-  LocationInfo,
-  WithLocationInfo,
-  TERMINATOR_TOKEN_FACTORY,
-  mapAssignmentPath,
   ASSIGNMENT_PATH_KEY,
+  documentedNode,
   expectTerminated,
+  LocationInfo,
+  mapAssignmentPath,
+  TERMINATOR_TOKEN_FACTORY,
+  WithLocationInfo,
 } from '../common';
 import {
   CONDITION_ATOM,
