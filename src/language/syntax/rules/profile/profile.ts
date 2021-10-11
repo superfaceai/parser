@@ -1,4 +1,5 @@
 import {
+  ComlinkLiteralNode,
   DocumentDefinition,
   DocumentedNode,
   EnumDefinitionNode,
@@ -10,6 +11,7 @@ import {
   NamedModelDefinitionNode,
   ObjectDefinitionNode,
   PrimitiveTypeNameNode,
+  ProfileASTNode,
   ProfileDocumentNode,
   ProfileHeaderNode,
   Type,
@@ -368,7 +370,7 @@ function SLOT_FACTORY<T>(
     });
 }
 
-function USECASE_SLOT_DEFINITION_FACTORY<T extends Type>(
+function USECASE_SLOT_DEFINITION_FACTORY<T extends ProfileASTNode>(
   names: [string, ...string[]],
   rule: SyntaxRule<WithLocationInfo<T>>
 ): SyntaxRule<WithLocationInfo<UseCaseSlotDefinitionNode<T>>> {
@@ -377,7 +379,7 @@ function USECASE_SLOT_DEFINITION_FACTORY<T extends Type>(
       (slot): WithLocationInfo<UseCaseSlotDefinitionNode<T>> => {
         return {
           kind: 'UseCaseSlotDefinition',
-          type: slot.value,
+          value: slot.value,
           location: slot.location,
           span: slot.span,
           title: slot.title,
@@ -397,16 +399,36 @@ const USECASE_EXAMPLE: SyntaxRule<WithLocationInfo<UseCaseExampleNode>> =
   SyntaxRule.optional(SyntaxRule.identifier())
     .followedBy(SyntaxRule.separator('{'))
     .andFollowedBy(
-      SyntaxRule.optional(SLOT_FACTORY(['input'], COMLINK_LITERAL))
+      SyntaxRule.optional(
+        USECASE_SLOT_DEFINITION_FACTORY<ComlinkLiteralNode>(
+          ['input'],
+          COMLINK_LITERAL
+        )
+      )
     )
     .andFollowedBy(
-      SyntaxRule.optional(SLOT_FACTORY(['result'], COMLINK_LITERAL))
+      SyntaxRule.optional(
+        USECASE_SLOT_DEFINITION_FACTORY<ComlinkLiteralNode>(
+          ['result'],
+          COMLINK_LITERAL
+        )
+      )
     )
     .andFollowedBy(
-      SyntaxRule.optional(SLOT_FACTORY(['async', 'result'], COMLINK_LITERAL))
+      SyntaxRule.optional(
+        USECASE_SLOT_DEFINITION_FACTORY<ComlinkLiteralNode>(
+          ['async', 'result'],
+          COMLINK_LITERAL
+        )
+      )
     )
     .andFollowedBy(
-      SyntaxRule.optional(SLOT_FACTORY(['error'], COMLINK_LITERAL))
+      SyntaxRule.optional(
+        USECASE_SLOT_DEFINITION_FACTORY<ComlinkLiteralNode>(
+          ['error'],
+          COMLINK_LITERAL
+        )
+      )
     )
     .andFollowedBy(SyntaxRule.separator('}'))
     .andThen<WithLocationInfo<UseCaseExampleNode>>(
@@ -432,10 +454,10 @@ const USECASE_EXAMPLE: SyntaxRule<WithLocationInfo<UseCaseExampleNode>> =
           kind: 'UseCaseExample',
           exampleName: maybeName?.data.identifier,
           // TODO: implement the transformation - waiting on ast
-          input: maybeInput as any,
-          result: maybeResult as any,
-          asyncResult: maybeAsyncResult as any,
-          error: maybeError as any,
+          input: maybeInput,
+          result: maybeResult,
+          asyncResult: maybeAsyncResult,
+          error: maybeError,
           location: firstNode.location,
           span: {
             start: firstNode.span.start,
@@ -446,12 +468,6 @@ const USECASE_EXAMPLE: SyntaxRule<WithLocationInfo<UseCaseExampleNode>> =
         return { kind: 'match', value };
       }
     );
-
-const USECASE_EXAMPLE_SLOT: SyntaxRule<any> = documentedNode(
-  SLOT_FACTORY(['example'], USECASE_EXAMPLE).map(slot => {
-    return slot as any;
-  })
-);
 
 /**
 * Construct of form:
@@ -479,17 +495,30 @@ export const USECASE_DEFINITION: SyntaxRule<
       )
     )
     .andFollowedBy(
-      SyntaxRule.optional(USECASE_SLOT_DEFINITION_FACTORY(['result'], TYPE))
-    )
-    .andFollowedBy(
       SyntaxRule.optional(
-        USECASE_SLOT_DEFINITION_FACTORY(['async', 'result'], TYPE)
+        USECASE_SLOT_DEFINITION_FACTORY<Type>(['result'], TYPE)
       )
     )
     .andFollowedBy(
-      SyntaxRule.optional(USECASE_SLOT_DEFINITION_FACTORY(['error'], TYPE))
+      SyntaxRule.optional(
+        USECASE_SLOT_DEFINITION_FACTORY<Type>(['async', 'result'], TYPE)
+      )
     )
-    .andFollowedBy(SyntaxRule.optional(SyntaxRule.repeat(USECASE_EXAMPLE_SLOT)))
+    .andFollowedBy(
+      SyntaxRule.optional(
+        USECASE_SLOT_DEFINITION_FACTORY<Type>(['error'], TYPE)
+      )
+    )
+    .andFollowedBy(
+      SyntaxRule.optional(
+        SyntaxRule.repeat(
+          USECASE_SLOT_DEFINITION_FACTORY<UseCaseExampleNode>(
+            ['example'],
+            USECASE_EXAMPLE
+          )
+        )
+      )
+    )
     .andFollowedBy(SyntaxRule.separator('}'))
     .map(
       ([

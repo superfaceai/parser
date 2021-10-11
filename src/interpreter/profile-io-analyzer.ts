@@ -74,6 +74,7 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
   visit(node: NamedModelDefinitionNode | NamedFieldDefinitionNode): void;
   visit(node: ObjectDefinitionNode): ObjectStructure;
   visit(node: Type): StructureType;
+  visit(node: UseCaseSlotDefinitionNode<Type>): StructureType;
   visit(node: ProfileASTNode | undefined): undefined;
   visit(
     node: ProfileASTNode
@@ -134,12 +135,10 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
     }
   }
 
-  visitUseCaseSlotDefinition(node: UseCaseSlotDefinitionNode): StructureType {
-    if (!node.type) {
-      throw new Error('This should not happen!');
-    }
-
-    return addDoc(node, this.visit(node.type));
+  visitUseCaseSlotDefinition(
+    node: UseCaseSlotDefinitionNode<ProfileASTNode>
+  ): StructureType {
+    return addDoc(node, this.visit(node.value));
   }
 
   visitEnumDefinitionNode(node: EnumDefinitionNode): StructureType {

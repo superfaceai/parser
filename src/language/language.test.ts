@@ -172,7 +172,7 @@ describe('profile', () => {
           safety: 'unsafe',
           input: {
             kind: 'UseCaseSlotDefinition',
-            type: {
+            value: {
               kind: 'ObjectDefinition',
               fields: [
                 {
@@ -196,7 +196,7 @@ describe('profile', () => {
           },
           result: {
             kind: 'UseCaseSlotDefinition',
-            type: {
+            value: {
               kind: 'ObjectDefinition',
               fields: [
                 {
@@ -211,7 +211,7 @@ describe('profile', () => {
           },
           asyncResult: {
             kind: 'UseCaseSlotDefinition',
-            type: {
+            value: {
               kind: 'ObjectDefinition',
               fields: [
                 {
@@ -227,7 +227,7 @@ describe('profile', () => {
           },
           error: {
             kind: 'UseCaseSlotDefinition',
-            type: {
+            value: {
               kind: 'ObjectDefinition',
               fields: [
                 {
@@ -456,8 +456,10 @@ describe('profile', () => {
         FORBIDDEN_WORD
       }
 
+      "success example"
       example success_example {
         input {
+          "hello has 5 letters"
           f = "hello"
         }
         result 5
@@ -486,10 +488,14 @@ describe('profile', () => {
       error: { kind: 'UseCaseSlotDefinition' },
       examples: [
         {
+          kind: 'UseCaseSlotDefinition',
+          title: 'success example',
           value: {
             kind: 'UseCaseExample',
             exampleName: 'success_example',
+
             input: {
+              kind: 'UseCaseSlotDefinition',
               value: {
                 kind: 'ComlinkObjectLiteral',
                 fields: [
@@ -500,6 +506,7 @@ describe('profile', () => {
                       kind: 'ComlinkPrimitiveLiteral',
                       value: 'hello',
                     },
+                    title: 'hello has 5 letters',
                   },
                 ],
               },
@@ -513,10 +520,12 @@ describe('profile', () => {
           },
         },
         {
+          kind: 'UseCaseSlotDefinition',
           value: {
             kind: 'UseCaseExample',
             exampleName: 'error_example',
             input: {
+              kind: 'UseCaseSlotDefinition',
               value: {
                 kind: 'ComlinkPrimitiveLiteral',
                 value: 'evil',
@@ -531,11 +540,13 @@ describe('profile', () => {
           },
         },
         {
+          kind: 'UseCaseSlotDefinition',
           value: {
             kind: 'UseCaseExample',
             exampleName: undefined,
             input: undefined,
             result: {
+              kind: 'UseCaseSlotDefinition',
               value: {
                 kind: 'ComlinkListLiteral',
                 items: [

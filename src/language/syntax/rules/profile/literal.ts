@@ -10,6 +10,7 @@ import { LexerTokenKind } from '../../../lexer/token';
 import { SyntaxRule, SyntaxRuleMutable } from '../../rule';
 import {
   ASSIGNMENT_PATH_KEY,
+  documentedNode,
   expectTerminated,
   mapAssignmentPath,
   WithLocationInfo,
@@ -39,22 +40,24 @@ const COMLINK_LITERAL_MUT = new SyntaxRuleMutable<
 
 export const COMLINK_OBJECT_LITERAL_ASSIGNMENT: SyntaxRule<
   WithLocationInfo<ComlinkAssignmentNode>
-> = ASSIGNMENT_PATH_KEY.followedBy(
-  SyntaxRule.operator('=').forgetFollowedBy(
-    expectTerminated(COMLINK_LITERAL_MUT, ',', '\n', '}')
-  )
-).map(([path, value]): WithLocationInfo<ComlinkAssignmentNode> => {
-  return {
-    kind: 'ComlinkAssignment',
-    key: mapAssignmentPath(path),
-    value,
-    location: path[0].location,
-    span: {
-      start: path[0].span.start,
-      end: value.span.end,
-    },
-  };
-});
+> = documentedNode(
+  ASSIGNMENT_PATH_KEY.followedBy(
+    SyntaxRule.operator('=').forgetFollowedBy(
+      expectTerminated(COMLINK_LITERAL_MUT, ',', '\n', '}')
+    )
+  ).map(([path, value]): WithLocationInfo<ComlinkAssignmentNode> => {
+    return {
+      kind: 'ComlinkAssignment',
+      key: mapAssignmentPath(path),
+      value,
+      location: path[0].location,
+      span: {
+        start: path[0].span.start,
+        end: value.span.end,
+      },
+    };
+  })
+);
 
 export const COMLINK_OBJECT_LITERAL: SyntaxRule<
   WithLocationInfo<ComlinkObjectLiteralNode>

@@ -1064,7 +1064,7 @@ describe('profile syntax rules', () => {
             result: tesMatch(
               {
                 kind: 'UseCaseSlotDefinition',
-                type: tesMatch(
+                value: tesMatch(
                   {
                     kind: 'ModelTypeName',
                     name: (tokens[4].data as IdentifierTokenData).identifier,
@@ -1132,7 +1132,7 @@ describe('profile syntax rules', () => {
             input: tesMatch(
               {
                 kind: 'UseCaseSlotDefinition',
-                type: tesMatch(
+                value: tesMatch(
                   {
                     kind: 'ObjectDefinition',
                     fields: [],
@@ -1147,7 +1147,7 @@ describe('profile syntax rules', () => {
             result: tesMatch(
               {
                 kind: 'UseCaseSlotDefinition',
-                type: tesMatch(
+                value: tesMatch(
                   {
                     kind: 'ModelTypeName',
                     name: (tokens[8].data as IdentifierTokenData).identifier,
@@ -1161,7 +1161,7 @@ describe('profile syntax rules', () => {
             asyncResult: tesMatch(
               {
                 kind: 'UseCaseSlotDefinition',
-                type: tesMatch(
+                value: tesMatch(
                   {
                     kind: 'NonNullDefinition',
                     type: tesMatch(
@@ -1202,7 +1202,7 @@ describe('profile syntax rules', () => {
             error: tesMatch(
               {
                 kind: 'UseCaseSlotDefinition',
-                type: tesMatch(
+                value: tesMatch(
                   {
                     kind: 'UnionDefinition',
                     types: [
@@ -1277,7 +1277,7 @@ describe('profile syntax rules', () => {
             result: tesMatch(
               {
                 kind: 'UseCaseSlotDefinition',
-                type: tesMatch(
+                value: tesMatch(
                   {
                     kind: 'ModelTypeName',
                     name: (tokens[5].data as IdentifierTokenData).identifier,
@@ -1455,7 +1455,7 @@ describe('profile syntax rules', () => {
                   result: tesMatch(
                     {
                       kind: 'UseCaseSlotDefinition',
-                      type: tesMatch(
+                      value: tesMatch(
                         {
                           kind: 'ModelTypeName',
                           name: (tokens[16].data as IdentifierTokenData)
