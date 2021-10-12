@@ -13,7 +13,7 @@ export type DocumentId = {
 };
 
 /** Information encoded in the profile id string. */
-export type ProfileDocumentId = {
+export type ProfileIdRange = {
   /** Scope of the profile, if any. */
   scope?: string;
   /** Name of the profile. */

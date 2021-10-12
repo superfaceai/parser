@@ -5,7 +5,7 @@ import {
 } from '@superfaceai/ast';
 
 import { VersionRange } from '.';
-import { DocumentId, MapDocumentId, ProfileDocumentId } from './interfaces';
+import { DocumentId, MapDocumentId, ProfileIdRange } from './interfaces';
 
 export type ParseResult<T> =
   | { kind: 'parsed'; value: T }
@@ -74,7 +74,7 @@ export function parseDocumentId(id: string): ParseResult<DocumentId> {
 }
 
 /** Parses the id using `parseDocumentId`, checks that the `middle` is a valid `name`. */
-export function parseProfileId(id: string): ParseResult<ProfileDocumentId> {
+export function parseProfileId(id: string): ParseResult<ProfileIdRange> {
   const baseResult = parseDocumentId(id);
   if (baseResult.kind === 'error') {
     return baseResult;
