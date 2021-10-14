@@ -291,7 +291,7 @@ export class MapValidator implements MapAstVisitor {
 
   visitHttpCallStatementNode(node: HttpCallStatementNode): void {
     const variableExpressions = node.url
-      .match(/{([_A-Za-z][_0-9A-Za-z]*[.]?)*(?<![.])}/g)
+      .match(/{([_A-Za-z][_0-9A-Za-z]*[.]?)*[_0-9A-Za-z]}/g)
       ?.map(expression => expression.slice(1, -1));
 
     if (variableExpressions) {
