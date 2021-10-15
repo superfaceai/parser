@@ -58,7 +58,9 @@ export function mapAssignmentPath(
   )[]
 ): string[] {
   if (path.length === 0) {
-    throw new Error('Expected at least one element in the assignment path. This in an error in the rule definition.');
+    throw new Error(
+      'Expected at least one element in the assignment path. This in an error in the rule definition.'
+    );
   }
 
   return path.map(p => {

@@ -10,7 +10,7 @@ import {
 import { Location, Source, Span } from '../../../source';
 import { RuleResult } from '../../rule';
 import { ArrayLexerStream } from '../../util';
-import * as rules from './profile';
+import * as rules from '.';
 
 // Declare custom matcher for sake of Typescript
 declare global {
@@ -1117,7 +1117,31 @@ describe('profile syntax rules', () => {
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'value' }),
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
 
-        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }), // 24
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'example' }), // 24
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'my_example' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'input' }), // 27
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'error' }), // 31
+        tesTok({ kind: LexerTokenKind.LITERAL, literal: true }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'example' }), // 35
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'my_example_2' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'input' }), // 38
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'result' }), // 42
+        tesTok({ kind: LexerTokenKind.LITERAL, literal: 15 }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }), // 46
       ];
       const stream = new ArrayLexerStream(tokens);
 
@@ -1246,9 +1270,99 @@ describe('profile syntax rules', () => {
               tokens[16],
               tokens[23]
             ),
+            examples: [
+              tesMatch(
+                {
+                  kind: 'UseCaseSlotDefinition',
+                  value: tesMatch(
+                    {
+                      kind: 'UseCaseExample',
+                      exampleName: 'my_example',
+                      input: tesMatch(
+                        {
+                          kind: 'UseCaseSlotDefinition',
+                          value: tesMatch(
+                            {
+                              kind: 'ComlinkObjectLiteral',
+                              fields: [],
+                            },
+                            tokens[28],
+                            tokens[29]
+                          ),
+                        },
+                        tokens[27],
+                        tokens[29]
+                      ),
+                      error: tesMatch(
+                        {
+                          kind: 'UseCaseSlotDefinition',
+                          value: tesMatch(
+                            {
+                              kind: 'ComlinkPrimitiveLiteral',
+                              value: true,
+                            },
+                            tokens[32]
+                          ),
+                        },
+                        tokens[31],
+                        tokens[32]
+                      ),
+                    },
+                    tokens[25],
+                    tokens[34]
+                  ),
+                },
+                tokens[24],
+                tokens[34]
+              ),
+              tesMatch(
+                {
+                  kind: 'UseCaseSlotDefinition',
+                  value: tesMatch(
+                    {
+                      kind: 'UseCaseExample',
+                      exampleName: 'my_example_2',
+                      input: tesMatch(
+                        {
+                          kind: 'UseCaseSlotDefinition',
+                          value: tesMatch(
+                            {
+                              kind: 'ComlinkObjectLiteral',
+                              fields: [],
+                            },
+                            tokens[39],
+                            tokens[40]
+                          ),
+                        },
+                        tokens[38],
+                        tokens[40]
+                      ),
+                      result: tesMatch(
+                        {
+                          kind: 'UseCaseSlotDefinition',
+                          value: tesMatch(
+                            {
+                              kind: 'ComlinkPrimitiveLiteral',
+                              value: 15,
+                            },
+                            tokens[43]
+                          ),
+                        },
+                        tokens[42],
+                        tokens[43]
+                      ),
+                    },
+                    tokens[36],
+                    tokens[45]
+                  ),
+                },
+                tokens[35],
+                tokens[45]
+              ),
+            ],
           },
           tokens[0],
-          tokens[24]
+          tokens[46]
         )
       );
     });
@@ -1477,6 +1591,177 @@ describe('profile syntax rules', () => {
           },
           tokens[1],
           tokens[17]
+        )
+      );
+    });
+  });
+
+  describe('comlink literals', () => {
+    it('should parse primitive literal', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.STRING, string: 'hello' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = rules.COMLINK_PRIMITIVE_LITERAL;
+
+      expect(rule.tryMatch(stream)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'ComlinkPrimitiveLiteral',
+            value: 'hello',
+          },
+          tokens[0]
+        )
+      );
+    });
+
+    it('should parse object literal', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'foo' }), // 1
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({ kind: LexerTokenKind.LITERAL, literal: 1234 }),
+        tesTok({ kind: LexerTokenKind.NEWLINE }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'bar' }), // 5
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'baz' }), // 8
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({ kind: LexerTokenKind.LITERAL, literal: true }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }), // 12
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = rules.COMLINK_OBJECT_LITERAL;
+
+      expect(rule.tryMatch(stream)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'ComlinkObjectLiteral',
+            fields: [
+              tesMatch(
+                {
+                  kind: 'ComlinkAssignment',
+                  key: ['foo'],
+                  value: tesMatch(
+                    {
+                      kind: 'ComlinkPrimitiveLiteral',
+                      value: 1234,
+                    },
+                    tokens[3]
+                  ),
+                },
+                tokens[1],
+                tokens[3]
+              ),
+              tesMatch(
+                {
+                  kind: 'ComlinkAssignment',
+                  key: ['bar'],
+                  value: tesMatch(
+                    {
+                      kind: 'ComlinkObjectLiteral',
+                      fields: [
+                        tesMatch(
+                          {
+                            kind: 'ComlinkAssignment',
+                            key: ['baz'],
+                            value: tesMatch(
+                              {
+                                kind: 'ComlinkPrimitiveLiteral',
+                                value: true,
+                              },
+                              tokens[10]
+                            ),
+                          },
+                          tokens[8],
+                          tokens[10]
+                        ),
+                      ],
+                    },
+                    tokens[7],
+                    tokens[11]
+                  ),
+                },
+                tokens[5],
+                tokens[11]
+              ),
+            ],
+          },
+          tokens[0],
+          tokens[12]
+        )
+      );
+    });
+
+    it('should parse list literal', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '[' }),
+        tesTok({ kind: LexerTokenKind.LITERAL, literal: 1234 }), // 1
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: ',' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'hello' }), // 3
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: ',' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '[' }), // 5
+        tesTok({ kind: LexerTokenKind.LITERAL, literal: false }), // 6
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: ']' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: ',' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }), // 9
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: ']' }), // 11
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = rules.COMLINK_LIST_LITERAL;
+
+      expect(rule.tryMatch(stream)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'ComlinkListLiteral',
+            items: [
+              tesMatch(
+                {
+                  kind: 'ComlinkPrimitiveLiteral',
+                  value: 1234,
+                },
+                tokens[1]
+              ),
+              tesMatch(
+                {
+                  kind: 'ComlinkPrimitiveLiteral',
+                  value: 'hello',
+                },
+                tokens[3]
+              ),
+              tesMatch(
+                {
+                  kind: 'ComlinkListLiteral',
+                  items: [
+                    tesMatch(
+                      {
+                        kind: 'ComlinkPrimitiveLiteral',
+                        value: false,
+                      },
+                      tokens[6]
+                    ),
+                  ],
+                },
+                tokens[5],
+                tokens[7]
+              ),
+              tesMatch(
+                {
+                  kind: 'ComlinkObjectLiteral',
+                  fields: [],
+                },
+                tokens[9],
+                tokens[10]
+              ),
+            ],
+          },
+          tokens[0],
+          tokens[11]
         )
       );
     });

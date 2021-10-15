@@ -467,7 +467,9 @@ describe('profile', () => {
       }
 
       example error_example {
-        input "evil"
+        input {
+          f = "evil"
+        }
         error "FORBIDDEN_WORD"
       }
 
@@ -527,8 +529,17 @@ describe('profile', () => {
             input: {
               kind: 'UseCaseSlotDefinition',
               value: {
-                kind: 'ComlinkPrimitiveLiteral',
-                value: 'evil',
+                kind: 'ComlinkObjectLiteral',
+                fields: [
+                  {
+                    kind: 'ComlinkAssignment',
+                    key: ['f'],
+                    value: {
+                      kind: 'ComlinkPrimitiveLiteral',
+                      value: 'evil',
+                    },
+                  },
+                ],
               },
             },
             error: {

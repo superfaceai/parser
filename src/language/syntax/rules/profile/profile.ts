@@ -1,5 +1,6 @@
 import {
   ComlinkLiteralNode,
+  ComlinkObjectLiteralNode,
   DocumentDefinition,
   DocumentedNode,
   EnumDefinitionNode,
@@ -39,7 +40,7 @@ import {
   LocationInfo,
   WithLocationInfo,
 } from '../common';
-import { COMLINK_LITERAL } from './literal';
+import { COMLINK_LITERAL, COMLINK_OBJECT_LITERAL } from './literal';
 
 // MUTABLE RULES //
 
@@ -113,7 +114,9 @@ export const ENUM_VALUE: SyntaxRule<WithLocationInfo<EnumValueNode>> =
             break;
 
           default:
-            throw new Error('Unexpected token kind. This is an error in the syntax rule definition');
+            throw new Error(
+              'Unexpected token kind. This is an error in the syntax rule definition'
+            );
         }
       }
 
@@ -400,9 +403,9 @@ const USECASE_EXAMPLE: SyntaxRule<WithLocationInfo<UseCaseExampleNode>> =
     .followedBy(SyntaxRule.separator('{'))
     .andFollowedBy(
       SyntaxRule.optional(
-        USECASE_SLOT_DEFINITION_FACTORY<ComlinkLiteralNode>(
+        USECASE_SLOT_DEFINITION_FACTORY<ComlinkObjectLiteralNode>(
           ['input'],
-          COMLINK_LITERAL
+          COMLINK_OBJECT_LITERAL
         )
       )
     )

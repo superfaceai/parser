@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comlink literals
 
 ### Changed
-- Updated to AST `0.0.32` (has BREAKING CHANGES)
+- Updated to AST `0.0.34` (has BREAKING CHANGES)
 
 ## [0.0.22] - 2021-09-22
 ### Changed
