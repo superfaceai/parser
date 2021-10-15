@@ -129,7 +129,7 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
       case 'ComlinkPrimitiveLiteral':
       case 'ComlinkListLiteral':
       case 'ComlinkObjectLiteral':
-        throw 'TODO: Not implemented';
+        throw new Error('TODO: Not implemented');
       default:
         assertUnreachable(node);
     }

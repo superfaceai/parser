@@ -113,7 +113,7 @@ export const ENUM_VALUE: SyntaxRule<WithLocationInfo<EnumValueNode>> =
             break;
 
           default:
-            throw 'Unexpected token kind. This is an error in the syntax rule definition';
+            throw new Error('Unexpected token kind. This is an error in the syntax rule definition');
         }
       }
 
