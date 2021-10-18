@@ -8,8 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [0.0.23] - 2021-10-18
-
-## [0.0.23-beta.0] - 2021-10-18
 ### Added
 - Profile example parsing
 - Comlink literals
@@ -30,13 +28,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.0.20] - 2021-08-03
 
-## [0.0.20-beta.0] - 2021-08-03
-
 ## [0.0.19] - 2021-07-14
 
 ## [0.0.18] - 2021-06-08
 
-## [0.0.18-beta.0] - 2021-06-07
 ### Added
 - Added an explicit hint to ShorthandPropertyAssignment Jessie construct error
 
@@ -156,7 +151,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Scope renamed from `@superindustries` to `@superfaceai`
 
-## [0.0.4-beta3] - 2020-10-26
 ### Added
 - `SyntaxError` category
 - `LexerContext` to communicate context from parser to the lexer
