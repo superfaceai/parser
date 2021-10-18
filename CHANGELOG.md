@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.0.23] - 2021-10-18
+
 ## [0.0.23-beta.0] - 2021-10-18
 ### Added
 - Profile example parsing
@@ -191,7 +193,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation extraction from doc strings
 - Usecase result parsing as optional
 
-[Unreleased]: https://github.com/superfaceai/parser/compare/v0.0.23-beta.0...HEAD
+[Unreleased]: https://github.com/superfaceai/parser/compare/v0.0.23...HEAD
+[0.0.23]: https://github.com/superfaceai/parser/compare/v0.0.23-beta.0...v0.0.23
 [0.0.23-beta.0]: https://github.com/superfaceai/parser/compare/v0.0.22...v0.0.23-beta.0
 [0.0.22]: https://github.com/superfaceai/parser/compare/v0.0.21...v0.0.22
 [0.0.21]: https://github.com/superfaceai/parser/compare/v0.0.20...v0.0.21
