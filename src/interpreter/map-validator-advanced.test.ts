@@ -193,7 +193,7 @@ describe('MapValidator', () => {
             useCaseName: 'Test',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -256,7 +256,7 @@ describe('MapValidator', () => {
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -285,7 +285,7 @@ describe('MapValidator', () => {
             },
             error: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'EnumDefinition',
                 values: [
                   {
@@ -669,7 +669,7 @@ describe('MapValidator', () => {
             safety: 'unsafe',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -713,7 +713,7 @@ describe('MapValidator', () => {
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -726,7 +726,7 @@ describe('MapValidator', () => {
             },
             asyncResult: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -744,7 +744,7 @@ describe('MapValidator', () => {
             },
             error: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -1416,7 +1416,7 @@ describe('MapValidator', () => {
             safety: 'unsafe',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -1444,7 +1444,7 @@ describe('MapValidator', () => {
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -1457,7 +1457,7 @@ describe('MapValidator', () => {
             },
             asyncResult: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -1475,7 +1475,7 @@ describe('MapValidator', () => {
             },
             error: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -2156,7 +2156,7 @@ describe('MapValidator', () => {
             safety: 'safe',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -2169,7 +2169,7 @@ describe('MapValidator', () => {
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -2182,7 +2182,7 @@ describe('MapValidator', () => {
             },
             asyncResult: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ModelTypeName',
                 name: 'A',
               },
@@ -2497,7 +2497,7 @@ describe('MapValidator', () => {
             safety: 'safe',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -2510,7 +2510,7 @@ describe('MapValidator', () => {
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -2533,7 +2533,7 @@ describe('MapValidator', () => {
             },
             error: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {

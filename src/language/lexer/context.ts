@@ -1,6 +1,9 @@
-import { JessieExpressionTerminationToken } from './sublexer/jessie/expression';
 import { ParseResult } from './sublexer/result';
-import { DefaultSublexerTokenData, JessieSublexerTokenData } from './token';
+import {
+  DefaultSublexerTokenData,
+  JessieSublexerTokenData,
+  TerminationTokens,
+} from './token';
 
 export const enum LexerContextType {
   /**
@@ -33,6 +36,6 @@ export type SublexerReturnType<C extends LexerContextType> =
 type LexerDefaultContext = { type: LexerContextType.DEFAULT };
 type LexerJessieContext = {
   type: LexerContextType.JESSIE_SCRIPT_EXPRESSION;
-  terminationTokens?: ReadonlyArray<JessieExpressionTerminationToken>;
+  terminationTokens?: ReadonlyArray<TerminationTokens>;
 };
 export type LexerContext = LexerDefaultContext | LexerJessieContext;

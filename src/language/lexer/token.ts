@@ -2,6 +2,9 @@ import { SyntaxError } from '../error';
 import { Location, Span } from '../source';
 import * as util from './util';
 
+/** Supported termination tokens */
+export type TerminationTokens = ';' | ',' | '\n' | ')' | ']' | '}';
+
 /** Enum describing the different kinds of tokens that the lexer emits. */
 export const enum LexerTokenKind {
   /** Token unknown to the lexer. */

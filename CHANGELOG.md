@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Profile example parsing
+- Comlink literals
+
+### Changed
+- Updated to AST `0.0.34` (has BREAKING CHANGES)
+
 ## [0.0.22] - 2021-09-22
 ### Changed
 - Updated ast dependecy to `0.0.29`

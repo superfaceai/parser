@@ -1,5 +1,4 @@
 import { LexerContext, LexerContextType, LexerTokenStream } from '../lexer';
-import { JessieExpressionTerminationToken } from '../lexer/sublexer/jessie/expression';
 import {
   formatTokenKind,
   IdentifierTokenData,
@@ -15,6 +14,7 @@ import {
   SeparatorTokenData,
   SeparatorValue,
   StringTokenData,
+  TerminationTokens,
 } from '../lexer/token';
 import { Location, Span } from '../source';
 
@@ -167,7 +167,7 @@ export abstract class SyntaxRule<T> {
   }
 
   static jessie(
-    terminatingChars?: ReadonlyArray<JessieExpressionTerminationToken>
+    terminatingChars?: ReadonlyArray<TerminationTokens>
   ): SyntaxRuleJessie {
     return new SyntaxRuleJessie(terminatingChars);
   }
@@ -201,6 +201,23 @@ export abstract class SyntaxRule<T> {
     return new SyntaxRuleAndThen(this, then, description);
   }
 
+  /** Ensures that `this` is followed by `rule` without consuming any tokens after `this`. */
+  lookahead<R>(rule: SyntaxRule<R>): SyntaxRule<T> {
+    return this.followedBy(new SyntaxRuleLookahead(rule)).map(
+      ([me, _lookahead]) => me
+    );
+  }
+
+  /** Skips `rule` following `this` without affecting the returned type. */
+  skip<R>(rule: SyntaxRule<R>): SyntaxRule<T> {
+    return this.followedBy(rule).map(([me, _skipped]) => me);
+  }
+
+  /** Forgets `this` and expectes `rule` to follow. */
+  forgetFollowedBy<R>(rule: SyntaxRule<R>): SyntaxRule<R> {
+    return this.followedBy(rule).map(([_me, newres]) => newres);
+  }
+
   static repeat<R>(rule: SyntaxRule<R>): SyntaxRuleRepeat<R> {
     return new SyntaxRuleRepeat(rule);
   }
@@ -209,19 +226,12 @@ export abstract class SyntaxRule<T> {
     return new SyntaxRuleOptional(rule);
   }
 
-  static lookahead<R>(
-    rule: SyntaxRule<R>,
-    invert?: 'invert'
-  ): SyntaxRuleLookahead<R> {
-    return new SyntaxRuleLookahead(rule, invert === 'invert' ? true : false);
-  }
-
   /**
    * Returns `rule` that cannot be preceded by a newline.
    * Example usage: `SyntaxRule.identifier('slot').followedBy(SyntaxRule.sameLine(SyntaxRule.string()))`
    */
   static sameLine<R>(rule: SyntaxRule<R>): SyntaxRule<R> {
-    return SyntaxRule.lookahead(SyntaxRule.newline(), 'invert')
+    return new SyntaxRuleLookahead(SyntaxRule.newline(), true)
       .followedBy(rule)
       .map(([_, r]) => r);
   }
@@ -428,9 +438,7 @@ export class SyntaxRuleNewline extends SyntaxRule<
 export class SyntaxRuleJessie extends SyntaxRule<
   LexerTokenMatch<JessieScriptTokenData>
 > {
-  constructor(
-    readonly terminationTokens?: ReadonlyArray<JessieExpressionTerminationToken>
-  ) {
+  constructor(readonly terminationTokens?: ReadonlyArray<TerminationTokens>) {
     super();
   }
 
@@ -469,11 +477,9 @@ export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
     super();
   }
 
-  static chainOr(...rest: []): undefined;
-  static chainOr<R>(...rest: SyntaxRule<R>[]): SyntaxRule<R>;
-  static chainOr<R>(...rest: SyntaxRule<R>[]): SyntaxRule<R> | undefined {
+  static chainOr<R>(...rest: SyntaxRule<R>[]): SyntaxRule<R> {
     if (rest.length === 0) {
-      return undefined;
+      return new SyntaxRuleNever<R>();
     }
 
     return rest.reduce((acc, curr) => acc.or(curr));
@@ -507,7 +513,7 @@ export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
   }
 }
 
-/** Matches `first` followed by `second.
+/** Matches `first` followed by `second`.
  *
  * Use `.andFollowedBy` to chain additional `followedBy` rules to flatten the `match` tuple.
  */
@@ -777,6 +783,28 @@ export class SyntaxRuleMutable<R> extends SyntaxRule<R> {
     }
 
     return '[Mutable Rule]';
+  }
+}
+
+/**
+ * Never rules.
+ *
+ * This rule never matches.
+ */
+export class SyntaxRuleNever<R> extends SyntaxRule<R> {
+  constructor() {
+    super();
+  }
+
+  tryMatch(_tokens: LexerTokenStream): RuleResult<R> {
+    return {
+      kind: 'nomatch',
+      attempts: new MatchAttempts(undefined, [this]),
+    };
+  }
+
+  [Symbol.toStringTag](): string {
+    return '<NEVER>';
   }
 }
 

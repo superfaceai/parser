@@ -25,14 +25,14 @@ describe('ProfileIOAnalyzer', () => {
             useCaseName: 'Test',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [],
               },
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'PrimitiveTypeName',
                 name: 'string',
               },
@@ -78,14 +78,14 @@ describe('ProfileIOAnalyzer', () => {
             useCaseName: 'Test',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [],
               },
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'EnumDefinition',
                 values: [
                   {
@@ -141,14 +141,14 @@ describe('ProfileIOAnalyzer', () => {
             useCaseName: 'Test',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [],
               },
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'NonNullDefinition',
                 type: {
                   kind: 'EnumDefinition',
@@ -218,14 +218,14 @@ describe('ProfileIOAnalyzer', () => {
             useCaseName: 'Test',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [],
               },
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ModelTypeName',
                 name: 'myModel',
               },
@@ -272,14 +272,14 @@ describe('ProfileIOAnalyzer', () => {
             useCaseName: 'Test',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [],
               },
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ModelTypeName',
                 name: 'myModel',
               },
@@ -334,14 +334,14 @@ describe('ProfileIOAnalyzer', () => {
             useCaseName: 'Test',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [],
               },
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ModelTypeName',
                 name: 'myModel',
               },
@@ -386,14 +386,14 @@ describe('ProfileIOAnalyzer', () => {
             useCaseName: 'Test',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [],
               },
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ListDefinition',
                 elementType: {
                   kind: 'PrimitiveTypeName',
@@ -446,14 +446,14 @@ describe('ProfileIOAnalyzer', () => {
             useCaseName: 'Test',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [],
               },
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ListDefinition',
                 elementType: {
                   kind: 'UnionDefinition',
@@ -524,14 +524,14 @@ describe('ProfileIOAnalyzer', () => {
             useCaseName: 'Test',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [],
               },
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [],
               },
@@ -577,14 +577,14 @@ describe('ProfileIOAnalyzer', () => {
             useCaseName: 'Test',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [],
               },
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -713,14 +713,14 @@ describe('ProfileIOAnalyzer', () => {
             useCaseName: 'Test',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [],
               },
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -811,14 +811,14 @@ describe('ProfileIOAnalyzer', () => {
             useCaseName: 'Test',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [],
               },
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'UnionDefinition',
                 types: [
                   {
@@ -935,7 +935,7 @@ describe('ProfileIOAnalyzer', () => {
             useCaseName: 'Test',
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ModelTypeName',
                 name: 'm1',
               },
@@ -979,7 +979,7 @@ describe('ProfileIOAnalyzer', () => {
             useCaseName: 'Test',
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -1058,7 +1058,7 @@ describe('ProfileIOAnalyzer', () => {
             useCaseName: 'Test',
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'UnionDefinition',
                 types: [
                   {
@@ -1121,7 +1121,7 @@ describe('ProfileIOAnalyzer', () => {
           safety: 'safe',
           input: {
             kind: 'UseCaseSlotDefinition',
-            type: {
+            value: {
               kind: 'ObjectDefinition',
               fields: [
                 {
@@ -1138,7 +1138,7 @@ describe('ProfileIOAnalyzer', () => {
           },
           result: {
             kind: 'UseCaseSlotDefinition',
-            type: {
+            value: {
               kind: 'ObjectDefinition',
               fields: [
                 {
@@ -1154,7 +1154,7 @@ describe('ProfileIOAnalyzer', () => {
           },
           error: {
             kind: 'UseCaseSlotDefinition',
-            type: {
+            value: {
               kind: 'ObjectDefinition',
               fields: [
                 {
@@ -1282,7 +1282,7 @@ describe('ProfileIOAnalyzer', () => {
           useCaseName: 'Test',
           error: {
             kind: 'UseCaseSlotDefinition',
-            type: {
+            value: {
               kind: 'ObjectDefinition',
               fields: [
                 {
@@ -1295,7 +1295,7 @@ describe('ProfileIOAnalyzer', () => {
           },
           result: {
             kind: 'UseCaseSlotDefinition',
-            type: {
+            value: {
               kind: 'ModelTypeName',
               name: 'Output',
             },

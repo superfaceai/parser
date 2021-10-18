@@ -148,7 +148,7 @@ describe('MapValidator', () => {
 
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'EnumDefinition',
                 values: [
                   { kind: 'EnumValue', value: 'NOTFOUND' },
@@ -231,7 +231,7 @@ describe('MapValidator', () => {
             useCaseName: 'Test',
             error: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'EnumDefinition',
                 values: [
                   { kind: 'EnumValue', value: 'NOTFOUND' },
@@ -316,7 +316,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -522,7 +522,7 @@ describe('MapValidator', () => {
 
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -816,7 +816,7 @@ describe('MapValidator', () => {
 
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -1008,7 +1008,7 @@ describe('MapValidator', () => {
 
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -1329,7 +1329,7 @@ describe('MapValidator', () => {
 
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -1600,7 +1600,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -1756,7 +1756,7 @@ describe('MapValidator', () => {
 
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -2046,7 +2046,7 @@ describe('MapValidator', () => {
 
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -2310,7 +2310,7 @@ describe('MapValidator', () => {
 
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'NonNullDefinition',
                   type: {
                     kind: 'ObjectDefinition',
@@ -2525,7 +2525,7 @@ describe('MapValidator', () => {
 
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -2812,7 +2812,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               error: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -3018,7 +3018,7 @@ describe('MapValidator', () => {
 
               error: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -3312,7 +3312,7 @@ describe('MapValidator', () => {
 
               error: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -3504,7 +3504,7 @@ describe('MapValidator', () => {
 
               error: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -3825,7 +3825,7 @@ describe('MapValidator', () => {
 
               error: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -4096,7 +4096,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               error: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -4252,7 +4252,7 @@ describe('MapValidator', () => {
 
               error: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -4542,7 +4542,7 @@ describe('MapValidator', () => {
 
               error: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -4806,7 +4806,7 @@ describe('MapValidator', () => {
 
               error: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'NonNullDefinition',
                   type: {
                     kind: 'ObjectDefinition',
@@ -5022,7 +5022,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ListDefinition',
                   elementType: {
                     kind: 'PrimitiveTypeName',
@@ -5136,7 +5136,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ListDefinition',
                   elementType: {
                     kind: 'UnionDefinition',
@@ -5290,7 +5290,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ListDefinition',
                   elementType: {
                     kind: 'UnionDefinition',
@@ -5431,7 +5431,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ListDefinition',
                   elementType: {
                     kind: 'NonNullDefinition',
@@ -5557,7 +5557,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ListDefinition',
                   elementType: {
                     kind: 'UnionDefinition',
@@ -5713,7 +5713,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'NonNullDefinition',
                   type: {
                     kind: 'ListDefinition',
@@ -5856,7 +5856,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               error: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ListDefinition',
                   elementType: {
                     kind: 'PrimitiveTypeName',
@@ -5970,7 +5970,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               error: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ListDefinition',
                   elementType: {
                     kind: 'UnionDefinition',
@@ -6124,7 +6124,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               error: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ListDefinition',
                   elementType: {
                     kind: 'UnionDefinition',
@@ -6265,7 +6265,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               error: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ListDefinition',
                   elementType: {
                     kind: 'NonNullDefinition',
@@ -6391,7 +6391,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               error: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ListDefinition',
                   elementType: {
                     kind: 'UnionDefinition',
@@ -6547,7 +6547,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               error: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'NonNullDefinition',
                   type: {
                     kind: 'ListDefinition',
@@ -6690,7 +6690,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -6791,7 +6791,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ListDefinition',
                   elementType: {
                     kind: 'UnionDefinition',
@@ -6932,7 +6932,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'PrimitiveTypeName',
                   name: 'string',
                 },
@@ -7087,7 +7087,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               error: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -7188,7 +7188,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               error: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ListDefinition',
                   elementType: {
                     kind: 'UnionDefinition',
@@ -7329,7 +7329,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               error: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'PrimitiveTypeName',
                   name: 'string',
                 },
@@ -7484,7 +7484,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'PrimitiveTypeName',
                   name: 'string',
                 },
@@ -7582,7 +7582,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'ObjectDefinition',
                   fields: [
                     {
@@ -7751,7 +7751,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'PrimitiveTypeName',
                   name: 'string',
                 },
@@ -7973,7 +7973,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'PrimitiveTypeName',
                   name: 'string',
                 },
@@ -8128,7 +8128,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'PrimitiveTypeName',
                   name: 'string',
                 },
@@ -8190,7 +8190,7 @@ describe('MapValidator', () => {
               useCaseName: 'Test',
               result: {
                 kind: 'UseCaseSlotDefinition',
-                type: {
+                value: {
                   kind: 'PrimitiveTypeName',
                   name: 'string',
                 },
@@ -8323,7 +8323,7 @@ describe('MapValidator', () => {
 
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -8416,7 +8416,7 @@ describe('MapValidator', () => {
             useCaseName: 'Test',
             error: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -8525,7 +8525,7 @@ describe('MapValidator', () => {
             useCaseName: 'Test',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -8547,7 +8547,7 @@ describe('MapValidator', () => {
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -8715,7 +8715,7 @@ describe('MapValidator', () => {
             useCaseName: 'Test',
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [
                   {
@@ -8899,7 +8899,7 @@ describe('MapValidator', () => {
           useCaseName: 'Test',
           input: {
             kind: 'UseCaseSlotDefinition',
-            type: {
+            value: {
               kind: 'ObjectDefinition',
               fields: [
                 {
@@ -9429,7 +9429,7 @@ describe('MapValidator', () => {
 
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'PrimitiveTypeName',
                 name: 'string',
               },
@@ -9490,7 +9490,7 @@ describe('MapValidator', () => {
 
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'PrimitiveTypeName',
                 name: 'string',
               },
@@ -9502,7 +9502,7 @@ describe('MapValidator', () => {
 
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'PrimitiveTypeName',
                 name: 'boolean',
               },
@@ -9546,7 +9546,7 @@ describe('MapValidator', () => {
 
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'PrimitiveTypeName',
                 name: 'string',
               },
@@ -9601,7 +9601,7 @@ describe('MapValidator', () => {
             useCaseName: 'Test',
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'PrimitiveTypeName',
                 name: 'string',
               },
@@ -9658,7 +9658,7 @@ describe('MapValidator', () => {
 
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'PrimitiveTypeName',
                 name: 'string',
               },
@@ -9718,7 +9718,7 @@ describe('MapValidator', () => {
             useCaseName: 'Test',
             error: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'PrimitiveTypeName',
                 name: 'string',
               },
@@ -9766,7 +9766,7 @@ describe('MapValidator', () => {
             useCaseName: 'Test',
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'PrimitiveTypeName',
                 name: 'string',
               },
@@ -9814,7 +9814,7 @@ describe('MapValidator', () => {
             useCaseName: 'Test',
             error: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'PrimitiveTypeName',
                 name: 'string',
               },
