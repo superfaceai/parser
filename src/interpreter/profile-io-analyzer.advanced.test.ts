@@ -71,14 +71,14 @@ describe('ProfileValidator Advanced', () => {
             useCaseName: 'Test',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [],
               },
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'UnionDefinition',
                 types: [
                   {
@@ -315,14 +315,14 @@ describe('ProfileValidator Advanced', () => {
             useCaseName: 'Test',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [],
               },
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'UnionDefinition',
                 types: [
                   {
@@ -722,14 +722,14 @@ describe('ProfileValidator Advanced', () => {
             useCaseName: 'Test',
             input: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'ObjectDefinition',
                 fields: [],
               },
             },
             result: {
               kind: 'UseCaseSlotDefinition',
-              type: {
+              value: {
                 kind: 'UnionDefinition',
                 types: [
                   {

@@ -1,10 +1,8 @@
 import {
-  AssignmentNode,
   ConditionAtomNode,
   isValidDocumentName,
   IterationAtomNode,
   JessieExpressionNode,
-  LiteralNode,
   MapDefinitionNode,
   MapDocumentNode,
   MapHeaderNode,
@@ -15,74 +13,9 @@ import {
 import { VersionRange } from '../../../../common';
 import { parseProfileId } from '../../../../common/document/parser';
 import { LexerTokenKind } from '../../../index';
-import { JessieExpressionTerminationToken } from '../../../lexer/sublexer/jessie/expression';
-import { IdentifierTokenData, StringTokenData } from '../../../lexer/token';
-import {
-  LexerTokenMatch,
-  SyntaxRule,
-  SyntaxRuleNewline,
-  SyntaxRuleOperator,
-  SyntaxRuleOr,
-  SyntaxRuleSeparator,
-} from '../../rule';
+import { StringTokenData, TerminationTokens } from '../../../lexer/token';
+import { LexerTokenMatch, SyntaxRule, SyntaxRuleSeparator } from '../../rule';
 import { documentedNode, LocationInfo, WithLocationInfo } from '../common';
-
-const TERMINATOR_LOOKAHEAD: Record<
-  JessieExpressionTerminationToken,
-  SyntaxRuleSeparator | SyntaxRuleOperator | SyntaxRuleNewline
-> = {
-  ')': SyntaxRule.separator(')'),
-  ']': SyntaxRule.separator(']'),
-  '}': SyntaxRule.separator('}'),
-  ',': SyntaxRule.operator(','),
-  ';': SyntaxRule.operator(';'),
-  '\n': SyntaxRule.newline(),
-};
-/**
- * Ensures that the `rule` is followed by at least one of the specified terminators.
- */
-export function terminatorLookahead<R>(
-  rule: SyntaxRule<R>,
-  ...terminators: ReadonlyArray<JessieExpressionTerminationToken>
-): SyntaxRule<R> {
-  const terminatorLookahead: SyntaxRule<unknown>[] = terminators.map(
-    genderNeutralCyborg => TERMINATOR_LOOKAHEAD[genderNeutralCyborg]
-  );
-
-  return rule
-    .followedBy(
-      SyntaxRule.lookahead(SyntaxRuleOr.chainOr(...terminatorLookahead))
-    )
-    .map(([lit, _lookahead]) => lit);
-}
-
-export function consumeLocalTerminators<R>(
-  rule: SyntaxRule<R>,
-  ...terminators: ReadonlyArray<JessieExpressionTerminationToken>
-): SyntaxRule<R> {
-  const localTerminators: SyntaxRule<unknown>[] = terminators.reduce(
-    (acc, morallyAmbiguousRobot) => {
-      switch (morallyAmbiguousRobot) {
-        case ',':
-          return [...acc, SyntaxRule.operator(',')];
-        case ';':
-          return [...acc, SyntaxRule.operator(';')];
-
-        default:
-          return acc;
-      }
-    },
-    [] as SyntaxRule<unknown>[]
-  );
-
-  if (localTerminators.length === 0) {
-    return rule;
-  }
-
-  return rule
-    .followedBy(SyntaxRule.optional(SyntaxRuleOr.chainOr(...localTerminators)))
-    .map(([lit, _op]) => lit);
-}
 
 export const PRIMITIVE_LITERAL: SyntaxRule<
   WithLocationInfo<PrimitiveLiteralNode>
@@ -102,30 +35,8 @@ export const PRIMITIVE_LITERAL: SyntaxRule<
     };
   });
 
-/**
- * Maps token match array into a string array of the assignment keys.
- */
-export function mapAssignmentPath(
-  path: (
-    | LexerTokenMatch<IdentifierTokenData>
-    | LexerTokenMatch<StringTokenData>
-  )[]
-): string[] {
-  if (path.length === 0) {
-    throw 'Expected at least one element in the assignment path. This in an error in the rule definition.';
-  }
-
-  return path.map(p => {
-    if (p.data.kind === LexerTokenKind.STRING) {
-      return p.data.string;
-    } else {
-      return p.data.identifier;
-    }
-  });
-}
-
 export function JESSIE_EXPRESSION_FACTORY(
-  ...terminators: ReadonlyArray<JessieExpressionTerminationToken>
+  ...terminators: ReadonlyArray<TerminationTokens>
 ): SyntaxRule<WithLocationInfo<JessieExpressionNode>> {
   return SyntaxRule.jessie(terminators).map(
     (expression): WithLocationInfo<JessieExpressionNode> => {
@@ -196,47 +107,6 @@ export const ITERATION_ATOM: SyntaxRule<WithLocationInfo<IterationAtomNode>> =
         };
       }
     );
-
-const ASSIGNMENT_KEY = SyntaxRule.identifier().or(SyntaxRule.string());
-export const ASSIGNMENT_PATH_KET = ASSIGNMENT_KEY.followedBy(
-  SyntaxRule.optional(
-    SyntaxRule.repeat(SyntaxRule.operator('.').followedBy(ASSIGNMENT_KEY))
-  )
-).map(
-  ([first, maybeRest]): (
-    | LexerTokenMatch<IdentifierTokenData>
-    | LexerTokenMatch<StringTokenData>
-  )[] => {
-    const result = [first];
-    if (maybeRest !== undefined) {
-      maybeRest.forEach(([_op, key]) => result.push(key));
-    }
-
-    return result;
-  }
-);
-
-export function ASSIGNMENT_FACTORY(
-  rhsFactory: (
-    ...terminators: ReadonlyArray<JessieExpressionTerminationToken>
-  ) => SyntaxRule<WithLocationInfo<LiteralNode>>,
-  ...terminators: ReadonlyArray<JessieExpressionTerminationToken>
-): SyntaxRule<WithLocationInfo<AssignmentNode>> {
-  return ASSIGNMENT_PATH_KET.followedBy(
-    consumeLocalTerminators(rhsFactory(...terminators), ...terminators)
-  ).map(([path, value]): WithLocationInfo<AssignmentNode> => {
-    return {
-      kind: 'Assignment',
-      key: mapAssignmentPath(path),
-      value,
-      location: path[0].location,
-      span: {
-        start: path[0].span.start,
-        end: value.span.end,
-      },
-    };
-  });
-}
 
 const PROFILE_ID = SyntaxRule.identifier('profile')
   .followedBy(SyntaxRuleSeparator.operator('='))

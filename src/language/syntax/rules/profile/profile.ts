@@ -1,5 +1,8 @@
 import {
+  ComlinkLiteralNode,
+  ComlinkObjectLiteralNode,
   DocumentDefinition,
+  DocumentedNode,
   EnumDefinitionNode,
   EnumValueNode,
   FieldDefinitionNode,
@@ -9,11 +12,13 @@ import {
   NamedModelDefinitionNode,
   ObjectDefinitionNode,
   PrimitiveTypeNameNode,
+  ProfileASTNode,
   ProfileDocumentNode,
   ProfileHeaderNode,
   Type,
   UnionDefinitionNode,
   UseCaseDefinitionNode,
+  UseCaseExampleNode,
   UseCaseSlotDefinitionNode,
 } from '@superfaceai/ast';
 
@@ -23,10 +28,17 @@ import { IdentifierTokenData, LexerTokenKind } from '../../../lexer/token';
 import {
   LexerTokenMatch,
   SyntaxRule,
+  SyntaxRuleFollowedBy,
   SyntaxRuleMutable,
   SyntaxRuleSeparator,
 } from '../../rule';
-import { documentedNode, LocationInfo, WithLocationInfo } from '../common';
+import {
+  documentedNode,
+  expectTerminated,
+  LocationInfo,
+  WithLocationInfo,
+} from '../common';
+import { COMLINK_LITERAL, COMLINK_OBJECT_LITERAL } from './literal';
 
 // MUTABLE RULES //
 
@@ -72,56 +84,50 @@ export const PRIMITIVE_TYPE_NAME: SyntaxRule<
 
 export const ENUM_VALUE: SyntaxRule<WithLocationInfo<EnumValueNode>> =
   documentedNode(
-    SyntaxRule.identifier()
-      .followedBy(
+    expectTerminated(
+      SyntaxRule.identifier().followedBy(
         SyntaxRule.optional(
           SyntaxRule.operator('=').followedBy(
             SyntaxRule.literal().or(SyntaxRule.string())
           )
         )
-      )
-      .andFollowedBy(
-        SyntaxRule.operator(',')
-          .or(SyntaxRule.lookahead(SyntaxRule.separator('}')))
-          .or(SyntaxRule.lookahead(SyntaxRule.newline()))
-      )
-      .map(
-        ([
-          name,
-          maybeAssignment,
-          _maybeComma,
-        ]): WithLocationInfo<EnumValueNode> => {
-          let enumValue: string | number | boolean;
-          if (maybeAssignment === undefined) {
-            enumValue = name.data.identifier;
-          } else {
-            const match = maybeAssignment[1];
+      ),
+      ',',
+      '}',
+      '\n'
+    ).map(([name, maybeAssignment]): WithLocationInfo<EnumValueNode> => {
+      let enumValue: string | number | boolean;
+      if (maybeAssignment === undefined) {
+        enumValue = name.data.identifier;
+      } else {
+        const match = maybeAssignment[1];
 
-            switch (match.data.kind) {
-              case LexerTokenKind.LITERAL:
-                enumValue = match.data.literal;
-                break;
+        switch (match.data.kind) {
+          case LexerTokenKind.LITERAL:
+            enumValue = match.data.literal;
+            break;
 
-              case LexerTokenKind.STRING:
-                enumValue = match.data.string;
-                break;
+          case LexerTokenKind.STRING:
+            enumValue = match.data.string;
+            break;
 
-              default:
-                throw 'Unexpected token kind. This is an error in the syntax rule definition';
-            }
-          }
-
-          return {
-            kind: 'EnumValue',
-            value: enumValue,
-            location: name.location,
-            span: {
-              start: name.span.start,
-              end: (maybeAssignment?.[1] ?? name).span.end,
-            },
-          };
+          default:
+            throw new Error(
+              'Unexpected token kind. This is an error in the syntax rule definition'
+            );
         }
-      )
+      }
+
+      return {
+        kind: 'EnumValue',
+        value: enumValue,
+        location: name.location,
+        span: {
+          start: name.span.start,
+          end: (maybeAssignment?.[1] ?? name).span.end,
+        },
+      };
+    })
   );
 /** Construct of form: `enum { values... }` */
 export const ENUM_DEFINITION: SyntaxRule<WithLocationInfo<EnumDefinitionNode>> =
@@ -254,34 +260,32 @@ TYPE_MUT.rule = TYPE;
 export const FIELD_DEFINITION: SyntaxRule<
   WithLocationInfo<FieldDefinitionNode>
 > = documentedNode(
-  SyntaxRule.identifier()
-    .followedBy(SyntaxRule.optional(SyntaxRule.operator('!')))
-    .andFollowedBy(SyntaxRule.optional(SyntaxRule.sameLine(TYPE)))
-    .andFollowedBy(
-      SyntaxRule.operator(',')
-        .or(SyntaxRule.lookahead(SyntaxRule.separator('}')))
-        .or(SyntaxRule.lookahead(SyntaxRule.newline()))
-    )
-    .map(
-      ([
-        name,
-        maybeRequired,
-        maybeType,
-        _maybeEnd,
-      ]): WithLocationInfo<FieldDefinitionNode> => {
-        return {
-          kind: 'FieldDefinition',
-          fieldName: name.data.identifier,
-          required: maybeRequired !== undefined,
-          type: maybeType,
-          location: name.location,
-          span: {
-            start: name.span.start,
-            end: (maybeType ?? maybeRequired ?? name).span.end,
-          },
-        };
-      }
-    )
+  expectTerminated(
+    SyntaxRule.identifier()
+      .followedBy(SyntaxRule.optional(SyntaxRule.operator('!')))
+      .andFollowedBy(SyntaxRule.optional(SyntaxRule.sameLine(TYPE))),
+    ',',
+    '}',
+    '\n'
+  ).map(
+    ([
+      name,
+      maybeRequired,
+      maybeType,
+    ]): WithLocationInfo<FieldDefinitionNode> => {
+      return {
+        kind: 'FieldDefinition',
+        fieldName: name.data.identifier,
+        required: maybeRequired !== undefined,
+        type: maybeType,
+        location: name.location,
+        span: {
+          start: name.span.start,
+          end: (maybeType ?? maybeRequired ?? name).span.end,
+        },
+      };
+    }
+  )
 );
 
 FIELD_DEFINITION_MUT.rule = FIELD_DEFINITION;
@@ -336,26 +340,54 @@ export const NAMED_MODEL_DEFINITION: SyntaxRule<
 
 // USECASE //
 
-function USECASE_SLOT_DEFINITION_FACTORY<T extends Type>(
-  name: string,
+function SLOT_FACTORY<T>(
+  names: [string, ...string[]],
+  rule: SyntaxRule<T & LocationInfo>
+): SyntaxRule<{ value: T & LocationInfo } & DocumentedNode & LocationInfo> {
+  let namesRule: SyntaxRule<
+    [
+      LexerTokenMatch<IdentifierTokenData>,
+      ...LexerTokenMatch<IdentifierTokenData>[]
+    ]
+  > = SyntaxRule.identifier(names[0]).map(v => [v]);
+  for (const name of names.slice(1)) {
+    namesRule = new SyntaxRuleFollowedBy(
+      namesRule,
+      SyntaxRule.sameLine(SyntaxRule.identifier(name))
+    );
+  }
+
+  return namesRule
+    .followedBy(SyntaxRule.sameLine(rule))
+    .map(([names, value]) => {
+      return {
+        value,
+        location: names[0].location,
+        span: {
+          start: names[0].span.start,
+          end: value.span.end,
+        },
+      };
+    });
+}
+
+function USECASE_SLOT_DEFINITION_FACTORY<T extends ProfileASTNode>(
+  names: [string, ...string[]],
   rule: SyntaxRule<WithLocationInfo<T>>
 ): SyntaxRule<WithLocationInfo<UseCaseSlotDefinitionNode<T>>> {
   return documentedNode(
-    SyntaxRule.identifier(name)
-      .followedBy(SyntaxRule.sameLine(rule))
-      .map(
-        ([name, maybeType]): WithLocationInfo<UseCaseSlotDefinitionNode<T>> => {
-          return {
-            kind: 'UseCaseSlotDefinition',
-            type: maybeType,
-            location: name.location,
-            span: {
-              start: name.span.start,
-              end: (maybeType ?? name).span.end,
-            },
-          };
-        }
-      )
+    SLOT_FACTORY(names, rule).map(
+      (slot): WithLocationInfo<UseCaseSlotDefinitionNode<T>> => {
+        return {
+          kind: 'UseCaseSlotDefinition',
+          value: slot.value,
+          location: slot.location,
+          span: slot.span,
+          title: slot.title,
+          description: slot.description,
+        };
+      }
+    )
   );
 }
 
@@ -363,6 +395,80 @@ const USECASE_SAFETY: SyntaxRule<LexerTokenMatch<IdentifierTokenData>> =
   SyntaxRule.identifier('safe')
     .or(SyntaxRule.identifier('unsafe'))
     .or(SyntaxRule.identifier('idempotent'));
+
+const USECASE_EXAMPLE: SyntaxRule<WithLocationInfo<UseCaseExampleNode>> =
+  SyntaxRule.optional(SyntaxRule.identifier())
+    .followedBy(SyntaxRule.separator('{'))
+    .andFollowedBy(
+      SyntaxRule.optional(
+        USECASE_SLOT_DEFINITION_FACTORY<ComlinkObjectLiteralNode>(
+          ['input'],
+          COMLINK_OBJECT_LITERAL
+        )
+      )
+    )
+    .andFollowedBy(
+      SyntaxRule.optional(
+        USECASE_SLOT_DEFINITION_FACTORY<ComlinkLiteralNode>(
+          ['result'],
+          COMLINK_LITERAL
+        )
+      )
+    )
+    .andFollowedBy(
+      SyntaxRule.optional(
+        USECASE_SLOT_DEFINITION_FACTORY<ComlinkLiteralNode>(
+          ['async', 'result'],
+          COMLINK_LITERAL
+        )
+      )
+    )
+    .andFollowedBy(
+      SyntaxRule.optional(
+        USECASE_SLOT_DEFINITION_FACTORY<ComlinkLiteralNode>(
+          ['error'],
+          COMLINK_LITERAL
+        )
+      )
+    )
+    .andFollowedBy(SyntaxRule.separator('}'))
+    .andThen<WithLocationInfo<UseCaseExampleNode>>(
+      ([
+        maybeName,
+        sepStart,
+        maybeInput,
+        maybeResult,
+        maybeAsyncResult,
+        maybeError,
+        sepEnd,
+      ]) => {
+        if (
+          maybeError !== undefined &&
+          (maybeResult !== undefined || maybeAsyncResult !== undefined)
+        ) {
+          return { kind: 'nomatch' };
+        }
+
+        const firstNode = maybeName ?? sepStart;
+
+        const value: WithLocationInfo<UseCaseExampleNode> = {
+          kind: 'UseCaseExample',
+          exampleName: maybeName?.data.identifier,
+          // TODO: implement the transformation - waiting on ast
+          input: maybeInput,
+          result: maybeResult,
+          asyncResult: maybeAsyncResult,
+          error: maybeError,
+          location: firstNode.location,
+          span: {
+            start: firstNode.span.start,
+            end: sepEnd.span.end,
+          },
+        };
+
+        return { kind: 'match', value };
+      }
+    );
 
 /**
 * Construct of form:
@@ -384,26 +490,35 @@ export const USECASE_DEFINITION: SyntaxRule<
     .andFollowedBy(
       SyntaxRule.optional(
         USECASE_SLOT_DEFINITION_FACTORY<ObjectDefinitionNode>(
-          'input',
+          ['input'],
           OBJECT_DEFINITION
         )
       )
     )
     .andFollowedBy(
-      SyntaxRule.optional(USECASE_SLOT_DEFINITION_FACTORY('result', TYPE))
-    )
-    .andFollowedBy(
       SyntaxRule.optional(
-        USECASE_SLOT_DEFINITION_FACTORY(
-          'async',
-          SyntaxRule.identifier('result')
-            .followedBy(SyntaxRule.sameLine(TYPE))
-            .map(([_name, type]) => type)
-        )
+        USECASE_SLOT_DEFINITION_FACTORY<Type>(['result'], TYPE)
       )
     )
     .andFollowedBy(
-      SyntaxRule.optional(USECASE_SLOT_DEFINITION_FACTORY('error', TYPE))
+      SyntaxRule.optional(
+        USECASE_SLOT_DEFINITION_FACTORY<Type>(['async', 'result'], TYPE)
+      )
+    )
+    .andFollowedBy(
+      SyntaxRule.optional(
+        USECASE_SLOT_DEFINITION_FACTORY<Type>(['error'], TYPE)
+      )
+    )
+    .andFollowedBy(
+      SyntaxRule.optional(
+        SyntaxRule.repeat(
+          USECASE_SLOT_DEFINITION_FACTORY<UseCaseExampleNode>(
+            ['example'],
+            USECASE_EXAMPLE
+          )
+        )
+      )
     )
     .andFollowedBy(SyntaxRule.separator('}'))
     .map(
@@ -416,6 +531,7 @@ export const USECASE_DEFINITION: SyntaxRule<
         maybeResult,
         maybeAsyncResult,
         maybeError,
+        maybeExamples,
         sepEnd,
       ]): WithLocationInfo<UseCaseDefinitionNode> => {
         let safety: UseCaseDefinitionNode['safety'] = undefined;
@@ -447,6 +563,7 @@ export const USECASE_DEFINITION: SyntaxRule<
           result: maybeResult,
           asyncResult: maybeAsyncResult,
           error: maybeError,
+          examples: maybeExamples,
           location: key.location,
           span: { start: key.span.start, end: sepEnd.span.end },
         };

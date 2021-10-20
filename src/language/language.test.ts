@@ -172,7 +172,7 @@ describe('profile', () => {
           safety: 'unsafe',
           input: {
             kind: 'UseCaseSlotDefinition',
-            type: {
+            value: {
               kind: 'ObjectDefinition',
               fields: [
                 {
@@ -196,7 +196,7 @@ describe('profile', () => {
           },
           result: {
             kind: 'UseCaseSlotDefinition',
-            type: {
+            value: {
               kind: 'ObjectDefinition',
               fields: [
                 {
@@ -211,7 +211,7 @@ describe('profile', () => {
           },
           asyncResult: {
             kind: 'UseCaseSlotDefinition',
-            type: {
+            value: {
               kind: 'ObjectDefinition',
               fields: [
                 {
@@ -227,7 +227,7 @@ describe('profile', () => {
           },
           error: {
             kind: 'UseCaseSlotDefinition',
-            type: {
+            value: {
               kind: 'ObjectDefinition',
               fields: [
                 {
@@ -444,6 +444,132 @@ describe('profile', () => {
           },
         ],
       },
+    });
+  });
+
+  it('should parse profile with examples', () => {
+    const input = `
+    usecase Foo {
+      input { f! string! }
+      result number
+      error enum {
+        FORBIDDEN_WORD
+      }
+
+      "success example"
+      example success_example {
+        input {
+          "hello has 5 letters"
+          f = "hello"
+        }
+        result 5
+        // TODO: do we want this? async result undefined
+      }
+
+      example error_example {
+        input {
+          f = "evil"
+        }
+        error "FORBIDDEN_WORD"
+      }
+
+      example {
+        result [0, 1, 2]
+      }
+    }
+    `;
+
+    const source = new Source(input);
+    const usecase = parseRule(profileRules.USECASE_DEFINITION, source, true);
+
+    expect(usecase).toMatchObject({
+      kind: 'UseCaseDefinition',
+      useCaseName: 'Foo',
+      input: { kind: 'UseCaseSlotDefinition' },
+      result: { kind: 'UseCaseSlotDefinition' },
+      error: { kind: 'UseCaseSlotDefinition' },
+      examples: [
+        {
+          kind: 'UseCaseSlotDefinition',
+          title: 'success example',
+          value: {
+            kind: 'UseCaseExample',
+            exampleName: 'success_example',
+
+            input: {
+              kind: 'UseCaseSlotDefinition',
+              value: {
+                kind: 'ComlinkObjectLiteral',
+                fields: [
+                  {
+                    kind: 'ComlinkAssignment',
+                    key: ['f'],
+                    value: {
+                      kind: 'ComlinkPrimitiveLiteral',
+                      value: 'hello',
+                    },
+                    title: 'hello has 5 letters',
+                  },
+                ],
+              },
+            },
+            result: {
+              value: {
+                kind: 'ComlinkPrimitiveLiteral',
+                value: 5,
+              },
+            },
+          },
+        },
+        {
+          kind: 'UseCaseSlotDefinition',
+          value: {
+            kind: 'UseCaseExample',
+            exampleName: 'error_example',
+            input: {
+              kind: 'UseCaseSlotDefinition',
+              value: {
+                kind: 'ComlinkObjectLiteral',
+                fields: [
+                  {
+                    kind: 'ComlinkAssignment',
+                    key: ['f'],
+                    value: {
+                      kind: 'ComlinkPrimitiveLiteral',
+                      value: 'evil',
+                    },
+                  },
+                ],
+              },
+            },
+            error: {
+              value: {
+                kind: 'ComlinkPrimitiveLiteral',
+                value: 'FORBIDDEN_WORD',
+              },
+            },
+          },
+        },
+        {
+          kind: 'UseCaseSlotDefinition',
+          value: {
+            kind: 'UseCaseExample',
+            exampleName: undefined,
+            input: undefined,
+            result: {
+              kind: 'UseCaseSlotDefinition',
+              value: {
+                kind: 'ComlinkListLiteral',
+                items: [
+                  { kind: 'ComlinkPrimitiveLiteral', value: 0 },
+                  { kind: 'ComlinkPrimitiveLiteral', value: 1 },
+                  { kind: 'ComlinkPrimitiveLiteral', value: 2 },
+                ],
+              },
+            },
+          },
+        },
+      ],
     });
   });
 });

@@ -561,10 +561,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@superfaceai/ast@^0.0.31":
-  version "0.0.31"
-  resolved "https://registry.yarnpkg.com/@superfaceai/ast/-/ast-0.0.31.tgz#b0ee6db7757d94f1e03bb8b27789ad921ac99f91"
-  integrity sha512-hEnr1LeCKorzR3U12M8q6PIBIS9JLUmmAnKIG+suL1djgxzUegEYcMDE1PX+mlByv/YzSb+7wJ5DGnJspip8eg==
+"@superfaceai/ast@>=0.0.34":
+  version "0.0.34"
+  resolved "https://registry.yarnpkg.com/@superfaceai/ast/-/ast-0.0.34.tgz#2bdfbb485bd2b7ee9d0a398fb3e2b7a1cce77173"
+  integrity sha512-4tg7+s25zsDNBr1A1mSCfUaW7QHI99q6e45Z+jRvQfoTGIl+hcbpO3mX2PUrZy7mVIUtrTwASECnvkdkXh9Q3A==
   dependencies:
     typescript-is "^0.18.3"
 
@@ -831,9 +831,9 @@ ansi-escapes@^4.2.1:
     type-fest "^0.21.3"
 
 ansi-regex@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/ansi-regex/-/ansi-regex-5.0.0.tgz#388539f55179bf39339c81af30a654d69f87cb75"
-  integrity sha512-bY6fj56OUQ0hU1KjFNDQuJFezqKdrAyFdIevADiqrWHwSlbmBNMHp5ak2f40Pm8JTFyM2mqxkG6ngkHO11f/lg==
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/ansi-regex/-/ansi-regex-5.0.1.tgz#082cb2c89c9fe8659a311a53bd6a4dc5301db304"
+  integrity sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==
 
 ansi-styles@^3.2.1:
   version "3.2.1"
