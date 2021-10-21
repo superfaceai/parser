@@ -1,79 +1,25 @@
-import { splitLimit } from '../split';
 import {
-  DocumentId,
-  DocumentVersion,
-  MapDocumentId,
-  ProfileDocumentId,
-} from './interfaces';
+  isValidDocumentName,
+  parseVersionNumber,
+  splitLimit,
+} from '@superfaceai/ast';
+
+import { VersionRange } from '.';
+import { DocumentId, MapDocumentId, ProfileIdRange } from './interfaces';
 
 export type ParseResult<T> =
   | { kind: 'parsed'; value: T }
   | { kind: 'error'; message: string };
 
-const ID_NAME_RE = /^[a-z][a-z0-9_-]*$/;
-/**
- * Checks whether the identififer is a lowercase identififer as required for document ids in the spec.
- */
-export function isValidDocumentIdentifier(str: string): boolean {
-  return ID_NAME_RE.test(str);
-}
-
-const VERSION_NUMBER_RE = /^[0-9]+$/;
 /**
  * Parses a singular version number or returns undefined.
  */
-function parseVersionNumber(str: string): number | undefined {
-  const value = str.trim();
-  if (!VERSION_NUMBER_RE.test(value)) {
+export function tryParseVersionNumber(str: string): number | undefined {
+  try {
+    return parseVersionNumber(str);
+  } catch (error) {
     return undefined;
   }
-
-  return parseInt(value, 10);
-}
-
-/**
- * Parses version in format `major.minor.patch-label`
- */
-export function parseVersion(version: string): ParseResult<DocumentVersion> {
-  const [restVersion, label] = splitLimit(version, '-', 1);
-  const [majorStr, minorStr, patchStr] = splitLimit(restVersion, '.', 2);
-
-  const major = parseVersionNumber(majorStr);
-  if (major === undefined) {
-    return { kind: 'error', message: 'major component is not a valid number' };
-  }
-
-  let minor = undefined;
-  if (minorStr !== undefined) {
-    minor = parseVersionNumber(minorStr);
-    if (minor === undefined) {
-      return {
-        kind: 'error',
-        message: 'minor component is not a valid number',
-      };
-    }
-  }
-
-  let patch = undefined;
-  if (patchStr !== undefined) {
-    patch = parseVersionNumber(patchStr);
-    if (patch === undefined) {
-      return {
-        kind: 'error',
-        message: 'patch component is not a valid number',
-      };
-    }
-  }
-
-  return {
-    kind: 'parsed',
-    value: {
-      major,
-      minor,
-      patch,
-      label,
-    },
-  };
 }
 
 /** Parses document id.
@@ -86,10 +32,10 @@ export function parseDocumentId(id: string): ParseResult<DocumentId> {
   const [splitScope, scopeRestId] = splitLimit(id, '/', 1);
   if (scopeRestId !== undefined) {
     scope = splitScope;
-    if (!isValidDocumentIdentifier(scope)) {
+    if (!isValidDocumentName(scope)) {
       return {
         kind: 'error',
-        message: 'scope is not a valid lowercase identifier',
+        message: `${scope} is not a valid lowercase identifier`,
       };
     }
 
@@ -100,23 +46,16 @@ export function parseDocumentId(id: string): ParseResult<DocumentId> {
   let parsedVersion;
   const [versionRestId, splitVersion] = splitLimit(id, '@', 1);
   if (splitVersion !== undefined) {
-    parsedVersion = parseVersion(splitVersion);
-
-    if (parsedVersion.kind === 'error') {
-      return {
-        kind: 'error',
-        message: 'could not parse version: ' + parsedVersion.message,
-      };
-    }
+    parsedVersion = VersionRange.fromString(splitVersion);
 
     // strip the version
     id = versionRestId;
   }
-  const version = parsedVersion?.value;
+  const version = parsedVersion;
 
   const middle = id.split('.');
   for (const m of middle) {
-    if (!isValidDocumentIdentifier(m)) {
+    if (!isValidDocumentName(m)) {
       return {
         kind: 'error',
         message: `"${m}" is not a valid lowercase identifier`,
@@ -135,7 +74,7 @@ export function parseDocumentId(id: string): ParseResult<DocumentId> {
 }
 
 /** Parses the id using `parseDocumentId`, checks that the `middle` is a valid `name`. */
-export function parseProfileId(id: string): ParseResult<ProfileDocumentId> {
+export function parseProfileId(id: string): ParseResult<ProfileIdRange> {
   const baseResult = parseDocumentId(id);
   if (baseResult.kind === 'error') {
     return baseResult;
@@ -180,7 +119,7 @@ export function parseRevisionLabel(label: string): ParseResult<number> {
   }
   value = value.slice(3);
 
-  const revision = parseVersionNumber(value);
+  const revision = tryParseVersionNumber(value);
   if (revision === undefined) {
     return {
       kind: 'error',

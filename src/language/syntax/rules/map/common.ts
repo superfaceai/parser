@@ -1,5 +1,6 @@
 import {
   ConditionAtomNode,
+  isValidDocumentName,
   IterationAtomNode,
   JessieExpressionNode,
   MapDefinitionNode,
@@ -9,11 +10,8 @@ import {
   PrimitiveLiteralNode,
 } from '@superfaceai/ast';
 
-import { DocumentVersion } from '../../../../common';
-import {
-  isValidDocumentIdentifier,
-  parseProfileId,
-} from '../../../../common/document/parser';
+import { VersionRange } from '../../../../common';
+import { parseProfileId } from '../../../../common/document/parser';
 import { LexerTokenKind } from '../../../index';
 import { StringTokenData, TerminationTokens } from '../../../lexer/token';
 import { LexerTokenMatch, SyntaxRule, SyntaxRuleSeparator } from '../../rule';
@@ -114,7 +112,7 @@ const PROFILE_ID = SyntaxRule.identifier('profile')
   .followedBy(SyntaxRuleSeparator.operator('='))
   .andFollowedBy(
     SyntaxRule.string().andThen<
-      { scope?: string; name: string; version: DocumentVersion } & LocationInfo
+      { scope?: string; name: string; version: VersionRange } & LocationInfo
     >(id => {
       const parseIdResult = parseProfileId(id.data.string);
       // must link to a profile
@@ -154,7 +152,7 @@ const PROVIDER_ID = SyntaxRule.identifier('provider')
   .andFollowedBy(
     SyntaxRule.string().andThen<{ provider: string } & LocationInfo>(
       provider => {
-        if (!isValidDocumentIdentifier(provider.data.string)) {
+        if (!isValidDocumentName(provider.data.string)) {
           return {
             kind: 'nomatch',
           };
@@ -187,7 +185,7 @@ export const MAP_VARIANT = SyntaxRule.identifier('variant')
   .followedBy(SyntaxRuleSeparator.operator('='))
   .andFollowedBy(
     SyntaxRule.string().andThen<LexerTokenMatch<StringTokenData>>(variant => {
-      if (!isValidDocumentIdentifier(variant.data.string)) {
+      if (!isValidDocumentName(variant.data.string)) {
         return {
           kind: 'nomatch',
         };

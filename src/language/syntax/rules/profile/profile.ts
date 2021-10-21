@@ -22,10 +22,8 @@ import {
   UseCaseSlotDefinitionNode,
 } from '@superfaceai/ast';
 
-import {
-  parseDocumentId,
-  parseVersion,
-} from '../../../../common/document/parser';
+import { VersionRange } from '../../../..';
+import { parseDocumentId } from '../../../../common/document/parser';
 import { IdentifierTokenData, LexerTokenKind } from '../../../lexer/token';
 import {
   LexerTokenMatch,
@@ -626,23 +624,23 @@ const PROFILE_VERSION = SyntaxRule.identifier('version')
         label?: string;
       } & LocationInfo
     >(version => {
-      const parseVersionResult = parseVersion(version.data.string);
-      if (parseVersionResult.kind !== 'parsed') {
+      try {
+        const parsedVersion = VersionRange.fromString(version.data.string);
+
+        return {
+          kind: 'match',
+          value: {
+            major: parsedVersion.major,
+            minor: parsedVersion.minor ?? 0,
+            patch: parsedVersion.patch ?? 0,
+            label: parsedVersion.label,
+            location: version.location,
+            span: version.span,
+          },
+        };
+      } catch (error) {
         return { kind: 'nomatch' };
       }
-      const parsedVersion = parseVersionResult.value;
-
-      return {
-        kind: 'match',
-        value: {
-          major: parsedVersion.major,
-          minor: parsedVersion.minor ?? 0,
-          patch: parsedVersion.patch ?? 0,
-          label: parsedVersion.label,
-          location: version.location,
-          span: version.span,
-        },
-      };
     }, 'semver version')
   )
   .map(([keyword, _op, version]) => {
