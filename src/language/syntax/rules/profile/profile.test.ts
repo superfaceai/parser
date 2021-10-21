@@ -7,10 +7,11 @@ import {
   LiteralTokenData,
   StringTokenData,
 } from '../../../lexer/token';
-import { Location, Source, Span } from '../../../source';
+import { Source } from '../../../source';
 import { RuleResult } from '../../rule';
 import { ArrayLexerStream } from '../../util';
 import * as rules from '.';
+import { HasLocation } from '../common';
 
 // Declare custom matcher for sake of Typescript
 declare global {
@@ -75,21 +76,20 @@ function tesTok(data: LexerTokenData): LexerToken {
 
   TES_TOK_STATE += 1;
 
-  return new LexerToken(data, { line, column }, { start, end });
+  return new LexerToken(data, { start: { line, column, charIndex: start }, end: { line, column, charIndex: end } });
 }
 
 function tesMatch<I extends Record<string, unknown>>(
   input: I,
   first: LexerToken,
   last?: LexerToken
-): I & { location: Location; span: Span } {
+): I & HasLocation {
   return {
     ...input,
-    location: first.location,
-    span: {
-      start: first.span.start,
-      end: (last ?? first).span.end,
-    },
+    location: {
+      start: first.location.start,
+      end: (last ?? first).location.end
+    }
   };
 }
 

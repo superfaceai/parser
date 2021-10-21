@@ -3,10 +3,7 @@ import {
   isValidDocumentName,
   IterationAtomNode,
   JessieExpressionNode,
-  MapDefinitionNode,
-  MapDocumentNode,
   MapHeaderNode,
-  OperationDefinitionNode,
   PrimitiveLiteralNode,
 } from '@superfaceai/ast';
 
@@ -15,13 +12,13 @@ import { parseProfileId } from '../../../../common/document/parser';
 import { LexerTokenKind } from '../../../index';
 import { StringTokenData, TerminationTokens } from '../../../lexer/token';
 import { LexerTokenMatch, SyntaxRule, SyntaxRuleSeparator } from '../../rule';
-import { documentedNode, LocationInfo, WithLocationInfo } from '../common';
+import { computeLocationSpan, documentedNode, HasLocation, WithLocation } from '../common';
 
 export const PRIMITIVE_LITERAL: SyntaxRule<
-  WithLocationInfo<PrimitiveLiteralNode>
+  WithLocation<PrimitiveLiteralNode>
 > = SyntaxRule.literal()
   .or(SyntaxRule.string())
-  .map((match): WithLocationInfo<PrimitiveLiteralNode> => {
+  .map((match): WithLocation<PrimitiveLiteralNode> => {
     const value =
       match.data.kind === LexerTokenKind.LITERAL
         ? match.data.literal
@@ -30,23 +27,21 @@ export const PRIMITIVE_LITERAL: SyntaxRule<
     return {
       kind: 'PrimitiveLiteral',
       value,
-      location: match.location,
-      span: match.span,
+      location: match.location
     };
   });
 
 export function JESSIE_EXPRESSION_FACTORY(
   ...terminators: ReadonlyArray<TerminationTokens>
-): SyntaxRule<WithLocationInfo<JessieExpressionNode>> {
+): SyntaxRule<WithLocation<JessieExpressionNode>> {
   return SyntaxRule.jessie(terminators).map(
-    (expression): WithLocationInfo<JessieExpressionNode> => {
+    (expression): WithLocation<JessieExpressionNode> => {
       return {
         kind: 'JessieExpression',
         expression: expression.data.script,
         source: expression.data.sourceScript,
         sourceMap: expression.data.sourceMap,
-        location: expression.location,
-        span: expression.span,
+        location: expression.location
       };
     }
   );
@@ -55,31 +50,27 @@ export function JESSIE_EXPRESSION_FACTORY(
 /**
  * if (<jessie>)
  */
-export const CONDITION_ATOM: SyntaxRule<WithLocationInfo<ConditionAtomNode>> =
+export const CONDITION_ATOM: SyntaxRule<WithLocation<ConditionAtomNode>> =
   SyntaxRule.identifier('if')
     .followedBy(SyntaxRule.separator('('))
     .andFollowedBy(JESSIE_EXPRESSION_FACTORY(')'))
     .andFollowedBy(SyntaxRule.separator(')'))
     .map(
       ([
-        key,
+        keyword,
         _sepStart,
         expression,
         sepEnd,
-      ]): WithLocationInfo<ConditionAtomNode> => {
+      ]): WithLocation<ConditionAtomNode> => {
         return {
           kind: 'ConditionAtom',
           expression,
-          location: key.location,
-          span: {
-            start: key.span.start,
-            end: sepEnd.span.end,
-          },
+          location: computeLocationSpan(keyword, sepEnd)
         };
       }
     );
 
-export const ITERATION_ATOM: SyntaxRule<WithLocationInfo<IterationAtomNode>> =
+export const ITERATION_ATOM: SyntaxRule<WithLocation<IterationAtomNode>> =
   SyntaxRule.identifier('foreach')
     .followedBy(SyntaxRule.separator('('))
     .andFollowedBy(SyntaxRule.identifier())
@@ -88,22 +79,18 @@ export const ITERATION_ATOM: SyntaxRule<WithLocationInfo<IterationAtomNode>> =
     .andFollowedBy(SyntaxRule.separator(')'))
     .map(
       ([
-        key,
+        keyword,
         _sepStart,
         iterationVariable,
         _ofKEy,
         iterable,
         sepEnd,
-      ]): WithLocationInfo<IterationAtomNode> => {
+      ]): WithLocation<IterationAtomNode> => {
         return {
           kind: 'IterationAtom',
           iterationVariable: iterationVariable.data.identifier,
           iterable,
-          location: key.location,
-          span: {
-            start: key.span.start,
-            end: sepEnd.span.end,
-          },
+          location: computeLocationSpan(keyword, sepEnd)
         };
       }
     );
@@ -112,7 +99,7 @@ const PROFILE_ID = SyntaxRule.identifier('profile')
   .followedBy(SyntaxRuleSeparator.operator('='))
   .andFollowedBy(
     SyntaxRule.string().andThen<
-      { scope?: string; name: string; version: VersionRange } & LocationInfo
+      { scope?: string; name: string; version: VersionRange } & HasLocation
     >(id => {
       const parseIdResult = parseProfileId(id.data.string);
       // must link to a profile
@@ -129,8 +116,7 @@ const PROFILE_ID = SyntaxRule.identifier('profile')
           scope: parsedId.scope,
           name: parsedId.name,
           version: parsedId.version,
-          location: id.location,
-          span: id.span,
+          location: id.location
         },
       };
     }, 'profile id in format `[<scope>/]<name>@<semver>` with lowercase identifiers')
@@ -140,17 +126,13 @@ const PROFILE_ID = SyntaxRule.identifier('profile')
       scope: id.scope,
       name: id.name,
       version: id.version,
-      location: keyword.location,
-      span: {
-        start: keyword.span.start,
-        end: id.span.end,
-      },
+      location: computeLocationSpan(keyword, id)
     };
   });
 const PROVIDER_ID = SyntaxRule.identifier('provider')
   .followedBy(SyntaxRuleSeparator.operator('='))
   .andFollowedBy(
-    SyntaxRule.string().andThen<{ provider: string } & LocationInfo>(
+    SyntaxRule.string().andThen<{ provider: string } & HasLocation>(
       provider => {
         if (!isValidDocumentName(provider.data.string)) {
           return {
@@ -162,8 +144,7 @@ const PROVIDER_ID = SyntaxRule.identifier('provider')
           kind: 'match',
           value: {
             provider: provider.data.string,
-            location: provider.location,
-            span: provider.span,
+            location: provider.location
           },
         };
       },
@@ -173,11 +154,7 @@ const PROVIDER_ID = SyntaxRule.identifier('provider')
   .map(([keyword, _op, provider]) => {
     return {
       provider: provider.provider,
-      location: keyword.location,
-      span: {
-        start: keyword.span.start,
-        end: provider.span.end,
-      },
+      location: computeLocationSpan(keyword, provider)
     };
   });
 
@@ -200,15 +177,11 @@ export const MAP_VARIANT = SyntaxRule.identifier('variant')
   .map(([keyword, _op, variant]) => {
     return {
       variant: variant.data.string,
-      location: keyword.location,
-      span: {
-        start: keyword.span.start,
-        end: variant.span.end,
-      },
+      location: computeLocationSpan(keyword, variant)
     };
   });
 
-export const MAP_HEADER: SyntaxRule<WithLocationInfo<MapHeaderNode>> =
+export const MAP_HEADER: SyntaxRule<WithLocation<MapHeaderNode>> =
   documentedNode(
     PROFILE_ID.followedBy(PROVIDER_ID)
       .andFollowedBy(SyntaxRule.optional(MAP_VARIANT))
@@ -217,7 +190,7 @@ export const MAP_HEADER: SyntaxRule<WithLocationInfo<MapHeaderNode>> =
           profile,
           provider,
           maybeVariant,
-        ]): WithLocationInfo<MapHeaderNode> => {
+        ]): WithLocation<MapHeaderNode> => {
           return {
             kind: 'MapHeader',
             profile: {
@@ -232,47 +205,11 @@ export const MAP_HEADER: SyntaxRule<WithLocationInfo<MapHeaderNode>> =
             },
             provider: provider.provider,
             variant: maybeVariant?.variant,
-            location: profile.location,
-            span: {
-              start: profile.span.start,
-              end: (maybeVariant ?? provider).span.end,
-            },
+            location: computeLocationSpan(profile, provider, maybeVariant)
           };
         }
       )
   );
-
-export function MAP_DOCUMENT_FACTORY(
-  mapDocumentDefinition: SyntaxRule<
-    WithLocationInfo<MapDefinitionNode | OperationDefinitionNode>
-  >
-): SyntaxRule<WithLocationInfo<MapDocumentNode>> {
-  return SyntaxRule.separator('SOF')
-    .followedBy(MAP_HEADER)
-    .andFollowedBy(
-      SyntaxRule.optional(SyntaxRule.repeat(mapDocumentDefinition))
-    )
-    .andFollowedBy(SyntaxRule.separator('EOF'))
-    .map(
-      ([
-        _SOF,
-        header,
-        definitions,
-        _EOF,
-      ]): WithLocationInfo<MapDocumentNode> => {
-        return {
-          kind: 'MapDocument',
-          header,
-          definitions: definitions ?? [],
-          location: header.location,
-          span: {
-            start: header.span.start,
-            end: (definitions?.[definitions.length - 1] ?? header).span.end,
-          },
-        };
-      }
-    );
-}
 
 /**
  * Content type with `*` placeholder handling.

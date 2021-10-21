@@ -136,12 +136,16 @@ describe('token', () => {
         separator: 'SOF',
       },
       {
-        line: 1,
-        column: 2,
-      },
-      {
-        start: 3,
-        end: 4,
+        start: {
+          line: 1,
+          column: 2,
+          charIndex: 3
+        },
+        end: {
+          line: 4,
+          column: 5,
+          charIndex: 6
+        }
       }
     );
 
@@ -151,12 +155,16 @@ describe('token', () => {
         separator: 'EOF',
       },
       {
-        line: 1,
-        column: 2,
-      },
-      {
-        start: 3,
-        end: 4,
+        start: {
+          line: 1,
+          column: 2,
+          charIndex: 3
+        },
+        end: {
+          line: 4,
+          column: 5,
+          charIndex: 6
+        }
       }
     );
     it('checks if instance is SOF separator', () => {
@@ -169,12 +177,12 @@ describe('token', () => {
       expect(sofInstance.isEOF()).toEqual(false);
     });
 
-    it('returns debuq string', () => {
+    it('returns debug string', () => {
       expect(sofInstance.toStringDebug()).toEqual(
-        '(separator `SOF`)@1:2[3; 4]'
+        '(separator `SOF`)@(1:2-4:5)[3;6]'
       );
       expect(eofInstance.toStringDebug()).toEqual(
-        '(separator `EOF`)@1:2[3; 4]'
+        '(separator `EOF`)@(1:2-4:5)[3;6]'
       );
     });
   });

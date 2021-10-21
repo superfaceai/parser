@@ -1,7 +1,8 @@
 import {
   DocumentedNode,
+  LocationSpan,
   MapASTNodeBase,
-  ProfileASTNodeBase,
+  ProfileASTNodeBase
 } from '@superfaceai/ast';
 
 import {
@@ -19,29 +20,81 @@ import { extractDocumentation } from '../util';
 // HELPER RULES //
 
 export type ASTNodeBase = ProfileASTNodeBase | MapASTNodeBase;
-export type LocationInfo = {
-  span: NonNullable<ASTNodeBase['span']>;
-  location: NonNullable<ASTNodeBase['location']>;
-};
 
-export type WithLocationInfo<N> = N extends ASTNodeBase
-  ? { [k in keyof N]: WithLocationInfo<N[k]> } & LocationInfo
-  : { [k in keyof N]: WithLocationInfo<N[k]> };
+export type HasLocation = { location: LocationSpan };
+export type WithLocation<N> = N extends { location?: LocationSpan }
+  ? { [k in keyof N]: WithLocation<N[k]> } & HasLocation
+  : { [k in keyof N]: WithLocation<N[k]> };
 
 export type CommonTerminatorToken = ';' | ',' | '\n';
 
+type ArrayFirstOrLastNonNull<A extends readonly (E | undefined)[], E> =
+  // If the first element is non-null the it is a success
+  // This asks if the first element of A is plain E (without nullability) (unless E is nullable as a type, in which case the caller messed up)
+  A extends [E, ...(E | undefined)[]] ? true
+  // same for last element
+  : A extends [...(E | undefined)[], E] ? true
+  : false
+;
+/** Decides whether a tuple/array _definitely_ has a non-null element */
+type ArrayHasNonNull<A extends readonly (E | undefined)[], E> =
+  ArrayFirstOrLastNonNull<A, E> extends true ? true
+  : (
+    // Here we use the `infer R` feature to effectivelly slice off the first element
+    // It doesn't pass if the array is empty, which is what we want.
+    // This is the slicing magic.
+    A extends [E | undefined, ...infer R] ? (
+      // Typescript doesn't believe us that R has the correct type (it thinks it is unknown[], maybe a bug?), so we force it using this condition
+      R extends readonly (E | undefined)[] ? ArrayHasNonNull<R, E> : never // it should never happen that the `never` branch is taken
+    ) : (
+      // Have to do the same thing symetrically from the end in case the non-null element is somewhere after the rest paratemer
+      A extends [...infer R, E | undefined] ? (
+        R extends readonly (E | undefined)[] ? ArrayHasNonNull<R, E> : never
+      ) : false
+    )
+  )
+;
+
+// const a: ArrayHasNonNull<[...undefined[], number, number | undefined], number> = true
+// const b: ArrayHasNonNull<[number | undefined, number | undefined, ...undefined[], number, number | undefined], number> = true
+
+export function computeLocationSpan<A extends (HasLocation | undefined)[]>(...nodes: A): ArrayHasNonNull<A, HasLocation> extends true ? LocationSpan : (LocationSpan | undefined);
+export function computeLocationSpan<A extends (HasLocation | undefined)[]>(...nodes: A): LocationSpan | undefined {
+  const first = nodes.find(node => node !== undefined)?.location;
+  const last = nodes.reverse().find(node => node !== undefined)?.location;
+
+  if (first === undefined || last === undefined) {
+    return undefined;
+  }
+
+  return {
+    start: {
+      line: first.start.line,
+      column: first.start.column,
+      charIndex: first.start.charIndex
+    },
+    end: {
+      line: last.end.line,
+      column: last.end.column,
+      charIndex: last.end.charIndex
+    }
+  }
+}
+
 export function documentedNode<
-  N extends WithLocationInfo<DocumentedNode & ASTNodeBase>
+  N extends DocumentedNode
 >(rule: SyntaxRule<N>): SyntaxRule<N> {
   return SyntaxRule.optional(SyntaxRule.string())
     .followedBy(rule)
     .map(([maybeDoc, result]): N => {
-      if (maybeDoc !== undefined) {
-        const doc = extractDocumentation(maybeDoc.data.string);
-        result.title = doc?.title;
-        result.description = doc?.description;
-        result.location = maybeDoc.location;
-        result.span.start = maybeDoc.span.start;
+      const doc = extractDocumentation(maybeDoc?.data.string);
+
+      if (maybeDoc !== undefined && doc !== undefined) {
+        result.documentation = {
+          title: doc.title,
+          description: doc.description,
+          location: maybeDoc.location
+        }
       }
 
       return result;

@@ -41,15 +41,7 @@ function addDoc<T>(
   node: DocumentedNode,
   structure: T
 ): T & DocumentedStructure {
-  const result: T & DocumentedStructure = { ...structure };
-  if (node.description !== undefined) {
-    result.description = node.description;
-  }
-  if (node.title !== undefined) {
-    result.title = node.title;
-  }
-
-  return result;
+  return { ...structure, documentation: node.documentation };
 }
 
 function assertUnreachable(node: never): never;
@@ -250,7 +242,7 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
       .map(definition => this.visit(definition));
 
     return addDoc(
-      { title: header.title, description: header.description },
+      header,
       { header, usecases }
     );
   }

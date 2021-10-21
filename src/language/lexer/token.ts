@@ -1,5 +1,5 @@
 import { SyntaxError } from '../error';
-import { Location, Span } from '../source';
+import { LocationSpan } from '../source';
 import * as util from './util';
 
 /** Supported termination tokens */
@@ -175,10 +175,7 @@ export class LexerToken {
   constructor(
     /** Data of the token. */
     readonly data: LexerTokenData,
-    /** Location in the formatted source code of this token. */
-    readonly location: Location,
-    /** Span of the source code which this token covers. */
-    readonly span: Span
+    readonly location: LocationSpan
   ) {}
 
   isSOF(): boolean {
@@ -196,9 +193,10 @@ export class LexerToken {
   }
 
   toStringDebug(): string {
-    return `(${this.toString()})@${this.location.line}:${
-      this.location.column
-    }[${this.span.start}; ${this.span.end}]`;
+    const loc = `${this.location.start.line}:${this.location.start.column}-${this.location.end.line}:${this.location.end.column}`;
+    const span = `${this.location.start.charIndex};${this.location.end.charIndex}`;
+
+    return `{${this.toString()}}@(${loc})[${span}]`;
   }
 
   toString(): string {

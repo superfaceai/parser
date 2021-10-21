@@ -1,18 +1,17 @@
 import { formatTokenData, LexerTokenKind } from './lexer/token';
-import { Location, Source, Span } from './source';
+import { LocationSpan, Source, CharIndexSpan } from './source';
 import { RuleResultNoMatch } from './syntax/rule';
 
 /**
  * Computes span and the initial line offset of a (up to) 3-line block that encompasses
- * the token at `innerSpan`.
+ * the token at `innerLocation`.
  */
 function computeVisualizeBlockSpan(
   body: string,
-  innerSpan: Span,
-  innerColumn: number
+  innerLocation: LocationSpan
 ): { start: number; end: number; lineOffset: number } {
   // Find start of the block slice, which is one line before the inner line, or from SOF
-  const innerLineStart = innerSpan.start - (innerColumn - 1);
+  const innerLineStart = innerLocation.start.charIndex - (innerLocation.start.column - 1);
 
   // Line offset is the offset between the innerLine index and the block start line index
   let lineOffset = 0;
@@ -26,7 +25,7 @@ function computeVisualizeBlockSpan(
   // Find end of the vis block slice, which is one line after the inner line, or until EOF
   let end = body.length;
 
-  const innerLineEnd = body.indexOf('\n', innerSpan.end);
+  const innerLineEnd = body.indexOf('\n', innerLocation.end.charIndex);
   if (innerLineEnd !== -1) {
     const nextLineEnd = body.indexOf('\n', innerLineEnd + 1);
     if (nextLineEnd !== -1) {
@@ -64,7 +63,7 @@ function formatLinePrefix(padSize?: number, lineNumber?: number): string {
  */
 function renderErrorVisualization(
   lines: string[],
-  errorSpan: Span,
+  errorLocation: LocationSpan,
   prefixWidth: number,
   firstLineIndex: number,
   startPosition: number
@@ -79,8 +78,8 @@ function renderErrorVisualization(
 
     // Check if this line intersects with the error span
     if (
-      position <= errorSpan.end &&
-      position + line.length >= errorSpan.start
+      position <= errorLocation.end.charIndex &&
+      position + line.length >= errorLocation.start.charIndex
     ) {
       output += formatLinePrefix(prefixWidth);
 
@@ -88,7 +87,7 @@ function renderErrorVisualization(
       // If the character is part of the error span, add ^ underneath
       // If it isn't either add a space or, if the character is tab, add a tab
       for (let i = 0; i < line.length; i += 1) {
-        if (i >= errorSpan.start - position && i < errorSpan.end - position) {
+        if (i >= errorLocation.start.charIndex - position && i < errorLocation.end.charIndex - position) {
           output += '^';
         } else {
           if (line.charAt(i) === '\t') {
@@ -117,37 +116,33 @@ function renderErrorVisualization(
  */
 function generateErrorVisualization(
   source: Source,
-  span: Span,
-  location: Location
+  location: LocationSpan
 ): {
   visualization: string;
   maxLineNumberLog: number;
-  sourceLocation: Location;
+  sourceLocation: LocationSpan;
 } {
   const visBlock = computeVisualizeBlockSpan(
     source.body,
-    span,
-    location.column
+    location
   );
+
+  // Location within the body plus the offset of the Source metadata.
+  const sourceLocation = source.applyLocationOffset(location);
 
   // Slice of the source that encompasses the token and is
   // delimited by newlines or file boundaries
   const sourceTextSlice = source.body.slice(visBlock.start, visBlock.end);
   const sourceTextLines = sourceTextSlice.split('\n');
 
-  // Location within the body plus the offset of the Source metadata.
-  const sourceLocation = {
-    line: location.line + source.fileLocationOffset.line,
-    column: location.column + source.fileLocationOffset.column,
-  };
   const maxLineNumberLog =
-    Math.log10(sourceLocation.line + sourceTextLines.length) + 1;
+    Math.log10(sourceLocation.start.line + sourceTextLines.length) + 1;
 
   const visualization = renderErrorVisualization(
     sourceTextLines,
-    span,
+    location,
     maxLineNumberLog,
-    sourceLocation.line + visBlock.lineOffset,
+    sourceLocation.start.line + visBlock.lineOffset,
     visBlock.start
   );
 
@@ -170,7 +165,8 @@ export const enum SyntaxErrorCategory {
 }
 
 export type ProtoError = {
-  readonly relativeSpan: Span;
+  /** Relative span of this error with respect to the token it is attached to. */
+  readonly relativeSpan: CharIndexSpan;
   readonly detail?: string;
   readonly category: SyntaxErrorCategory;
   readonly hint?: string;
@@ -184,9 +180,7 @@ export class SyntaxError {
     /** Input source that is being parsed. */
     readonly source: Source,
     /** Location of the error. */
-    readonly location: Location,
-    /** Span of the error. */
-    readonly span: Span,
+    readonly location: LocationSpan,
     /** Category of this error. */
     readonly category: SyntaxErrorCategory,
     detail?: string,
@@ -224,8 +218,7 @@ export class SyntaxError {
       }
     }
 
-    const location = result.attempts.token?.location ?? { line: 0, column: 0 };
-    const span = result.attempts.token?.span ?? { start: 0, end: 0 };
+    const location = result.attempts.token?.location ?? { start: { line: 0, column: 0, charIndex: 0 }, end: { line: 0, column: 0, charIndex: 0 } };
 
     const expectedFilterSet = new Set();
     const expected = result.attempts.rules
@@ -244,7 +237,6 @@ export class SyntaxError {
     return new SyntaxError(
       source,
       location,
-      span,
       SyntaxErrorCategory.PARSER,
       `Expected ${expected} but found ${actual}`
     );
@@ -253,7 +245,7 @@ export class SyntaxError {
   format(): string {
     // Generate the lines
     const { visualization, maxLineNumberLog, sourceLocation } =
-      generateErrorVisualization(this.source, this.span, this.location);
+      generateErrorVisualization(this.source, this.location);
 
     let categoryInfo = '';
     switch (this.category) {
@@ -265,7 +257,7 @@ export class SyntaxError {
 
     const errorLine = `SyntaxError: ${categoryInfo}${this.detail}`;
     const locationLinePrefix = ' '.repeat(maxLineNumberLog) + '--> ';
-    const locationLine = `${locationLinePrefix}${this.source.fileName}:${sourceLocation.line}:${sourceLocation.column}`;
+    const locationLine = `${locationLinePrefix}${this.source.fileName}:${sourceLocation.start.line}:${sourceLocation.start.column}`;
 
     const maybeHint = this.hint ? `Hint: ${this.hint}\n` : '';
 

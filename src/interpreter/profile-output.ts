@@ -1,3 +1,5 @@
+import { DocumentedNode } from "@superfaceai/ast";
+
 export type StructureKind =
   | 'PrimitiveStructure'
   | 'EnumStructure'
@@ -18,10 +20,7 @@ export interface Structure {
 /**
  * @interface DocumentedStructure represents documentable structures
  */
-export interface DocumentedStructure {
-  title?: string;
-  description?: string;
-}
+export type DocumentedStructure = DocumentedNode;
 
 /**
  * @interface PrimitiveStructure represents structure of primitive type

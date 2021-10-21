@@ -33,30 +33,31 @@ import {
   SyntaxRuleSeparator,
 } from '../../rule';
 import {
+  computeLocationSpan,
   documentedNode,
   expectTerminated,
-  LocationInfo,
-  WithLocationInfo,
+  HasLocation,
+  WithLocation,
 } from '../common';
 import { COMLINK_LITERAL, COMLINK_OBJECT_LITERAL } from './literal';
 
 // MUTABLE RULES //
 
 // These rules need to use mutability to achieve recursion and they make use of the `SyntaxRuleMutable` rule
-const TYPE_MUT = new SyntaxRuleMutable<WithLocationInfo<Type>>();
+const TYPE_MUT = new SyntaxRuleMutable<WithLocation<Type>>();
 const FIELD_DEFINITION_MUT = new SyntaxRuleMutable<
-  WithLocationInfo<FieldDefinitionNode>
+  WithLocation<FieldDefinitionNode>
 >();
 
 // TYPES //
 
 /** From keywords: `boolean`, `number` and `string` */
 export const PRIMITIVE_TYPE_NAME: SyntaxRule<
-  WithLocationInfo<PrimitiveTypeNameNode>
+  WithLocation<PrimitiveTypeNameNode>
 > = SyntaxRule.identifier('boolean')
   .or(SyntaxRule.identifier('number'))
   .or(SyntaxRule.identifier('string'))
-  .map((keywordMatch): WithLocationInfo<PrimitiveTypeNameNode> => {
+  .map((keywordMatch): WithLocation<PrimitiveTypeNameNode> => {
     let name: PrimitiveTypeNameNode['name'];
 
     switch (keywordMatch.data.identifier) {
@@ -77,12 +78,11 @@ export const PRIMITIVE_TYPE_NAME: SyntaxRule<
     return {
       kind: 'PrimitiveTypeName',
       name,
-      span: keywordMatch.span,
-      location: keywordMatch.location,
+      location: keywordMatch.location
     };
   });
 
-export const ENUM_VALUE: SyntaxRule<WithLocationInfo<EnumValueNode>> =
+export const ENUM_VALUE: SyntaxRule<WithLocation<EnumValueNode>> =
   documentedNode(
     expectTerminated(
       SyntaxRule.identifier().followedBy(
@@ -95,7 +95,7 @@ export const ENUM_VALUE: SyntaxRule<WithLocationInfo<EnumValueNode>> =
       ',',
       '}',
       '\n'
-    ).map(([name, maybeAssignment]): WithLocationInfo<EnumValueNode> => {
+    ).map(([name, maybeAssignment]): WithLocation<EnumValueNode> => {
       let enumValue: string | number | boolean;
       if (maybeAssignment === undefined) {
         enumValue = name.data.identifier;
@@ -121,56 +121,45 @@ export const ENUM_VALUE: SyntaxRule<WithLocationInfo<EnumValueNode>> =
       return {
         kind: 'EnumValue',
         value: enumValue,
-        location: name.location,
-        span: {
-          start: name.span.start,
-          end: (maybeAssignment?.[1] ?? name).span.end,
-        },
+        location: computeLocationSpan(name, ...(maybeAssignment ?? []))
       };
     })
   );
 /** Construct of form: `enum { values... }` */
-export const ENUM_DEFINITION: SyntaxRule<WithLocationInfo<EnumDefinitionNode>> =
+export const ENUM_DEFINITION: SyntaxRule<WithLocation<EnumDefinitionNode>> =
   SyntaxRule.identifier('enum')
     .followedBy(SyntaxRule.separator('{'))
     .andFollowedBy(SyntaxRule.repeat(ENUM_VALUE))
     .andFollowedBy(SyntaxRule.separator('}'))
-    .map((matches): WithLocationInfo<EnumDefinitionNode> => {
-      const [keyword /* sepStart */, , values, sepEnd] = matches;
-
+    .map(([keyword, _sepStart, values, sepEnd]): WithLocation<EnumDefinitionNode> => {
       return {
         kind: 'EnumDefinition',
         values,
-        location: keyword.location,
-        span: { start: keyword.span.start, end: sepEnd.span.end },
+        location: computeLocationSpan(keyword, sepEnd)
       };
     });
 
 /** Name of a model type parsed from identifiers. */
-export const MODEL_TYPE_NAME: SyntaxRule<WithLocationInfo<ModelTypeNameNode>> =
-  SyntaxRule.identifier().map((name): WithLocationInfo<ModelTypeNameNode> => {
+export const MODEL_TYPE_NAME: SyntaxRule<WithLocation<ModelTypeNameNode>> =
+  SyntaxRule.identifier().map((name): WithLocation<ModelTypeNameNode> => {
     return {
       kind: 'ModelTypeName',
       name: name.data.identifier,
-      location: name.location,
-      span: name.span,
+      location: computeLocationSpan(name)
     };
   });
 
 /** Construct of form: `{ fields... }` */
 export const OBJECT_DEFINITION: SyntaxRule<
-  WithLocationInfo<ObjectDefinitionNode>
+  WithLocation<ObjectDefinitionNode>
 > = SyntaxRule.separator('{')
   .followedBy(SyntaxRule.optional(SyntaxRule.repeat(FIELD_DEFINITION_MUT)))
   .andFollowedBy(SyntaxRule.separator('}'))
-  .map((matches): WithLocationInfo<ObjectDefinitionNode> => {
-    const [sepStart, fields, sepEnd] = matches;
-
+  .map(([sepStart, maybeFields, sepEnd]): WithLocation<ObjectDefinitionNode> => {
     return {
       kind: 'ObjectDefinition',
-      fields: fields ?? [],
-      location: sepStart.location,
-      span: { start: sepStart.span.start, end: sepEnd.span.end },
+      fields: maybeFields ?? [],
+      location: computeLocationSpan(sepStart, sepEnd)
     };
   });
 
@@ -178,48 +167,40 @@ export const OBJECT_DEFINITION: SyntaxRule<
 //
 // MODEL must go after both PRIMITIVE and ENUM
 const BASIC_TYPE: SyntaxRule<
-  | WithLocationInfo<PrimitiveTypeNameNode>
-  | WithLocationInfo<EnumDefinitionNode>
-  | WithLocationInfo<ModelTypeNameNode>
-  | WithLocationInfo<ObjectDefinitionNode>
+  | WithLocation<PrimitiveTypeNameNode>
+  | WithLocation<EnumDefinitionNode>
+  | WithLocation<ModelTypeNameNode>
+  | WithLocation<ObjectDefinitionNode>
 > = PRIMITIVE_TYPE_NAME.or(ENUM_DEFINITION)
   .or(MODEL_TYPE_NAME)
   .or(OBJECT_DEFINITION);
 
 /** Array type: `[type]` */
-export const LIST_DEFINITION: SyntaxRule<WithLocationInfo<ListDefinitionNode>> =
+export const LIST_DEFINITION: SyntaxRule<WithLocation<ListDefinitionNode>> =
   SyntaxRule.separator('[')
     .followedBy(TYPE_MUT)
     .andFollowedBy(SyntaxRule.separator(']'))
-    .map((matches): WithLocationInfo<ListDefinitionNode> => {
-      const [sepStart, type, sepEnd] = matches;
-
+    .map(([sepStart, type, sepEnd]): WithLocation<ListDefinitionNode> => {
       return {
         kind: 'ListDefinition',
         elementType: type,
-        location: sepStart.location,
-        span: { start: sepStart.span.start, end: sepEnd.span.end },
+        location: computeLocationSpan(sepStart, sepEnd)
       };
     });
 
 const NON_UNION_TYPE: SyntaxRule<
-  WithLocationInfo<Exclude<Type, UnionDefinitionNode>>
+  WithLocation<Exclude<Type, UnionDefinitionNode>>
 > = BASIC_TYPE.or(LIST_DEFINITION)
   .followedBy(SyntaxRule.optional(SyntaxRule.operator('!')))
   .map(
-    (
-      matches
-    ): WithLocationInfo<
-      WithLocationInfo<Exclude<Type, UnionDefinitionNode>>
+    ([type, maybeOp]): WithLocation<
+      WithLocation<Exclude<Type, UnionDefinitionNode>>
     > => {
-      const [type, maybeOp] = matches;
-
       if (maybeOp !== undefined) {
         return {
           kind: 'NonNullDefinition',
           type: type,
-          location: type.location,
-          span: { start: type.span.start, end: maybeOp.span.end },
+          location: computeLocationSpan(type, maybeOp)
         };
       }
 
@@ -227,27 +208,20 @@ const NON_UNION_TYPE: SyntaxRule<
     }
   );
 
-export const TYPE: SyntaxRule<WithLocationInfo<Type>> =
+export const TYPE: SyntaxRule<WithLocation<Type>> =
   NON_UNION_TYPE.followedBy(
     SyntaxRule.optional(
       SyntaxRule.repeat(SyntaxRule.operator('|').followedBy(NON_UNION_TYPE))
     )
-  ).map((matches): WithLocationInfo<Type> => {
-    const [firstType, maybeRestPairs] = matches;
-
+  ).map(([firstType, maybeRestPairs]): WithLocation<Type> => {
     // Handle unions
     if (maybeRestPairs !== undefined) {
-      const types = [firstType];
-      maybeRestPairs.forEach(([_op, type]) => types.push(type));
+      const types = [firstType, ...maybeRestPairs.map(([_op, type]) => type)];
 
       return {
         kind: 'UnionDefinition',
         types,
-        location: firstType.location,
-        span: {
-          start: firstType.span.start,
-          end: types[types.length - 1].span.end,
-        },
+        location: computeLocationSpan(firstType, ...types)
       };
     }
 
@@ -258,7 +232,7 @@ TYPE_MUT.rule = TYPE;
 // FIELDS //
 
 export const FIELD_DEFINITION: SyntaxRule<
-  WithLocationInfo<FieldDefinitionNode>
+  WithLocation<FieldDefinitionNode>
 > = documentedNode(
   expectTerminated(
     SyntaxRule.identifier()
@@ -272,17 +246,13 @@ export const FIELD_DEFINITION: SyntaxRule<
       name,
       maybeRequired,
       maybeType,
-    ]): WithLocationInfo<FieldDefinitionNode> => {
+    ]): WithLocation<FieldDefinitionNode> => {
       return {
         kind: 'FieldDefinition',
         fieldName: name.data.identifier,
         required: maybeRequired !== undefined,
         type: maybeType,
-        location: name.location,
-        span: {
-          start: name.span.start,
-          end: (maybeType ?? maybeRequired ?? name).span.end,
-        },
+        location: computeLocationSpan(name, maybeRequired, maybeType)
       };
     }
   )
@@ -292,23 +262,17 @@ FIELD_DEFINITION_MUT.rule = FIELD_DEFINITION;
 
 /** * Construct of form: `field ident type` or `field ident { fields... }` */
 export const NAMED_FIELD_DEFINITION: SyntaxRule<
-  WithLocationInfo<NamedFieldDefinitionNode>
+  WithLocation<NamedFieldDefinitionNode>
 > = documentedNode(
   SyntaxRule.identifier('field')
     .followedBy(SyntaxRule.identifier())
     .andFollowedBy(SyntaxRule.optional(SyntaxRule.sameLine(TYPE)))
-    .map((matches): WithLocationInfo<NamedFieldDefinitionNode> => {
-      const [keyword, fieldName, type] = matches;
-
+    .map(([keyword, fieldName, maybeType]): WithLocation<NamedFieldDefinitionNode> => {
       return {
         kind: 'NamedFieldDefinition',
         fieldName: fieldName.data.identifier,
-        type,
-        location: keyword.location,
-        span: {
-          start: keyword.span.start,
-          end: (type ?? fieldName).span.end,
-        },
+        type: maybeType,
+        location: computeLocationSpan(keyword, fieldName, maybeType)
       };
     })
 );
@@ -317,33 +281,28 @@ export const NAMED_FIELD_DEFINITION: SyntaxRule<
 
 /** Construct of form: `model ident type` or `model ident { fields... }` */
 export const NAMED_MODEL_DEFINITION: SyntaxRule<
-  WithLocationInfo<NamedModelDefinitionNode>
+  WithLocation<NamedModelDefinitionNode>
 > = documentedNode(
   SyntaxRule.identifier('model')
     .followedBy(SyntaxRule.identifier())
     .andFollowedBy(SyntaxRule.optional(SyntaxRule.sameLine(TYPE)))
-    .map((matches): WithLocationInfo<NamedModelDefinitionNode> => {
-      const [keyword, modelName, type] = matches;
-
+    .map(([keyword, modelName, maybeType]): WithLocation<NamedModelDefinitionNode> => {
       return {
         kind: 'NamedModelDefinition',
         modelName: modelName.data.identifier,
-        type,
-        location: keyword.location,
-        span: {
-          start: keyword.span.start,
-          end: (type ?? modelName).span.end,
-        },
+        type: maybeType,
+        location: computeLocationSpan(keyword, modelName, maybeType)
       };
     })
 );
 
 // USECASE //
 
-function SLOT_FACTORY<T>(
+type SlotType<T> = { value: T } & HasLocation & WithLocation<DocumentedNode>;
+function SLOT_FACTORY<T extends HasLocation>(
   names: [string, ...string[]],
-  rule: SyntaxRule<T & LocationInfo>
-): SyntaxRule<{ value: T & LocationInfo } & DocumentedNode & LocationInfo> {
+  rule: SyntaxRule<T>
+): SyntaxRule<SlotType<T>> {
   let namesRule: SyntaxRule<
     [
       LexerTokenMatch<IdentifierTokenData>,
@@ -357,38 +316,32 @@ function SLOT_FACTORY<T>(
     );
   }
 
-  return namesRule
+  const slotrule = namesRule
     .followedBy(SyntaxRule.sameLine(rule))
-    .map(([names, value]) => {
+    .map(([names, value]): SlotType<T> => {
       return {
         value,
-        location: names[0].location,
-        span: {
-          start: names[0].span.start,
-          end: value.span.end,
-        },
+        location: computeLocationSpan(...names, value as HasLocation)
       };
     });
+
+  return documentedNode<SlotType<T>>(slotrule);
 }
 
-function USECASE_SLOT_DEFINITION_FACTORY<T extends ProfileASTNode>(
+function USECASE_SLOT_DEFINITION_FACTORY<T extends ProfileASTNode & DocumentedNode>(
   names: [string, ...string[]],
-  rule: SyntaxRule<WithLocationInfo<T>>
-): SyntaxRule<WithLocationInfo<UseCaseSlotDefinitionNode<T>>> {
-  return documentedNode(
-    SLOT_FACTORY(names, rule).map(
-      (slot): WithLocationInfo<UseCaseSlotDefinitionNode<T>> => {
-        return {
-          kind: 'UseCaseSlotDefinition',
-          value: slot.value,
-          location: slot.location,
-          span: slot.span,
-          title: slot.title,
-          description: slot.description,
-        };
-      }
-    )
-  );
+  rule: SyntaxRule<WithLocation<T>>
+): SyntaxRule<WithLocation<UseCaseSlotDefinitionNode<T>>> {
+  return SLOT_FACTORY(names, rule).map(
+    (slot): WithLocation<UseCaseSlotDefinitionNode<T>> => {
+      return {
+        kind: 'UseCaseSlotDefinition',
+        value: slot.value,
+        location: slot.location,
+        documentation: slot.documentation
+      };
+    }
+  )
 }
 
 const USECASE_SAFETY: SyntaxRule<LexerTokenMatch<IdentifierTokenData>> =
@@ -396,7 +349,7 @@ const USECASE_SAFETY: SyntaxRule<LexerTokenMatch<IdentifierTokenData>> =
     .or(SyntaxRule.identifier('unsafe'))
     .or(SyntaxRule.identifier('idempotent'));
 
-const USECASE_EXAMPLE: SyntaxRule<WithLocationInfo<UseCaseExampleNode>> =
+const USECASE_EXAMPLE: SyntaxRule<WithLocation<UseCaseExampleNode>> =
   SyntaxRule.optional(SyntaxRule.identifier())
     .followedBy(SyntaxRule.separator('{'))
     .andFollowedBy(
@@ -432,7 +385,7 @@ const USECASE_EXAMPLE: SyntaxRule<WithLocationInfo<UseCaseExampleNode>> =
       )
     )
     .andFollowedBy(SyntaxRule.separator('}'))
-    .andThen<WithLocationInfo<UseCaseExampleNode>>(
+    .andThen<WithLocation<UseCaseExampleNode>>(
       ([
         maybeName,
         sepStart,
@@ -449,9 +402,7 @@ const USECASE_EXAMPLE: SyntaxRule<WithLocationInfo<UseCaseExampleNode>> =
           return { kind: 'nomatch' };
         }
 
-        const firstNode = maybeName ?? sepStart;
-
-        const value: WithLocationInfo<UseCaseExampleNode> = {
+        const value: WithLocation<UseCaseExampleNode> = {
           kind: 'UseCaseExample',
           exampleName: maybeName?.data.identifier,
           // TODO: implement the transformation - waiting on ast
@@ -459,11 +410,7 @@ const USECASE_EXAMPLE: SyntaxRule<WithLocationInfo<UseCaseExampleNode>> =
           result: maybeResult,
           asyncResult: maybeAsyncResult,
           error: maybeError,
-          location: firstNode.location,
-          span: {
-            start: firstNode.span.start,
-            end: sepEnd.span.end,
-          },
+          location: computeLocationSpan(maybeName, sepStart, sepEnd)
         };
 
         return { kind: 'match', value };
@@ -481,7 +428,7 @@ usecase ident safety {
 ```
 */
 export const USECASE_DEFINITION: SyntaxRule<
-  WithLocationInfo<UseCaseDefinitionNode>
+  WithLocation<UseCaseDefinitionNode>
 > = documentedNode(
   SyntaxRule.identifier('usecase')
     .followedBy(SyntaxRule.identifier(undefined))
@@ -523,7 +470,7 @@ export const USECASE_DEFINITION: SyntaxRule<
     .andFollowedBy(SyntaxRule.separator('}'))
     .map(
       ([
-        key,
+        keyword,
         name,
         maybeSafety,
         _sepStart,
@@ -533,7 +480,7 @@ export const USECASE_DEFINITION: SyntaxRule<
         maybeError,
         maybeExamples,
         sepEnd,
-      ]): WithLocationInfo<UseCaseDefinitionNode> => {
+      ]): WithLocation<UseCaseDefinitionNode> => {
         let safety: UseCaseDefinitionNode['safety'] = undefined;
         switch (maybeSafety?.data.identifier) {
           case undefined:
@@ -564,8 +511,7 @@ export const USECASE_DEFINITION: SyntaxRule<
           asyncResult: maybeAsyncResult,
           error: maybeError,
           examples: maybeExamples,
-          location: key.location,
-          span: { start: key.span.start, end: sepEnd.span.end },
+          location: computeLocationSpan(keyword, sepEnd)
         };
       }
     )
@@ -576,7 +522,7 @@ const PROFILE_NAME = SyntaxRule.identifier('name')
   .followedBy(SyntaxRuleSeparator.operator('='))
   .andFollowedBy(
     SyntaxRule.string().andThen<
-      { scope?: string; name: string } & LocationInfo
+      { scope?: string; name: string } & HasLocation
     >(name => {
       const parseNameResult = parseDocumentId(name.data.string);
       // profiles can't have version specified in the name
@@ -596,21 +542,16 @@ const PROFILE_NAME = SyntaxRule.identifier('name')
         value: {
           scope: parsedName.scope,
           name: parsedName.middle[0],
-          location: name.location,
-          span: name.span,
+          location: name.location
         },
       };
     }, 'profile name in format `[<scope>/]<name>` with lowercase identifier')
   )
-  .map(([keyword, _op, name]) => {
+  .map(([keyword, op, name]) => {
     return {
       scope: name.scope,
       name: name.name,
-      location: keyword.location,
-      span: {
-        start: keyword.span.start,
-        end: name.span.end,
-      },
+      location: computeLocationSpan(keyword, op, name)
     };
   });
 const PROFILE_VERSION = SyntaxRule.identifier('version')
@@ -622,7 +563,7 @@ const PROFILE_VERSION = SyntaxRule.identifier('version')
         minor: number;
         patch: number;
         label?: string;
-      } & LocationInfo
+      } & HasLocation
     >(version => {
       try {
         const parsedVersion = VersionRange.fromString(version.data.string);
@@ -634,8 +575,7 @@ const PROFILE_VERSION = SyntaxRule.identifier('version')
             minor: parsedVersion.minor ?? 0,
             patch: parsedVersion.patch ?? 0,
             label: parsedVersion.label,
-            location: version.location,
-            span: version.span,
+            location: version.location
           },
         };
       } catch (error) {
@@ -643,45 +583,37 @@ const PROFILE_VERSION = SyntaxRule.identifier('version')
       }
     }, 'semver version')
   )
-  .map(([keyword, _op, version]) => {
+  .map(([keyword, op, version]) => {
     return {
       version: {
         major: version.major,
         minor: version.minor,
         patch: version.patch,
       },
-      location: keyword.location,
-      span: {
-        start: keyword.span.start,
-        end: version.span.end,
-      },
+      location: computeLocationSpan(keyword, op, version)
     };
   });
-export const PROFILE_HEADER: SyntaxRule<WithLocationInfo<ProfileHeaderNode>> =
+export const PROFILE_HEADER: SyntaxRule<WithLocation<ProfileHeaderNode>> =
   documentedNode(
     PROFILE_NAME.followedBy(PROFILE_VERSION).map(
-      ([name, version]): WithLocationInfo<ProfileHeaderNode> => {
+      ([name, version]): WithLocation<ProfileHeaderNode> => {
         return {
           kind: 'ProfileHeader',
           scope: name.scope,
           name: name.name,
           version: version.version,
-
-          location: name.location,
-          span: {
-            start: name.span.start,
-            end: (version ?? name).span.end,
-          },
+          location: computeLocationSpan(name, version)
         };
       }
     )
   );
 
 export const PROFILE_DOCUMENT_DEFINITION: SyntaxRule<
-  WithLocationInfo<DocumentDefinition>
+  WithLocation<DocumentDefinition>
 > = USECASE_DEFINITION.or(NAMED_FIELD_DEFINITION).or(NAMED_MODEL_DEFINITION);
+
 export const PROFILE_DOCUMENT: SyntaxRule<
-  WithLocationInfo<ProfileDocumentNode>
+  WithLocation<ProfileDocumentNode>
 > = SyntaxRule.separator('SOF')
   .followedBy(PROFILE_HEADER)
   .andFollowedBy(
@@ -692,18 +624,17 @@ export const PROFILE_DOCUMENT: SyntaxRule<
     ([
       _SOF,
       header,
-      definitions,
+      maybeDefinitions,
       _EOF,
-    ]): WithLocationInfo<ProfileDocumentNode> => {
+    ]): WithLocation<ProfileDocumentNode> => {
+      const definitions = maybeDefinitions ?? [];
+
       return {
         kind: 'ProfileDocument',
         header,
-        definitions: definitions ?? [],
-        location: header.location,
-        span: {
-          start: header.span.start,
-          end: (definitions?.[definitions.length - 1] ?? header).span.end,
-        },
+        definitions,
+        location: computeLocationSpan(header, ...definitions),
+        astMetadata: undefined as any // TODO
       };
     }
   );

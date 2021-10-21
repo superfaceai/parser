@@ -724,14 +724,18 @@ describe('map strict', () => {
         throw 'unreachable';
       }
 
-      expect(result.error.span).toStrictEqual({
-        start: 68,
-        end: 72,
-      });
       expect(result.error.location).toStrictEqual({
-        line: 3,
-        column: 51,
-      });
+        start: {
+          line: 3,
+          column: 51,
+          charIndex: 68
+        },
+        end: {
+          line: 3,
+          column: 55,
+          charIndex: 72
+        }
+      })
     });
   });
 
