@@ -73,7 +73,7 @@ function ASSIGNMENT_FACTORY(
         kind: 'Assignment',
         key: mapAssignmentPath(path),
         value,
-        location: computeLocationSpan(...path, value)
+        location: computeLocationSpan(...path, value),
       };
     }
   );
@@ -109,7 +109,7 @@ const CALL_STATEMENT_HEAD = SyntaxRule.identifier('call')
         condition: maybeCondition,
         operationName: name.data.identifier,
         arguments: maybeArguments ?? [],
-        location: computeLocationSpan(key, sepEnd, maybeCondition)
+        location: computeLocationSpan(key, sepEnd, maybeCondition),
       };
     }
   );
@@ -145,15 +145,13 @@ export const OBJECT_LITERAL_ASSIGNMENT = ASSIGNMENT_FACTORY(
 export const OBJECT_LITERAL = SyntaxRule.separator('{')
   .followedBy(SyntaxRule.optional(SyntaxRule.repeat(OBJECT_LITERAL_ASSIGNMENT)))
   .andFollowedBy(SyntaxRule.separator('}'))
-  .map(
-    ([sepStart, maybeFields, sepEnd]): WithLocation<ObjectLiteralNode> => {
-      return {
-        kind: 'ObjectLiteral',
-        fields: maybeFields ?? [],
-        location: computeLocationSpan(sepStart, sepEnd)
-      };
-    }
-  );
+  .map(([sepStart, maybeFields, sepEnd]): WithLocation<ObjectLiteralNode> => {
+    return {
+      kind: 'ObjectLiteral',
+      fields: maybeFields ?? [],
+      location: computeLocationSpan(sepStart, sepEnd),
+    };
+  });
 OBJECT_LITERAL_MUT.rule = OBJECT_LITERAL;
 
 export const SET_BLOCK_ASSIGNMENT = ASSIGNMENT_FACTORY(
@@ -194,7 +192,7 @@ const SET_STATEMENT_FULL: SyntaxRule<WithLocation<SetStatementNode>> =
           kind: 'SetStatement',
           condition: maybeCondition,
           assignments,
-          location: computeLocationSpan(keyword, sepEnd)
+          location: computeLocationSpan(keyword, sepEnd),
         };
       }
     );
@@ -204,7 +202,7 @@ const SET_STATEMENT_RAW: SyntaxRule<WithLocation<SetStatementNode>> =
     return {
       kind: 'SetStatement',
       assignments: [assignment],
-      location: assignment.location
+      location: assignment.location,
     };
   });
 
@@ -235,7 +233,7 @@ export function CALL_STATEMENT_FACTORY(
           kind: 'CallStatement',
           ...head,
           statements: statements ?? [],
-          location: computeLocationSpan(head, sepEnd)
+          location: computeLocationSpan(head, sepEnd),
         };
       }
     );
@@ -247,48 +245,49 @@ type HttpCallStatementSecurityRequirement = {
   id?: HttpSecurityRequirement['id'];
   scheme?: HttpSecurityRequirement['scheme'];
 } & HasLocation;
-const HTTP_CALL_STATEMENT_SECURITY_REQUIREMENT: SyntaxRule<HttpCallStatementSecurityRequirement> = SyntaxRule.identifier('security')
-  .followedBy(SyntaxRule.string().or(SyntaxRule.identifier('none')))
-  .lookahead(SyntaxRule.newline())
-  .map(([keyword, id]) => {
-    let idString = undefined;
-    if (id.data.kind === LexerTokenKind.STRING) {
-      idString = id.data.string;
-    }
+const HTTP_CALL_STATEMENT_SECURITY_REQUIREMENT: SyntaxRule<HttpCallStatementSecurityRequirement> =
+  SyntaxRule.identifier('security')
+    .followedBy(SyntaxRule.string().or(SyntaxRule.identifier('none')))
+    .lookahead(SyntaxRule.newline())
+    .map(([keyword, id]) => {
+      let idString = undefined;
+      if (id.data.kind === LexerTokenKind.STRING) {
+        idString = id.data.string;
+      }
 
-    return {
-      id: idString,
-      location: computeLocationSpan(keyword, id)
-    };
-  });
+      return {
+        id: idString,
+        location: computeLocationSpan(keyword, id),
+      };
+    });
 
 const HTTP_CALL_STATEMENT_SECURITY_REQUIREMENTS =
   new SyntaxRuleFeatureSubstitute(
-    HTTP_CALL_STATEMENT_SECURITY_REQUIREMENT.map<[HttpCallStatementSecurityRequirement]>(s => [s]),
+    HTTP_CALL_STATEMENT_SECURITY_REQUIREMENT.map<
+      [HttpCallStatementSecurityRequirement]
+    >(s => [s]),
     'multiple_security_schemes',
     SyntaxRule.repeat(HTTP_CALL_STATEMENT_SECURITY_REQUIREMENT)
-  ).map(
-    arr => {
-      const requirements: HttpSecurityRequirement[] = arr
-        .filter(elem => elem.id !== undefined)
-        .map(req => {
-          if (typeof req.id !== 'string') {
-            // .filter API is.. lacking
-            throw 'unreachable';
-          }
+  ).map(arr => {
+    const requirements: HttpSecurityRequirement[] = arr
+      .filter(elem => elem.id !== undefined)
+      .map(req => {
+        if (typeof req.id !== 'string') {
+          // .filter API is.. lacking
+          throw 'unreachable';
+        }
 
-          return {
-            id: req.id,
-            scheme: req.scheme,
-          };
-        });
+        return {
+          id: req.id,
+          scheme: req.scheme,
+        };
+      });
 
-      return {
-        security: requirements,
-        location: computeLocationSpan(...arr)
-      };
-    }
-  );
+    return {
+      security: requirements,
+      location: computeLocationSpan(...arr),
+    };
+  });
 
 const HTTP_CALL_STATEMENT_REQUEST_SLOT_LITERAL = SyntaxRule.sameLine(
   OBJECT_LITERAL
@@ -323,31 +322,33 @@ export const HTTP_REQUEST_VARIABLES_BLOCK = SyntaxRule.separator('{')
       query: maybeQuery?.[1],
       headers: maybeHeaders?.[1],
       body: maybeBody?.[1],
-      location: computeLocationSpan(sepStart, sepEnd)
+      location: computeLocationSpan(sepStart, sepEnd),
     };
   });
 
-export const HTTP_REQUEST_VARIABLES_SHORTHAND = SyntaxRuleOr.chainOr<{
-  query?: WithLocation<HttpRequestNode>['query'];
-  headers?: WithLocation<HttpRequestNode>['headers'];
-  body?: WithLocation<HttpRequestNode>['body'];
-} & HasLocation>(
+export const HTTP_REQUEST_VARIABLES_SHORTHAND = SyntaxRuleOr.chainOr<
+  {
+    query?: WithLocation<HttpRequestNode>['query'];
+    headers?: WithLocation<HttpRequestNode>['headers'];
+    body?: WithLocation<HttpRequestNode>['body'];
+  } & HasLocation
+>(
   HTTP_CALL_STATEMENT_REQUEST_QUERY_SLOT.map(([_, value]) => {
     return {
       query: value,
-      location: value.location
+      location: value.location,
     };
   }),
   HTTP_CALL_STATEMENT_REQUEST_HEADERS_SLOT.map(([_, value]) => {
     return {
       headers: value,
-      location: value.location
+      location: value.location,
     };
   }),
   HTTP_CALL_STATEMENT_REQUEST_BODY_SLOT.map(([_, value]) => {
     return {
       body: value,
-      location: value.location
+      location: value.location,
     };
   })
 );
@@ -371,7 +372,7 @@ export const HTTP_CALL_STATEMENT_REQUEST = SyntaxRule.identifier('request')
       query: variablesBlock.query,
       headers: variablesBlock.headers,
       body: variablesBlock.body,
-      location: computeLocationSpan(keyword, variablesBlock)
+      location: computeLocationSpan(keyword, variablesBlock),
     } as const;
   });
 
@@ -388,7 +389,7 @@ const HTTP_REQUEST_OPTIONAL: SyntaxRule<
           kind: 'HttpRequest',
           ...maybeRequest,
           ...maybeSecurity,
-          location: computeLocationSpan(maybeSecurity, maybeRequest)
+          location: computeLocationSpan(maybeSecurity, maybeRequest),
         };
       } else if (maybeSecurity !== undefined) {
         return {
@@ -447,7 +448,7 @@ function HTTP_CALL_STATEMENT_RESPONSE_HANDLER(
           contentType: maybeContentType,
           contentLanguage: maybeContentLanguage?.data.string,
           statements: maybeSubstatements ?? [],
-          location: computeLocationSpan(keyword, sepEnd)
+          location: computeLocationSpan(keyword, sepEnd),
         };
       }
     );
@@ -489,7 +490,7 @@ export function HTTP_CALL_STATEMENT_FACTORY(
           url: url.data.string,
           request: maybeRequest,
           responseHandlers: maybeResponseHandlers ?? [],
-          location: computeLocationSpan(keyword, sepEnd)
+          location: computeLocationSpan(keyword, sepEnd),
         };
       }
     );
@@ -530,7 +531,7 @@ export const MAP_OUTCOME_STATEMENT: SyntaxRule<
         terminateFlow: maybeReturn !== undefined,
         condition: maybeCondition,
         value,
-        location: computeLocationSpan(maybeReturn, keywordMap, value)
+        location: computeLocationSpan(maybeReturn, keywordMap, value),
       };
     }
   );
@@ -556,7 +557,7 @@ export const OPERATION_OUTCOME_STATEMENT: SyntaxRule<
         terminateFlow: true,
         condition: maybeCondition,
         value,
-        location: computeLocationSpan(keywordType, value)
+        location: computeLocationSpan(keywordType, value),
       };
     }
   );
@@ -605,7 +606,7 @@ export const MAP_DEFINITION: SyntaxRule<WithLocation<MapDefinitionNode>> =
             name: name.data.identifier,
             usecaseName: name.data.identifier,
             statements: maybeStatements ?? [],
-            location: computeLocationSpan(keyword, sepEnd)
+            location: computeLocationSpan(keyword, sepEnd),
           };
         }
       )
@@ -635,7 +636,7 @@ export const OPERATION_DEFINITION: SyntaxRule<
           kind: 'OperationDefinition',
           name: name.data.identifier,
           statements: maybeStatements ?? [],
-          location: computeLocationSpan(keyword, sepEnd)
+          location: computeLocationSpan(keyword, sepEnd),
         };
       }
     )
@@ -647,27 +648,28 @@ export const MAP_DOCUMENT_DEFINITION: SyntaxRule<
   WithLocation<MapDefinitionNode | OperationDefinitionNode>
 > = MAP_DEFINITION.or(OPERATION_DEFINITION);
 
-export const MAP_DOCUMENT: SyntaxRule<WithLocation<MapDocumentNode>> = SyntaxRule.separator('SOF')
-  .followedBy(MAP_HEADER)
-  .andFollowedBy(
-    SyntaxRule.optional(SyntaxRule.repeat(MAP_DOCUMENT_DEFINITION))
-  )
-  .andFollowedBy(SyntaxRule.separator('EOF'))
-  .map(
-    ([
-      _SOF,
-      header,
-      maybeDefinitions,
-      _EOF,
-    ]): WithLocation<MapDocumentNode> => {
-      const definitions = maybeDefinitions ?? [];
-
-      return {
-        kind: 'MapDocument',
+export const MAP_DOCUMENT: SyntaxRule<WithLocation<MapDocumentNode>> =
+  SyntaxRule.separator('SOF')
+    .followedBy(MAP_HEADER)
+    .andFollowedBy(
+      SyntaxRule.optional(SyntaxRule.repeat(MAP_DOCUMENT_DEFINITION))
+    )
+    .andFollowedBy(SyntaxRule.separator('EOF'))
+    .map(
+      ([
+        _SOF,
         header,
-        definitions,
-        location: computeLocationSpan(header, ...definitions),
-        astMetadata: undefined as any // TODO
-      };
-    }
-  );
+        maybeDefinitions,
+        _EOF,
+      ]): WithLocation<MapDocumentNode> => {
+        const definitions = maybeDefinitions ?? [];
+
+        return {
+          kind: 'MapDocument',
+          header,
+          definitions,
+          location: computeLocationSpan(header, ...definitions),
+          astMetadata: undefined as any, // TODO
+        };
+      }
+    );

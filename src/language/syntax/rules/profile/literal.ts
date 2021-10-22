@@ -30,7 +30,7 @@ export const COMLINK_PRIMITIVE_LITERAL: SyntaxRule<
     return {
       kind: 'ComlinkPrimitiveLiteral',
       value,
-      location: match.location
+      location: match.location,
     };
   });
 
@@ -50,7 +50,7 @@ export const COMLINK_OBJECT_LITERAL_ASSIGNMENT: SyntaxRule<
       kind: 'ComlinkAssignment',
       key: mapAssignmentPath(path),
       value,
-      location: computeLocationSpan(...path, value)
+      location: computeLocationSpan(...path, value),
     };
   })
 );
@@ -71,7 +71,7 @@ export const COMLINK_OBJECT_LITERAL: SyntaxRule<
       return {
         kind: 'ComlinkObjectLiteral',
         fields: maybeFields ?? [],
-        location: computeLocationSpan(sepStart, sepEnd)
+        location: computeLocationSpan(sepStart, sepEnd),
       };
     }
   );
@@ -86,15 +86,11 @@ export const COMLINK_LIST_LITERAL: SyntaxRule<
   )
   .andFollowedBy(SyntaxRule.separator(']'))
   .map(
-    ([
-      sepStart,
-      maybeItems,
-      sepEnd,
-    ]): WithLocation<ComlinkListLiteralNode> => {
+    ([sepStart, maybeItems, sepEnd]): WithLocation<ComlinkListLiteralNode> => {
       return {
         kind: 'ComlinkListLiteral',
         items: maybeItems ?? [],
-        location: computeLocationSpan(sepStart, sepEnd)
+        location: computeLocationSpan(sepStart, sepEnd),
       };
     }
   );

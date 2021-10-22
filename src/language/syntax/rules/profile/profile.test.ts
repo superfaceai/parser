@@ -10,8 +10,8 @@ import {
 import { Source } from '../../../source';
 import { RuleResult } from '../../rule';
 import { ArrayLexerStream } from '../../util';
-import * as rules from '.';
 import { HasLocation } from '../common';
+import * as rules from '.';
 
 // Declare custom matcher for sake of Typescript
 declare global {
@@ -76,7 +76,10 @@ function tesTok(data: LexerTokenData): LexerToken {
 
   TES_TOK_STATE += 1;
 
-  return new LexerToken(data, { start: { line, column, charIndex: start }, end: { line, column, charIndex: end } });
+  return new LexerToken(data, {
+    start: { line, column, charIndex: start },
+    end: { line, column, charIndex: end },
+  });
 }
 
 function tesMatch<I extends Record<string, unknown>>(
@@ -88,8 +91,8 @@ function tesMatch<I extends Record<string, unknown>>(
     ...input,
     location: {
       start: first.location.start,
-      end: (last ?? first).location.end
-    }
+      end: (last ?? first).location.end,
+    },
   };
 }
 
@@ -781,8 +784,8 @@ describe('profile syntax rules', () => {
             documentation: {
               title: 'Title',
               description: 'Description',
-              location: tokens[0].location
-            }
+              location: tokens[0].location,
+            },
           },
           tokens[1]
         )
@@ -874,8 +877,8 @@ describe('profile syntax rules', () => {
             documentation: {
               title: 'title',
               description: undefined,
-              location: tokens[0].location
-            }
+              location: tokens[0].location,
+            },
           },
           tokens[1],
           tokens[2]
@@ -1010,8 +1013,8 @@ describe('profile syntax rules', () => {
             documentation: {
               title: 'Title',
               description: 'Description',
-              location: tokens[0].location
-            }
+              location: tokens[0].location,
+            },
           },
           tokens[1],
           tokens[2]
@@ -1415,8 +1418,8 @@ describe('profile syntax rules', () => {
             documentation: {
               title: 'Title',
               description: 'Description',
-              location: tokens[0].location
-            }
+              location: tokens[0].location,
+            },
           },
           tokens[1],
           tokens[6]
@@ -1486,8 +1489,8 @@ describe('profile syntax rules', () => {
             documentation: {
               title: 'Title',
               description: 'Description',
-              location: tokens[0].location
-            }
+              location: tokens[0].location,
+            },
           },
           tokens[1],
           tokens[6]

@@ -26,7 +26,10 @@ function tesTok(data: LexerTokenData): LexerToken {
 
   TES_TOK_STATE += 1;
 
-  return new LexerToken(data, { start: { line, column, charIndex: start }, end: { line, column, charIndex: end } });
+  return new LexerToken(data, {
+    start: { line, column, charIndex: start },
+    end: { line, column, charIndex: end },
+  });
 }
 function tokMatch(token: LexerToken): LexerTokenMatch {
   return {

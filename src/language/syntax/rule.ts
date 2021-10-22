@@ -90,7 +90,7 @@ export type RuleResult<T> = RuleResultMatch<T> | RuleResultNoMatch;
 
 export interface LexerTokenMatch<D extends LexerTokenData = LexerTokenData> {
   readonly data: D;
-  readonly location: LocationSpan
+  readonly location: LocationSpan;
 }
 
 export abstract class SyntaxRule<T> {
@@ -260,7 +260,7 @@ export class SyntaxRuleSeparator extends SyntaxRule<
         ) {
           return {
             data: token.data,
-            location: token.location
+            location: token.location,
           };
         }
       }
@@ -296,7 +296,7 @@ export class SyntaxRuleOperator extends SyntaxRule<
         ) {
           return {
             data: token.data,
-            location: token.location
+            location: token.location,
           };
         }
       }
@@ -332,7 +332,7 @@ export class SyntaxRuleIdentifier extends SyntaxRule<
         ) {
           return {
             data: token.data,
-            location: token.location
+            location: token.location,
           };
         }
       }
@@ -360,7 +360,7 @@ export class SyntaxRuleLiteral extends SyntaxRule<
       if (token.data.kind === LexerTokenKind.LITERAL) {
         return {
           data: token.data,
-          location: token.location
+          location: token.location,
         };
       }
 
@@ -383,7 +383,7 @@ export class SyntaxRuleString extends SyntaxRule<
       if (token.data.kind === LexerTokenKind.STRING) {
         return {
           data: token.data,
-          location: token.location
+          location: token.location,
         };
       }
 
@@ -411,7 +411,7 @@ export class SyntaxRuleNewline extends SyntaxRule<
       if (token.data.kind === LexerTokenKind.NEWLINE) {
         return {
           data: token.data,
-          location: token.location
+          location: token.location,
         };
       }
 
@@ -444,7 +444,7 @@ export class SyntaxRuleJessie extends SyntaxRule<
         if (token.data.kind === LexerTokenKind.JESSIE_SCRIPT) {
           return {
             data: token.data,
-            location: token.location
+            location: token.location,
           };
         }
 

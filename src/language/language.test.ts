@@ -168,7 +168,7 @@ describe('profile', () => {
         {
           kind: 'UseCaseDefinition',
           documentation: {
-            title: 'Send single conversation message'
+            title: 'Send single conversation message',
           },
           useCaseName: 'SendMessage',
           safety: 'unsafe',
@@ -211,7 +211,7 @@ describe('profile', () => {
             documentation: {
               title: 'Title',
               description: 'Description of the result',
-            }
+            },
           },
           asyncResult: {
             kind: 'UseCaseSlotDefinition',
@@ -240,21 +240,21 @@ describe('profile', () => {
                   documentation: {
                     title: 'Problem',
                     description: 'Description of this field',
-                  }
+                  },
                 },
                 {
                   kind: 'FieldDefinition',
                   fieldName: 'detail',
                   documentation: {
                     title: 'Detail',
-                  }
+                  },
                 },
                 {
                   kind: 'FieldDefinition',
                   fieldName: 'instance',
                   documentation: {
                     title: 'Instance whoop whoop',
-                  }
+                  },
                 },
               ],
             },
@@ -278,7 +278,7 @@ describe('profile', () => {
             title: 'Identifier of Message',
             description:
               'The identifier is channel-specific and not unique. It should be treated as an opaque value and only used in subsequent calls',
-          }
+          },
         },
         {
           kind: 'NamedFieldDefinition',
@@ -304,7 +304,7 @@ describe('profile', () => {
             title: 'Delivery Status of Message',
             description:
               'Status of a sent message. Harmonized across different channels.',
-          }
+          },
         },
         {
           kind: 'NamedFieldDefinition',
@@ -333,7 +333,7 @@ describe('profile', () => {
           documentation: {
             title: 'Title of the field channel',
             description: 'Description of the field channel',
-          }
+          },
         },
       ],
     });
@@ -748,14 +748,14 @@ describe('map strict', () => {
         start: {
           line: 3,
           column: 51,
-          charIndex: 68
+          charIndex: 68,
         },
         end: {
           line: 3,
           column: 55,
-          charIndex: 72
-        }
-      })
+          charIndex: 72,
+        },
+      });
     });
   });
 

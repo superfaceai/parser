@@ -1,5 +1,5 @@
 import { formatTokenData, LexerTokenKind } from './lexer/token';
-import { LocationSpan, Source, CharIndexSpan } from './source';
+import { CharIndexSpan, LocationSpan, Source } from './source';
 import { RuleResultNoMatch } from './syntax/rule';
 
 /**
@@ -11,7 +11,8 @@ function computeVisualizeBlockSpan(
   innerLocation: LocationSpan
 ): { start: number; end: number; lineOffset: number } {
   // Find start of the block slice, which is one line before the inner line, or from SOF
-  const innerLineStart = innerLocation.start.charIndex - (innerLocation.start.column - 1);
+  const innerLineStart =
+    innerLocation.start.charIndex - (innerLocation.start.column - 1);
 
   // Line offset is the offset between the innerLine index and the block start line index
   let lineOffset = 0;
@@ -87,7 +88,10 @@ function renderErrorVisualization(
       // If the character is part of the error span, add ^ underneath
       // If it isn't either add a space or, if the character is tab, add a tab
       for (let i = 0; i < line.length; i += 1) {
-        if (i >= errorLocation.start.charIndex - position && i < errorLocation.end.charIndex - position) {
+        if (
+          i >= errorLocation.start.charIndex - position &&
+          i < errorLocation.end.charIndex - position
+        ) {
           output += '^';
         } else {
           if (line.charAt(i) === '\t') {
@@ -122,10 +126,7 @@ function generateErrorVisualization(
   maxLineNumberLog: number;
   sourceLocation: LocationSpan;
 } {
-  const visBlock = computeVisualizeBlockSpan(
-    source.body,
-    location
-  );
+  const visBlock = computeVisualizeBlockSpan(source.body, location);
 
   // Location within the body plus the offset of the Source metadata.
   const sourceLocation = source.applyLocationOffset(location);
@@ -218,7 +219,10 @@ export class SyntaxError {
       }
     }
 
-    const location = result.attempts.token?.location ?? { start: { line: 0, column: 0, charIndex: 0 }, end: { line: 0, column: 0, charIndex: 0 } };
+    const location = result.attempts.token?.location ?? {
+      start: { line: 0, column: 0, charIndex: 0 },
+      end: { line: 0, column: 0, charIndex: 0 },
+    };
 
     const expectedFilterSet = new Set();
     const expected = result.attempts.rules

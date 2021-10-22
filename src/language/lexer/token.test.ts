@@ -139,13 +139,13 @@ describe('token', () => {
         start: {
           line: 1,
           column: 2,
-          charIndex: 3
+          charIndex: 3,
         },
         end: {
           line: 4,
           column: 5,
-          charIndex: 6
-        }
+          charIndex: 6,
+        },
       }
     );
 
@@ -158,13 +158,13 @@ describe('token', () => {
         start: {
           line: 1,
           column: 2,
-          charIndex: 3
+          charIndex: 3,
         },
         end: {
           line: 4,
           column: 5,
-          charIndex: 6
-        }
+          charIndex: 6,
+        },
       }
     );
     it('checks if instance is SOF separator', () => {

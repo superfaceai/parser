@@ -87,7 +87,10 @@ function tesTok(data: LexerTokenData): LexerToken {
 
   TES_TOK_STATE += 1;
 
-  return new LexerToken(data, { start: { line, column, charIndex: start }, end: { line, column, charIndex: end } });
+  return new LexerToken(data, {
+    start: { line, column, charIndex: start },
+    end: { line, column, charIndex: end },
+  });
 }
 
 function tesMatch<I extends Record<string, unknown>>(
@@ -99,8 +102,8 @@ function tesMatch<I extends Record<string, unknown>>(
     ...input,
     location: {
       start: first.location.start,
-      end: (last ?? first).location.end
-    }
+      end: (last ?? first).location.end,
+    },
   };
 }
 function tesMatchJessie(token: LexerToken) {
@@ -996,7 +999,7 @@ describe('strict map syntax rules', () => {
               },
               tokens[3],
               tokens[9]
-            )
+            ),
           },
           tokens[0],
           tokens[10]

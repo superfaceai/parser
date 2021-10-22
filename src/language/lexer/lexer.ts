@@ -1,5 +1,5 @@
 import { SyntaxError, SyntaxErrorCategory } from '../error';
-import { computeEndLocation, Location, Source, CharIndexSpan } from '../source';
+import { CharIndexSpan, computeEndLocation, Location, Source } from '../source';
 import { LexerContext, LexerContextType, Sublexer } from './context';
 import { tryParseDefault } from './sublexer/default';
 import { tryParseJessieScriptExpression } from './sublexer/jessie';
@@ -79,13 +79,13 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
         start: {
           line: 1,
           column: 1,
-          charIndex: 0
+          charIndex: 0,
         },
         end: {
           line: 1,
           column: 1,
-          charIndex: 0
-        }
+          charIndex: 0,
+        },
       }
     );
 
@@ -211,14 +211,14 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
       ch => !util.isNewline(ch) && util.isWhitespace(ch),
       this.source.body.slice(lastToken.location.end.charIndex)
     );
-    
+
     // Since we already know the end location of the last token and we only cound non-newline whitespace
     // we can obtain the new location trivially.
     return {
       line: lastToken.location.end.line,
       column: lastToken.location.end.column + whitespaceAfterLast,
-      charIndex: lastToken.location.end.charIndex + whitespaceAfterLast
-    }
+      charIndex: lastToken.location.end.charIndex + whitespaceAfterLast,
+    };
   }
 
   /** Reads the next token following the `afterPosition`. */
@@ -264,9 +264,9 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
         end: {
           line: startLocation.line,
           column: startLocation.column + 1,
-          charIndex: startLocation.charIndex + 1
-        }
-      }
+          charIndex: startLocation.charIndex + 1,
+        },
+      };
 
       const error = new SyntaxError(
         this.source,
@@ -320,20 +320,29 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
       const tokenLocation = {
         start: startLocation,
         end: computeEndLocation(
-          this.source.body.slice(startLocation.charIndex, startLocation.charIndex + relativeSpan.end),
+          this.source.body.slice(
+            startLocation.charIndex,
+            startLocation.charIndex + relativeSpan.end
+          ),
           startLocation
-        )
+        ),
       };
 
       const errorLocation = {
         start: computeEndLocation(
-          this.source.body.slice(tokenLocation.start.charIndex, tokenLocation.start.charIndex + relativeSpan.start),
+          this.source.body.slice(
+            tokenLocation.start.charIndex,
+            tokenLocation.start.charIndex + relativeSpan.start
+          ),
           tokenLocation.start
         ),
         end: computeEndLocation(
-          this.source.body.slice(tokenLocation.start.charIndex, tokenLocation.start.charIndex + relativeSpan.end),
+          this.source.body.slice(
+            tokenLocation.start.charIndex,
+            tokenLocation.start.charIndex + relativeSpan.end
+          ),
           tokenLocation.start
-        )
+        ),
       };
 
       const error = new SyntaxError(
@@ -355,13 +364,19 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
 
     const parsedTokenLocation = {
       start: computeEndLocation(
-        this.source.body.slice(startLocation.charIndex, startLocation.charIndex + tokenParseResult.relativeSpan.start),
+        this.source.body.slice(
+          startLocation.charIndex,
+          startLocation.charIndex + tokenParseResult.relativeSpan.start
+        ),
         startLocation
       ),
       end: computeEndLocation(
-        this.source.body.slice(startLocation.charIndex, startLocation.charIndex + tokenParseResult.relativeSpan.end),
+        this.source.body.slice(
+          startLocation.charIndex,
+          startLocation.charIndex + tokenParseResult.relativeSpan.end
+        ),
         startLocation
-      )
+      ),
     };
 
     // All is well

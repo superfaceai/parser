@@ -1,4 +1,8 @@
-import { Location as AstLocation, LocationSpan as AstLocationSpan } from '@superfaceai/ast';
+import {
+  Location as AstLocation,
+  LocationSpan as AstLocationSpan,
+} from '@superfaceai/ast';
+
 import { isNewline } from './lexer/util';
 
 export type Location = AstLocation;
@@ -24,7 +28,11 @@ export class Source {
   /** Offset from the start of the file the body covers. */
   fileLocationOffset: LocationOffset;
 
-  constructor(body: string, fileName?: string, fileLocationOffset?: LocationOffset) {
+  constructor(
+    body: string,
+    fileName?: string,
+    fileLocationOffset?: LocationOffset
+  ) {
     this.body = body;
 
     this.fileName = fileName ?? '[input]';
@@ -32,21 +40,23 @@ export class Source {
   }
 
   applyLocationOffset(location: LocationSpan): LocationSpan {
-    const startColumnShift = location.start.line === 1 ? (this.fileLocationOffset.column) : 0;
-    const endColumnShift = location.end.line === 1 ? (this.fileLocationOffset.column) : 0;
-    
+    const startColumnShift =
+      location.start.line === 1 ? this.fileLocationOffset.column : 0;
+    const endColumnShift =
+      location.end.line === 1 ? this.fileLocationOffset.column : 0;
+
     return {
       start: {
         line: this.fileLocationOffset.line + location.start.line,
         column: location.start.column + startColumnShift,
-        charIndex: location.start.charIndex
+        charIndex: location.start.charIndex,
       },
       end: {
         line: this.fileLocationOffset.line + location.end.line,
         column: location.end.column + endColumnShift,
-        charIndex: location.end.charIndex
-      }
-    }
+        charIndex: location.end.charIndex,
+      },
+    };
   }
 }
 
@@ -83,6 +93,6 @@ export function computeEndLocation(
   return {
     line: startLocation.line + newlines,
     column,
-    charIndex: startLocation.charIndex + slice.length
+    charIndex: startLocation.charIndex + slice.length,
   };
 }

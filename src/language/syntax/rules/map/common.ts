@@ -12,24 +12,28 @@ import { parseProfileId } from '../../../../common/document/parser';
 import { LexerTokenKind } from '../../../index';
 import { StringTokenData, TerminationTokens } from '../../../lexer/token';
 import { LexerTokenMatch, SyntaxRule, SyntaxRuleSeparator } from '../../rule';
-import { computeLocationSpan, documentedNode, HasLocation, WithLocation } from '../common';
+import {
+  computeLocationSpan,
+  documentedNode,
+  HasLocation,
+  WithLocation,
+} from '../common';
 
-export const PRIMITIVE_LITERAL: SyntaxRule<
-  WithLocation<PrimitiveLiteralNode>
-> = SyntaxRule.literal()
-  .or(SyntaxRule.string())
-  .map((match): WithLocation<PrimitiveLiteralNode> => {
-    const value =
-      match.data.kind === LexerTokenKind.LITERAL
-        ? match.data.literal
-        : match.data.string;
+export const PRIMITIVE_LITERAL: SyntaxRule<WithLocation<PrimitiveLiteralNode>> =
+  SyntaxRule.literal()
+    .or(SyntaxRule.string())
+    .map((match): WithLocation<PrimitiveLiteralNode> => {
+      const value =
+        match.data.kind === LexerTokenKind.LITERAL
+          ? match.data.literal
+          : match.data.string;
 
-    return {
-      kind: 'PrimitiveLiteral',
-      value,
-      location: match.location
-    };
-  });
+      return {
+        kind: 'PrimitiveLiteral',
+        value,
+        location: match.location,
+      };
+    });
 
 export function JESSIE_EXPRESSION_FACTORY(
   ...terminators: ReadonlyArray<TerminationTokens>
@@ -41,7 +45,7 @@ export function JESSIE_EXPRESSION_FACTORY(
         expression: expression.data.script,
         source: expression.data.sourceScript,
         sourceMap: expression.data.sourceMap,
-        location: expression.location
+        location: expression.location,
       };
     }
   );
@@ -65,7 +69,7 @@ export const CONDITION_ATOM: SyntaxRule<WithLocation<ConditionAtomNode>> =
         return {
           kind: 'ConditionAtom',
           expression,
-          location: computeLocationSpan(keyword, sepEnd)
+          location: computeLocationSpan(keyword, sepEnd),
         };
       }
     );
@@ -90,7 +94,7 @@ export const ITERATION_ATOM: SyntaxRule<WithLocation<IterationAtomNode>> =
           kind: 'IterationAtom',
           iterationVariable: iterationVariable.data.identifier,
           iterable,
-          location: computeLocationSpan(keyword, sepEnd)
+          location: computeLocationSpan(keyword, sepEnd),
         };
       }
     );
@@ -116,7 +120,7 @@ const PROFILE_ID = SyntaxRule.identifier('profile')
           scope: parsedId.scope,
           name: parsedId.name,
           version: parsedId.version,
-          location: id.location
+          location: id.location,
         },
       };
     }, 'profile id in format `[<scope>/]<name>@<semver>` with lowercase identifiers')
@@ -126,7 +130,7 @@ const PROFILE_ID = SyntaxRule.identifier('profile')
       scope: id.scope,
       name: id.name,
       version: id.version,
-      location: computeLocationSpan(keyword, id)
+      location: computeLocationSpan(keyword, id),
     };
   });
 const PROVIDER_ID = SyntaxRule.identifier('provider')
@@ -144,7 +148,7 @@ const PROVIDER_ID = SyntaxRule.identifier('provider')
           kind: 'match',
           value: {
             provider: provider.data.string,
-            location: provider.location
+            location: provider.location,
           },
         };
       },
@@ -154,7 +158,7 @@ const PROVIDER_ID = SyntaxRule.identifier('provider')
   .map(([keyword, _op, provider]) => {
     return {
       provider: provider.provider,
-      location: computeLocationSpan(keyword, provider)
+      location: computeLocationSpan(keyword, provider),
     };
   });
 
@@ -177,7 +181,7 @@ export const MAP_VARIANT = SyntaxRule.identifier('variant')
   .map(([keyword, _op, variant]) => {
     return {
       variant: variant.data.string,
-      location: computeLocationSpan(keyword, variant)
+      location: computeLocationSpan(keyword, variant),
     };
   });
 
@@ -185,30 +189,24 @@ export const MAP_HEADER: SyntaxRule<WithLocation<MapHeaderNode>> =
   documentedNode(
     PROFILE_ID.followedBy(PROVIDER_ID)
       .andFollowedBy(SyntaxRule.optional(MAP_VARIANT))
-      .map(
-        ([
-          profile,
-          provider,
-          maybeVariant,
-        ]): WithLocation<MapHeaderNode> => {
-          return {
-            kind: 'MapHeader',
-            profile: {
-              scope: profile.scope,
-              name: profile.name,
-              // TODO: should we default to zeros here?
-              version: {
-                major: profile.version.major,
-                minor: profile.version.minor ?? 0,
-                patch: profile.version.patch ?? 0,
-              },
+      .map(([profile, provider, maybeVariant]): WithLocation<MapHeaderNode> => {
+        return {
+          kind: 'MapHeader',
+          profile: {
+            scope: profile.scope,
+            name: profile.name,
+            // TODO: should we default to zeros here?
+            version: {
+              major: profile.version.major,
+              minor: profile.version.minor ?? 0,
+              patch: profile.version.patch ?? 0,
             },
-            provider: provider.provider,
-            variant: maybeVariant?.variant,
-            location: computeLocationSpan(profile, provider, maybeVariant)
-          };
-        }
-      )
+          },
+          provider: provider.provider,
+          variant: maybeVariant?.variant,
+          location: computeLocationSpan(profile, provider, maybeVariant),
+        };
+      })
   );
 
 /**

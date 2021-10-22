@@ -910,13 +910,11 @@ ng2"
       const actual = [];
       for (let i = 0; i < expected.length; i += 1) {
         const token = lexer.advance();
-        
-        actual.push(
-          {
-            start: token.location.start.charIndex,
-            end: token.location.end.charIndex
-          }
-        );
+
+        actual.push({
+          start: token.location.start.charIndex,
+          end: token.location.end.charIndex,
+        });
       }
 
       expect(actual).toStrictEqual(expected);
@@ -942,7 +940,7 @@ ng2"
         }
       );
 
-      const expected: { line: number, column: number }[] = [
+      const expected: { line: number; column: number }[] = [
         { line: 1, column: 1 }, // SOF
         { line: 1, column: 1 }, // the
         { line: 1, column: 5 }, // tokens
@@ -961,12 +959,10 @@ ng2"
       const actual = [];
       for (let i = 0; i < expected.length; i += 1) {
         const token = lexer.advance();
-        actual.push(
-          {
-            line: token.location.start.line,
-            column: token.location.start.column
-          }
-        );
+        actual.push({
+          line: token.location.start.line,
+          column: token.location.start.column,
+        });
       }
 
       expect(actual).toStrictEqual(expected);

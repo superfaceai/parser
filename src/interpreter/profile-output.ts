@@ -1,4 +1,4 @@
-import { DocumentedNode } from "@superfaceai/ast";
+import { DocumentedNode } from '@superfaceai/ast';
 
 export type StructureKind =
   | 'PrimitiveStructure'
