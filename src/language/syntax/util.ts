@@ -3,6 +3,7 @@ import {
   DEFAULT_TOKEN_KIND_FILTER,
   LexerTokenKindFilter,
 } from '../lexer/lexer';
+import { Source } from '../source';
 
 /**
  * LexerTokenStream implementation that takes tokens from an array instead of a Lexer.
@@ -13,12 +14,14 @@ export class ArrayLexerStream implements LexerTokenStream<number> {
   private index: number;
 
   tokenKindFilter: LexerTokenKindFilter;
-  emitUnknown: boolean;
+  readonly source: Source;
 
   constructor(private readonly array: ReadonlyArray<LexerToken>) {
     this.index = 0;
     this.tokenKindFilter = DEFAULT_TOKEN_KIND_FILTER;
-    this.emitUnknown = false;
+    this.source = new Source(
+      array.map(token => token.toStringDebug()).join('\n')
+    );
   }
 
   next(context?: LexerContext): IteratorResult<LexerToken, undefined> {

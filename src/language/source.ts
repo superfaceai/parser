@@ -2,6 +2,7 @@ import {
   Location as AstLocation,
   LocationSpan as AstLocationSpan,
 } from '@superfaceai/ast';
+import { createHash } from 'crypto';
 
 import { isNewline } from './lexer/util';
 
@@ -37,6 +38,13 @@ export class Source {
 
     this.fileName = fileName ?? '[input]';
     this.fileLocationOffset = fileLocationOffset ?? { line: 0, column: 0 };
+  }
+
+  checksum(): string {
+    const hash = createHash('sha256');
+    hash.update(this.body);
+
+    return hash.digest('hex');
   }
 
   applyLocationOffset(location: LocationSpan): LocationSpan {

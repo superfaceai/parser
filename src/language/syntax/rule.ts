@@ -1,4 +1,5 @@
-import { LexerContext, LexerContextType, LexerTokenStream } from '../lexer';
+import { LexerContext, LexerContextType } from '../lexer/context';
+import { LexerTokenStream } from '../lexer/lexer';
 import {
   formatTokenKind,
   IdentifierTokenData,
@@ -624,10 +625,7 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
 
 // META //
 
-/** Matches rule and then restores `tokens` state.
- *
- * This rule automatically uses the `emitUnknown` flag.
- */
+/** Matches rule and then restores `tokens` state. */
 export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
   /**
    * Invert the lookahead, matching if the inner rule fails.

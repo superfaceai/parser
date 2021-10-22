@@ -17,6 +17,7 @@ import {
   SetStatementNode,
 } from '@superfaceai/ast';
 
+import { PARSED_AST_VERSION, PARSED_VERSION } from '../../../../metadata';
 import { LexerTokenKind } from '../../../lexer';
 import { TerminationTokens } from '../../../lexer/token';
 import {
@@ -31,6 +32,7 @@ import {
   expectTerminated,
   HasLocation,
   mapAssignmentPath,
+  SyntaxRuleSourceChecksum,
   TERMINATOR_TOKEN_FACTORY,
   WithLocation,
 } from '../common';
@@ -655,12 +657,14 @@ export const MAP_DOCUMENT: SyntaxRule<WithLocation<MapDocumentNode>> =
       SyntaxRule.optional(SyntaxRule.repeat(MAP_DOCUMENT_DEFINITION))
     )
     .andFollowedBy(SyntaxRule.separator('EOF'))
+    .andFollowedBy(new SyntaxRuleSourceChecksum())
     .map(
       ([
         _SOF,
         header,
         maybeDefinitions,
         _EOF,
+        sourceChecksum,
       ]): WithLocation<MapDocumentNode> => {
         const definitions = maybeDefinitions ?? [];
 
@@ -669,7 +673,11 @@ export const MAP_DOCUMENT: SyntaxRule<WithLocation<MapDocumentNode>> =
           header,
           definitions,
           location: computeLocationSpan(header, ...definitions),
-          astMetadata: undefined as any, // TODO
+          astMetadata: {
+            astVersion: PARSED_AST_VERSION,
+            parserVersion: PARSED_VERSION,
+            sourceChecksum,
+          },
         };
       }
     );

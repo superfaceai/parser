@@ -23,6 +23,7 @@ export const DEFAULT_TOKEN_KIND_FILTER: LexerTokenKindFilter = {
 export interface LexerTokenStream<SavedState = unknown>
   extends Generator<LexerToken, undefined, LexerContext | undefined> {
   tokenKindFilter: LexerTokenKindFilter;
+  readonly source: Source;
 
   peek(
     ...context: [] | [LexerContext | undefined]

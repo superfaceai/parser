@@ -1,3 +1,4 @@
+import { PARSED_AST_VERSION, PARSED_VERSION } from '../../../../metadata';
 import { SyntaxError } from '../../../error';
 import {
   IdentifierTokenData,
@@ -1533,6 +1534,11 @@ describe('profile syntax rules', () => {
         tesMatch(
           {
             kind: 'ProfileDocument',
+            astMetadata: {
+              astVersion: PARSED_AST_VERSION,
+              parserVersion: PARSED_VERSION,
+              sourceChecksum: expect.anything(),
+            },
             header: tesMatch(
               {
                 kind: 'ProfileHeader',

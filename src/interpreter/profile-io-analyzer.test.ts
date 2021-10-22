@@ -1,4 +1,8 @@
-import { AstMetadata, ProfileDocumentNode, ProfileHeaderNode } from '@superfaceai/ast';
+import {
+  AstMetadata,
+  ProfileDocumentNode,
+  ProfileHeaderNode,
+} from '@superfaceai/ast';
 
 import { ProfileIOAnalyzer } from './profile-io-analyzer';
 import { ProfileOutput } from './profile-output';
@@ -17,21 +21,22 @@ const AST_METADATA: AstMetadata = {
   astVersion: {
     major: 0,
     minor: 0,
-    patch: 0
+    patch: 0,
   },
   parserVersion: {
     major: 0,
     minor: 0,
-    patch: 0
+    patch: 0,
   },
-  sourceChecksum: ''
+  sourceChecksum: '',
 };
 
 describe('ProfileIOAnalyzer', () => {
   describe('When Profile has empty Input', () => {
     describe('and Result is Primitive Type', () => {
       const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument', astMetadata: AST_METADATA,
+        kind: 'ProfileDocument',
+        astMetadata: AST_METADATA,
         header,
         definitions: [
           {
@@ -84,7 +89,8 @@ describe('ProfileIOAnalyzer', () => {
 
     describe('and Result is Enum Type', () => {
       const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument', astMetadata: AST_METADATA,
+        kind: 'ProfileDocument',
+        astMetadata: AST_METADATA,
         header,
         definitions: [
           {
@@ -147,7 +153,8 @@ describe('ProfileIOAnalyzer', () => {
 
     describe('and Result is Enum Type which is NonNull Type', () => {
       const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument', astMetadata: AST_METADATA,
+        kind: 'ProfileDocument',
+        astMetadata: AST_METADATA,
         header,
         definitions: [
           {
@@ -216,7 +223,8 @@ describe('ProfileIOAnalyzer', () => {
 
     describe('and Result is Model Type which is defined in definition aswell as useCaseDefinition', () => {
       const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument', astMetadata: AST_METADATA,
+        kind: 'ProfileDocument',
+        astMetadata: AST_METADATA,
         header,
         definitions: [
           {
@@ -278,7 +286,8 @@ describe('ProfileIOAnalyzer', () => {
 
     describe('and Result is Model Type which is defined in definition after useCaseDefinition', () => {
       const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument', astMetadata: AST_METADATA,
+        kind: 'ProfileDocument',
+        astMetadata: AST_METADATA,
         header,
         definitions: [
           {
@@ -340,7 +349,8 @@ describe('ProfileIOAnalyzer', () => {
 
     describe('and Result is Model Type which is not defined in ProfileDocument definitions', () => {
       const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument', astMetadata: AST_METADATA,
+        kind: 'ProfileDocument',
+        astMetadata: AST_METADATA,
         header,
         definitions: [
           {
@@ -392,7 +402,8 @@ describe('ProfileIOAnalyzer', () => {
 
     describe('and Result is List Type', () => {
       const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument', astMetadata: AST_METADATA,
+        kind: 'ProfileDocument',
+        astMetadata: AST_METADATA,
         header,
         definitions: [
           {
@@ -452,7 +463,8 @@ describe('ProfileIOAnalyzer', () => {
 
     describe('and Result is List Type with Union', () => {
       const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument', astMetadata: AST_METADATA,
+        kind: 'ProfileDocument',
+        astMetadata: AST_METADATA,
         header,
         definitions: [
           {
@@ -530,7 +542,8 @@ describe('ProfileIOAnalyzer', () => {
 
     describe('and Result is empty Object Type', () => {
       const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument', astMetadata: AST_METADATA,
+        kind: 'ProfileDocument',
+        astMetadata: AST_METADATA,
         header,
         definitions: [
           {
@@ -583,7 +596,8 @@ describe('ProfileIOAnalyzer', () => {
 
     describe('and Result is a Object Type with fields of multiple Types', () => {
       const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument', astMetadata: AST_METADATA,
+        kind: 'ProfileDocument',
+        astMetadata: AST_METADATA,
         header,
         definitions: [
           {
@@ -719,7 +733,8 @@ describe('ProfileIOAnalyzer', () => {
 
     describe('and Result is a Object Type', () => {
       const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument', astMetadata: AST_METADATA,
+        kind: 'ProfileDocument',
+        astMetadata: AST_METADATA,
         header,
         definitions: [
           {
@@ -817,7 +832,8 @@ describe('ProfileIOAnalyzer', () => {
 
     describe('and Result is a Union Type with fields of multiple Types', () => {
       const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument', astMetadata: AST_METADATA,
+        kind: 'ProfileDocument',
+        astMetadata: AST_METADATA,
         header,
         definitions: [
           {
@@ -937,7 +953,8 @@ describe('ProfileIOAnalyzer', () => {
 
     describe('and Result is a undefined model', () => {
       const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument', astMetadata: AST_METADATA,
+        kind: 'ProfileDocument',
+        astMetadata: AST_METADATA,
         header,
         definitions: [
           {
@@ -985,7 +1002,8 @@ describe('ProfileIOAnalyzer', () => {
 
     describe('and Result is an Object with undefined fields', () => {
       const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument', astMetadata: AST_METADATA,
+        kind: 'ProfileDocument',
+        astMetadata: AST_METADATA,
         header,
         definitions: [
           {
@@ -1056,7 +1074,8 @@ describe('ProfileIOAnalyzer', () => {
 
     describe('and Result is a Union with undefined models', () => {
       const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument', astMetadata: AST_METADATA,
+        kind: 'ProfileDocument',
+        astMetadata: AST_METADATA,
         header,
         definitions: [
           {
@@ -1126,7 +1145,8 @@ describe('ProfileIOAnalyzer', () => {
 
   it('should extract documentation strings', () => {
     const ast: ProfileDocumentNode = {
-      kind: 'ProfileDocument', astMetadata: AST_METADATA,
+      kind: 'ProfileDocument',
+      astMetadata: AST_METADATA,
       header,
       definitions: [
         {
@@ -1143,16 +1163,16 @@ describe('ProfileIOAnalyzer', () => {
                   fieldName: 'testField',
                   required: false,
                   documentation: {
-                  title: 'Test field',
-                  description: 'This is a test field',
-                  }
+                    title: 'Test field',
+                    description: 'This is a test field',
+                  },
                 },
               ],
             },
             documentation: {
-            title: 'This is the inputs',
-            description: 'Really',
-            }
+              title: 'This is the inputs',
+              description: 'Really',
+            },
           },
           result: {
             kind: 'UseCaseSlotDefinition',
@@ -1164,15 +1184,15 @@ describe('ProfileIOAnalyzer', () => {
                   fieldName: 'resultyTestField',
                   required: false,
                   documentation: {
-                  title: 'The result test field',
-                  }
+                    title: 'The result test field',
+                  },
                 },
               ],
             },
             documentation: {
-            title: 'This is the results',
-            description: 'Would I lie to you?',
-            }
+              title: 'This is the results',
+              description: 'Would I lie to you?',
+            },
           },
           error: {
             kind: 'UseCaseSlotDefinition',
@@ -1184,7 +1204,7 @@ describe('ProfileIOAnalyzer', () => {
                   fieldName: 'message',
                   required: false,
                   documentation: {
-                  title: 'The error message',
+                    title: 'The error message',
                   },
                   type: {
                     kind: 'ModelTypeName',
@@ -1194,13 +1214,13 @@ describe('ProfileIOAnalyzer', () => {
               ],
             },
             documentation: {
-            title: 'The ERROR',
-            }
+              title: 'The ERROR',
+            },
           },
           documentation: {
-          title: 'The Test Case',
-          description: 'It tests the case',
-          }
+            title: 'The Test Case',
+            description: 'It tests the case',
+          },
         },
         {
           kind: 'NamedFieldDefinition',
@@ -1212,7 +1232,7 @@ describe('ProfileIOAnalyzer', () => {
           documentation: {
             title: 'the resultyTest field',
             description: 'it is number',
-          }
+          },
         },
         {
           kind: 'NamedModelDefinition',
@@ -1224,22 +1244,22 @@ describe('ProfileIOAnalyzer', () => {
                 kind: 'EnumValue',
                 value: 'bad',
                 documentation: {
-                title: 'This means bad',
-                }
+                  title: 'This means bad',
+                },
               },
               {
                 kind: 'EnumValue',
                 value: 'badder',
                 documentation: {
-                title: 'This means badder',
-                }
+                  title: 'This means badder',
+                },
               },
             ],
           },
           documentation: {
-          title: 'The Error Enum',
-          description: 'It is either bad or badder',
-          }
+            title: 'The Error Enum',
+            description: 'It is either bad or badder',
+          },
         },
       ],
     };
@@ -1259,8 +1279,8 @@ describe('ProfileIOAnalyzer', () => {
         {
           useCaseName: 'TestCase',
           documentation: {
-          title: 'The Test Case',
-          description: 'It tests the case',
+            title: 'The Test Case',
+            description: 'It tests the case',
           },
           input: {
             kind: 'ObjectStructure',
@@ -1269,15 +1289,15 @@ describe('ProfileIOAnalyzer', () => {
                 kind: 'ScalarStructure',
                 required: false,
                 documentation: {
-                title: 'Test field',
-                description: 'This is a test field',
-                }
+                  title: 'Test field',
+                  description: 'This is a test field',
+                },
               },
             },
             documentation: {
-            title: 'This is the inputs',
-            description: 'Really',
-            }
+              title: 'This is the inputs',
+              description: 'Really',
+            },
           },
           result: {
             kind: 'ObjectStructure',
@@ -1288,13 +1308,13 @@ describe('ProfileIOAnalyzer', () => {
                 type: 'number',
                 documentation: {
                   title: 'The result test field',
-                }
+                },
               },
             },
             documentation: {
               title: 'This is the results',
               description: 'Would I lie to you?',
-            }
+            },
           },
           error: {
             kind: 'ObjectStructure',
@@ -1303,17 +1323,20 @@ describe('ProfileIOAnalyzer', () => {
                 required: false,
                 kind: 'EnumStructure',
                 documentation: {
-                  title: 'The error message'
+                  title: 'The error message',
                 },
                 enums: [
                   { value: 'bad', documentation: { title: 'This means bad' } },
-                  { value: 'badder', documentation: { title: 'This means badder' } },
+                  {
+                    value: 'badder',
+                    documentation: { title: 'This means badder' },
+                  },
                 ],
               },
             },
             documentation: {
-            title: 'The ERROR',
-            }
+              title: 'The ERROR',
+            },
           },
         },
       ],
@@ -1323,7 +1346,8 @@ describe('ProfileIOAnalyzer', () => {
 
   it('should correctly reference fields and models', () => {
     const ast: ProfileDocumentNode = {
-      kind: 'ProfileDocument', astMetadata: AST_METADATA,
+      kind: 'ProfileDocument',
+      astMetadata: AST_METADATA,
       header,
       definitions: [
         {

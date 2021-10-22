@@ -22,8 +22,9 @@ import {
   UseCaseSlotDefinitionNode,
 } from '@superfaceai/ast';
 
-import { VersionRange } from '../../../..';
 import { parseDocumentId } from '../../../../common/document/parser';
+import { VersionRange } from '../../../../common/document/version';
+import { PARSED_AST_VERSION, PARSED_VERSION } from '../../../../metadata';
 import { IdentifierTokenData, LexerTokenKind } from '../../../lexer/token';
 import {
   LexerTokenMatch,
@@ -37,6 +38,7 @@ import {
   documentedNode,
   expectTerminated,
   HasLocation,
+  SyntaxRuleSourceChecksum,
   WithLocation,
 } from '../common';
 import { COMLINK_LITERAL, COMLINK_OBJECT_LITERAL } from './literal';
@@ -636,12 +638,14 @@ export const PROFILE_DOCUMENT: SyntaxRule<WithLocation<ProfileDocumentNode>> =
       SyntaxRule.optional(SyntaxRule.repeat(PROFILE_DOCUMENT_DEFINITION))
     )
     .andFollowedBy(SyntaxRule.separator('EOF'))
+    .andFollowedBy(new SyntaxRuleSourceChecksum())
     .map(
       ([
         _SOF,
         header,
         maybeDefinitions,
         _EOF,
+        sourceChecksum,
       ]): WithLocation<ProfileDocumentNode> => {
         const definitions = maybeDefinitions ?? [];
 
@@ -650,7 +654,11 @@ export const PROFILE_DOCUMENT: SyntaxRule<WithLocation<ProfileDocumentNode>> =
           header,
           definitions,
           location: computeLocationSpan(header, ...definitions),
-          astMetadata: undefined as any, // TODO
+          astMetadata: {
+            astVersion: PARSED_AST_VERSION,
+            parserVersion: PARSED_VERSION,
+            sourceChecksum,
+          },
         };
       }
     );

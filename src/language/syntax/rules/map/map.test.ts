@@ -1,3 +1,4 @@
+import { PARSED_AST_VERSION, PARSED_VERSION } from '../../../../metadata';
 import { SyntaxError } from '../../../error';
 import { LexerTokenStream } from '../../../lexer';
 import {
@@ -1193,6 +1194,11 @@ describe('strict map syntax rules', () => {
         tesMatch(
           {
             kind: 'MapDocument',
+            astMetadata: {
+              astVersion: PARSED_AST_VERSION,
+              parserVersion: PARSED_VERSION,
+              sourceChecksum: expect.anything(),
+            },
             header: tesMatch(
               {
                 kind: 'MapHeader',

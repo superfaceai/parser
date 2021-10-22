@@ -5,6 +5,7 @@ import {
   ProfileASTNodeBase,
 } from '@superfaceai/ast';
 
+import { LexerTokenStream } from '../../lexer';
 import {
   IdentifierTokenData,
   LexerTokenKind,
@@ -14,7 +15,7 @@ import {
   StringTokenData,
   TerminationTokens,
 } from '../../lexer/token';
-import { LexerTokenMatch, SyntaxRule, SyntaxRuleOr } from '../rule';
+import { LexerTokenMatch, RuleResult, SyntaxRule, SyntaxRuleOr } from '../rule';
 import { extractDocumentation } from '../util';
 
 // HELPER RULES //
@@ -44,15 +45,15 @@ type ArrayHasNonNull<
 > = ArrayFirstOrLastNonNull<A, E> extends true
   ? true
   : // Here we use the `infer R` feature to effectivelly slice off the first element
-    // It doesn't pass if the array is empty, which is what we want.
-    // This is the slicing magic.
-    A extends [E | undefined, ...infer R]
+  // It doesn't pass if the array is empty, which is what we want.
+  // This is the slicing magic.
+  A extends [E | undefined, ...infer R]
   ? // Typescript doesn't believe us that R has the correct type (it thinks it is unknown[], maybe a bug?), so we force it using this condition
     R extends readonly (E | undefined)[]
     ? ArrayHasNonNull<R, E>
     : never // it should never happen that the `never` branch is taken
   : // Have to do the same thing symetrically from the end in case the non-null element is somewhere after the rest paratemer
-    A extends [...infer R, E | undefined]
+  A extends [...infer R, E | undefined]
   ? R extends readonly (E | undefined)[]
     ? ArrayHasNonNull<R, E>
     : never
@@ -190,4 +191,18 @@ export function expectTerminated<T>(
         )
       )
     );
+}
+
+// CHECKSUM //
+export class SyntaxRuleSourceChecksum extends SyntaxRule<string> {
+  tryMatch(tokens: LexerTokenStream<unknown>): RuleResult<string> {
+    return {
+      kind: 'match',
+      match: tokens.source.checksum(),
+    };
+  }
+
+  [Symbol.toStringTag](): string {
+    return '<CHECKSUM>';
+  }
 }

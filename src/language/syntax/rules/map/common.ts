@@ -9,8 +9,11 @@ import {
 
 import { VersionRange } from '../../../../common';
 import { parseProfileId } from '../../../../common/document/parser';
-import { LexerTokenKind } from '../../../index';
-import { StringTokenData, TerminationTokens } from '../../../lexer/token';
+import {
+  LexerTokenKind,
+  StringTokenData,
+  TerminationTokens,
+} from '../../../lexer/token';
 import { LexerTokenMatch, SyntaxRule, SyntaxRuleSeparator } from '../../rule';
 import {
   computeLocationSpan,

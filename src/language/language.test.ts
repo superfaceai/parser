@@ -1,6 +1,7 @@
 import fs from 'fs';
 import { join } from 'path';
 
+import { PARSED_AST_VERSION, PARSED_VERSION } from '../metadata';
 import { Source } from './source';
 import {
   parseMap,
@@ -830,6 +831,38 @@ describe('map strict', () => {
           ],
         },
       ],
+    });
+  });
+});
+
+describe('document metadata', () => {
+  it('should parse profile with ast metadata', () => {
+    const input = `
+    name = "hello"
+    version = "1.2.3"
+    `;
+    const source = new Source(input);
+    const profile = parseProfile(source);
+
+    expect(profile.astMetadata).toStrictEqual({
+      astVersion: PARSED_AST_VERSION,
+      parserVersion: PARSED_VERSION,
+      sourceChecksum: new Source(input).checksum(),
+    });
+  });
+
+  it('should parse map with ast metadata', () => {
+    const input = `
+    profile = "hello@1.2"
+    provider = "world"
+    `;
+    const source = new Source(input);
+    const profile = parseMap(source);
+
+    expect(profile.astMetadata).toStrictEqual({
+      astVersion: PARSED_AST_VERSION,
+      parserVersion: PARSED_VERSION,
+      sourceChecksum: new Source(input).checksum(),
     });
   });
 });
