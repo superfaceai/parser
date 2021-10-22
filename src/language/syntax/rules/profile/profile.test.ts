@@ -778,10 +778,12 @@ describe('profile syntax rules', () => {
             fieldName: (tokens[1].data as IdentifierTokenData).identifier,
             required: false,
             type: undefined,
-            title: 'Title',
-            description: 'Description',
+            documentation: {
+              title: 'Title',
+              description: 'Description',
+              location: tokens[0].location
+            }
           },
-          tokens[0],
           tokens[1]
         )
       );
@@ -869,10 +871,13 @@ describe('profile syntax rules', () => {
             kind: 'NamedFieldDefinition',
             fieldName: (tokens[2].data as IdentifierTokenData).identifier,
             type: undefined,
-            title: 'title',
-            description: undefined,
+            documentation: {
+              title: 'title',
+              description: undefined,
+              location: tokens[0].location
+            }
           },
-          tokens[0],
+          tokens[1],
           tokens[2]
         )
       );
@@ -1002,10 +1007,13 @@ describe('profile syntax rules', () => {
             kind: 'NamedModelDefinition',
             modelName: (tokens[2].data as IdentifierTokenData).identifier,
             type: undefined,
-            title: 'Title',
-            description: 'Description',
+            documentation: {
+              title: 'Title',
+              description: 'Description',
+              location: tokens[0].location
+            }
           },
-          tokens[0],
+          tokens[1],
           tokens[2]
         )
       );
@@ -1404,10 +1412,13 @@ describe('profile syntax rules', () => {
             ),
             asyncResult: undefined,
             error: undefined,
-            title: 'Title',
-            description: 'Description',
+            documentation: {
+              title: 'Title',
+              description: 'Description',
+              location: tokens[0].location
+            }
           },
-          tokens[0],
+          tokens[1],
           tokens[6]
         )
       );
@@ -1472,10 +1483,13 @@ describe('profile syntax rules', () => {
               minor: 12,
               patch: 0,
             },
-            title: 'Title',
-            description: 'Description',
+            documentation: {
+              title: 'Title',
+              description: 'Description',
+              location: tokens[0].location
+            }
           },
-          tokens[0],
+          tokens[1],
           tokens[6]
         )
       );

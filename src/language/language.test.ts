@@ -167,7 +167,9 @@ describe('profile', () => {
       definitions: [
         {
           kind: 'UseCaseDefinition',
-          title: 'Send single conversation message',
+          documentation: {
+            title: 'Send single conversation message'
+          },
           useCaseName: 'SendMessage',
           safety: 'unsafe',
           input: {
@@ -206,8 +208,10 @@ describe('profile', () => {
                 },
               ],
             },
-            title: 'Title',
-            description: 'Description of the result',
+            documentation: {
+              title: 'Title',
+              description: 'Description of the result',
+            }
           },
           asyncResult: {
             kind: 'UseCaseSlotDefinition',
@@ -233,18 +237,24 @@ describe('profile', () => {
                 {
                   kind: 'FieldDefinition',
                   fieldName: 'problem',
-                  title: 'Problem',
-                  description: 'Description of this field',
+                  documentation: {
+                    title: 'Problem',
+                    description: 'Description of this field',
+                  }
                 },
                 {
                   kind: 'FieldDefinition',
                   fieldName: 'detail',
-                  title: 'Detail',
+                  documentation: {
+                    title: 'Detail',
+                  }
                 },
                 {
                   kind: 'FieldDefinition',
                   fieldName: 'instance',
-                  title: 'Instance whoop whoop',
+                  documentation: {
+                    title: 'Instance whoop whoop',
+                  }
                 },
               ],
             },
@@ -264,9 +274,11 @@ describe('profile', () => {
             kind: 'PrimitiveTypeName',
             name: 'string',
           },
-          title: 'Identifier of Message',
-          description:
-            'The identifier is channel-specific and not unique. It should be treated as an opaque value and only used in subsequent calls',
+          documentation: {
+            title: 'Identifier of Message',
+            description:
+              'The identifier is channel-specific and not unique. It should be treated as an opaque value and only used in subsequent calls',
+          }
         },
         {
           kind: 'NamedFieldDefinition',
@@ -288,9 +300,11 @@ describe('profile', () => {
               },
             ],
           },
-          title: 'Delivery Status of Message',
-          description:
-            'Status of a sent message. Harmonized across different channels.',
+          documentation: {
+            title: 'Delivery Status of Message',
+            description:
+              'Status of a sent message. Harmonized across different channels.',
+          }
         },
         {
           kind: 'NamedFieldDefinition',
@@ -316,8 +330,10 @@ describe('profile', () => {
               },
             ],
           },
-          title: 'Title of the field channel',
-          description: 'Description of the field channel',
+          documentation: {
+            title: 'Title of the field channel',
+            description: 'Description of the field channel',
+          }
         },
       ],
     });
@@ -491,7 +507,9 @@ describe('profile', () => {
       examples: [
         {
           kind: 'UseCaseSlotDefinition',
-          title: 'success example',
+          documentation: {
+            title: 'success example',
+          },
           value: {
             kind: 'UseCaseExample',
             exampleName: 'success_example',
@@ -508,7 +526,9 @@ describe('profile', () => {
                       kind: 'ComlinkPrimitiveLiteral',
                       value: 'hello',
                     },
-                    title: 'hello has 5 letters',
+                    documentation: {
+                      title: 'hello has 5 letters',
+                    },
                   },
                 ],
               },

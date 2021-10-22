@@ -193,7 +193,7 @@ export class LexerToken {
   }
 
   toStringDebug(): string {
-    const loc = `${this.location.start.line}:${this.location.start.column}-${this.location.end.line}:${this.location.end.column}`;
+    const loc = `${this.location.start.line}:${this.location.start.column};${this.location.end.line}:${this.location.end.column}`;
     const span = `${this.location.start.charIndex};${this.location.end.charIndex}`;
 
     return `{${this.toString()}}@(${loc})[${span}]`;

@@ -179,10 +179,10 @@ describe('token', () => {
 
     it('returns debug string', () => {
       expect(sofInstance.toStringDebug()).toEqual(
-        '(separator `SOF`)@(1:2-4:5)[3;6]'
+        '{separator `SOF`}@(1:2;4:5)[3;6]'
       );
       expect(eofInstance.toStringDebug()).toEqual(
-        '(separator `EOF`)@(1:2-4:5)[3;6]'
+        '{separator `EOF`}@(1:2;4:5)[3;6]'
       );
     });
   });
