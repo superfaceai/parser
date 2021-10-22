@@ -1,4 +1,5 @@
 import {
+  AstMetadata,
   MapASTNode,
   MapHeaderNode,
   ProfileDocumentNode,
@@ -28,6 +29,20 @@ const mapHeader: MapHeaderNode = {
     version,
   },
   provider: 'whatever',
+};
+
+const AST_METADATA: AstMetadata = {
+  astVersion: {
+    major: 0,
+    minor: 0,
+    patch: 0
+  },
+  parserVersion: {
+    major: 0,
+    minor: 0,
+    patch: 0
+  },
+  sourceChecksum: ''
 };
 
 declare global {
@@ -185,7 +200,7 @@ describe('MapValidator', () => {
         }
         */
       const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
+        kind: 'ProfileDocument', astMetadata: AST_METADATA,
         header: profileHeader,
         definitions: [
           {
@@ -304,7 +319,7 @@ describe('MapValidator', () => {
       };
 
       const mapAst1: MapASTNode = {
-        kind: 'MapDocument',
+        kind: 'MapDocument', astMetadata: AST_METADATA,
         header: mapHeader,
         definitions: [
           {
@@ -404,7 +419,7 @@ describe('MapValidator', () => {
         ],
       };
       const mapAst2: MapASTNode = {
-        kind: 'MapDocument',
+        kind: 'MapDocument', astMetadata: AST_METADATA,
         header: mapHeader,
         definitions: [
           {
@@ -503,7 +518,7 @@ describe('MapValidator', () => {
         ],
       };
       const mapAst3: MapASTNode = {
-        kind: 'MapDocument',
+        kind: 'MapDocument', astMetadata: AST_METADATA,
         header: mapHeader,
         definitions: [
           {
@@ -660,7 +675,7 @@ describe('MapValidator', () => {
         }
       */
       const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
+        kind: 'ProfileDocument', astMetadata: AST_METADATA,
         header: profileHeader,
         definitions: [
           {
@@ -835,7 +850,7 @@ describe('MapValidator', () => {
         ],
       };
       const mapAst1: MapASTNode = {
-        kind: 'MapDocument',
+        kind: 'MapDocument', astMetadata: AST_METADATA,
         header: mapHeader,
         definitions: [
           {
@@ -1009,7 +1024,7 @@ describe('MapValidator', () => {
         ],
       };
       const mapAst2: MapASTNode = {
-        kind: 'MapDocument',
+        kind: 'MapDocument', astMetadata: AST_METADATA,
         header: mapHeader,
         definitions: [
           {
@@ -1191,7 +1206,7 @@ describe('MapValidator', () => {
         ],
       };
       const mapAst3: MapASTNode = {
-        kind: 'MapDocument',
+        kind: 'MapDocument', astMetadata: AST_METADATA,
         header: mapHeader,
         definitions: [
           {
@@ -1407,7 +1422,7 @@ describe('MapValidator', () => {
         }
       */
       const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
+        kind: 'ProfileDocument', astMetadata: AST_METADATA,
         header: profileHeader,
         definitions: [
           {
@@ -1554,7 +1569,7 @@ describe('MapValidator', () => {
         ],
       };
       const mapAst1: MapASTNode = {
-        kind: 'MapDocument',
+        kind: 'MapDocument', astMetadata: AST_METADATA,
         header: mapHeader,
         definitions: [
           {
@@ -1728,7 +1743,7 @@ describe('MapValidator', () => {
         ],
       };
       const mapAst2: MapASTNode = {
-        kind: 'MapDocument',
+        kind: 'MapDocument', astMetadata: AST_METADATA,
         header: mapHeader,
         definitions: [
           {
@@ -1901,7 +1916,7 @@ describe('MapValidator', () => {
         ],
       };
       const mapAst3: MapASTNode = {
-        kind: 'MapDocument',
+        kind: 'MapDocument', astMetadata: AST_METADATA,
         header: mapHeader,
         definitions: [
           {
@@ -2147,7 +2162,7 @@ describe('MapValidator', () => {
         }
        */
       const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
+        kind: 'ProfileDocument', astMetadata: AST_METADATA,
         header: profileHeader,
         definitions: [
           {
@@ -2245,7 +2260,7 @@ describe('MapValidator', () => {
         ],
       };
       const mapAst1: MapASTNode = {
-        kind: 'MapDocument',
+        kind: 'MapDocument', astMetadata: AST_METADATA,
         header: mapHeader,
         definitions: [
           {
@@ -2333,7 +2348,7 @@ describe('MapValidator', () => {
         ],
       };
       const mapAst2: MapASTNode = {
-        kind: 'MapDocument',
+        kind: 'MapDocument', astMetadata: AST_METADATA,
         header: mapHeader,
         definitions: [
           {
@@ -2476,7 +2491,7 @@ describe('MapValidator', () => {
     });
     describe('swapi get character information', () => {
       const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
+        kind: 'ProfileDocument', astMetadata: AST_METADATA,
         header: {
           kind: 'ProfileHeader',
           scope: 'starwars',
@@ -2486,9 +2501,10 @@ describe('MapValidator', () => {
             minor: 0,
             patch: 3,
           },
-
-          title: 'Star Wars Character Information',
-          description: 'Retrive information about Star Wars characters.',
+          documentation: {
+            title: 'Star Wars Character Information',
+            description: 'Retrive information about Star Wars characters.',
+          }
         },
         definitions: [
           {
@@ -2549,9 +2565,10 @@ describe('MapValidator', () => {
                 ],
               },
             },
-
-            title: 'Retrieve Character Info',
-            description: 'Retrieve information about a Star Wars character.',
+            documentation: {
+              title: 'Retrieve Character Info',
+              description: 'Retrieve information about a Star Wars character.',
+            }
           },
           {
             kind: 'NamedFieldDefinition',
@@ -2560,10 +2577,11 @@ describe('MapValidator', () => {
               kind: 'PrimitiveTypeName',
               name: 'string',
             },
-
+            documentation: {
             title: 'Character name',
             description:
               'The character name to use when looking up character information',
+            }
           },
           {
             kind: 'NamedFieldDefinition',
@@ -2573,8 +2591,10 @@ describe('MapValidator', () => {
               name: 'string',
             },
 
+            documentation: {
             title: 'Height',
             description: 'The height of the character',
+            }
           },
           {
             kind: 'NamedFieldDefinition',
@@ -2583,9 +2603,10 @@ describe('MapValidator', () => {
               kind: 'PrimitiveTypeName',
               name: 'string',
             },
-
+            documentation: {
             title: 'Weight',
             description: 'The weight of the character',
+            }
           },
           {
             kind: 'NamedFieldDefinition',
@@ -2595,8 +2616,10 @@ describe('MapValidator', () => {
               name: 'string',
             },
 
+            documentation: {
             title: 'Year of birth',
             description: 'The year of birth of the character',
+            }
           },
           {
             kind: 'NamedFieldDefinition',
@@ -2606,9 +2629,11 @@ describe('MapValidator', () => {
               name: 'string',
             },
 
+            documentation: {
             title: 'Message',
             description:
               'The message for when an error occurs looking up character information',
+            }
           },
           {
             kind: 'NamedFieldDefinition',
@@ -2621,15 +2646,17 @@ describe('MapValidator', () => {
               },
             },
 
+            documentation: {
             title: 'Characters',
             description:
               'List of characters which might correspond to entered character name.',
+            }
           },
         ],
       };
 
       const mapAst: MapASTNode = {
-        kind: 'MapDocument',
+        kind: 'MapDocument', astMetadata: AST_METADATA,
         header: {
           kind: 'MapHeader',
           profile: {

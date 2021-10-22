@@ -129,7 +129,7 @@ export interface ProfileHeaderStructure extends DocumentedStructure {
 /**
  * @interface ProfileOutput - represent profile structure
  */
-export interface ProfileOutput extends DocumentedStructure {
+export interface ProfileOutput {
   header: ProfileHeaderStructure;
   usecases: UseCaseStructure[];
 }

@@ -241,7 +241,7 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
       .filter(isUseCaseDefinitionNode)
       .map(definition => this.visit(definition));
 
-    return addDoc(header, { header, usecases });
+    return { header, usecases };
   }
 
   visitProfileHeaderNode(node: ProfileHeaderNode): ProfileHeaderStructure {

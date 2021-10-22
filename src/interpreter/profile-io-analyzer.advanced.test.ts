@@ -1,4 +1,4 @@
-import { ProfileDocumentNode, ProfileHeaderNode } from '@superfaceai/ast';
+import { AstMetadata, ProfileDocumentNode, ProfileHeaderNode } from '@superfaceai/ast';
 
 import { ProfileIOAnalyzer } from './profile-io-analyzer';
 import { ObjectStructure, ProfileOutput } from './profile-output';
@@ -11,6 +11,20 @@ const header: ProfileHeaderNode = {
     minor: 0,
     patch: 0,
   },
+};
+
+const AST_METADATA: AstMetadata = {
+  astVersion: {
+    major: 0,
+    minor: 0,
+    patch: 0
+  },
+  parserVersion: {
+    major: 0,
+    minor: 0,
+    patch: 0
+  },
+  sourceChecksum: ''
 };
 
 describe('ProfileValidator Advanced', () => {
@@ -29,7 +43,7 @@ describe('ProfileValidator Advanced', () => {
      */
     describe('and Result is a Union Type with multiple Types', () => {
       const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
+        kind: 'ProfileDocument', astMetadata: AST_METADATA,
         header,
         definitions: [
           {
@@ -307,7 +321,7 @@ describe('ProfileValidator Advanced', () => {
      */
     describe('and Result is a Union Type that reference NamedModels of Object Types that reference NamedFields', () => {
       const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
+        kind: 'ProfileDocument', astMetadata: AST_METADATA,
         header,
         definitions: [
           {
@@ -514,7 +528,7 @@ describe('ProfileValidator Advanced', () => {
      */
     describe('and Result is a Union Type that reference NamedModels of Object Types that references NamedFields', () => {
       const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
+        kind: 'ProfileDocument', astMetadata: AST_METADATA,
         header,
         definitions: [
           {
