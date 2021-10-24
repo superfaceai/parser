@@ -1,34 +1,9 @@
-import {
-  MapASTNode,
-  MapHeaderNode,
-  ProfileDocumentNode,
-  ProfileHeaderNode,
-} from '@superfaceai/ast';
+import { MapASTNode, ProfileDocumentNode } from '@superfaceai/ast';
+import { parseMap, parseProfile, Source } from '..';
 
 import { ValidationIssue } from './issue';
 import { ProfileOutput } from './profile-output';
 import { formatIssues, getProfileOutput, validateMap } from './utils';
-
-const version = {
-  major: 1,
-  minor: 0,
-  patch: 0,
-};
-
-const profileHeader: ProfileHeaderNode = {
-  kind: 'ProfileHeader',
-  name: 'whatever',
-  version,
-};
-
-const mapHeader: MapHeaderNode = {
-  kind: 'MapHeader',
-  profile: {
-    name: 'whatever',
-    version,
-  },
-  provider: 'whatever',
-};
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -134,84 +109,48 @@ function invalid(
   });
 }
 
+const parseMapFromSource = (source: string): MapASTNode =>
+  parseMap(
+    new Source(
+      `
+      profile = "test@1.0"
+      provider = "test"
+      ` + source
+    )
+  );
+
+const parseProfileFromSource = (source: string): ProfileDocumentNode =>
+  parseProfile(
+    new Source(
+      `
+      name = "test"
+      version = "1.0.0"
+      ` + source
+    )
+  );
+
 describe('MapValidator', () => {
   describe('result & error', () => {
     describe('result is PrimitiveTypeName', () => {
-      const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-
-        header: profileHeader,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'EnumDefinition',
-                values: [
-                  { kind: 'EnumValue', value: 'NOTFOUND' },
-                  { kind: 'EnumValue', value: 'BADREQUEST' },
-                ],
-              },
-            },
-          },
-        ],
-      };
-      const mapAst1: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                isError: false,
-                terminateFlow: false,
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'NOTFOUND',
-                },
-              },
-              {
-                kind: 'OutcomeStatement',
-                isError: false,
-                terminateFlow: false,
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'BADREQUEST',
-                },
-              },
-            ],
-          },
-        ],
-      };
-      const mapAst2: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                isError: false,
-                terminateFlow: false,
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'wrong',
-                },
-              },
-            ],
-          },
-        ],
-      };
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+          result enum {
+            NOTFOUND
+            BADREQUEST
+          }
+        }`
+      );
+      const mapAst1 = parseMapFromSource(
+        `map Test {
+          map result 'NOTFOUND'
+          map result 'BADREQUEST'
+        }`
+      );
+      const mapAst2 = parseMapFromSource(
+        `map Test {
+          map result 'wrong'
+        }`
+      );
 
       valid(profileAst, [mapAst1]);
       invalid(
@@ -221,80 +160,29 @@ describe('MapValidator', () => {
         ''
       );
     });
+
     describe('error is PrimitiveTypeName', () => {
-      const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        header: profileHeader,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            error: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'EnumDefinition',
-                values: [
-                  { kind: 'EnumValue', value: 'NOTFOUND' },
-                  { kind: 'EnumValue', value: 'BADREQUEST' },
-                ],
-              },
-            },
-          },
-        ],
-      };
-      const mapAst1: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                isError: true,
-                terminateFlow: false,
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'NOTFOUND',
-                },
-              },
-              {
-                kind: 'OutcomeStatement',
-                isError: true,
-                terminateFlow: false,
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'BADREQUEST',
-                },
-              },
-            ],
-          },
-        ],
-      };
-      const mapAst2: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                isError: true,
-                terminateFlow: false,
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'wrong',
-                },
-              },
-            ],
-          },
-        ],
-      };
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+          error enum {
+            NOTFOUND
+            BADREQUEST
+          }
+        }`
+      );
+
+      const mapAst1 = parseMapFromSource(
+        `map Test {
+          map error 'NOTFOUND'
+          map error 'BADREQUEST'
+        }`
+      );
+
+      const mapAst2 = parseMapFromSource(
+        `map Test {
+          map error 'wrong'
+        }`
+      );
 
       valid(profileAst, [mapAst1]);
       invalid(
@@ -304,198 +192,34 @@ describe('MapValidator', () => {
         ''
       );
     });
+
     describe('result is an object', () => {
       describe('possibly null field f1', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result {
+              f1 string
+            }
+          }`
+        );
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'PrimitiveTypeName',
-                        name: 'string',
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'ObjectLiteral',
-                          fields: [
-                            {
-                              kind: 'Assignment',
-                              key: ['inner'],
-                              value: {
-                                kind: 'PrimitiveLiteral',
-                                value: 2,
-                              },
-                            },
-                          ],
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result {}
+            map result { f1 = null }
+          }`
+        );
+
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map result {
+              f1 = {
+                inner = 2
+              }
+            }
+          }`
+        );
 
         valid(
           profileAst,
@@ -510,286 +234,59 @@ describe('MapValidator', () => {
           ''
         );
       });
+
       describe('possibly null fields: f1, f2', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result {
+              f1 string
+              f2 number
+            }
+          }`
+        );
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'PrimitiveTypeName',
-                        name: 'string',
-                      },
-                    },
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f2',
-                      type: {
-                        kind: 'PrimitiveTypeName',
-                        name: 'number',
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: '["some", "key"]',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result {
+            }
+            map result {
+              f1 = null
+            }
+            map result {
+              f2 = null
+            }
+            map result {
+              f1 = null
+              f2 = null
+            }
+            map result {
+              f1 = "some string"
+            }
+            map result {
+              f2 = 2
+            }
+            map result {
+              f1 = "some string"
+              f2 = 2
+            }
+            map result {
+              f1 = "some string"
+              f3 = 3
+            }
+            map result {
+              f3 = 3
+            }
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map result {
+              f1 = ["some", "key"]
+              f2 = 2
+            }
+          }`
+        );
 
         valid(
           profileAst,
@@ -804,184 +301,43 @@ describe('MapValidator', () => {
           ''
         );
       });
+
       describe('non null field f1', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result {
+              f1 string!
+            }
+          }`
+        );
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'string',
-                        },
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: '["some", "key"]',
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result {
+            }
+            map result {
+              f1 = "some string"
+            }
+            map result {
+              f1 = "some string"
+              f3 = 3
+            }
+            map result {
+              f3 = 3
+            }
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map result {
+              f1 = null
+            }
+            map result {
+              f1 = ["some", "key"]
+            }
+          }`
+        );
 
         valid(
           profileAst,
@@ -996,313 +352,62 @@ describe('MapValidator', () => {
           ''
         );
       });
+
       describe('fields: f1, f2, where f2 is non null', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result {
+              f1 string
+              f2 number!
+            }
+          }`
+        );
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'PrimitiveTypeName',
-                        name: 'string',
-                      },
-                    },
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f2',
-                      type: {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'number',
-                        },
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result {
+            }
+            map result {
+              f1 = null
+            }
+            map result {
+              f1 = "some string"
+            }
+            map result {
+              f2 = 2
+            }
+            map result {
+              f1 = null
+              f2 = 2
+            }
+            map result {
+              f1 = "some string"
+              f2 = 2
+            }
+            map result {
+              f1 = "some string"
+              f2 = 2
+              f3 = 3
+            }
+            map result {
+              f2 = 2
+              f3 = 3
+            }
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map result {
+              f1 = "some string"
+              f2 = null
+            }
+            map result {
+              f2 = null
+              f3 = 3
+            }
+          }`
+        );
 
         valid(
           profileAst,
@@ -1317,264 +422,54 @@ describe('MapValidator', () => {
           ''
         );
       });
+
       describe('non null fields: f1, f2', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result {
+              f1 string!
+              f2 number!
+            }
+          }`
+        );
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'string',
-                        },
-                      },
-                    },
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f2',
-                      type: {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'number',
-                        },
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result {
+            }
+            map result {
+              f1 = "some string"
+            }
+            map result {
+              f2 = 2
+            }
+            map result {
+              f1 = "some string"
+              f2 = 2
+            }
+            map result {
+              f1 = "some string"
+              f3 = 3
+            }
+            map result {
+              f1 = "some string"
+              f2 = 2
+              f3 = 3
+            }
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map result {
+              f1 = null
+            }
+            map result {
+              f1 = null
+              f2 = null
+            }
+          }`
+        );
 
         valid(
           profileAst,
@@ -1589,147 +484,36 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('one required field: f1', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: true,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'string',
-                        },
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('one required field: f1', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result {
+              f1! string!
+            }
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result {
+              f1 = "some string"
+            }
+            map result {
+              f1 = "some string"
+              f3 = 3
+            }
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map result {
+            }
+            map result {
+              f1 = null
+            }
+          }`
+        );
 
         valid(
           profileAst,
@@ -1744,282 +528,57 @@ describe('MapValidator', () => {
           ''
         );
       });
+
       describe('one required and one not required field: f1, f2', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result {
+              f1! string!
+              f2 boolean!
+            }
+          }`
+        );
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: true,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'string',
-                        },
-                      },
-                    },
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f2',
-                      type: {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'boolean',
-                        },
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: true,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: false,
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: true,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result {
+              f1 = "some string"
+            }
+            map result {
+              f1 = "some string"
+              f2 = true
+            }
+            map result {
+              f1 = "some string"
+              f3 = 3
+            }
+            map result {
+              f1 = "some string"
+              f2 = false
+              f3 = 3
+            }
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map result {
+            }
+            map result {
+              f1 = null
+            }
+            map result {
+              f2 = null
+            }
+            map result {
+              f1 = null
+              f2 = null
+            }
+            map result {
+              f2 = true
+            }
+          }`
+        );
 
         valid(
           profileAst,
@@ -2034,256 +593,54 @@ describe('MapValidator', () => {
           ''
         );
       });
+
       describe('required fields: f1, f2', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result {
+              f1! string!
+              f2! boolean!
+            }
+          }`
+        );
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result {
+              f1 = "some string"
+              f2 = true
+            }
+            map result {
+              f1 = "some string"
+              f2 = true
+              f3 = 3
+            }
+          }`
+        );
 
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: true,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'string',
-                        },
-                      },
-                    },
-                    {
-                      kind: 'FieldDefinition',
-                      required: true,
-                      fieldName: 'f2',
-                      type: {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'boolean',
-                        },
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: true,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: true,
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: true,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map result {
+            }
+            map result {
+              f1 = null
+            }
+            map result {
+              f2 = null
+            }
+            map result {
+              f1 = null
+              f2 = null
+            }
+            map result {
+              f1 = "some string"
+            }
+            map result {
+              f2 = true
+            }
+          }`
+        );
 
         valid(
           profileAst,
@@ -2298,206 +655,43 @@ describe('MapValidator', () => {
           ''
         );
       });
+
       describe('non null object with two required fields f1, f2', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'NonNullDefinition',
-                  type: {
-                    kind: 'ObjectDefinition',
-                    fields: [
-                      {
-                        kind: 'FieldDefinition',
-                        required: true,
-                        fieldName: 'f1',
-                        type: {
-                          kind: 'NonNullDefinition',
-                          type: {
-                            kind: 'PrimitiveTypeName',
-                            name: 'string',
-                          },
-                        },
-                      },
-                      {
-                        kind: 'FieldDefinition',
-                        required: true,
-                        fieldName: 'f2',
-                        type: {
-                          kind: 'NonNullDefinition',
-                          type: {
-                            kind: 'PrimitiveTypeName',
-                            name: 'number',
-                          },
-                        },
-                      },
-                    ],
-                  },
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'null',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result {
+              f1! string!
+              f2! number!
+            }!
+          }`
+        );
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            map result {
+              f1 = "some string"
+              f2 = 2
+            }
+            map result {
+              f1 = "some string"
+              f2 = 2
+              f3 = 3
+            }
+          }`
+        );
+        const mapAst2 = parseMapFromSource(`map Test {}`);
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map result {
+            }
+            map result {
+              f1 = null
+            }
+            map result {
+              f1 = "some string"
+            }
+            map result null
+          }`
+        );
 
         valid(
           profileAst,
@@ -2513,283 +707,60 @@ describe('MapValidator', () => {
           ''
         );
       });
+
       describe('that uses dot.notation for fields', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'ObjectDefinition',
-                        fields: [
-                          {
-                            kind: 'FieldDefinition',
-                            required: false,
-                            fieldName: 'f2',
-                            type: {
-                              kind: 'ObjectDefinition',
-                              fields: [
-                                {
-                                  kind: 'FieldDefinition',
-                                  required: false,
-                                  fieldName: 'inner',
-                                  type: {
-                                    kind: 'PrimitiveTypeName',
-                                    name: 'number',
-                                  },
-                                },
-                              ],
-                            },
-                          },
-                        ],
-                      },
-                    },
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f2',
-                      type: {
-                        kind: 'PrimitiveTypeName',
-                        name: 'number',
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1', 'f2', 'inner'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 1,
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'ObjectLiteral',
-                          fields: [
-                            {
-                              kind: 'Assignment',
-                              key: ['f2', 'inner'],
-                              value: {
-                                kind: 'PrimitiveLiteral',
-                                value: 1,
-                              },
-                            },
-                          ],
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'ObjectLiteral',
-                          fields: [
-                            {
-                              kind: 'Assignment',
-                              key: ['f2'],
-                              value: {
-                                kind: 'ObjectLiteral',
-                                fields: [
-                                  {
-                                    kind: 'Assignment',
-                                    key: ['inner'],
-                                    value: {
-                                      kind: 'PrimitiveLiteral',
-                                      value: 1,
-                                    },
-                                  },
-                                ],
-                              },
-                            },
-                          ],
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1', 'f2', 'inner'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 1,
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2', 'f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1', 'f2.inner'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 1,
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2', 'f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1', 'f2', 'inner'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 1,
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'ObjectLiteral',
-                          fields: [
-                            {
-                              kind: 'Assignment',
-                              key: ['f1'],
-                              value: {
-                                kind: 'PrimitiveLiteral',
-                                value: 2,
-                              },
-                            },
-                          ],
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result {
+              f1 {
+                f2 {
+                  inner number
+                }
+              }
+              f2 number
+            }    
+          }`
+        );
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            map result {
+              f1.f2.inner = 1
+              f2 = 2
+            }
+            map result {
+              f1 = {
+                f2.inner = 1
+              }
+              f2 = 2
+            }
+            map result {
+              f1 = {
+                f2 = {
+                  inner = 1
+                }
+              }
+              f2 = 2
+            }
+          }`
+        );
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result {
+              f1.f2.inner = 1
+              f2.f1 = 2
+            }
+            map result {
+              f1.f2.inner = 1
+              f2.f1 = 2
+            }
+            map result {
+              f1.f2.inner = 1
+              f2 = {
+                f1 = 2
+              }
+            }
+          }`
+        );
 
         valid(profileAst, [mapAst1]);
         invalid(
@@ -2800,198 +771,46 @@ describe('MapValidator', () => {
         );
       });
     });
+
     describe('error is an object', () => {
       describe('possibly null field f1', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              error: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'PrimitiveTypeName',
-                        name: 'string',
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'ObjectLiteral',
-                          fields: [
-                            {
-                              kind: 'Assignment',
-                              key: ['inner'],
-                              value: {
-                                kind: 'PrimitiveLiteral',
-                                value: 2,
-                              },
-                            },
-                          ],
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error {
+              f1 string
+            }    
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map error {
+            }
+            map error {
+              f1 = null
+            }
+            map error {
+              f1 = null
+              f2 = null
+            }
+            map error {
+              f1 = "some string"
+              f2 = 2
+            }
+            map error {
+              f2 = 2
+            }
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map error {
+              f1 = {
+                inner = 2
+              }
+            }
+          }`
+        );
 
         valid(
           profileAst,
@@ -3006,286 +825,58 @@ describe('MapValidator', () => {
           ''
         );
       });
+
       describe('possibly null fields: f1, f2', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-
-              error: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'PrimitiveTypeName',
-                        name: 'string',
-                      },
-                    },
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f2',
-                      type: {
-                        kind: 'PrimitiveTypeName',
-                        name: 'number',
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: '["some", "key"]',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error {
+              f1 string
+              f2 number
+            }    
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map error {
+            }
+            map error {
+              f1 = null
+            }
+            map error {
+              f2 = null
+            }
+            map error {
+              f1 = null
+              f2 = null
+            }
+            map error {
+              f1 = "some string"
+            }
+            map error {
+              f2 = 2
+            }
+            map error {
+              f1 = "some string"
+              f2 = 2
+            }
+            map error {
+              f1 = "some string"
+              f3 = 3
+            }
+            map error {
+              f3 = 3
+            }
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map error {
+              f1 = ["some", "key"]
+              f2 = 2
+            }
+          }`
+        );
 
         valid(
           profileAst,
@@ -3300,184 +891,42 @@ describe('MapValidator', () => {
           ''
         );
       });
+
       describe('non null field f1', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-
-              error: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'string',
-                        },
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: '["some", "key"]',
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error {
+              f1 string!
+            }    
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map error {
+            }
+            map error {
+              f1 = "some string"
+            }
+            map error {
+              f1 = "some string"
+              f3 = 3
+            }
+            map error {
+              f3 = 3
+            }
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map error {
+              f1 = null
+            }
+            map error {
+              f1 = ["some", "key"]
+            }
+          }`
+        );
 
         valid(
           profileAst,
@@ -3492,313 +941,61 @@ describe('MapValidator', () => {
           ''
         );
       });
+
       describe('fields: f1, f2, where f2 is non null', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-
-              error: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'PrimitiveTypeName',
-                        name: 'string',
-                      },
-                    },
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f2',
-                      type: {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'number',
-                        },
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error {
+              f1 string
+              f2 number!
+            }    
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map error {
+            }
+            map error {
+              f1 = null
+            }
+            map error {
+              f1 = "some string"
+            }
+            map error {
+              f2 = 2
+            }
+            map error {
+              f1 = null
+              f2 = 2
+            }
+            map error {
+              f1 = "some string"
+              f2 = 2
+            }
+            map error {
+              f1 = "some string"
+              f2 = 2
+              f3 = 3
+            }
+            map error {
+              f2 = 2
+              f3 = 3
+            }
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map error {
+              f1 = "some string"
+              f2 = null
+            }
+            map error {
+              f2 = null
+              f3 = 3
+            }
+          }`
+        );
 
         valid(
           profileAst,
@@ -3813,264 +1010,53 @@ describe('MapValidator', () => {
           ''
         );
       });
+
       describe('non null fields: f1, f2', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-
-              error: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'string',
-                        },
-                      },
-                    },
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f2',
-                      type: {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'number',
-                        },
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error {
+              f1 string!
+              f2 number!
+            }    
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map error {
+            }
+            map error {
+              f1 = "some string"
+            }
+            map error {
+              f2 = 2
+            }
+            map error {
+              f1 = "some string"
+              f2 = 2
+            }
+            map error {
+              f1 = "some string"
+              f3 = 3
+            }
+            map error {
+              f1 = "some string"
+              f2 = 2
+              f3 = 3
+            }
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map error {
+              f1 = null
+            }
+            map error {
+              f1 = null
+              f2 = null
+            }
+          }`
+        );
 
         valid(
           profileAst,
@@ -4085,147 +1071,36 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('one required field: f1', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              error: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: true,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'string',
-                        },
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('one required field: f1', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error {
+              f1! string!
+            }    
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map error {
+              f1 = "some string"
+            }
+            map error {
+              f1 = "some string"
+              f3 = 3
+            }
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map error {
+            }
+            map error {
+              f1 = null
+            }
+          }`
+        );
 
         valid(
           profileAst,
@@ -4240,282 +1115,56 @@ describe('MapValidator', () => {
           ''
         );
       });
+
       describe('one required and one not required field: f1, f2', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-
-              error: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: true,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'string',
-                        },
-                      },
-                    },
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f2',
-                      type: {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'boolean',
-                        },
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: true,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: false,
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: true,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error {
+              f1! string!
+              f2 boolean!
+            }        
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map error {
+              f1 = "some string"
+            }
+            map error {
+              f1 = "some string"
+              f2 = true
+            }
+            map error {
+              f1 = "some string"
+              f3 = 3
+            }
+            map error {
+              f1 = "some string"
+              f2 = false
+              f3 = 3
+            }
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map error {
+            }
+            map error {
+              f1 = null
+            }
+            map error {
+              f2 = null
+            }
+            map error {
+              f1 = null
+              f2 = null
+            }
+            map error {
+              f2 = true
+            }
+          }`
+        );
 
         valid(
           profileAst,
@@ -4530,256 +1179,52 @@ describe('MapValidator', () => {
           ''
         );
       });
+
       describe('required fields: f1, f2', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-
-              error: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: true,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'string',
-                        },
-                      },
-                    },
-                    {
-                      kind: 'FieldDefinition',
-                      required: true,
-                      fieldName: 'f2',
-                      type: {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'boolean',
-                        },
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: true,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: true,
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: true,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error {
+              f1! string!
+              f2! boolean!
+            }
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map error {
+              f1 = "some string"
+              f2 = true
+            }
+            map error {
+              f1 = "some string"
+              f2 = true
+              f3 = 3
+            }
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map error {
+            }
+            map error {
+              f1 = null
+            }
+            map error {
+              f2 = null
+            }
+            map error {
+              f1 = null
+              f2 = null
+            }
+            map error {
+              f1 = "some string"
+            }
+            map error {
+              f2 = true
+            }
+          }`
+        );
 
         valid(
           profileAst,
@@ -4794,206 +1239,43 @@ describe('MapValidator', () => {
           ''
         );
       });
+
       describe('non null object with two required fields f1, f2', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-
-              error: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'NonNullDefinition',
-                  type: {
-                    kind: 'ObjectDefinition',
-                    fields: [
-                      {
-                        kind: 'FieldDefinition',
-                        required: true,
-                        fieldName: 'f1',
-                        type: {
-                          kind: 'NonNullDefinition',
-                          type: {
-                            kind: 'PrimitiveTypeName',
-                            name: 'string',
-                          },
-                        },
-                      },
-                      {
-                        kind: 'FieldDefinition',
-                        required: true,
-                        fieldName: 'f2',
-                        type: {
-                          kind: 'NonNullDefinition',
-                          type: {
-                            kind: 'PrimitiveTypeName',
-                            name: 'number',
-                          },
-                        },
-                      },
-                    ],
-                  },
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f2'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 2,
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['f3'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 3,
-                        },
-                      },
-                    ],
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'null',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['f1'],
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'some string',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'null',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error {
+              f1! string!
+              f2! number!
+            }!    
+          }`
+        );
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            map error {
+              f1 = "some string"
+              f2 = 2
+            }
+            map error {
+              f1 = "some string"
+              f2 = 2
+              f3 = 3
+            }
+          }`
+        );
+        const mapAst2 = parseMapFromSource(`map Test {}`);
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map error {
+            }
+            map error {
+              f1 = null
+            }
+            map error {
+              f1 = "some string"
+            }
+            map error null
+          }`
+        );
 
         valid(
           profileAst,
@@ -5010,112 +1292,28 @@ describe('MapValidator', () => {
         );
       });
     });
+
     describe('result is a list', () => {
       describe('primitive type', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ListDefinition',
-                  elementType: {
-                    kind: 'PrimitiveTypeName',
-                    name: 'boolean',
-                  },
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[null]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, false]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[2]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[{}]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result [boolean]    
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result [null]
+            map result [true]
+            map result [true, false]
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map result [2]
+            map result [{}]
+          }`
+        );
 
         valid(profileAst, [mapAst1, mapAst2]);
         invalid(
@@ -5125,151 +1323,31 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('primitive or object type', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ListDefinition',
-                  elementType: {
-                    kind: 'UnionDefinition',
-                    types: [
-                      { kind: 'PrimitiveTypeName', name: 'boolean' },
-                      { kind: 'ObjectDefinition', fields: [] },
-                    ],
-                  },
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[null]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, false]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[{}, {}]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, {}]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression:
-                      '[true, false, true, false, {}, true, {}, true, {}]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[2]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[[true]]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, 2, {}]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('primitive or object type', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result [boolean | {}]    
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result [true]
+            map result [null]
+            map result [true, false]
+            map result [{}, {}]
+            map result [true, {}]
+            map result [true, false, true, false, {}, true, {}, true, {}]
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map result [2]
+            map result [[true]]
+            map result [true, 2, {}]
+          }`
+        );
 
         valid(profileAst, [mapAst1, mapAst2]);
         invalid(
@@ -5279,138 +1357,29 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('non null primitive type or possibly null object type', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ListDefinition',
-                  elementType: {
-                    kind: 'UnionDefinition',
-                    types: [
-                      {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'boolean',
-                        },
-                      },
-                      { kind: 'ObjectDefinition', fields: [] },
-                    ],
-                  },
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[null]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, {}]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, 2]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, 2, {}]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[[true]]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('non null primitive type or possibly null object type', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result [boolean! | {}]
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result []
+            map result [null]
+            map result [true]
+            map result [true, {}]
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map result [true, 2]
+            map result [true, 2, {}]
+            map result [[true]]
+          }`
+        );
 
         valid(profileAst, [mapAst1, mapAst2]);
         invalid(
@@ -5420,123 +1389,28 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('non null primitive type', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ListDefinition',
-                  elementType: {
-                    kind: 'NonNullDefinition',
-                    type: {
-                      kind: 'PrimitiveTypeName',
-                      name: 'boolean',
-                    },
-                  },
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[null]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[{}]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, {}]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, 2]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[[true]]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('non null primitive type', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result [boolean!]    
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result [true]
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map result [null]
+            map result [{}]
+            map result [true, {}]
+            map result [true, 2]
+            map result [[true]]
+          }`
+        );
 
         valid(profileAst, [mapAst1, mapAst2]);
         invalid(
@@ -5546,153 +1420,30 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('non null primitive or object type', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ListDefinition',
-                  elementType: {
-                    kind: 'UnionDefinition',
-                    types: [
-                      {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'boolean',
-                        },
-                      },
-                      {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'ObjectDefinition',
-                          fields: [],
-                        },
-                      },
-                    ],
-                  },
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, {}]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[null]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[undefined]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, 2]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, 2, {}]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[[true]]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('non null primitive or object type', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result [boolean! | {}!]    
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result [true]
+            map result []
+            map result [true, {}]
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map result [null]
+            map result [undefined]
+            map result [true, 2]
+            map result [true, 2, {}]
+            map result [[true]]
+          }`
+        );
 
         valid(profileAst, [mapAst1, mapAst2]);
         invalid(
@@ -5702,136 +1453,31 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('non null list with primitive or object type', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'NonNullDefinition',
-                  type: {
-                    kind: 'ListDefinition',
-                    elementType: {
-                      kind: 'UnionDefinition',
-                      types: [
-                        {
-                          kind: 'PrimitiveTypeName',
-                          name: 'boolean',
-                        },
-                        {
-                          kind: 'ObjectDefinition',
-                          fields: [],
-                        },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[null]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, {}]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst4: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, 2]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, 2, {}]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[[true]]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('non null list with primitive or object type', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result [boolean | {}]!                
+          }`
+        );
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            map result [null]
+          }`
+        );
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result [true, {}]
+          }`
+        );
+        const mapAst3 = parseMapFromSource(`map Test {}`);
+        const mapAst4 = parseMapFromSource(
+          `map Test {
+            map result [true, 2]
+            map result [true, 2, {}]
+            map result [[true]]
+          }`
+        );
 
         valid(profileAst, [mapAst1, mapAst2]);
         invalid(
@@ -5844,112 +1490,28 @@ describe('MapValidator', () => {
         );
       });
     });
+
     describe('error is a list', () => {
       describe('primitive type', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              error: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ListDefinition',
-                  elementType: {
-                    kind: 'PrimitiveTypeName',
-                    name: 'boolean',
-                  },
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[null]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, false]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[2]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[{}]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error [boolean]
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map error [null]
+            map error [true]
+            map error [true, false]
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map error [2]
+            map error [{}]
+          }`
+        );
 
         valid(profileAst, [mapAst1, mapAst2]);
         invalid(
@@ -5959,151 +1521,31 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('primitive or object type', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              error: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ListDefinition',
-                  elementType: {
-                    kind: 'UnionDefinition',
-                    types: [
-                      { kind: 'PrimitiveTypeName', name: 'boolean' },
-                      { kind: 'ObjectDefinition', fields: [] },
-                    ],
-                  },
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[null]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, false]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[{}, {}]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, {}]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression:
-                      '[true, false, true, false, {}, true, {}, true, {}]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[2]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[[true]]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, 2, {}]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('primitive or object type', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error [boolean | {}]
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map error [true]
+            map error [null]
+            map error [true, false]
+            map error [{}, {}]
+            map error [true, {}]
+            map error [true, false, true, false, {}, true, {}, true, {}]
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map error [2]
+            map error [[true]]
+            map error [true, 2, {}]
+          }`
+        );
 
         valid(profileAst, [mapAst1, mapAst2]);
         invalid(
@@ -6113,138 +1555,29 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('non null primitive type or possibly null object type', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              error: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ListDefinition',
-                  elementType: {
-                    kind: 'UnionDefinition',
-                    types: [
-                      {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'boolean',
-                        },
-                      },
-                      { kind: 'ObjectDefinition', fields: [] },
-                    ],
-                  },
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[null]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, {}]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, 2]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, 2, {}]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[[true]]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('non null primitive type or possibly null object type', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error [boolean! | {}]
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map error []
+            map error [null]
+            map error [true]
+            map error [true, {}]
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map error [true, 2]
+            map error [true, 2, {}]
+            map error [[true]]
+          }`
+        );
 
         valid(profileAst, [mapAst1, mapAst2]);
         invalid(
@@ -6254,123 +1587,28 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('non null primitive type', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              error: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ListDefinition',
-                  elementType: {
-                    kind: 'NonNullDefinition',
-                    type: {
-                      kind: 'PrimitiveTypeName',
-                      name: 'boolean',
-                    },
-                  },
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[null]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[{}]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, {}]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, 2]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[[true]]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('non null primitive type', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error [boolean!]
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map error [true]
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map error [null]
+            map error [{}]
+            map error [true, {}]
+            map error [true, 2]
+            map error [[true]]
+          }`
+        );
 
         valid(profileAst, [mapAst1, mapAst2]);
         invalid(
@@ -6380,153 +1618,30 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('non null primitive or object type', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              error: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ListDefinition',
-                  elementType: {
-                    kind: 'UnionDefinition',
-                    types: [
-                      {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'boolean',
-                        },
-                      },
-                      {
-                        kind: 'NonNullDefinition',
-                        type: {
-                          kind: 'ObjectDefinition',
-                          fields: [],
-                        },
-                      },
-                    ],
-                  },
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, {}]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[null]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[undefined]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, 2]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, 2, {}]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[[true]]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('non null primitive or object type', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error [boolean! | {}!]
+          }`
+        );
+        const mapAst1 = parseMapFromSource(`map Test {}`);
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map error [true]
+            map error []
+            map error [true, {}]
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            map error [null]
+            map error [undefined]
+            map error [true, 2]
+            map error [true, 2, {}]
+            map error [[true]]
+          }`
+        );
 
         valid(profileAst, [mapAst1, mapAst2]);
         invalid(
@@ -6536,136 +1651,31 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('non null list with primitive or object type', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              error: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'NonNullDefinition',
-                  type: {
-                    kind: 'ListDefinition',
-                    elementType: {
-                      kind: 'UnionDefinition',
-                      types: [
-                        {
-                          kind: 'PrimitiveTypeName',
-                          name: 'boolean',
-                        },
-                        {
-                          kind: 'ObjectDefinition',
-                          fields: [],
-                        },
-                      ],
-                    },
-                  },
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[null]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, {}]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [],
-            },
-          ],
-        };
-        const mapAst4: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, 2]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[true, 2, {}]',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '[[true]]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('non null list with primitive or object type', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error [boolean | {}]!
+          }`
+        );
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            map error [null]
+          }`
+        );
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map error [true, {}]
+          }`
+        );
+        const mapAst3 = parseMapFromSource(`map Test {}`);
+        const mapAst4 = parseMapFromSource(
+          `map Test {
+            map error [true, 2]
+            map error [true, 2, {}]
+            map error [[true]]
+          }`
+        );
 
         valid(profileAst, [mapAst1, mapAst2]);
         invalid(
@@ -6673,104 +1683,36 @@ describe('MapValidator', () => {
           [mapAst3, mapAst4],
           'MapDefinition - Error not defined',
           '',
-          'ArrayLiteralExpression - Wrong Structure: expected ListStructure, but got "[true, 2]"\nJessieExpression - Wrong Structure: expected ListStructure, but got "[true, 2, {}]"\n1:14 ArrayLiteralExpression - Wrong Structure: expected ListStructure, but got "[true, 2, {}]"\nJessieExpression - Wrong Structure: expected ListStructure, but got "[[true]]"\n1:9 ArrayLiteralExpression - Wrong Structure: expected ListStructure, but got "[[true]]"',
+          'JessieExpression - Wrong Structure: expected ListStructure, but got "[true, 2]"\n1:10 ArrayLiteralExpression - Wrong Structure: expected ListStructure, but got "[true, 2]"\n6:23 JessieExpression - Wrong Structure: expected ListStructure, but got "[true, 2, {}]"\n1:14 ArrayLiteralExpression - Wrong Structure: expected ListStructure, but got "[true, 2, {}]"\n7:23 JessieExpression - Wrong Structure: expected ListStructure, but got "[[true]]"\n1:9 ArrayLiteralExpression - Wrong Structure: expected ListStructure, but got "[[true]]"',
           ''
         );
       });
     });
+
     describe('result is a jessie script', () => {
       describe('object', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'PrimitiveTypeName',
-                        name: 'string',
-                      },
-                    },
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f2',
-                      type: {
-                        kind: 'PrimitiveTypeName',
-                        name: 'boolean',
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: "{\n\tf1: 'some string',\n\tf2: true\r\n}",
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression:
-                      'body.map(function (val) { return val.toUpperCase(); })',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: "['some string', true]",
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result {
+              f1 string
+              f2 boolean
+            }
+          }`
+        );
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            map result {
+            f1: 'some string',
+            f2: true
+          }
+            map result body.map(function (val) { return val.toUpperCase(); })
+          }`
+        );
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result ['some string', true]
+          }`
+        );
 
         valid(profileAst, [mapAst1]);
         invalid(
@@ -6780,291 +1722,69 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('array', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ListDefinition',
-                  elementType: {
-                    kind: 'UnionDefinition',
-                    types: [
-                      {
-                        kind: 'PrimitiveTypeName',
-                        name: 'string',
-                      },
-                      {
-                        kind: 'PrimitiveTypeName',
-                        name: 'boolean',
-                      },
-                    ],
-                  },
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: "['some string', true]",
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: "Array('some string', true)",
-                  },
-                },
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a'],
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: '["hello", "world"]',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression:
-                      'readArrays = (this && this.__spreadArrays) || function () {\r\n    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;\r\n    for (var r = Array(s), k = 0, i = 0; i < il; i++)\r\n        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)\r\n            r[k] = a[j];\r\n    return r;\r\n};\r\nvar x = __spreadArrays(a.map(function (val) { return val.toUpperCase(); }))',
-                    source: '[...a.map(val => val.toUpperCase())]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a'],
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: '["hello", "world"]',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression:
-                      'sign = (this && this.__assign) || function () {\n\t__assign = Object.assign || function(t) {\n\t    for (var s, i = 1, n = arguments.length; i < n; i++) {\n\t        s = arguments[i];\n\t        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))\n\t            t[p] = s[p];\n\t    }\n\t    return t;\n\t};\n\treturn __assign.apply(this, arguments);\r\n};\r\nvar x = __assign({}, a.map(function (val) { return val.toUpperCase(); }))',
-                    source: '{...a.map(val => val.toUpperCase())}',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: "{\n\tf1: 'some string',\n\tf2: true\n}",
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('array', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result [string | boolean]
+          }`
+        );
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            map result ['some string', true]
+            map result Array('some string', true)
+            a = ["hello", "world"]
+            map result [...a.map(val => val.toUpperCase())]
+          }`
+        );
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            a = ["hello", "world"]
+            map result {...a.map(val => val.toUpperCase())}
+            map result {
+              f1: 'some string',
+              f2: true
+            }
+          }`
+        );
 
         valid(profileAst, [mapAst1]);
         invalid(
           profileAst,
           [mapAst2],
-          'JessieExpression - Wrong Structure: expected ListStructure, but got "{...a.map(val => val.toUpperCase())}"\n1:37 ObjectLiteralExpression - Wrong Structure: expected ListStructure, but got "{...a.map(val => val.toUpperCase())}"\nJessieExpression - Wrong Structure: expected ListStructure, but got "{\n\tf1: \'some string\',\n\tf2: true\n}"\n1:34 ObjectLiteralExpression - Wrong Structure: expected ListStructure, but got "{\n\tf1: \'some string\',\n\tf2: true\n}"',
+          'JessieExpression - Wrong Structure: expected ListStructure, but got "{...a.map(val => val.toUpperCase())}"\n1:37 ObjectLiteralExpression - Wrong Structure: expected ListStructure, but got "{...a.map(val => val.toUpperCase())}"\n7:24 JessieExpression - Wrong Structure: expected ListStructure, but got "{\n\tf1: \'some string\',\n\tf2: true\n}"\n1:72 ObjectLiteralExpression - Wrong Structure: expected ListStructure, but got "{\n\tf1: \'some string\',\n\tf2: true\n}"',
           ''
         );
       });
-      describe('primitive type', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'PrimitiveTypeName',
-                  name: 'string',
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: "'string' + true'",
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '1+"true"',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '"some " + "string"',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'String(24)',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: "['some ', 'string'].join('')",
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '`some ${var}`',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: "['some string', true]",
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: "{\n\tf1: 'some string',\n\tf2: true\n}",
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'true',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'false',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '2+25',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('primitive type', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result string
+          }`
+        );
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            map result 'string' + true'
+            map result 1+"true"
+            map result "some " + "string"
+            map result String(24)
+            map result ['some ', 'string'].join('')
+            map result \`some \${var}\`
+          }`
+        );
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result ['some string', true]
+            map result {
+            f1: 'some string',
+            f2: true
+          }
+            map result true
+            map result false
+            map result 2+25
+          }`
+        );
 
         valid(profileAst, [mapAst1]);
         invalid(
@@ -7075,99 +1795,31 @@ describe('MapValidator', () => {
         );
       });
     });
+
     describe('error is a jessie script', () => {
       describe('object', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
-
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              error: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f1',
-                      type: {
-                        kind: 'PrimitiveTypeName',
-                        name: 'string',
-                      },
-                    },
-                    {
-                      kind: 'FieldDefinition',
-                      required: false,
-                      fieldName: 'f2',
-                      type: {
-                        kind: 'PrimitiveTypeName',
-                        name: 'boolean',
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: "{\n\tf1: 'some string',\n\tf2: true\r\n}",
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression:
-                      'body.map(function (val) { return val.toUpperCase(); })',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: "['some string', true]",
-                  },
-                },
-              ],
-            },
-          ],
-        };
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error {
+              f1 string
+              f2 boolean
+            }
+          }`
+        );
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            map error {
+            f1: 'some string',
+            f2: true
+          }
+            map error body.map(function (val) { return val.toUpperCase(); })
+          }`
+        );
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map error ['some string', true]
+          }`
+        );
 
         valid(profileAst, [mapAst1]);
         invalid(
@@ -7177,138 +1829,31 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('array', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              error: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ListDefinition',
-                  elementType: {
-                    kind: 'UnionDefinition',
-                    types: [
-                      {
-                        kind: 'PrimitiveTypeName',
-                        name: 'string',
-                      },
-                      {
-                        kind: 'PrimitiveTypeName',
-                        name: 'boolean',
-                      },
-                    ],
-                  },
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: "['some string', true]",
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: "Array('some string', true)",
-                  },
-                },
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a'],
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: '["hello", "world"]',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression:
-                      'readArrays = (this && this.__spreadArrays) || function () {\r\n    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;\r\n    for (var r = Array(s), k = 0, i = 0; i < il; i++)\r\n        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)\r\n            r[k] = a[j];\r\n    return r;\r\n};\r\nvar x = __spreadArrays(a.map(function (val) { return val.toUpperCase(); }))',
-                    source: '[...a.map(val => val.toUpperCase())]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a'],
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: '["hello", "world"]',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression:
-                      'sign = (this && this.__assign) || function () {\n\t__assign = Object.assign || function(t) {\n\t    for (var s, i = 1, n = arguments.length; i < n; i++) {\n\t        s = arguments[i];\n\t        for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))\n\t            t[p] = s[p];\n\t    }\n\t    return t;\n\t};\n\treturn __assign.apply(this, arguments);\r\n};\r\nvar x = __assign({}, a.map(function (val) { return val.toUpperCase(); }))',
-                    source: '{...a.map(val => val.toUpperCase())}',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: "{\n\tf1: 'some string',\n\tf2: true\n}",
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('array', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error [string | boolean]
+          }`
+        );
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            map error ['some string', true]
+            map error Array('some string', true)
+            a = ["hello", "world"]
+            map error [...a.map(val => val.toUpperCase())]
+          }`
+        );
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            a = ["hello", "world"]
+            map error {...a.map(val => val.toUpperCase())}
+            map error {
+              f1: 'some string',
+              f2: true
+            }
+          }`
+        );
 
         valid(profileAst, [mapAst1]);
         invalid(
@@ -7318,150 +1863,35 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('primitive type', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              error: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'PrimitiveTypeName',
-                  name: 'string',
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: "'string' + true'",
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '1+"true"',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '"some " + "string"',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'String(24)',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: "['some ', 'string'].join('')",
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '`some ${var}`',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: "['some string', true]",
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: "{\n\tf1: 'some string',\n\tf2: true\n}",
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'true',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'false',
-                  },
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: true,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '2+25',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('primitive type', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error string
+          }`
+        );
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            map error 'string' + true'
+            map error 1 + "true"
+            map error \"some \" + \"string\"
+            map error String(24)
+            map error ['some ', 'string'].join('')
+            map error \`some \$\{var\}\`
+          }`
+        );
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map error ['some string', true]
+            map error {
+            f1: 'some string',
+            f2: true
+          }
+            map error true
+            map error false
+            map error 2+25
+          }`
+        );
 
         valid(profileAst, [mapAst1]);
         invalid(
@@ -7472,96 +1902,27 @@ describe('MapValidator', () => {
         );
       });
     });
-    describe('result is variable', () => {
-      describe('referenced in outcome', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'PrimitiveTypeName',
-                  name: 'string',
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a', 'c'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'string',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'a.c',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a', 'c'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'string',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'a',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+    describe('result is variable', () => {
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+          result string
+        }`
+      );
+
+      describe('referenced in outcome', () => {
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            a.c = "string"
+            map result a.c
+          }`
+        );
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            a.c = "string"
+            map result a
+          }`
+        );
 
         valid(profileAst, [mapAst1]);
         invalid(
@@ -7571,166 +1932,32 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('reassigned (object)', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'ObjectDefinition',
-                  fields: [
-                    {
-                      kind: 'FieldDefinition',
-                      fieldName: 'f1',
-                      required: false,
-                      type: {
-                        kind: 'PrimitiveTypeName',
-                        name: 'string',
-                      },
-                    },
-                    {
-                      kind: 'FieldDefinition',
-                      fieldName: 'f2',
-                      required: false,
-                      type: {
-                        kind: 'PrimitiveTypeName',
-                        name: 'boolean',
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['foo'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'string',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['foo', 'f1'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'string',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['foo', 'f2'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: false,
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'foo',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['foo', 'f1'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'string',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['foo', 'f2'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: false,
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['foo'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'string',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'foo',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('reassigned (object)', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result {
+              f1 string
+              f2 boolean
+            }
+          }`
+        );
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            foo = "string"
+            foo.f1 = "string"
+            foo.f2 = false
+            map result foo
+          }`
+        );
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            foo.f1 = "string"
+            foo.f2 = false
+            foo = "string"
+            map result foo
+          }`
+        );
 
         valid(profileAst, [mapAst1]);
         invalid(
@@ -7740,217 +1967,36 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('reassigned (string)', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'PrimitiveTypeName',
-                  name: 'string',
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: false,
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a', 'b'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'some string',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'a.b',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a', 'b'],
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: '[1, 2, 3]',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a', 'b'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'some string',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'a.b',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a', 'b'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'some string',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: false,
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'a',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst4: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a', 'b'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'some string',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a', 'b'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: false,
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'a.b',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('reassigned (string)', () => {
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            a = false
+            a.b = "some string"
+            map result a.b
+          }`
+        );
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            a.b = [1, 2, 3]
+            a.b = "some string"
+            map result a.b
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            a.b = "some string"
+            a = false
+            map result a
+          }`
+        );
+        const mapAst4 = parseMapFromSource(
+          `map Test {
+            a.b = "some string"
+            a.b = false
+            map result a.b
+          }`
+        );
 
         valid(profileAst, [mapAst1, mapAst2]);
         invalid(
@@ -7962,152 +2008,28 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('using variable with string key', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'PrimitiveTypeName',
-                  name: 'string',
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['foo.bar', 'a'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'some string',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '"foo.bar".a',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst2: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['foo.bar', 'a'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'some string',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '"foo.bar".a',
-                  },
-                },
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['foo', 'bar.a'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'some string',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'foo["bar.a"]',
-                  },
-                },
-              ],
-            },
-          ],
-        };
-        const mapAst3: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['foo.bar', 'a'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: false,
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: '"foo.bar".a',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('using variable with string key', () => {
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            foo.bar.a = "some string"
+            map result "foo.bar".a
+          }`
+        );
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            foo.bar.a = "some string"
+            map result "foo.bar".a
+            foo.bar.a = "some string"
+            map result foo["bar.a"]
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            foo.bar.a = false
+            map result "foo.bar".a
+          }`
+        );
 
         valid(profileAst, [mapAst1, mapAst2]);
         invalid(
@@ -8117,60 +2039,14 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('wrong structure', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'PrimitiveTypeName',
-                  name: 'string',
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a', 'b'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: false,
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'a.b',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('wrong structure', () => {
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            a.b = false
+            map result a.b
+          }`
+        );
 
         invalid(
           profileAst,
@@ -8179,129 +2055,26 @@ describe('MapValidator', () => {
           ''
         );
       });
-      describe('in different scopes', () => {
-        const profileAst: ProfileDocumentNode = {
-          kind: 'ProfileDocument',
 
-          header: profileHeader,
-          definitions: [
-            {
-              kind: 'UseCaseDefinition',
-              useCaseName: 'Test',
-              result: {
-                kind: 'UseCaseSlotDefinition',
-                value: {
-                  kind: 'PrimitiveTypeName',
-                  name: 'string',
-                },
-              },
-            },
-          ],
-        };
-        const mapAst1: MapASTNode = {
-          kind: 'MapDocument',
-          header: mapHeader,
-          definitions: [
-            {
-              kind: 'MapDefinition',
-              name: 'Test',
-              usecaseName: 'Test',
-              statements: [
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['a', 'c'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: false,
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'SetStatement',
-                  assignments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['b'],
-                      value: {
-                        kind: 'PrimitiveLiteral',
-                        value: 'some string',
-                      },
-                    },
-                  ],
-                },
-                {
-                  kind: 'HttpCallStatement',
-                  method: 'GET',
-                  url: 'http://example.com/',
-                  responseHandlers: [
-                    {
-                      kind: 'HttpResponseHandler',
-                      statements: [
-                        {
-                          kind: 'SetStatement',
-                          assignments: [
-                            {
-                              kind: 'Assignment',
-                              key: ['a', 'c'],
-                              value: {
-                                kind: 'PrimitiveLiteral',
-                                value: 'some string',
-                              },
-                            },
-                          ],
-                        },
-                        {
-                          kind: 'SetStatement',
-                          assignments: [
-                            {
-                              kind: 'Assignment',
-                              key: ['c'],
-                              value: {
-                                kind: 'PrimitiveLiteral',
-                                value: 'some string',
-                              },
-                            },
-                          ],
-                        },
-                        {
-                          kind: 'OutcomeStatement',
-                          terminateFlow: false,
-                          isError: false,
-                          value: {
-                            kind: 'JessieExpression',
-                            expression: 'a.c',
-                          },
-                        },
-                        {
-                          kind: 'OutcomeStatement',
-                          terminateFlow: false,
-                          isError: false,
-                          value: {
-                            kind: 'JessieExpression',
-                            expression: 'b',
-                          },
-                        },
-                      ],
-                    },
-                  ],
-                },
-                {
-                  kind: 'OutcomeStatement',
-                  terminateFlow: false,
-                  isError: false,
-                  value: {
-                    kind: 'JessieExpression',
-                    expression: 'a.c',
-                  },
-                },
-              ],
-            },
-          ],
-        };
+      describe('in different scopes', () => {
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            a.c = false
+            b = "some string"
+            http GET "http://example.com/" {
+              response {
+                a.c = "some string"
+          
+                c = "some string"
+          
+                map result a.c
+          
+                map result b
+              }
+            }
+            map result a.c
+          }`
+        );
 
         invalid(
           profileAst,
@@ -8311,93 +2084,26 @@ describe('MapValidator', () => {
         );
       });
     });
+
     describe('result is conditioned', () => {
-      const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-
-        header: profileHeader,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [
-                  {
-                    kind: 'FieldDefinition',
-                    required: false,
-                    fieldName: 'f1',
-                    type: {
-                      kind: 'ObjectDefinition',
-                      fields: [
-                        {
-                          kind: 'FieldDefinition',
-                          fieldName: 'inner',
-                          required: false,
-                          type: {
-                            kind: 'PrimitiveTypeName',
-                            name: 'string',
-                          },
-                        },
-                      ],
-                    },
-                  },
-                ],
-              },
-            },
-          },
-        ],
-      };
-      const mapAst: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                terminateFlow: false,
-                isError: false,
-                condition: {
-                  kind: 'ConditionAtom',
-                  expression: {
-                    kind: 'JessieExpression',
-                    expression: 'cond',
-                  },
-                },
-                value: {
-                  kind: 'ObjectLiteral',
-                  fields: [
-                    {
-                      kind: 'Assignment',
-                      key: ['f1'],
-                      value: {
-                        kind: 'ObjectLiteral',
-                        fields: [
-                          {
-                            kind: 'Assignment',
-                            key: ['inner'],
-                            value: {
-                              kind: 'ObjectLiteral',
-                              fields: [],
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-        ],
-      };
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+          result {
+            f1 {
+              inner string
+            }
+          }
+        }`
+      );
+      const mapAst = parseMapFromSource(
+        `map Test {
+          map result if (cond) {
+            f1 = {
+              inner = {}
+            }
+          }
+        }`
+      );
 
       valid(
         profileAst,
@@ -8405,108 +2111,27 @@ describe('MapValidator', () => {
         'ObjectLiteral - Wrong Structure: expected string, but got "ObjectLiteral"'
       );
     });
-    describe('error is conditioned', () => {
-      const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
 
-        header: profileHeader,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            error: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [
-                  {
-                    kind: 'FieldDefinition',
-                    required: false,
-                    fieldName: 'f1',
-                    type: {
-                      kind: 'ObjectDefinition',
-                      fields: [
-                        {
-                          kind: 'FieldDefinition',
-                          fieldName: 'inner',
-                          required: false,
-                          type: {
-                            kind: 'PrimitiveTypeName',
-                            name: 'string',
-                          },
-                        },
-                      ],
-                    },
-                  },
-                ],
-              },
-            },
-          },
-        ],
-      };
-      const mapAst: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                terminateFlow: false,
-                isError: true,
-                condition: {
-                  kind: 'ConditionAtom',
-                  expression: {
-                    kind: 'JessieExpression',
-                    expression: 'cond',
-                  },
-                },
-                value: {
-                  kind: 'ObjectLiteral',
-                  fields: [
-                    {
-                      kind: 'Assignment',
-                      key: ['f1'],
-                      value: {
-                        kind: 'ObjectLiteral',
-                        fields: [
-                          {
-                            kind: 'Assignment',
-                            key: ['inner'],
-                            value: {
-                              kind: 'ObjectLiteral',
-                              fields: [],
-                            },
-                          },
-                        ],
-                      },
-                    },
-                  ],
-                },
-              },
-              {
-                kind: 'OutcomeStatement',
-                terminateFlow: false,
-                isError: true,
-                condition: {
-                  kind: 'ConditionAtom',
-                  expression: {
-                    kind: 'JessieExpression',
-                    expression: 'cond',
-                  },
-                },
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'some string',
-                },
-              },
-            ],
-          },
-        ],
-      };
+    describe('error is conditioned', () => {
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+          error {
+            f1 {
+              inner string
+            }
+          }
+        }`
+      );
+      const mapAst = parseMapFromSource(
+        `map Test {
+          map error if (cond) {
+            f1 = {
+              inner = {}
+            }
+          }
+          map error if (cond) "some string"
+        }`
+      );
 
       valid(
         profileAst,
@@ -8514,183 +2139,45 @@ describe('MapValidator', () => {
         'ObjectLiteral - Wrong Structure: expected string, but got "ObjectLiteral"\nPrimitiveLiteral - Wrong Structure: expected ObjectStructure, but got "some string"'
       );
     });
-    describe('map is using http call', () => {
-      const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
 
-        header: profileHeader,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            input: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [
-                  {
-                    kind: 'FieldDefinition',
-                    required: false,
-                    fieldName: 'to',
-                    type: {
-                      kind: 'PrimitiveTypeName',
-                      name: 'string',
-                    },
-                  },
-                  {
-                    kind: 'FieldDefinition',
-                    required: false,
-                    fieldName: 'from',
-                  },
-                ],
-              },
-            },
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [
-                  {
-                    kind: 'FieldDefinition',
-                    required: false,
-                    fieldName: 'from',
-                    type: {
-                      kind: 'PrimitiveTypeName',
-                      name: 'string',
-                    },
-                  },
-                  {
-                    kind: 'FieldDefinition',
-                    required: false,
-                    fieldName: 'text',
-                    type: {
-                      kind: 'PrimitiveTypeName',
-                      name: 'string',
-                    },
-                  },
-                ],
-              },
-            },
-          },
-        ],
-      };
-      const mapAst1: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'SetStatement',
-                assignments: [
-                  {
-                    kind: 'Assignment',
-                    key: ['some', 'variable'],
-                    value: {
-                      kind: 'PrimitiveLiteral',
-                      value: 'string',
-                    },
-                  },
-                ],
-              },
-              {
-                kind: 'HttpCallStatement',
-                method: 'POST',
-                url: 'http://example.com/{some.variable}/{input.from}',
-                responseHandlers: [
-                  {
-                    kind: 'HttpResponseHandler',
-                    statusCode: 200,
-                    statements: [
-                      {
-                        kind: 'OutcomeStatement',
-                        terminateFlow: false,
-                        isError: false,
-                        value: {
-                          kind: 'ObjectLiteral',
-                          fields: [
-                            {
-                              kind: 'Assignment',
-                              key: ['from'],
-                              value: {
-                                kind: 'PrimitiveLiteral',
-                                value: 'some string',
-                              },
-                            },
-                            {
-                              kind: 'Assignment',
-                              key: ['text'],
-                              value: {
-                                kind: 'PrimitiveLiteral',
-                                value: 'some string',
-                              },
-                            },
-                          ],
-                        },
-                      },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-      const mapAst2: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'HttpCallStatement',
-                method: 'POST',
-                url: 'http://www.example.com/',
-                responseHandlers: [
-                  {
-                    kind: 'HttpResponseHandler',
-                    statusCode: 200,
-                    statements: [
-                      {
-                        kind: 'OutcomeStatement',
-                        terminateFlow: false,
-                        isError: false,
-                        value: {
-                          kind: 'ObjectLiteral',
-                          fields: [
-                            {
-                              kind: 'Assignment',
-                              key: ['from'],
-                              value: {
-                                kind: 'ObjectLiteral',
-                                fields: [],
-                              },
-                            },
-                            {
-                              kind: 'Assignment',
-                              key: ['text'],
-                              value: {
-                                kind: 'PrimitiveLiteral',
-                                value: 'some string',
-                              },
-                            },
-                          ],
-                        },
-                      },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
+    describe('map is using http call', () => {
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+          input {
+            to string
+            from
+          }
+          result {
+            from string
+            text string
+          }
+        }`
+      );
+      const mapAst1 = parseMapFromSource(
+        `map Test {
+          some.variable = "string"
+          http POST "http://example.com/{some.variable}/{input.from}" {
+            response 200 {
+              map result {
+                from = "some string"
+                text = "some string"
+              }
+            }
+          }
+        }`
+      );
+      const mapAst2 = parseMapFromSource(
+        `map Test {
+          http POST "http://www.example.com/" {
+            response 200 {
+              map result {
+                from = {}
+                text = "some string"
+              }
+            }
+          }
+        }`
+      );
 
       valid(
         profileAst,
@@ -8700,422 +2187,110 @@ describe('MapValidator', () => {
       invalid(
         profileAst,
         [mapAst2],
-        'ObjectLiteral - Wrong Structure: expected string, but got "ObjectLiteral"',
+        'ObjectLiteralExpression - Wrong Structure: expected string, but got "{}"',
         ''
       );
     });
-    describe('map is using inline call', () => {
-      const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
 
-        header: profileHeader,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [
-                  {
-                    kind: 'FieldDefinition',
-                    required: false,
-                    fieldName: 'from',
-                    type: {
-                      kind: 'PrimitiveTypeName',
-                      name: 'string',
-                    },
-                  },
-                  {
-                    kind: 'FieldDefinition',
-                    required: false,
-                    fieldName: 'text',
-                    type: {
-                      kind: 'PrimitiveTypeName',
-                      name: 'string',
-                    },
-                  },
-                ],
-              },
-            },
-          },
-        ],
-      };
-      const mapAst1: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'OperationDefinition',
-            name: 'Foo',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                terminateFlow: false,
-                isError: false,
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'some string',
-                },
-              },
-            ],
-          },
-          {
-            kind: 'OperationDefinition',
-            name: 'Bar',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                terminateFlow: false,
-                isError: false,
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'some string',
-                },
-              },
-            ],
-          },
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                terminateFlow: false,
-                isError: false,
-                value: {
-                  kind: 'ObjectLiteral',
-                  fields: [
-                    {
-                      kind: 'Assignment',
-                      key: ['from'],
-                      value: {
-                        kind: 'InlineCall',
-                        operationName: 'Foo',
-                        arguments: [],
-                      },
-                    },
-                    {
-                      kind: 'Assignment',
-                      key: ['text'],
-                      value: {
-                        kind: 'InlineCall',
-                        operationName: 'Bar',
-                        arguments: [],
-                      },
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-        ],
-      };
-      const mapAst2: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'OperationDefinition',
-            name: 'Foo',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                terminateFlow: false,
-                isError: false,
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'some string',
-                },
-              },
-            ],
-          },
-          {
-            kind: 'OperationDefinition',
-            name: 'Bar',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                terminateFlow: false,
-                isError: false,
-                value: {
-                  kind: 'ObjectLiteral',
-                  fields: [],
-                },
-              },
-            ],
-          },
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                terminateFlow: false,
-                isError: false,
-                value: {
-                  kind: 'ObjectLiteral',
-                  fields: [
-                    {
-                      kind: 'Assignment',
-                      key: ['from'],
-                      value: {
-                        kind: 'InlineCall',
-                        operationName: 'Foo',
-                        arguments: [],
-                      },
-                    },
-                    {
-                      kind: 'Assignment',
-                      key: ['text'],
-                      value: {
-                        kind: 'InlineCall',
-                        operationName: 'Bar',
-                        arguments: [],
-                      },
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-        ],
-      };
+    describe('map is using inline call', () => {
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+          result {
+            from string
+            text string
+          }
+        }`
+      );
+      const mapAst1 = parseMapFromSource(
+        `operation Foo {
+          return "some string"
+        }
+        
+        operation Bar {
+          return "some string"
+        }
+        
+        map Test {
+          map result {
+            from = call Foo()
+            text = call Bar()
+          }
+        }`
+      );
+      const mapAst2 = parseMapFromSource(
+        `operation Foo {
+          return "some string"
+        }
+        
+        operation Bar {
+          return {
+          }
+        }
+        
+        map Test {
+          map result {
+            from = call Foo()
+            text = call Bar()
+          }
+        }`
+      );
 
       valid(profileAst, [mapAst1, mapAst2]);
     });
   });
 
   describe('input', () => {
-    const profileAst: ProfileDocumentNode = {
-      kind: 'ProfileDocument',
-      header: profileHeader,
-      definitions: [
-        {
-          kind: 'UseCaseDefinition',
-          useCaseName: 'Test',
-          input: {
-            kind: 'UseCaseSlotDefinition',
-            value: {
-              kind: 'ObjectDefinition',
-              fields: [
-                {
-                  kind: 'FieldDefinition',
-                  required: false,
-                  fieldName: 'person',
-                  type: {
-                    kind: 'ObjectDefinition',
-                    fields: [
-                      {
-                        kind: 'FieldDefinition',
-                        required: false,
-                        fieldName: 'from',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'string',
-                        },
-                      },
-                      {
-                        kind: 'FieldDefinition',
-                        required: false,
-                        fieldName: 'to',
-                        type: {
-                          kind: 'PrimitiveTypeName',
-                          name: 'string',
-                        },
-                      },
-                    ],
-                  },
-                },
-                {
-                  kind: 'FieldDefinition',
-                  required: false,
-                  fieldName: 'to',
-                  type: {
-                    kind: 'PrimitiveTypeName',
-                    name: 'string',
-                  },
-                },
-                {
-                  kind: 'FieldDefinition',
-                  required: false,
-                  fieldName: 'from',
-                  type: {
-                    kind: 'PrimitiveTypeName',
-                    name: 'string',
-                  },
-                },
-                {
-                  kind: 'FieldDefinition',
-                  required: false,
-                  fieldName: 'text',
-                  type: {
-                    kind: 'PrimitiveTypeName',
-                    name: 'string',
-                  },
-                },
-              ],
-            },
-          },
-        },
-      ],
-    };
+    const profileAst = parseProfileFromSource(
+      `usecase Test {
+        input {
+          person {
+            from string
+            to string
+          }
+          to string
+          from string
+          text string
+        }
+      }`
+    );
+
     describe('input referenced in HttpCallStatement', () => {
-      const mapAst1: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'HttpCallStatement',
-                method: 'POST',
-                url: 'http://www.example.com/',
-                request: {
-                  kind: 'HttpRequest',
-                  body: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['to'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'input.to',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['sms', 'from'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'input.from',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['sms', 'text'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'input.text',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['to', 'person'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'input.person.to',
-                        },
-                      },
-                    ],
-                  },
-                  security: [],
-                },
-                responseHandlers: [
-                  {
-                    kind: 'HttpResponseHandler',
-                    statusCode: 200,
-                    statements: [
-                      {
-                        kind: 'OutcomeStatement',
-                        terminateFlow: false,
-                        isError: false,
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'OK',
-                        },
-                      },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-      const mapAst2: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'HttpCallStatement',
-                method: 'POST',
-                url: 'http://www.example.com/',
-                request: {
-                  kind: 'HttpRequest',
-                  body: {
-                    kind: 'ObjectLiteral',
-                    fields: [
-                      {
-                        kind: 'Assignment',
-                        key: ['to'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'input.wrong',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['sms', 'from'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'input.from',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['sms', 'text'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'input.text',
-                        },
-                      },
-                      {
-                        kind: 'Assignment',
-                        key: ['to', 'person'],
-                        value: {
-                          kind: 'JessieExpression',
-                          expression: 'input.person.wrong',
-                        },
-                      },
-                    ],
-                  },
-                  security: [],
-                },
-                responseHandlers: [
-                  {
-                    kind: 'HttpResponseHandler',
-                    statusCode: 200,
-                    statements: [
-                      {
-                        kind: 'OutcomeStatement',
-                        terminateFlow: false,
-                        isError: false,
-                        value: {
-                          kind: 'PrimitiveLiteral',
-                          value: 'OK',
-                        },
-                      },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
+      const mapAst1 = parseMapFromSource(
+        `map Test {
+          http POST "http://www.example.com/" {
+            request {
+              body {
+                to = input.to
+                sms.from = input.from
+                sms.text = input.text
+                to.person = input.person.to
+              }
+            }
+        
+            response 200 {
+              map result "OK"
+            }
+          }
+        }`
+      );
+      const mapAst2 = parseMapFromSource(
+        `map Test {
+          http POST "http://www.example.com/" {
+            request {
+              body {
+                to = input.wrong
+                sms.from = input.from
+                sms.text = input.text
+                to.person = input.person.wrong
+              }
+            }
+        
+            response 200 {
+              map result "OK"
+            }
+          }
+        }`
+      );
 
       valid(profileAst, [mapAst1]);
       invalid(
@@ -9125,75 +2300,24 @@ describe('MapValidator', () => {
         ''
       );
     });
+
     describe('input referenced in SetStatement', () => {
-      const mapAst1: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'SetStatement',
-                assignments: [
-                  {
-                    kind: 'Assignment',
-                    key: ['a'],
-                    value: {
-                      kind: 'JessieExpression',
-                      expression: 'input.from',
-                    },
-                  },
-                  {
-                    kind: 'Assignment',
-                    key: ['b'],
-                    value: {
-                      kind: 'JessieExpression',
-                      expression: 'input.person.from',
-                    },
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
-      const mapAst2: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'SetStatement',
-                assignments: [
-                  {
-                    kind: 'Assignment',
-                    key: ['a'],
-                    value: {
-                      kind: 'JessieExpression',
-                      expression: 'input.wrong',
-                    },
-                  },
-                  {
-                    kind: 'Assignment',
-                    key: ['b'],
-                    value: {
-                      kind: 'JessieExpression',
-                      expression: 'input.person.wrong',
-                    },
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-      };
+      const mapAst1 = parseMapFromSource(
+        `map Test {
+          set {
+            a = input.from
+            b = input.person.from
+          }
+        }`
+      );
+      const mapAst2 = parseMapFromSource(
+        `map Test {
+          set {
+            a = input.wrong
+            b = input.person.wrong
+          }
+        }`
+      );
 
       valid(profileAst, [mapAst1]);
       invalid(
@@ -9203,91 +2327,20 @@ describe('MapValidator', () => {
         ''
       );
     });
+
     describe('input referenced in ConditionAtomNode', () => {
-      const mapAst1: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'SetStatement',
-                condition: {
-                  kind: 'ConditionAtom',
-                  expression: {
-                    kind: 'JessieExpression',
-                    expression: 'input.person',
-                  },
-                },
-                assignments: [
-                  {
-                    kind: 'Assignment',
-                    key: ['a'],
-                    value: {
-                      kind: 'JessieExpression',
-                      expression: '25 + 10',
-                    },
-                  },
-                ],
-              },
-              {
-                kind: 'OutcomeStatement',
-                isError: false,
-                terminateFlow: false,
-                value: {
-                  kind: 'JessieExpression',
-                  expression: 'input.person.from',
-                },
-              },
-            ],
-          },
-        ],
-      };
-      const mapAst2: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'SetStatement',
-                condition: {
-                  kind: 'ConditionAtom',
-                  expression: {
-                    kind: 'JessieExpression',
-                    expression: 'input.wrong',
-                  },
-                },
-                assignments: [
-                  {
-                    kind: 'Assignment',
-                    key: ['a'],
-                    value: {
-                      kind: 'JessieExpression',
-                      expression: '25 + 10',
-                    },
-                  },
-                ],
-              },
-              {
-                kind: 'OutcomeStatement',
-                isError: false,
-                terminateFlow: false,
-                value: {
-                  kind: 'JessieExpression',
-                  expression: 'input.person.wrong',
-                },
-              },
-            ],
-          },
-        ],
-      };
+      const mapAst1 = parseMapFromSource(
+        `map Test {
+          a = 25 + 10
+          map result input.person.from
+        }`
+      );
+      const mapAst2 = parseMapFromSource(
+        `map Test {
+          a = 25 + 10
+          map result input.person.wrong
+        }`
+      );
 
       valid(profileAst, [mapAst1]);
       invalid(
@@ -9297,114 +2350,24 @@ describe('MapValidator', () => {
         ''
       );
     });
+
     describe('input referenced in arguments of CallStatement', () => {
-      const mapAst1: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'OperationDefinition',
-            name: 'Foo',
-            statements: [],
-          },
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'CallStatement',
-                operationName: 'Foo',
-                arguments: [
-                  {
-                    kind: 'Assignment',
-                    key: ['from', 'person'],
-                    value: {
-                      kind: 'JessieExpression',
-                      expression: 'input.person.from',
-                    },
-                  },
-                  {
-                    kind: 'Assignment',
-                    key: ['to', 'person'],
-                    value: {
-                      kind: 'JessieExpression',
-                      expression: 'input.person.to',
-                    },
-                  },
-                  {
-                    kind: 'Assignment',
-                    key: ['message'],
-                    value: {
-                      kind: 'JessieExpression',
-                      expression: 'input.text',
-                    },
-                  },
-                ],
-                statements: [],
-              },
-            ],
-          },
-        ],
-      };
-      const mapAst2: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'OperationDefinition',
-            name: 'Foo',
-            statements: [],
-          },
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'CallStatement',
-                operationName: 'Foo',
-                arguments: [
-                  {
-                    kind: 'Assignment',
-                    key: ['from', 'person'],
-                    value: {
-                      kind: 'JessieExpression',
-                      expression: 'input.person.from',
-                    },
-                  },
-                  {
-                    kind: 'Assignment',
-                    key: ['to', 'person'],
-                    value: {
-                      kind: 'JessieExpression',
-                      expression: 'input.person.wrong',
-                    },
-                  },
-                  {
-                    kind: 'Assignment',
-                    key: ['message'],
-                    value: {
-                      kind: 'JessieExpression',
-                      expression: 'input.so.wrong',
-                    },
-                  },
-                  {
-                    kind: 'Assignment',
-                    key: ['super', 'wrong'],
-                    value: {
-                      kind: 'JessieExpression',
-                      expression:
-                        'input.person.something.really.wrong.do.not.do.this',
-                    },
-                  },
-                ],
-                statements: [],
-              },
-            ],
-          },
-        ],
-      };
+      const mapAst1 = parseMapFromSource(
+        `operation Foo {}
+        
+        map Test {
+          call Foo(from.person = input.person.from, to.person = input.person.to, message = input.text) {
+          }
+        }`
+      );
+      const mapAst2 = parseMapFromSource(
+        `operation Foo {}
+        
+        map Test {
+          call Foo(from.person = input.person.from, to.person = input.person.wrong, message = input.so.wrong, super.wrong = input.person.something.really.wrong.do.not.do.this) {
+          }
+        }`
+      );
 
       valid(profileAst, [mapAst1]);
       invalid(
@@ -9418,227 +2381,79 @@ describe('MapValidator', () => {
 
   describe('usecase-map compatibility', () => {
     describe('multiple maps', () => {
-      const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-
-        header: profileHeader,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'PrimitiveTypeName',
-                name: 'string',
-              },
-            },
-          },
-        ],
-      };
-      const mapAst: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                terminateFlow: false,
-                isError: false,
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'some string',
-                },
-              },
-            ],
-          },
-          {
-            kind: 'MapDefinition',
-            name: 'Test2',
-            usecaseName: 'Test2',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                terminateFlow: false,
-                isError: false,
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: true,
-                },
-              },
-            ],
-          },
-        ],
-      };
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+          result string
+        }`
+      );
+      const mapAst = parseMapFromSource(
+        `map Test {
+          map result "some string"
+        }
+        
+        map Test2 {
+          map result true
+        }`
+      );
 
       valid(profileAst, [mapAst], '', 'Extra Map');
     });
+
     describe('missing maps', () => {
-      const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-
-        header: profileHeader,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test1',
-
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'PrimitiveTypeName',
-                name: 'string',
-              },
-            },
-          },
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test2',
-
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'PrimitiveTypeName',
-                name: 'boolean',
-              },
-            },
-          },
-        ],
-      };
-      const mapAst: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test1',
-            usecaseName: 'Test1',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                terminateFlow: false,
-                isError: false,
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'some string',
-                },
-              },
-            ],
-          },
-        ],
-      };
+      const profileAst = parseProfileFromSource(
+        `usecase Test1 {
+          result string
+        }
+        usecase Test2 {
+          result boolean
+        }`
+      );
+      const mapAst = parseMapFromSource(
+        `map Test1 {
+          map result "some string"
+        }`
+      );
 
       invalid(profileAst, [mapAst], 'MapDocument - Map not found: Test2', '');
     });
-    describe('wrong profile name', () => {
-      const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        header: profileHeader,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
 
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'PrimitiveTypeName',
-                name: 'string',
-              },
-            },
-          },
-        ],
-      };
-      const mapAst: MapASTNode = {
-        kind: 'MapDocument',
-        header: {
-          kind: 'MapHeader',
-          profile: {
-            name: 'wrong',
-            version: mapHeader.profile.version,
-          },
-          provider: mapHeader.provider,
-        },
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                terminateFlow: false,
-                isError: false,
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'some string',
-                },
-              },
-            ],
-          },
-        ],
-      };
+    describe('wrong profile name', () => {
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+          result string
+        }`
+      );
+      const mapAst = parseMap(
+        new Source(`profile = "wrong@1.0"
+        provider = "test"
+        
+        map Test {
+          map result "some string"
+        }`)
+      );
 
       invalid(
         profileAst,
         [mapAst],
-        'MapHeader - Wrong Profile Name: expected whatever, but got wrong',
+        'MapHeader - Wrong Profile Name: expected test, but got wrong',
         ''
       );
     });
+
     describe('wrong scope', () => {
-      const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        header: profileHeader,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'PrimitiveTypeName',
-                name: 'string',
-              },
-            },
-          },
-        ],
-      };
-      const mapAst: MapASTNode = {
-        kind: 'MapDocument',
-        header: {
-          kind: 'MapHeader',
-          profile: {
-            name: mapHeader.profile.name,
-            scope: 'starwars',
-            version: mapHeader.profile.version,
-          },
-          provider: mapHeader.provider,
-        },
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                terminateFlow: false,
-                isError: false,
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'some string',
-                },
-              },
-            ],
-          },
-        ],
-      };
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+          result string
+        }`
+      );
+      const mapAst = parseMap(
+        new Source(`profile = "starwars/test@1.0"
+        provider = "test"
+        
+        map Test {
+          map result "some string"
+        }`)
+      );
 
       invalid(
         profileAst,
@@ -9647,58 +2462,21 @@ describe('MapValidator', () => {
         ''
       );
     });
-    describe('wrong version', () => {
-      const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        header: profileHeader,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
 
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'PrimitiveTypeName',
-                name: 'string',
-              },
-            },
-          },
-        ],
-      };
-      const mapAst: MapASTNode = {
-        kind: 'MapDocument',
-        header: {
-          kind: 'MapHeader',
-          profile: {
-            name: mapHeader.profile.name,
-            version: {
-              major: 2,
-              minor: 0,
-              patch: 0,
-            },
-          },
-          provider: mapHeader.provider,
-        },
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                terminateFlow: false,
-                isError: false,
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'some string',
-                },
-              },
-            ],
-          },
-        ],
-      };
+    describe('wrong version', () => {
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+          result string
+        }`
+      );
+      const mapAst = parseMap(
+        new Source(`profile = "test@2.0"
+        provider = "test"
+        
+        map Test {
+          map result "some string"
+        }`)
+      );
 
       invalid(
         profileAst,
@@ -9707,47 +2485,18 @@ describe('MapValidator', () => {
         ''
       );
     });
-    describe('profile result missing', () => {
-      const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
 
-        header: profileHeader,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            error: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'PrimitiveTypeName',
-                name: 'string',
-              },
-            },
-          },
-        ],
-      };
-      const mapAst: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                terminateFlow: false,
-                isError: false,
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'some string',
-                },
-              },
-            ],
-          },
-        ],
-      };
+    describe('profile result missing', () => {
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+          error string
+        }`
+      );
+      const mapAst = parseMapFromSource(
+        `map Test {
+          map result "some string"
+        }`
+      );
 
       valid(
         profileAst,
@@ -9755,47 +2504,18 @@ describe('MapValidator', () => {
         'OutcomeStatement - Result Not Found: returning "some string", but there is no result defined in usecase'
       );
     });
-    describe('profile error missing', () => {
-      const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
 
-        header: profileHeader,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'PrimitiveTypeName',
-                name: 'string',
-              },
-            },
-          },
-        ],
-      };
-      const mapAst: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                terminateFlow: false,
-                isError: true,
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'some string',
-                },
-              },
-            ],
-          },
-        ],
-      };
+    describe('profile error missing', () => {
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+          result string
+        }`
+      );
+      const mapAst = parseMapFromSource(
+        `map Test {
+          map error "some string"
+        }`
+      );
 
       valid(
         profileAst,
@@ -9803,84 +2523,30 @@ describe('MapValidator', () => {
         'OutcomeStatement - Error Not Found: returning "some string", but there is no error defined in usecase'
       );
     });
-    describe('profile input missing', () => {
-      const profileAst: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
 
-        header: profileHeader,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            error: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'PrimitiveTypeName',
-                name: 'string',
-              },
-            },
-          },
-        ],
-      };
-      const mapAst: MapASTNode = {
-        kind: 'MapDocument',
-        header: mapHeader,
-        definitions: [
-          {
-            kind: 'OperationDefinition',
-            name: 'Foo',
-            statements: [],
-          },
-          {
-            kind: 'MapDefinition',
-            name: 'Test',
-            usecaseName: 'Test',
-            statements: [
-              {
-                kind: 'OutcomeStatement',
-                condition: {
-                  kind: 'ConditionAtom',
-                  expression: {
-                    kind: 'JessieExpression',
-                    expression: 'input.something',
-                  },
-                },
-                terminateFlow: false,
-                isError: true,
-                value: {
-                  kind: 'PrimitiveLiteral',
-                  value: 'some string',
-                },
-              },
-              {
-                kind: 'OutcomeStatement',
-                terminateFlow: false,
-                isError: false,
-                value: {
-                  kind: 'InlineCall',
-                  operationName: 'Foo',
-                  arguments: [
-                    {
-                      kind: 'Assignment',
-                      key: ['some', 'key'],
-                      value: {
-                        kind: 'JessieExpression',
-                        expression: 'input.some.variable',
-                      },
-                    },
-                  ],
-                },
-              },
-            ],
-          },
-        ],
-      };
+    describe('profile input missing', () => {
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+          error string
+        }`
+      );
+      const mapAst = parseMapFromSource(
+        `operation Foo {}
+        
+        map Test {
+          map error if (input.something) "some string"
+
+          output = call Foo(some.key = input.some.variable)
+
+          map result output
+        }`
+      );
 
       invalid(
         profileAst,
         [mapAst],
-        'JessieExpression - Input Not Found: input.something - there is no input defined in usecase\n1:16 PropertyAccessExpression - Input Not Found: input.something - there is no input defined in usecase\nJessieExpression - Input Not Found: input.some.variable - there is no input defined in usecase\n1:20 PropertyAccessExpression - Input Not Found: input.some.variable - there is no input defined in usecase',
-        'OutcomeStatement - Result Not Found: returning "InlineCall", but there is no result defined in usecase'
+        'JessieExpression - Input Not Found: input.something - there is no input defined in usecase\n1:16 PropertyAccessExpression - Input Not Found: input.something - there is no input defined in usecase\n9:40 JessieExpression - Input Not Found: input.some.variable - there is no input defined in usecase\n1:20 PropertyAccessExpression - Input Not Found: input.some.variable - there is no input defined in usecase',
+        'OutcomeStatement - Result Not Found: returning "JessieExpression", but there is no result defined in usecase'
       );
     });
   });
