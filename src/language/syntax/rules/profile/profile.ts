@@ -423,7 +423,6 @@ const USECASE_EXAMPLE: SyntaxRule<WithLocation<UseCaseExampleNode>> =
         const value: WithLocation<UseCaseExampleNode> = {
           kind: 'UseCaseExample',
           exampleName: maybeName?.data.identifier,
-          // TODO: implement the transformation - waiting on ast
           input: maybeInput,
           result: maybeResult,
           asyncResult: maybeAsyncResult,
