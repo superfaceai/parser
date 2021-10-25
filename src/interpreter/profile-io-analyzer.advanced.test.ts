@@ -1,11 +1,10 @@
-import { ProfileDocumentNode, ProfileHeaderNode } from '@superfaceai/ast';
-import { parseProfile, Source } from '..';
+import { ProfileDocumentNode } from '@superfaceai/ast';
 
+import { parseProfile, Source } from '..';
 import { ProfileIOAnalyzer } from './profile-io-analyzer';
 import { ObjectStructure, ProfileOutput } from './profile-output';
 
-const header: ProfileHeaderNode = {
-  kind: 'ProfileHeader',
+const header = {
   name: 'test',
   version: {
     major: 1,
@@ -207,7 +206,7 @@ describe('ProfileValidator Advanced', () => {
             f4
         }
 
-        usecase myCase {
+        usecase Test {
             input {}
             result m1 | m2
         }`
@@ -215,14 +214,7 @@ describe('ProfileValidator Advanced', () => {
 
       const profileValidator = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        header: {
-          name: 'test',
-          version: {
-            major: 0,
-            minor: 0,
-            patch: 0,
-          },
-        },
+        header,
         usecases: [
           {
             useCaseName: 'Test',
@@ -236,25 +228,20 @@ describe('ProfileValidator Advanced', () => {
                   kind: 'ObjectStructure',
                   fields: {
                     f1: {
-                      kind: 'UnionStructure',
-                      types: [
-                        {
-                          kind: 'NonNullStructure',
-                          value: {
-                            kind: 'ObjectStructure',
-                            fields: {
-                              if1: {
-                                kind: 'PrimitiveStructure',
-                                type: 'string',
-                              },
-                              if2: {
-                                kind: 'PrimitiveStructure',
-                                type: 'boolean',
-                              },
-                            },
+                      kind: 'NonNullStructure',
+                      value: {
+                        kind: 'ObjectStructure',
+                        fields: {
+                          if1: {
+                            kind: 'PrimitiveStructure',
+                            type: 'string',
+                          },
+                          if2: {
+                            kind: 'PrimitiveStructure',
+                            type: 'boolean',
                           },
                         },
-                      ],
+                      },
                     },
                     f2: {
                       kind: 'NonNullStructure',

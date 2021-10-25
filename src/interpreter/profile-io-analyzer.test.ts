@@ -1,11 +1,10 @@
-import { ProfileDocumentNode, ProfileHeaderNode } from '@superfaceai/ast';
-import { parseProfile, Source } from '..';
+import { ProfileDocumentNode } from '@superfaceai/ast';
 
+import { parseProfile, Source } from '..';
 import { ProfileIOAnalyzer } from './profile-io-analyzer';
 import { ProfileOutput } from './profile-output';
 
-const header: ProfileHeaderNode = {
-  kind: 'ProfileHeader',
+const header = {
   name: 'test',
   version: {
     major: 1,
@@ -314,9 +313,8 @@ describe('ProfileIOAnalyzer', () => {
             f2 [string | boolean]
             f3 enum { A, B }
           }
-
-          model myModel boolean
-        }`
+        }
+        model myModel boolean`
       );
 
       const analyzer = new ProfileIOAnalyzer();
@@ -636,7 +634,7 @@ describe('ProfileIOAnalyzer', () => {
       header,
       usecases: [
         {
-          useCaseName: 'TestCase',
+          useCaseName: 'Test',
           title: 'The Test Case',
           description: 'It tests the case',
           input: {
@@ -692,11 +690,11 @@ describe('ProfileIOAnalyzer', () => {
   it('should correctly reference fields and models', () => {
     const ast = parseProfileFromSource(
       `usecase Test {
+        result Output
+
         error {
           message
         }
-        
-        result Output
       }
       
       field message ErrorEnum
