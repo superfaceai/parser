@@ -8,8 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-**BREAKINK CHANGE:** `ProfileDocumentId` renamed to `ProfileIdRange`
-**BREAKINK CHANGE:** `DocumentVersion` renamed to `VersionRange`
+**BREAKING CHANGE:** `ProfileDocumentId` renamed to `ProfileIdRange`
+**BREAKING CHANGE:** `DocumentVersion` renamed to `VersionRange`
+**BREAKING CHANGE:** `parseVersionNumber` renamed to `tryParseVersionNumber`
+**BREAKING CHANGE:** removed `isValidDocumentIdentifier` started using `isValidDocumentName` from AST
+**BREAKING CHANGE:** removed `splitLimit` strated using `splitLimit` from AST
 
 ### Added
 `ProfileVersion` class representing version of profile in ProfileId
