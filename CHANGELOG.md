@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+**BREAKINK CHANGE:** `ProfileDocumentId` renamed to `ProfileIdRange`
+**BREAKINK CHANGE:** `DocumentVersion` renamed to `VersionRange`
+
+### Added
+`ProfileVersion` class representing version of profile in ProfileId
+`ProfileId` class representing complete id of profile
+`MapVersion` class representing version of map in MapId
+`MapId` class representing complete id of map
+
+
 ## [0.0.23] - 2021-10-18
 ### Added
 - Profile example parsing
