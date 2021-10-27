@@ -561,10 +561,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@superfaceai/ast@0.0.35-beta.1":
-  version "0.0.35-beta.1"
-  resolved "https://registry.yarnpkg.com/@superfaceai/ast/-/ast-0.0.35-beta.1.tgz#0433afc9069937b76855fa5037b471d436b55ec9"
-  integrity sha512-bKzOZNLi9zBK8lyf8S9tJja1reQqY0rPINJ3On2Jb4QbwmdgyBSd85UcfKGSEkmipEcT278rv31Z63FKjOXqTg==
+"@superfaceai/ast@0.0.35-beta.2":
+  version "0.0.35-beta.2"
+  resolved "https://registry.yarnpkg.com/@superfaceai/ast/-/ast-0.0.35-beta.2.tgz#7a574c1fff1a54b5df329a6f0644da58fb439781"
+  integrity sha512-5q+WVhw1LqKygBMrYs6UWNqqWNwSBCNk0Y7Ej+bBfWhK+NP592p6qkPdrlUG016G1pc/FqKTbgMIyYVSfiZ1oQ==
   dependencies:
     typescript-is "^0.18.3"
 
