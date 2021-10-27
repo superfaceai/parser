@@ -1,74 +1,41 @@
-import {
-  AstMetadata,
-  ProfileDocumentNode,
-  ProfileHeaderNode,
-} from '@superfaceai/ast';
+import { ProfileDocumentNode } from '@superfaceai/ast';
 
+import { parseProfile, Source } from '..';
 import { ProfileIOAnalyzer } from './profile-io-analyzer';
 import { ProfileOutput } from './profile-output';
 
-const header: ProfileHeaderNode = {
-  kind: 'ProfileHeader',
+const header = {
   name: 'test',
   version: {
-    major: 0,
+    major: 1,
     minor: 0,
     patch: 0,
   },
 };
 
-const AST_METADATA: AstMetadata = {
-  astVersion: {
-    major: 0,
-    minor: 0,
-    patch: 0,
-  },
-  parserVersion: {
-    major: 0,
-    minor: 0,
-    patch: 0,
-  },
-  sourceChecksum: '',
-};
+const parseProfileFromSource = (source: string): ProfileDocumentNode =>
+  parseProfile(
+    new Source(
+      `
+      name = "test"
+      version = "1.0.0"
+      ` + source
+    )
+  );
 
 describe('ProfileIOAnalyzer', () => {
   describe('When Profile has empty Input', () => {
     describe('and Result is Primitive Type', () => {
-      const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        astMetadata: AST_METADATA,
-        header,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            input: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [],
-              },
-            },
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'PrimitiveTypeName',
-                name: 'string',
-              },
-            },
-          },
-        ],
-      };
+      const ast = parseProfileFromSource(
+        `usecase Test {
+          input {}
+          result string     
+        }`
+      );
+
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        header: {
-          name: 'test',
-          version: {
-            major: 0,
-            minor: 0,
-            patch: 0,
-          },
-        },
+        header,
         usecases: [
           {
             useCaseName: 'Test',
@@ -88,51 +55,16 @@ describe('ProfileIOAnalyzer', () => {
     });
 
     describe('and Result is Enum Type', () => {
-      const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        astMetadata: AST_METADATA,
-        header,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            input: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [],
-              },
-            },
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'EnumDefinition',
-                values: [
-                  {
-                    kind: 'EnumValue',
-                    value: 'a',
-                  },
-                  {
-                    kind: 'EnumValue',
-                    value: 'b',
-                  },
-                ],
-              },
-            },
-          },
-        ],
-      };
+      const ast = parseProfileFromSource(
+        `usecase Test {
+          input {}
+          result enum { a, b }
+        }`
+      );
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        header: {
-          name: 'test',
-          version: {
-            major: 0,
-            minor: 0,
-            patch: 0,
-          },
-        },
+        header,
         usecases: [
           {
             useCaseName: 'Test',
@@ -152,54 +84,16 @@ describe('ProfileIOAnalyzer', () => {
     });
 
     describe('and Result is Enum Type which is NonNull Type', () => {
-      const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        astMetadata: AST_METADATA,
-        header,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            input: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [],
-              },
-            },
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'NonNullDefinition',
-                type: {
-                  kind: 'EnumDefinition',
-                  values: [
-                    {
-                      kind: 'EnumValue',
-                      value: 'a',
-                    },
-                    {
-                      kind: 'EnumValue',
-                      value: 'b',
-                    },
-                  ],
-                },
-              },
-            },
-          },
-        ],
-      };
+      const ast = parseProfileFromSource(
+        `usecase Test {
+          input {}
+          result enum { a, b }!
+        }`
+      );
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        header: {
-          name: 'test',
-          version: {
-            major: 0,
-            minor: 0,
-            patch: 0,
-          },
-        },
+        header,
         usecases: [
           {
             useCaseName: 'Test',
@@ -222,50 +116,18 @@ describe('ProfileIOAnalyzer', () => {
     });
 
     describe('and Result is Model Type which is defined in definition aswell as useCaseDefinition', () => {
-      const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        astMetadata: AST_METADATA,
-        header,
-        definitions: [
-          {
-            kind: 'NamedModelDefinition',
-            modelName: 'myModel',
-            type: {
-              kind: 'PrimitiveTypeName',
-              name: 'boolean',
-            },
-          },
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            input: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [],
-              },
-            },
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ModelTypeName',
-                name: 'myModel',
-              },
-            },
-          },
-        ],
-      };
+      const ast = parseProfileFromSource(
+        `model myModel boolean
+
+        usecase Test {
+          input {}
+          result myModel
+        }`
+      );
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        header: {
-          name: 'test',
-          version: {
-            major: 0,
-            minor: 0,
-            patch: 0,
-          },
-        },
+        header,
         usecases: [
           {
             useCaseName: 'Test',
@@ -285,50 +147,18 @@ describe('ProfileIOAnalyzer', () => {
     });
 
     describe('and Result is Model Type which is defined in definition after useCaseDefinition', () => {
-      const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        astMetadata: AST_METADATA,
-        header,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            input: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [],
-              },
-            },
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ModelTypeName',
-                name: 'myModel',
-              },
-            },
-          },
-          {
-            kind: 'NamedModelDefinition',
-            modelName: 'myModel',
-            type: {
-              kind: 'PrimitiveTypeName',
-              name: 'boolean',
-            },
-          },
-        ],
-      };
+      const ast = parseProfileFromSource(
+        `usecase Test {
+          input {}
+          result myModel    
+        }
+
+        model myModel boolean`
+      );
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        header: {
-          name: 'test',
-          version: {
-            major: 0,
-            minor: 0,
-            patch: 0,
-          },
-        },
+        header,
         usecases: [
           {
             useCaseName: 'Test',
@@ -348,42 +178,16 @@ describe('ProfileIOAnalyzer', () => {
     });
 
     describe('and Result is Model Type which is not defined in ProfileDocument definitions', () => {
-      const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        astMetadata: AST_METADATA,
-        header,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            input: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [],
-              },
-            },
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ModelTypeName',
-                name: 'myModel',
-              },
-            },
-          },
-        ],
-      };
+      const ast = parseProfileFromSource(
+        `usecase Test {
+          input {}
+          result myModel
+        }`
+      );
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        header: {
-          name: 'test',
-          version: {
-            major: 0,
-            minor: 0,
-            patch: 0,
-          },
-        },
+        header,
         usecases: [
           {
             useCaseName: 'Test',
@@ -401,45 +205,16 @@ describe('ProfileIOAnalyzer', () => {
     });
 
     describe('and Result is List Type', () => {
-      const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        astMetadata: AST_METADATA,
-        header,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            input: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [],
-              },
-            },
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ListDefinition',
-                elementType: {
-                  kind: 'PrimitiveTypeName',
-                  name: 'string',
-                },
-              },
-            },
-          },
-        ],
-      };
+      const ast = parseProfileFromSource(
+        `usecase Test {
+          input {}
+          result [string]
+        }`
+      );
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        header: {
-          name: 'test',
-          version: {
-            major: 0,
-            minor: 0,
-            patch: 0,
-          },
-        },
+        header,
         usecases: [
           {
             useCaseName: 'Test',
@@ -462,54 +237,16 @@ describe('ProfileIOAnalyzer', () => {
     });
 
     describe('and Result is List Type with Union', () => {
-      const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        astMetadata: AST_METADATA,
-        header,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            input: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [],
-              },
-            },
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ListDefinition',
-                elementType: {
-                  kind: 'UnionDefinition',
-                  types: [
-                    {
-                      kind: 'PrimitiveTypeName',
-                      name: 'string',
-                    },
-                    {
-                      kind: 'PrimitiveTypeName',
-                      name: 'boolean',
-                    },
-                  ],
-                },
-              },
-            },
-          },
-        ],
-      };
+      const ast = parseProfileFromSource(
+        `usecase Test {
+          input {}
+          result [string | boolean]
+        }`
+      );
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        header: {
-          name: 'test',
-          version: {
-            major: 0,
-            minor: 0,
-            patch: 0,
-          },
-        },
+        header,
         usecases: [
           {
             useCaseName: 'Test',
@@ -541,46 +278,19 @@ describe('ProfileIOAnalyzer', () => {
     });
 
     describe('and Result is empty Object Type', () => {
-      const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        astMetadata: AST_METADATA,
-        header,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            input: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [],
-              },
-            },
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [],
-              },
-            },
-          },
-        ],
-      };
+      const ast = parseProfileFromSource(
+        `usecase Test {
+          input {}
+          result {}
+        }`
+      );
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        header: {
-          name: 'test',
-          version: {
-            major: 0,
-            minor: 0,
-            patch: 0,
-          },
-        },
+        header,
         usecases: [
           {
             useCaseName: 'Test',
-
             result: {
               kind: 'ObjectStructure',
             },
@@ -595,103 +305,24 @@ describe('ProfileIOAnalyzer', () => {
     });
 
     describe('and Result is a Object Type with fields of multiple Types', () => {
-      const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        astMetadata: AST_METADATA,
-        header,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            input: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [],
-              },
-            },
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [
-                  {
-                    kind: 'FieldDefinition',
-                    required: false,
-                    fieldName: 'f1',
-                    type: {
-                      kind: 'ModelTypeName',
-                      name: 'myModel',
-                    },
-                  },
-                  {
-                    kind: 'FieldDefinition',
-                    required: false,
-                    fieldName: 'f2',
-                    type: {
-                      kind: 'ListDefinition',
-                      elementType: {
-                        kind: 'UnionDefinition',
-                        types: [
-                          {
-                            kind: 'PrimitiveTypeName',
-                            name: 'string',
-                          },
-                          {
-                            kind: 'PrimitiveTypeName',
-                            name: 'boolean',
-                          },
-                        ],
-                      },
-                    },
-                  },
-                  {
-                    kind: 'FieldDefinition',
-                    required: false,
-                    fieldName: 'f3',
-                    type: {
-                      kind: 'EnumDefinition',
-                      values: [
-                        {
-                          kind: 'EnumValue',
-                          value: 'A',
-                        },
-                        {
-                          kind: 'EnumValue',
-                          value: 'B',
-                        },
-                      ],
-                    },
-                  },
-                ],
-              },
-            },
-          },
-          {
-            kind: 'NamedModelDefinition',
-            modelName: 'myModel',
-            type: {
-              kind: 'PrimitiveTypeName',
-              name: 'boolean',
-            },
-          },
-        ],
-      };
+      const ast = parseProfileFromSource(
+        `usecase Test {
+          input {}
+          result {
+            f1 myModel
+            f2 [string | boolean]
+            f3 enum { A, B }
+          }
+        }
+        model myModel boolean`
+      );
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        header: {
-          name: 'test',
-          version: {
-            major: 0,
-            minor: 0,
-            patch: 0,
-          },
-        },
+        header,
         usecases: [
           {
             useCaseName: 'Test',
-
             result: {
               kind: 'ObjectStructure',
               fields: {
@@ -732,75 +363,25 @@ describe('ProfileIOAnalyzer', () => {
     });
 
     describe('and Result is a Object Type', () => {
-      const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        astMetadata: AST_METADATA,
-        header,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            input: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [],
-              },
-            },
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [
-                  {
-                    kind: 'FieldDefinition',
-                    required: false,
-                    fieldName: 'test',
-                    type: {
-                      kind: 'ObjectDefinition',
-                      fields: [
-                        {
-                          kind: 'FieldDefinition',
-                          required: false,
-                          fieldName: 'hello',
-                          type: {
-                            kind: 'ObjectDefinition',
-                            fields: [
-                              {
-                                kind: 'FieldDefinition',
-                                required: false,
-                                fieldName: 'goodbye',
-                                type: {
-                                  kind: 'PrimitiveTypeName',
-                                  name: 'boolean',
-                                },
-                              },
-                            ],
-                          },
-                        },
-                      ],
-                    },
-                  },
-                ],
-              },
-            },
-          },
-        ],
-      };
+      const ast = parseProfileFromSource(
+        `usecase Test {
+          input {}
+          result {
+            test {
+              hello {
+                goodbye boolean
+              }
+            }
+          }
+        }`
+      );
+
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        header: {
-          name: 'test',
-          version: {
-            major: 0,
-            minor: 0,
-            patch: 0,
-          },
-        },
+        header,
         usecases: [
           {
             useCaseName: 'Test',
-
             result: {
               kind: 'ObjectStructure',
               fields: {
@@ -831,84 +412,17 @@ describe('ProfileIOAnalyzer', () => {
     });
 
     describe('and Result is a Union Type with fields of multiple Types', () => {
-      const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        astMetadata: AST_METADATA,
-        header,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            input: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [],
-              },
-            },
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'UnionDefinition',
-                types: [
-                  {
-                    kind: 'ModelTypeName',
-                    name: 'myModel',
-                  },
-                  {
-                    kind: 'ListDefinition',
-                    elementType: {
-                      kind: 'UnionDefinition',
-                      types: [
-                        {
-                          kind: 'PrimitiveTypeName',
-                          name: 'string',
-                        },
-                        {
-                          kind: 'PrimitiveTypeName',
-                          name: 'boolean',
-                        },
-                      ],
-                    },
-                  },
-                  {
-                    kind: 'EnumDefinition',
-                    values: [
-                      {
-                        kind: 'EnumValue',
-                        value: 'A',
-                      },
-                      {
-                        kind: 'EnumValue',
-                        value: 'B',
-                      },
-                    ],
-                  },
-                ],
-              },
-            },
-          },
-          {
-            kind: 'NamedModelDefinition',
-            modelName: 'myModel',
-            type: {
-              kind: 'PrimitiveTypeName',
-              name: 'boolean',
-            },
-          },
-        ],
-      };
+      const ast = parseProfileFromSource(
+        `usecase Test {
+          result myModel | [string | boolean] | enum { A, B }
+        }
+        
+        model myModel boolean`
+      );
 
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        header: {
-          name: 'test',
-          version: {
-            major: 0,
-            minor: 0,
-            patch: 0,
-          },
-        },
+        header,
         usecases: [
           {
             useCaseName: 'Test',
@@ -952,38 +466,17 @@ describe('ProfileIOAnalyzer', () => {
     });
 
     describe('and Result is a undefined model', () => {
-      const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        astMetadata: AST_METADATA,
-        header,
-        definitions: [
-          {
-            kind: 'NamedModelDefinition',
-            modelName: 'm1',
-          },
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ModelTypeName',
-                name: 'm1',
-              },
-            },
-          },
-        ],
-      };
+      const ast = parseProfileFromSource(
+        `model m1
+        
+        usecase Test {
+          result m1
+        }`
+      );
+
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        header: {
-          name: 'test',
-          version: {
-            major: 0,
-            minor: 0,
-            patch: 0,
-          },
-        },
+        header,
         usecases: [
           {
             useCaseName: 'Test',
@@ -1001,53 +494,21 @@ describe('ProfileIOAnalyzer', () => {
     });
 
     describe('and Result is an Object with undefined fields', () => {
-      const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        astMetadata: AST_METADATA,
-        header,
-        definitions: [
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'ObjectDefinition',
-                fields: [
-                  {
-                    kind: 'FieldDefinition',
-                    required: false,
-                    fieldName: 'f1',
-                  },
-                  {
-                    kind: 'FieldDefinition',
-                    required: false,
-                    fieldName: 'f2',
-                  },
-                ],
-              },
-            },
-          },
-          {
-            kind: 'NamedFieldDefinition',
-            fieldName: 'f2',
-          },
-          {
-            kind: 'NamedFieldDefinition',
-            fieldName: 'f1',
-          },
-        ],
-      };
+      const ast = parseProfileFromSource(
+        `usecase Test {
+          result {
+            f1
+            f2
+          }
+        }
+        
+        field f1
+        field f2`
+      );
+
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        header: {
-          name: 'test',
-          version: {
-            major: 0,
-            minor: 0,
-            patch: 0,
-          },
-        },
+        header,
         usecases: [
           {
             useCaseName: 'Test',
@@ -1073,51 +534,18 @@ describe('ProfileIOAnalyzer', () => {
     });
 
     describe('and Result is a Union with undefined models', () => {
-      const ast: ProfileDocumentNode = {
-        kind: 'ProfileDocument',
-        astMetadata: AST_METADATA,
-        header,
-        definitions: [
-          {
-            kind: 'NamedModelDefinition',
-            modelName: 'm1',
-          },
-          {
-            kind: 'NamedModelDefinition',
-            modelName: 'm2',
-          },
-          {
-            kind: 'UseCaseDefinition',
-            useCaseName: 'Test',
-            result: {
-              kind: 'UseCaseSlotDefinition',
-              value: {
-                kind: 'UnionDefinition',
-                types: [
-                  {
-                    kind: 'ModelTypeName',
-                    name: 'm1',
-                  },
-                  {
-                    kind: 'ModelTypeName',
-                    name: 'm2',
-                  },
-                ],
-              },
-            },
-          },
-        ],
-      };
+      const ast = parseProfileFromSource(
+        `model m1
+        model m2
+
+        usecase Test {
+          result m1 | m2 
+        }`
+      );
+
       const analyzer = new ProfileIOAnalyzer();
       const expected: ProfileOutput = {
-        header: {
-          name: 'test',
-          version: {
-            major: 0,
-            minor: 0,
-            patch: 0,
-          },
-        },
+        header,
         usecases: [
           {
             useCaseName: 'Test',
@@ -1144,143 +572,84 @@ describe('ProfileIOAnalyzer', () => {
   });
 
   it('should extract documentation strings', () => {
-    const ast: ProfileDocumentNode = {
-      kind: 'ProfileDocument',
-      astMetadata: AST_METADATA,
-      header,
-      definitions: [
-        {
-          kind: 'UseCaseDefinition',
-          useCaseName: 'TestCase',
-          safety: 'safe',
-          input: {
-            kind: 'UseCaseSlotDefinition',
-            value: {
-              kind: 'ObjectDefinition',
-              fields: [
-                {
-                  kind: 'FieldDefinition',
-                  fieldName: 'testField',
-                  required: false,
-                  documentation: {
-                    title: 'Test field',
-                    description: 'This is a test field',
-                  },
-                },
-              ],
-            },
-            documentation: {
-              title: 'This is the inputs',
-              description: 'Really',
-            },
-          },
-          result: {
-            kind: 'UseCaseSlotDefinition',
-            value: {
-              kind: 'ObjectDefinition',
-              fields: [
-                {
-                  kind: 'FieldDefinition',
-                  fieldName: 'resultyTestField',
-                  required: false,
-                  documentation: {
-                    title: 'The result test field',
-                  },
-                },
-              ],
-            },
-            documentation: {
-              title: 'This is the results',
-              description: 'Would I lie to you?',
-            },
-          },
-          error: {
-            kind: 'UseCaseSlotDefinition',
-            value: {
-              kind: 'ObjectDefinition',
-              fields: [
-                {
-                  kind: 'FieldDefinition',
-                  fieldName: 'message',
-                  required: false,
-                  documentation: {
-                    title: 'The error message',
-                  },
-                  type: {
-                    kind: 'ModelTypeName',
-                    name: 'ErrorEnum',
-                  },
-                },
-              ],
-            },
-            documentation: {
-              title: 'The ERROR',
-            },
-          },
-          documentation: {
-            title: 'The Test Case',
-            description: 'It tests the case',
-          },
-        },
-        {
-          kind: 'NamedFieldDefinition',
-          fieldName: 'resultyTestField',
-          type: {
-            kind: 'PrimitiveTypeName',
-            name: 'number',
-          },
-          documentation: {
-            title: 'the resultyTest field',
-            description: 'it is number',
-          },
-        },
-        {
-          kind: 'NamedModelDefinition',
-          modelName: 'ErrorEnum',
-          type: {
-            kind: 'EnumDefinition',
-            values: [
-              {
-                kind: 'EnumValue',
-                value: 'bad',
-                documentation: {
-                  title: 'This means bad',
-                },
-              },
-              {
-                kind: 'EnumValue',
-                value: 'badder',
-                documentation: {
-                  title: 'This means badder',
-                },
-              },
-            ],
-          },
-          documentation: {
-            title: 'The Error Enum',
-            description: 'It is either bad or badder',
-          },
-        },
-      ],
-    };
+    const ast = parseProfileFromSource(
+      `"
+        The Test Case
+        It tests the case
+        "
+        usecase Test {
+          "
+          This is the inputs
+          Really
+          "
+          input {
+            "
+            Test field
+            This is a test field
+            "
+            testField 
+          }
+
+          "
+          This is the results
+          Would I lie to you?
+          "
+          result {
+            "The result test field"
+            resultyTestField
+          }
+
+          "
+          The ERROR
+          "
+          error {
+            "
+            The error message
+            "
+            message ErrorEnum
+          }
+        }
+        
+        "
+        the resultyTest field
+        it is number
+        "
+        field resultyTestField number
+        
+        "
+        The Error Enum
+        It is either bad or badder
+        "
+        model ErrorEnum enum {
+          "This means bad"
+          bad
+          "This means badder"
+          badder
+        }`
+    );
+
     const analyzer = new ProfileIOAnalyzer();
     const result = analyzer.visit(ast);
     const expected: ProfileOutput = {
-      header: {
-        documentation: undefined,
-        name: 'test',
-        version: {
-          major: 0,
-          minor: 0,
-          patch: 0,
-        },
-      },
+      header,
       usecases: [
         {
-          useCaseName: 'TestCase',
+          useCaseName: 'Test',
           documentation: {
             title: 'The Test Case',
             description: 'It tests the case',
+            location: {
+              end: {
+                charIndex: 110,
+                column: 10,
+                line: 7,
+              },
+              start: {
+                charIndex: 51,
+                column: 7,
+                line: 4,
+              },
+            },
           },
           input: {
             kind: 'ObjectStructure',
@@ -1290,12 +659,36 @@ describe('ProfileIOAnalyzer', () => {
                 required: false,
                 documentation: {
                   title: 'Test field',
+                  location: {
+                    end: {
+                      charIndex: 305,
+                      column: 14,
+                      line: 17,
+                    },
+                    start: {
+                      charIndex: 234,
+                      column: 13,
+                      line: 14,
+                    },
+                  },
                   description: 'This is a test field',
                 },
               },
             },
             documentation: {
               title: 'This is the inputs',
+              location: {
+                end: {
+                  charIndex: 203,
+                  column: 12,
+                  line: 12,
+                },
+                start: {
+                  charIndex: 144,
+                  column: 11,
+                  line: 9,
+                },
+              },
               description: 'Really',
             },
           },
@@ -1308,11 +701,35 @@ describe('ProfileIOAnalyzer', () => {
                 type: 'number',
                 documentation: {
                   title: 'The result test field',
+                  location: {
+                    end: {
+                      charIndex: 480,
+                      column: 36,
+                      line: 26,
+                    },
+                    start: {
+                      charIndex: 457,
+                      column: 13,
+                      line: 26,
+                    },
+                  },
                 },
               },
             },
             documentation: {
               title: 'This is the results',
+              location: {
+                end: {
+                  charIndex: 425,
+                  column: 12,
+                  line: 24,
+                },
+                start: {
+                  charIndex: 352,
+                  column: 11,
+                  line: 21,
+                },
+              },
               description: 'Would I lie to you?',
             },
           },
@@ -1323,116 +740,105 @@ describe('ProfileIOAnalyzer', () => {
                 required: false,
                 kind: 'EnumStructure',
                 documentation: {
+                  location: {
+                    end: {
+                      charIndex: 642,
+                      column: 14,
+                      line: 36,
+                    },
+                    start: {
+                      charIndex: 597,
+                      column: 13,
+                      line: 34,
+                    },
+                  },
                   title: 'The error message',
                 },
                 enums: [
-                  { value: 'bad', documentation: { title: 'This means bad' } },
+                  {
+                    value: 'bad',
+                    documentation: {
+                      title: 'This means bad',
+                      location: {
+                        end: {
+                          charIndex: 957,
+                          column: 27,
+                          line: 52,
+                        },
+                        start: {
+                          charIndex: 941,
+                          column: 11,
+                          line: 52,
+                        },
+                      },
+                    },
+                  },
                   {
                     value: 'badder',
-                    documentation: { title: 'This means badder' },
+                    documentation: {
+                      title: 'This means badder',
+                      location: {
+                        end: {
+                          charIndex: 1001,
+                          column: 30,
+                          line: 54,
+                        },
+                        start: {
+                          charIndex: 982,
+                          column: 11,
+                          line: 54,
+                        },
+                      },
+                    },
                   },
                 ],
               },
             },
             documentation: {
+              location: {
+                end: {
+                  charIndex: 566,
+                  column: 12,
+                  line: 32,
+                },
+                start: {
+                  charIndex: 533,
+                  column: 11,
+                  line: 30,
+                },
+              },
               title: 'The ERROR',
             },
           },
         },
       ],
     };
+
     expect(result).toStrictEqual(expected);
   });
 
   it('should correctly reference fields and models', () => {
-    const ast: ProfileDocumentNode = {
-      kind: 'ProfileDocument',
-      astMetadata: AST_METADATA,
-      header,
-      definitions: [
-        {
-          kind: 'UseCaseDefinition',
-          useCaseName: 'Test',
-          error: {
-            kind: 'UseCaseSlotDefinition',
-            value: {
-              kind: 'ObjectDefinition',
-              fields: [
-                {
-                  kind: 'FieldDefinition',
-                  fieldName: 'message',
-                  required: false,
-                },
-              ],
-            },
-          },
-          result: {
-            kind: 'UseCaseSlotDefinition',
-            value: {
-              kind: 'ModelTypeName',
-              name: 'Output',
-            },
-          },
-        },
-        {
-          kind: 'NamedFieldDefinition',
-          fieldName: 'message',
-          type: {
-            kind: 'ModelTypeName',
-            name: 'ErrorEnum',
-          },
-        },
-        {
-          kind: 'NamedFieldDefinition',
-          fieldName: 'to',
-          type: {
-            kind: 'PrimitiveTypeName',
-            name: 'string',
-          },
-        },
-        {
-          kind: 'NamedModelDefinition',
-          modelName: 'ErrorEnum',
-          type: {
-            kind: 'EnumDefinition',
-            values: [
-              {
-                kind: 'EnumValue',
-                value: 'a',
-              },
-              {
-                kind: 'EnumValue',
-                value: 'b',
-              },
-            ],
-          },
-        },
-        {
-          kind: 'NamedModelDefinition',
-          modelName: 'Output',
-          type: {
-            kind: 'ObjectDefinition',
-            fields: [
-              {
-                kind: 'FieldDefinition',
-                required: true,
-                fieldName: 'to',
-              },
-            ],
-          },
-        },
-      ],
-    };
+    const ast = parseProfileFromSource(
+      `usecase Test {
+        result Output
+
+        error {
+          message
+        }
+      }
+      
+      field message ErrorEnum
+      field to string
+      
+      model ErrorEnum enum { a, b }
+      model Output {
+        to
+      }`
+    );
+
     const analyzer = new ProfileIOAnalyzer();
     const expected: ProfileOutput = {
-      header: {
-        name: 'test',
-        version: {
-          major: 0,
-          minor: 0,
-          patch: 0,
-        },
-      },
+      header,
       usecases: [
         {
           useCaseName: 'Test',
