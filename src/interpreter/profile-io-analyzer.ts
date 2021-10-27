@@ -41,7 +41,15 @@ function addDoc<T>(
   node: DocumentedNode,
   structure: T
 ): T & DocumentedStructure {
-  return { ...structure, documentation: node.documentation };
+  const result: T & DocumentedStructure = { ...structure };
+  if (node.documentation?.description !== undefined) {
+    result.description = node.documentation.description;
+  }
+  if (node.documentation?.title !== undefined) {
+    result.title = node.documentation.title;
+  }
+
+  return result;
 }
 
 function assertUnreachable(node: never): never;

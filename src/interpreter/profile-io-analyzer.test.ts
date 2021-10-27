@@ -635,62 +635,20 @@ describe('ProfileIOAnalyzer', () => {
       usecases: [
         {
           useCaseName: 'Test',
-          documentation: {
-            title: 'The Test Case',
-            description: 'It tests the case',
-            location: {
-              end: {
-                charIndex: 110,
-                column: 10,
-                line: 7,
-              },
-              start: {
-                charIndex: 51,
-                column: 7,
-                line: 4,
-              },
-            },
-          },
+          title: 'The Test Case',
+          description: 'It tests the case',
           input: {
             kind: 'ObjectStructure',
             fields: {
               testField: {
                 kind: 'ScalarStructure',
                 required: false,
-                documentation: {
-                  title: 'Test field',
-                  location: {
-                    end: {
-                      charIndex: 305,
-                      column: 14,
-                      line: 17,
-                    },
-                    start: {
-                      charIndex: 234,
-                      column: 13,
-                      line: 14,
-                    },
-                  },
-                  description: 'This is a test field',
-                },
+                title: 'Test field',
+                description: 'This is a test field',
               },
             },
-            documentation: {
-              title: 'This is the inputs',
-              location: {
-                end: {
-                  charIndex: 203,
-                  column: 12,
-                  line: 12,
-                },
-                start: {
-                  charIndex: 144,
-                  column: 11,
-                  line: 9,
-                },
-              },
-              description: 'Really',
-            },
+            title: 'This is the inputs',
+            description: 'Really',
           },
           result: {
             kind: 'ObjectStructure',
@@ -699,39 +657,11 @@ describe('ProfileIOAnalyzer', () => {
                 kind: 'PrimitiveStructure',
                 required: false,
                 type: 'number',
-                documentation: {
-                  title: 'The result test field',
-                  location: {
-                    end: {
-                      charIndex: 480,
-                      column: 36,
-                      line: 26,
-                    },
-                    start: {
-                      charIndex: 457,
-                      column: 13,
-                      line: 26,
-                    },
-                  },
-                },
+                title: 'The result test field',
               },
             },
-            documentation: {
-              title: 'This is the results',
-              location: {
-                end: {
-                  charIndex: 425,
-                  column: 12,
-                  line: 24,
-                },
-                start: {
-                  charIndex: 352,
-                  column: 11,
-                  line: 21,
-                },
-              },
-              description: 'Would I lie to you?',
-            },
+            title: 'This is the results',
+            description: 'Would I lie to you?',
           },
           error: {
             kind: 'ObjectStructure',
@@ -739,76 +669,20 @@ describe('ProfileIOAnalyzer', () => {
               message: {
                 required: false,
                 kind: 'EnumStructure',
-                documentation: {
-                  location: {
-                    end: {
-                      charIndex: 642,
-                      column: 14,
-                      line: 36,
-                    },
-                    start: {
-                      charIndex: 597,
-                      column: 13,
-                      line: 34,
-                    },
-                  },
-                  title: 'The error message',
-                },
+                title: 'The error message',
                 enums: [
                   {
                     value: 'bad',
-                    documentation: {
-                      title: 'This means bad',
-                      location: {
-                        end: {
-                          charIndex: 957,
-                          column: 27,
-                          line: 52,
-                        },
-                        start: {
-                          charIndex: 941,
-                          column: 11,
-                          line: 52,
-                        },
-                      },
-                    },
+                    title: 'This means bad',
                   },
                   {
                     value: 'badder',
-                    documentation: {
-                      title: 'This means badder',
-                      location: {
-                        end: {
-                          charIndex: 1001,
-                          column: 30,
-                          line: 54,
-                        },
-                        start: {
-                          charIndex: 982,
-                          column: 11,
-                          line: 54,
-                        },
-                      },
-                    },
+                    title: 'This means badder',
                   },
                 ],
               },
             },
-            documentation: {
-              location: {
-                end: {
-                  charIndex: 566,
-                  column: 12,
-                  line: 32,
-                },
-                start: {
-                  charIndex: 533,
-                  column: 11,
-                  line: 30,
-                },
-              },
-              title: 'The ERROR',
-            },
+            title: 'The ERROR',
           },
         },
       ],

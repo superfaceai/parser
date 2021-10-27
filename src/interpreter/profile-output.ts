@@ -1,5 +1,3 @@
-import { DocumentedNode } from '@superfaceai/ast';
-
 export type StructureKind =
   | 'PrimitiveStructure'
   | 'EnumStructure'
@@ -20,7 +18,10 @@ export interface Structure {
 /**
  * @interface DocumentedStructure represents documentable structures
  */
-export type DocumentedStructure = DocumentedNode;
+export type DocumentedStructure = {
+  title?: string;
+  description?: string;
+};
 
 /**
  * @interface PrimitiveStructure represents structure of primitive type
@@ -129,7 +130,7 @@ export interface ProfileHeaderStructure extends DocumentedStructure {
 /**
  * @interface ProfileOutput - represent profile structure
  */
-export interface ProfileOutput {
+export interface ProfileOutput extends DocumentedStructure {
   header: ProfileHeaderStructure;
   usecases: UseCaseStructure[];
 }
