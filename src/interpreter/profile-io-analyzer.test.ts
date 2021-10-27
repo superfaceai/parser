@@ -658,6 +658,7 @@ describe('ProfileIOAnalyzer', () => {
                 required: false,
                 type: 'number',
                 title: 'The result test field',
+                description: 'it is number',
               },
             },
             title: 'This is the results',
@@ -670,6 +671,7 @@ describe('ProfileIOAnalyzer', () => {
                 required: false,
                 kind: 'EnumStructure',
                 title: 'The error message',
+                description: 'It is either bad or badder',
                 enums: [
                   {
                     value: 'bad',
