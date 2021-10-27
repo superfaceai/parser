@@ -1,6 +1,10 @@
-import { splitLimit, parseVersionNumber, VERSION as AST_VERSION } from '@superfaceai/ast';
-
+import {
+  parseVersionNumber,
+  splitLimit,
+  VERSION as AST_VERSION,
+} from '@superfaceai/ast';
 import createDebug from 'debug';
+
 const metadataDebug = createDebug('superface-parser:metadata');
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-var-requires
@@ -15,11 +19,11 @@ type FullVersion = {
   label?: string;
 };
 export function parseMetadataVersion(input: string): FullVersion {
-  let version: FullVersion = {
+  const version: FullVersion = {
     major: 0,
     minor: 0,
     patch: 0,
-    label: undefined
+    label: undefined,
   };
 
   const plusInInput = input.indexOf('+');
@@ -60,4 +64,5 @@ export function parseMetadataVersion(input: string): FullVersion {
 }
 
 export const PARSED_VERSION: FullVersion = parseMetadataVersion(VERSION);
-export const PARSED_AST_VERSION: FullVersion = parseMetadataVersion(AST_VERSION);
+export const PARSED_AST_VERSION: FullVersion =
+  parseMetadataVersion(AST_VERSION);
