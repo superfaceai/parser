@@ -138,4 +138,13 @@ describe('document name parsing', () => {
         'revision label must be in format `revN` where N is a non-negative integer',
     });
   });
+
+  it('returns an error for invalid version', () => {
+    const id = 'scope/profile.provider@.1';
+
+    expect(parseMapId(id)).toStrictEqual({
+      kind: 'error',
+      message: '.1 is not a valid version',
+    });
+  });
 });
