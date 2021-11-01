@@ -46,7 +46,14 @@ export function parseDocumentId(id: string): ParseResult<DocumentId> {
   let parsedVersion;
   const [versionRestId, splitVersion] = splitLimit(id, '@', 1);
   if (splitVersion !== undefined) {
-    parsedVersion = VersionRange.fromString(splitVersion);
+    try {
+      parsedVersion = VersionRange.fromString(splitVersion);
+    } catch (error) {
+      return {
+        kind: 'error',
+        message: `${splitVersion} is not a valid version`,
+      };
+    }
 
     // strip the version
     id = versionRestId;
