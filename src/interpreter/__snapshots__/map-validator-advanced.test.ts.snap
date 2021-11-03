@@ -86,6 +86,14 @@ Object {
 }
 `;
 
+exports[`MapValidatorAdvanced combination of input, result & error sendgrid update templete then validation will pass 1`] = `
+Object {
+  "profile-provider": Object {
+    "warnings": "15:11 OutcomeStatement - Error Not Found: returning \\"ObjectLiteral\\", but there is no error defined in usecase",
+  },
+}
+`;
+
 exports[`MapValidatorAdvanced combination of input, result & error swapi get character information then validation will pass 1`] = `
 Object {
   "profile-provider": Object {},

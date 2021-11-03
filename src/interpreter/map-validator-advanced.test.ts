@@ -615,5 +615,118 @@ describe('MapValidatorAdvanced', () => {
 
       valid(profileAst, [mapAst]);
     });
+
+    describe('sendgrid update templete', () => {
+      const profileAst = parseProfileFromSource(
+        `
+        """
+        Update template
+        """
+        usecase UpdateTemplate unsafe {
+          input {
+            id!
+            name
+            subject
+            text
+            html
+          }
+        
+          result Template
+        }
+        
+        model Template {
+          id
+          name
+        }
+        
+        "Unique template identifier"
+        field id
+        
+        "Name of the template"
+        field name
+        
+        "Subject of the email"
+        field subject
+        
+        "Text content"
+        field text
+        
+        "HTML Content"
+        field html`
+      );
+
+      const mapAst = parseMapFromSource(
+        `
+        map UpdateTemplate {
+          template = call FetchTemplateCall(templateId = input.id)
+          template = call UpdateTemplateCall(templateId = template.id, name = input.name) if (input.name)
+        
+          subject = input.subject || template.subject
+          text = input.text || template.text
+          html = input.html || template.html
+        
+          templateVersion = call CreateTemplateVersionCall(templateId = template.id, subject = subject, text = text, html = html) if (subject || text || html)
+        
+          map error if (!template) {
+            title = "Template not found",
+            detail = "Template doesn't exists"
+          }
+        
+          map result {
+            id = template.id
+            name = template.name
+          }
+        }
+        
+        operation FetchTemplateCall {
+          http GET "/templates/{args.templateId}" {
+            security "bearer_token"
+        
+            response 200 "application/json" {
+              return body
+            }
+          }
+        }
+
+        
+        operation CreateTemplateVersionCall {
+          http POST "/templates/{args.templateId}/versions" {
+            security "bearer_token"
+        
+            request {
+              body {
+                name = "test"
+                subject = args.subject
+                plain_content = args.text
+                html_content = args.html
+                active = 1
+              }
+            }
+        
+            response 201 "application/json" {
+              return body
+            }
+          }
+        }
+        
+        operation UpdateTemplateCall {
+          http PATCH "/templates/{args.templateId}" {
+            security "bearer_token"
+        
+            request {
+              body {
+                name = args.name
+              }
+            }
+        
+            response 200 "application/json" {
+              return body
+            }
+          }
+        }`
+      );
+
+      valid(profileAst, [mapAst]);
+    });
   });
 });
