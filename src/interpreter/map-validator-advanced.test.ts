@@ -615,5 +615,46 @@ describe('MapValidatorAdvanced', () => {
 
       valid(profileAst, [mapAst]);
     });
+
+    describe('validating binary expression', () => {
+      const profileAst = parseProfileFromSource(
+        `
+        usecase UpdateTemplate unsafe {
+          input {
+            name
+            subject
+            text
+            html
+          }
+        
+          result Template
+        }
+        
+        model Template {
+          id
+          name
+        }
+      `
+      );
+
+      const mapAst = parseMapFromSource(
+        `
+        map UpdateTemplate {
+          template = { text: "text", html: "html", id: "id", name: "name"}
+        
+          subject = input.subject || template.subject
+          text = input.text || template.text
+          html = input.html || template.html
+        
+          map result {
+            id = template.id
+            name = template.name
+          }
+        }
+        `
+      );
+
+      valid(profileAst, [mapAst]);
+    });
   });
 });
