@@ -86,13 +86,13 @@ Object {
 }
 `;
 
-exports[`MapValidatorAdvanced combination of input, result & error sendgrid update templete then validation will pass 1`] = `
+exports[`MapValidatorAdvanced combination of input, result & error swapi get character information then validation will pass 1`] = `
 Object {
   "profile-provider": Object {},
 }
 `;
 
-exports[`MapValidatorAdvanced combination of input, result & error swapi get character information then validation will pass 1`] = `
+exports[`MapValidatorAdvanced combination of input, result & error validating binary expression then validation will pass 1`] = `
 Object {
   "profile-provider": Object {},
 }
