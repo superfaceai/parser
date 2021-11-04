@@ -1,4 +1,5 @@
-import { Location, Source, Span } from '../source';
+import { CharIndexSpan } from '..';
+import { Source } from '../source';
 import { LexerContext, LexerContextType } from './context';
 import { DEFAULT_TOKEN_KIND_FILTER, Lexer } from './lexer';
 import {
@@ -890,7 +891,7 @@ ng2"
         }
       );
 
-      const expected: Span[] = [
+      const expected: CharIndexSpan[] = [
         { start: 0, end: 0 }, // SOF
         { start: 0, end: 3 }, // the
         { start: 4, end: 10 }, // tokens
@@ -908,7 +909,12 @@ ng2"
 
       const actual = [];
       for (let i = 0; i < expected.length; i += 1) {
-        actual.push(lexer.advance().span);
+        const token = lexer.advance();
+
+        actual.push({
+          start: token.location.start.charIndex,
+          end: token.location.end.charIndex,
+        });
       }
 
       expect(actual).toStrictEqual(expected);
@@ -934,7 +940,7 @@ ng2"
         }
       );
 
-      const expected: Location[] = [
+      const expected: { line: number; column: number }[] = [
         { line: 1, column: 1 }, // SOF
         { line: 1, column: 1 }, // the
         { line: 1, column: 5 }, // tokens
@@ -952,7 +958,11 @@ ng2"
 
       const actual = [];
       for (let i = 0; i < expected.length; i += 1) {
-        actual.push(lexer.advance().location);
+        const token = lexer.advance();
+        actual.push({
+          line: token.location.start.line,
+          column: token.location.start.column,
+        });
       }
 
       expect(actual).toStrictEqual(expected);

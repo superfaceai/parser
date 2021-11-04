@@ -1,4 +1,5 @@
-import { LexerContext, LexerContextType, LexerTokenStream } from '../lexer';
+import { LexerContext, LexerContextType } from '../lexer/context';
+import { LexerTokenStream } from '../lexer/lexer';
 import {
   formatTokenKind,
   IdentifierTokenData,
@@ -16,7 +17,7 @@ import {
   StringTokenData,
   TerminationTokens,
 } from '../lexer/token';
-import { Location, Span } from '../source';
+import { LocationSpan } from '../source';
 
 export class MatchAttempts {
   constructor(
@@ -55,19 +56,19 @@ export class MatchAttempts {
     }
 
     // if the tokens are of UNKNOWN variant then we compare their error spans instead
-    const thisSpan =
+    const thisLocation =
       this.token.data.kind === LexerTokenKind.UNKNOWN
-        ? this.token.data.error.span
-        : this.token.span;
-    const otherSpan =
+        ? this.token.data.error.location
+        : this.token.location;
+    const otherLocation =
       other.token.data.kind === LexerTokenKind.UNKNOWN
-        ? other.token.data.error.span
-        : other.token.span;
+        ? other.token.data.error.location
+        : other.token.location;
 
-    if (thisSpan.start === otherSpan.start) {
+    if (thisLocation.start.charIndex === otherLocation.start.charIndex) {
       return new MatchAttempts(this.token, [...this.rules, ...other.rules]);
     }
-    if (thisSpan.start > otherSpan.start) {
+    if (thisLocation.start.charIndex > otherLocation.start.charIndex) {
       return this;
     } else {
       return other;
@@ -90,8 +91,7 @@ export type RuleResult<T> = RuleResultMatch<T> | RuleResultNoMatch;
 
 export interface LexerTokenMatch<D extends LexerTokenData = LexerTokenData> {
   readonly data: D;
-  readonly location: Location;
-  readonly span: Span;
+  readonly location: LocationSpan;
 }
 
 export abstract class SyntaxRule<T> {
@@ -261,7 +261,6 @@ export class SyntaxRuleSeparator extends SyntaxRule<
         ) {
           return {
             data: token.data,
-            span: token.span,
             location: token.location,
           };
         }
@@ -298,7 +297,6 @@ export class SyntaxRuleOperator extends SyntaxRule<
         ) {
           return {
             data: token.data,
-            span: token.span,
             location: token.location,
           };
         }
@@ -335,7 +333,6 @@ export class SyntaxRuleIdentifier extends SyntaxRule<
         ) {
           return {
             data: token.data,
-            span: token.span,
             location: token.location,
           };
         }
@@ -364,7 +361,6 @@ export class SyntaxRuleLiteral extends SyntaxRule<
       if (token.data.kind === LexerTokenKind.LITERAL) {
         return {
           data: token.data,
-          span: token.span,
           location: token.location,
         };
       }
@@ -388,7 +384,6 @@ export class SyntaxRuleString extends SyntaxRule<
       if (token.data.kind === LexerTokenKind.STRING) {
         return {
           data: token.data,
-          span: token.span,
           location: token.location,
         };
       }
@@ -417,7 +412,6 @@ export class SyntaxRuleNewline extends SyntaxRule<
       if (token.data.kind === LexerTokenKind.NEWLINE) {
         return {
           data: token.data,
-          span: token.span,
           location: token.location,
         };
       }
@@ -451,7 +445,6 @@ export class SyntaxRuleJessie extends SyntaxRule<
         if (token.data.kind === LexerTokenKind.JESSIE_SCRIPT) {
           return {
             data: token.data,
-            span: token.span,
             location: token.location,
           };
         }
@@ -565,12 +558,12 @@ export class SyntaxRuleFollowedBy<
 }
 
 /** Matches one or more occurences of `rule`. */
-export class SyntaxRuleRepeat<R> extends SyntaxRule<R[]> {
+export class SyntaxRuleRepeat<R> extends SyntaxRule<[R, ...R[]]> {
   constructor(readonly rule: SyntaxRule<R>) {
     super();
   }
 
-  tryMatch(tokens: LexerTokenStream): RuleResult<R[]> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<[R, ...R[]]> {
     const matches: R[] = [];
 
     let lastMatch: RuleResultMatch<R> | undefined;
@@ -590,7 +583,7 @@ export class SyntaxRuleRepeat<R> extends SyntaxRule<R[]> {
     if (matches.length > 0) {
       return {
         kind: 'match',
-        match: matches,
+        match: matches as [R, ...R[]],
         optionalAttempts: lastResult.attempts.merge(
           lastMatch?.optionalAttempts
         ),
@@ -632,10 +625,7 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
 
 // META //
 
-/** Matches rule and then restores `tokens` state.
- *
- * This rule automatically uses the `emitUnknown` flag.
- */
+/** Matches rule and then restores `tokens` state. */
 export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
   /**
    * Invert the lookahead, matching if the inner rule fails.

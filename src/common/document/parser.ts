@@ -4,8 +4,8 @@ import {
   splitLimit,
 } from '@superfaceai/ast';
 
-import { VersionRange } from '.';
 import { DocumentId, MapDocumentId, ProfileIdRange } from './interfaces';
+import { VersionRange } from './version';
 
 export type ParseResult<T> =
   | { kind: 'parsed'; value: T }

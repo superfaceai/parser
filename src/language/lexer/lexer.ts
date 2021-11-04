@@ -1,5 +1,5 @@
 import { SyntaxError, SyntaxErrorCategory } from '../error';
-import { computeEndLocation, Location, Source, Span } from '../source';
+import { CharIndexSpan, computeEndLocation, Location, Source } from '../source';
 import { LexerContext, LexerContextType, Sublexer } from './context';
 import { tryParseDefault } from './sublexer/default';
 import { tryParseJessieScriptExpression } from './sublexer/jessie';
@@ -23,6 +23,7 @@ export const DEFAULT_TOKEN_KIND_FILTER: LexerTokenKindFilter = {
 export interface LexerTokenStream<SavedState = unknown>
   extends Generator<LexerToken, undefined, LexerContext | undefined> {
   tokenKindFilter: LexerTokenKindFilter;
+  readonly source: Source;
 
   peek(
     ...context: [] | [LexerContext | undefined]
@@ -75,8 +76,18 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
         kind: LexerTokenKind.SEPARATOR,
         separator: 'SOF',
       },
-      { line: 1, column: 1 },
-      { start: 0, end: 0 }
+      {
+        start: {
+          line: 1,
+          column: 1,
+          charIndex: 0,
+        },
+        end: {
+          line: 1,
+          column: 1,
+          charIndex: 0,
+        },
+      }
     );
 
     this.tokenKindFilter = tokenKindFilter ?? DEFAULT_TOKEN_KIND_FILTER;
@@ -192,28 +203,22 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
     this.fileSeparatorYielded = state[1];
   }
 
-  private computeNextTokenPosition(lastToken: LexerToken): {
-    start: number;
-    location: Location;
-  } {
+  /**
+   * Compute start location of the token following `lastToken`.
+   */
+  private computeNextTokenStartLocation(lastToken: LexerToken): Location {
     // Count number of non-newline whitespace tokens after the last token.
-    const whitespaceAfterToken = util.countStarting(
+    const whitespaceAfterLast = util.countStarting(
       ch => !util.isNewline(ch) && util.isWhitespace(ch),
-      this.source.body.slice(lastToken.span.end)
+      this.source.body.slice(lastToken.location.end.charIndex)
     );
 
-    // Compute the start of the **next** token by ignoring whitespace after the last token.
-    const start = lastToken.span.end + whitespaceAfterToken;
-
-    // Compute the end location of the last token + whitespace which equals the start location of the next token.
-    const location = computeEndLocation(
-      this.source.body.slice(lastToken.span.start, start),
-      lastToken.location
-    );
-
+    // Since we already know the end location of the last token and we only cound non-newline whitespace
+    // we can obtain the new location trivially.
     return {
-      start,
-      location,
+      line: lastToken.location.end.line,
+      column: lastToken.location.end.column + whitespaceAfterLast,
+      charIndex: lastToken.location.end.charIndex + whitespaceAfterLast,
     };
   }
 
@@ -222,9 +227,9 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
     lastToken: LexerToken,
     context?: LexerContext
   ): LexerToken {
-    const { start, location } = this.computeNextTokenPosition(lastToken);
+    const startLocation = this.computeNextTokenStartLocation(lastToken);
 
-    const slice = this.source.body.slice(start);
+    const slice = this.source.body.slice(startLocation.charIndex);
 
     // Call one of the sublexers
     let tokenParseResult: ParseResult<LexerTokenData>;
@@ -253,16 +258,20 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
 
     // Didn't parse as any known token or produced an error
     if (tokenParseResult.kind === 'nomatch') {
-      // here we couldn't match anything, so the token span and the error span (and location) is the same
-      const tokenSpan = {
-        start,
-        end: start + 1,
+      // here we couldn't match anything, so the token span and the error span are the same
+      // we assume the token wasn't a newline (since we can parse that token)
+      const tokenLocationSpan = {
+        start: startLocation,
+        end: {
+          line: startLocation.line,
+          column: startLocation.column + 1,
+          charIndex: startLocation.charIndex + 1,
+        },
       };
 
       const error = new SyntaxError(
         this.source,
-        location,
-        tokenSpan,
+        tokenLocationSpan,
         SyntaxErrorCategory.LEXER,
         'Could not match any token'
       );
@@ -272,8 +281,7 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
           kind: LexerTokenKind.UNKNOWN,
           error,
         },
-        location,
-        tokenSpan
+        tokenLocationSpan
       );
     }
 
@@ -282,7 +290,7 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
       let category: SyntaxErrorCategory;
       let detail: string | undefined;
       let hint: string | undefined;
-      let relativeSpan: Span;
+      let relativeSpan: CharIndexSpan;
 
       // Single-error results are easy
       if (tokenParseResult.errors.length === 1) {
@@ -310,24 +318,37 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
       }
 
       // here the error span and the token span (and location) are different
-      const tokenSpan = {
-        start: start,
-        end: start + relativeSpan.end,
+      const tokenLocation = {
+        start: startLocation,
+        end: computeEndLocation(
+          this.source.body.slice(
+            startLocation.charIndex,
+            startLocation.charIndex + relativeSpan.end
+          ),
+          startLocation
+        ),
       };
 
-      const errorSpan = {
-        start: start + relativeSpan.start,
-        end: start + relativeSpan.end,
+      const errorLocation = {
+        start: computeEndLocation(
+          this.source.body.slice(
+            tokenLocation.start.charIndex,
+            tokenLocation.start.charIndex + relativeSpan.start
+          ),
+          tokenLocation.start
+        ),
+        end: computeEndLocation(
+          this.source.body.slice(
+            tokenLocation.start.charIndex,
+            tokenLocation.start.charIndex + relativeSpan.end
+          ),
+          tokenLocation.start
+        ),
       };
-      const errorLocation = computeEndLocation(
-        this.source.body.slice(tokenSpan.start, errorSpan.start),
-        location
-      );
 
       const error = new SyntaxError(
         this.source,
         errorLocation,
-        errorSpan,
         category,
         detail,
         hint
@@ -338,17 +359,28 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
           kind: LexerTokenKind.UNKNOWN,
           error,
         },
-        location,
-        tokenSpan
+        tokenLocation
       );
     }
 
-    const parsedTokenSpan = {
-      start: start + tokenParseResult.relativeSpan.start,
-      end: start + tokenParseResult.relativeSpan.end,
+    const parsedTokenLocation = {
+      start: computeEndLocation(
+        this.source.body.slice(
+          startLocation.charIndex,
+          startLocation.charIndex + tokenParseResult.relativeSpan.start
+        ),
+        startLocation
+      ),
+      end: computeEndLocation(
+        this.source.body.slice(
+          startLocation.charIndex,
+          startLocation.charIndex + tokenParseResult.relativeSpan.end
+        ),
+        startLocation
+      ),
     };
 
     // All is well
-    return new LexerToken(tokenParseResult.data, location, parsedTokenSpan);
+    return new LexerToken(tokenParseResult.data, parsedTokenLocation);
   }
 }

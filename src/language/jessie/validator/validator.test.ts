@@ -203,7 +203,7 @@ describe('validator', () => {
         `
         const foo = (x) => {
           if (x === 0) return 0;
-          return x + foo(x - 1],
+          return x + foo(x - 1);
         }
         `,
       ],

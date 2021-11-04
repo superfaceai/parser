@@ -673,8 +673,14 @@ describe('ProfileIOAnalyzer', () => {
                 title: 'The error message',
                 description: 'It is either bad or badder',
                 enums: [
-                  { value: 'bad', title: 'This means bad' },
-                  { value: 'badder', title: 'This means badder' },
+                  {
+                    value: 'bad',
+                    title: 'This means bad',
+                  },
+                  {
+                    value: 'badder',
+                    title: 'This means badder',
+                  },
                 ],
               },
             },

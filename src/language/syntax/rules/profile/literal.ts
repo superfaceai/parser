@@ -10,17 +10,18 @@ import { LexerTokenKind } from '../../../lexer/token';
 import { SyntaxRule, SyntaxRuleMutable } from '../../rule';
 import {
   ASSIGNMENT_PATH_KEY,
+  computeLocationSpan,
   documentedNode,
   expectTerminated,
   mapAssignmentPath,
-  WithLocationInfo,
+  WithLocation,
 } from '../common';
 
 export const COMLINK_PRIMITIVE_LITERAL: SyntaxRule<
-  WithLocationInfo<ComlinkPrimitiveLiteralNode>
+  WithLocation<ComlinkPrimitiveLiteralNode>
 > = SyntaxRule.literal()
   .or(SyntaxRule.string())
-  .map((match): WithLocationInfo<ComlinkPrimitiveLiteralNode> => {
+  .map((match): WithLocation<ComlinkPrimitiveLiteralNode> => {
     const value =
       match.data.kind === LexerTokenKind.LITERAL
         ? match.data.literal
@@ -30,37 +31,32 @@ export const COMLINK_PRIMITIVE_LITERAL: SyntaxRule<
       kind: 'ComlinkPrimitiveLiteral',
       value,
       location: match.location,
-      span: match.span,
     };
   });
 
 const COMLINK_LITERAL_MUT = new SyntaxRuleMutable<
-  WithLocationInfo<ComlinkLiteralNode>
+  WithLocation<ComlinkLiteralNode>
 >();
 
 export const COMLINK_OBJECT_LITERAL_ASSIGNMENT: SyntaxRule<
-  WithLocationInfo<ComlinkAssignmentNode>
+  WithLocation<ComlinkAssignmentNode>
 > = documentedNode(
   ASSIGNMENT_PATH_KEY.followedBy(
     SyntaxRule.operator('=').forgetFollowedBy(
       expectTerminated(COMLINK_LITERAL_MUT, ',', '\n', '}')
     )
-  ).map(([path, value]): WithLocationInfo<ComlinkAssignmentNode> => {
+  ).map(([path, value]): WithLocation<ComlinkAssignmentNode> => {
     return {
       kind: 'ComlinkAssignment',
       key: mapAssignmentPath(path),
       value,
-      location: path[0].location,
-      span: {
-        start: path[0].span.start,
-        end: value.span.end,
-      },
+      location: computeLocationSpan(...path, value),
     };
   })
 );
 
 export const COMLINK_OBJECT_LITERAL: SyntaxRule<
-  WithLocationInfo<ComlinkObjectLiteralNode>
+  WithLocation<ComlinkObjectLiteralNode>
 > = SyntaxRule.separator('{')
   .followedBy(
     SyntaxRule.optional(SyntaxRule.repeat(COMLINK_OBJECT_LITERAL_ASSIGNMENT))
@@ -71,21 +67,17 @@ export const COMLINK_OBJECT_LITERAL: SyntaxRule<
       sepStart,
       maybeFields,
       sepEnd,
-    ]): WithLocationInfo<ComlinkObjectLiteralNode> => {
+    ]): WithLocation<ComlinkObjectLiteralNode> => {
       return {
         kind: 'ComlinkObjectLiteral',
         fields: maybeFields ?? [],
-        location: sepStart.location,
-        span: {
-          start: sepStart.span.start,
-          end: sepEnd.span.end,
-        },
+        location: computeLocationSpan(sepStart, sepEnd),
       };
     }
   );
 
 export const COMLINK_LIST_LITERAL: SyntaxRule<
-  WithLocationInfo<ComlinkListLiteralNode>
+  WithLocation<ComlinkListLiteralNode>
 > = SyntaxRule.separator('[')
   .followedBy(
     SyntaxRule.optional(
@@ -94,19 +86,11 @@ export const COMLINK_LIST_LITERAL: SyntaxRule<
   )
   .andFollowedBy(SyntaxRule.separator(']'))
   .map(
-    ([
-      sepStart,
-      maybeItems,
-      sepEnd,
-    ]): WithLocationInfo<ComlinkListLiteralNode> => {
+    ([sepStart, maybeItems, sepEnd]): WithLocation<ComlinkListLiteralNode> => {
       return {
         kind: 'ComlinkListLiteral',
         items: maybeItems ?? [],
-        location: sepStart.location,
-        span: {
-          start: sepStart.span.start,
-          end: sepEnd.span.end,
-        },
+        location: computeLocationSpan(sepStart, sepEnd),
       };
     }
   );

@@ -42,11 +42,11 @@ function addDoc<T>(
   structure: T
 ): T & DocumentedStructure {
   const result: T & DocumentedStructure = { ...structure };
-  if (node.description !== undefined) {
-    result.description = node.description;
+  if (node.documentation?.description !== undefined) {
+    result.description = node.documentation.description;
   }
-  if (node.title !== undefined) {
-    result.title = node.title;
+  if (node.documentation?.title !== undefined) {
+    result.title = node.documentation.title;
   }
 
   return result;
@@ -249,10 +249,7 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
       .filter(isUseCaseDefinitionNode)
       .map(definition => this.visit(definition));
 
-    return addDoc(
-      { title: header.title, description: header.description },
-      { header, usecases }
-    );
+    return addDoc(node.header, { header, usecases });
   }
 
   visitProfileHeaderNode(node: ProfileHeaderNode): ProfileHeaderStructure {

@@ -440,7 +440,7 @@ export const RETURN_CONSTRUCTS: {
         if (isTypescriptIdentifier(node.right)) {
           results.push(
             visitConstruct(
-              node,
+              node.right,
               undefined,
               inputStructure,
               isOutcomeWithCondition,

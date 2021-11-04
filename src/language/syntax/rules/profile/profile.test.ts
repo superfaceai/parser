@@ -1,3 +1,4 @@
+import { PARSED_AST_VERSION, PARSED_VERSION } from '../../../../metadata';
 import { SyntaxError } from '../../../error';
 import {
   IdentifierTokenData,
@@ -7,9 +8,10 @@ import {
   LiteralTokenData,
   StringTokenData,
 } from '../../../lexer/token';
-import { Location, Source, Span } from '../../../source';
+import { Source } from '../../../source';
 import { RuleResult } from '../../rule';
 import { ArrayLexerStream } from '../../util';
+import { HasLocation } from '../common';
 import * as rules from '.';
 
 // Declare custom matcher for sake of Typescript
@@ -75,20 +77,22 @@ function tesTok(data: LexerTokenData): LexerToken {
 
   TES_TOK_STATE += 1;
 
-  return new LexerToken(data, { line, column }, { start, end });
+  return new LexerToken(data, {
+    start: { line, column, charIndex: start },
+    end: { line, column, charIndex: end },
+  });
 }
 
 function tesMatch<I extends Record<string, unknown>>(
   input: I,
   first: LexerToken,
   last?: LexerToken
-): I & { location: Location; span: Span } {
+): I & HasLocation {
   return {
     ...input,
-    location: first.location,
-    span: {
-      start: first.span.start,
-      end: (last ?? first).span.end,
+    location: {
+      start: first.location.start,
+      end: (last ?? first).location.end,
     },
   };
 }
@@ -778,10 +782,12 @@ describe('profile syntax rules', () => {
             fieldName: (tokens[1].data as IdentifierTokenData).identifier,
             required: false,
             type: undefined,
-            title: 'Title',
-            description: 'Description',
+            documentation: {
+              title: 'Title',
+              description: 'Description',
+              location: tokens[0].location,
+            },
           },
-          tokens[0],
           tokens[1]
         )
       );
@@ -869,10 +875,13 @@ describe('profile syntax rules', () => {
             kind: 'NamedFieldDefinition',
             fieldName: (tokens[2].data as IdentifierTokenData).identifier,
             type: undefined,
-            title: 'title',
-            description: undefined,
+            documentation: {
+              title: 'title',
+              description: undefined,
+              location: tokens[0].location,
+            },
           },
-          tokens[0],
+          tokens[1],
           tokens[2]
         )
       );
@@ -1002,10 +1011,13 @@ describe('profile syntax rules', () => {
             kind: 'NamedModelDefinition',
             modelName: (tokens[2].data as IdentifierTokenData).identifier,
             type: undefined,
-            title: 'Title',
-            description: 'Description',
+            documentation: {
+              title: 'Title',
+              description: 'Description',
+              location: tokens[0].location,
+            },
           },
-          tokens[0],
+          tokens[1],
           tokens[2]
         )
       );
@@ -1404,10 +1416,13 @@ describe('profile syntax rules', () => {
             ),
             asyncResult: undefined,
             error: undefined,
-            title: 'Title',
-            description: 'Description',
+            documentation: {
+              title: 'Title',
+              description: 'Description',
+              location: tokens[0].location,
+            },
           },
-          tokens[0],
+          tokens[1],
           tokens[6]
         )
       );
@@ -1472,10 +1487,13 @@ describe('profile syntax rules', () => {
               minor: 12,
               patch: 0,
             },
-            title: 'Title',
-            description: 'Description',
+            documentation: {
+              title: 'Title',
+              description: 'Description',
+              location: tokens[0].location,
+            },
           },
-          tokens[0],
+          tokens[1],
           tokens[6]
         )
       );
@@ -1516,6 +1534,11 @@ describe('profile syntax rules', () => {
         tesMatch(
           {
             kind: 'ProfileDocument',
+            astMetadata: {
+              astVersion: PARSED_AST_VERSION,
+              parserVersion: PARSED_VERSION,
+              sourceChecksum: expect.anything(),
+            },
             header: tesMatch(
               {
                 kind: 'ProfileHeader',

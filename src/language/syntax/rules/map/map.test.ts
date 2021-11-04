@@ -1,3 +1,4 @@
+import { PARSED_AST_VERSION, PARSED_VERSION } from '../../../../metadata';
 import { SyntaxError } from '../../../error';
 import { LexerTokenStream } from '../../../lexer';
 import {
@@ -9,10 +10,11 @@ import {
   LiteralTokenData,
   StringTokenData,
 } from '../../../lexer/token';
-import { Location, Source, Span } from '../../../source';
+import { Source } from '../../../source';
 import { allFeatures, PARSER_FEATURES, ParserFeature } from '../../features';
 import { RuleResult, SyntaxRule } from '../../rule';
 import { ArrayLexerStream } from '../../util';
+import { HasLocation } from '../common';
 import * as mapRules from './index';
 
 // Declare custom matcher for sake of Typescript
@@ -37,7 +39,7 @@ expect.extend({
         token === undefined
           ? ''
           : ' at token #' +
-            Math.trunc(token.location.line / 10000).toString() +
+            Math.trunc(token.location.start.line / 10000).toString() +
             ': ' +
             token.toString();
       message =
@@ -86,20 +88,22 @@ function tesTok(data: LexerTokenData): LexerToken {
 
   TES_TOK_STATE += 1;
 
-  return new LexerToken(data, { line, column }, { start, end });
+  return new LexerToken(data, {
+    start: { line, column, charIndex: start },
+    end: { line, column, charIndex: end },
+  });
 }
 
 function tesMatch<I extends Record<string, unknown>>(
   input: I,
   first: LexerToken,
   last?: LexerToken
-): I & { location: Location; span: Span } {
+): I & HasLocation {
   return {
     ...input,
-    location: first.location,
-    span: {
-      start: first.span.start,
-      end: (last ?? first).span.end,
+    location: {
+      start: first.location.start,
+      end: (last ?? first).location.end,
     },
   };
 }
@@ -969,40 +973,38 @@ describe('strict map syntax rules', () => {
       ];
       const stream = new ArrayLexerStream(tokens);
 
-      const expected = {
-        body: tesMatch(
+      expectAllToBeAMatch(
+        tesMatch(
           {
-            kind: 'InlineCall',
-            operationName: 'Op',
-            arguments: [
-              tesMatch(
-                {
-                  kind: 'Assignment',
-                  key: [(tokens[6].data as IdentifierTokenData).identifier],
-                  value: tesMatch(
+            body: tesMatch(
+              {
+                kind: 'InlineCall',
+                operationName: 'Op',
+                arguments: [
+                  tesMatch(
                     {
-                      kind: 'PrimitiveLiteral',
-                      value: 3,
+                      kind: 'Assignment',
+                      key: [(tokens[6].data as IdentifierTokenData).identifier],
+                      value: tesMatch(
+                        {
+                          kind: 'PrimitiveLiteral',
+                          value: 3,
+                        },
+                        tokens[8]
+                      ),
                     },
+                    tokens[6],
                     tokens[8]
                   ),
-                },
-                tokens[6],
-                tokens[8]
-              ),
-            ],
+                ],
+              },
+              tokens[3],
+              tokens[9]
+            ),
           },
-          tokens[3],
-          tokens[9]
+          tokens[0],
+          tokens[10]
         ),
-        span: {
-          start: tokens[0].span.start,
-          end: tokens[10].span.end,
-        },
-      };
-
-      expectAllToBeAMatch(
-        expected,
         stream,
         [mapRules.HTTP_REQUEST_VARIABLES_BLOCK],
         ...allFeatures()
@@ -1192,6 +1194,11 @@ describe('strict map syntax rules', () => {
         tesMatch(
           {
             kind: 'MapDocument',
+            astMetadata: {
+              astVersion: PARSED_AST_VERSION,
+              parserVersion: PARSED_VERSION,
+              sourceChecksum: expect.anything(),
+            },
             header: tesMatch(
               {
                 kind: 'MapHeader',

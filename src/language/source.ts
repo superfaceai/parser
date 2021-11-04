@@ -1,17 +1,21 @@
+import {
+  Location as AstLocation,
+  LocationSpan as AstLocationSpan,
+} from '@superfaceai/ast';
+import { createHash } from 'crypto';
+
 import { isNewline } from './lexer/util';
 
-/**
- * Human-readable location of a token inside source code.
- *
- * Both `line` and `column` are indexed from 1.
- */
-export type Location = {
-  line: number;
-  column: number;
+export type Location = AstLocation;
+export type LocationSpan = AstLocationSpan;
+export type LocationOffset = {
+  /** Line offset - this is basically how many lines there are preceding the one in question */
+  line: 0;
+  /** Column offset - this only applies to the first line */
+  column: 0;
 };
 
-/** Span of one node inside source code. */
-export type Span = {
+export type CharIndexSpan = {
   start: number;
   end: number;
 };
@@ -23,13 +27,44 @@ export class Source {
   /** Name of the file to display in errors. */
   fileName: string;
   /** Offset from the start of the file the body covers. */
-  fileLocationOffset: Location;
+  fileLocationOffset: LocationOffset;
 
-  constructor(body: string, fileName?: string, fileLocationOffset?: Location) {
+  constructor(
+    body: string,
+    fileName?: string,
+    fileLocationOffset?: LocationOffset
+  ) {
     this.body = body;
 
     this.fileName = fileName ?? '[input]';
     this.fileLocationOffset = fileLocationOffset ?? { line: 0, column: 0 };
+  }
+
+  checksum(): string {
+    const hash = createHash('sha256');
+    hash.update(this.body);
+
+    return hash.digest('hex');
+  }
+
+  applyLocationOffset(location: LocationSpan): LocationSpan {
+    const startColumnShift =
+      location.start.line === 1 ? this.fileLocationOffset.column : 0;
+    const endColumnShift =
+      location.end.line === 1 ? this.fileLocationOffset.column : 0;
+
+    return {
+      start: {
+        line: this.fileLocationOffset.line + location.start.line,
+        column: location.start.column + startColumnShift,
+        charIndex: location.start.charIndex,
+      },
+      end: {
+        line: this.fileLocationOffset.line + location.end.line,
+        column: location.end.column + endColumnShift,
+        charIndex: location.end.charIndex,
+      },
+    };
   }
 }
 
@@ -66,5 +101,6 @@ export function computeEndLocation(
   return {
     line: startLocation.line + newlines,
     column,
+    charIndex: startLocation.charIndex + slice.length,
   };
 }

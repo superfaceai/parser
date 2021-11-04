@@ -1,12 +1,12 @@
 import { ProtoError } from '../../error';
-import { Span } from '../../source';
+import { CharIndexSpan } from '../../source';
 import { LexerTokenData, LexerTokenKind } from '../token';
 
 /** The match is successful */
 type ParseResultMatch<T extends LexerTokenData> = {
   readonly kind: 'match';
   readonly data: T;
-  readonly relativeSpan: Span;
+  readonly relativeSpan: CharIndexSpan;
 };
 /** The match cannot happen here, further rules should be attempted */
 type ParseResultNomatch = {

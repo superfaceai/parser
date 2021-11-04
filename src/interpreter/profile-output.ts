@@ -18,10 +18,10 @@ export interface Structure {
 /**
  * @interface DocumentedStructure represents documentable structures
  */
-export interface DocumentedStructure {
+export type DocumentedStructure = {
   title?: string;
   description?: string;
-}
+};
 
 /**
  * @interface PrimitiveStructure represents structure of primitive type

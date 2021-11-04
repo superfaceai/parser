@@ -717,7 +717,7 @@ export class MapValidator implements MapAstVisitor {
 
   private getPath(node: MapASTNode): string[] {
     return node.location
-      ? [`${node.location.line}:${node.location.column}`, node.kind]
+      ? [`${node.location.start.line}:${node.location.start.column}`, node.kind]
       : [node.kind];
   }
 
