@@ -8,17 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
-**BREAKING CHANGE:** `ProfileDocumentId` renamed to `ProfileIdRange`
-**BREAKING CHANGE:** `DocumentVersion` renamed to `VersionRange`
-**BREAKING CHANGE:** `parseVersionNumber` renamed to `tryParseVersionNumber`
-**BREAKING CHANGE:** removed `isValidDocumentIdentifier` started using `isValidDocumentName` from AST
-**BREAKING CHANGE:** removed `splitLimit` strated using `splitLimit` from AST
+- **BREAKING CHANGE:** `ProfileDocumentId` renamed to `ProfileIdRange`
+- **BREAKING CHANGE:** `DocumentVersion` renamed to `VersionRange`
+- **BREAKING CHANGE:** `parseVersionNumber` renamed to `tryParseVersionNumber`
+- **BREAKING CHANGE:** removed `isValidDocumentIdentifier` started using `isValidDocumentName` from AST
+- **BREAKING CHANGE:** removed `splitLimit` strated using `splitLimit` from AST
 
 ### Added
-`ProfileVersion` class representing version of profile in ProfileId
-`ProfileId` class representing complete id of profile
-`MapVersion` class representing version of map in MapId
-`MapId` class representing complete id of map
+- `ProfileVersion` class representing version of profile in ProfileId
+- `ProfileId` class representing complete id of profile
+- `MapVersion` class representing version of map in MapId
+- `MapId` class representing complete id of map
 
 
 ## [0.0.23] - 2021-10-18
