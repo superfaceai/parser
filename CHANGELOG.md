@@ -7,19 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- **BREAKING CHANGE:** `ProfileDocumentId` renamed to `ProfileIdRange`
-- **BREAKING CHANGE:** `DocumentVersion` renamed to `VersionRange`
-- **BREAKING CHANGE:** `parseVersionNumber` renamed to `tryParseVersionNumber`
-- **BREAKING CHANGE:** removed `isValidDocumentIdentifier` started using `isValidDocumentName` from AST
-- **BREAKING CHANGE:** removed `splitLimit` strated using `splitLimit` from AST
-
+## [1.0.0] - 2021-11-04
 ### Added
 - `ProfileVersion` class representing version of profile in ProfileId
 - `ProfileId` class representing complete id of profile
 - `MapVersion` class representing version of map in MapId
 - `MapId` class representing complete id of map
 
+### Changed
+- **BREAKING CHANGE:** `ProfileDocumentId` renamed to `ProfileIdRange`
+- **BREAKING CHANGE:** `DocumentVersion` renamed to `VersionRange`
+- **BREAKING CHANGE:** `parseVersionNumber` renamed to `tryParseVersionNumber`
+- **BREAKING CHANGE:** removed `isValidDocumentIdentifier` started using `isValidDocumentName` from AST
+- **BREAKING CHANGE:** removed `splitLimit` strated using `splitLimit` from AST
 
 ## [0.0.23] - 2021-10-18
 ### Added
@@ -45,7 +45,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.0.19] - 2021-07-14
 
 ## [0.0.18] - 2021-06-08
-
 ### Added
 - Added an explicit hint to ShorthandPropertyAssignment Jessie construct error
 
@@ -161,11 +160,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `none` security scheme for http call
 - Inline call support in maps
-
-### Changed
-- Scope renamed from `@superindustries` to `@superfaceai`
-
-### Added
 - `SyntaxError` category
 - `LexerContext` to communicate context from parser to the lexer
 - `LexerTokenStream` with native save and rollback
@@ -178,6 +172,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Simple build option that skips parcel because of bugs with the produced artifacts
 
 ### Changed
+- Scope renamed from `@superindustries` to `@superfaceai`
 - Updated dependency versions
 - Updated typescript to version 4+ and using new features
 - Line comment token from `#` to `//`
@@ -201,16 +196,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation extraction from doc strings
 - Usecase result parsing as optional
 
-[Unreleased]: https://github.com/superfaceai/parser/compare/v0.0.23...HEAD
-[0.0.23]: https://github.com/superfaceai/parser/compare/v0.0.23-beta.0...v0.0.23
-[0.0.23-beta.0]: https://github.com/superfaceai/parser/compare/v0.0.22...v0.0.23-beta.0
+[Unreleased]: https://github.com/superfaceai/parser/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/superfaceai/parser/compare/v0.0.23...v1.0.0
+[0.0.23]: https://github.com/superfaceai/parser/compare/v0.0.22...v0.0.23
 [0.0.22]: https://github.com/superfaceai/parser/compare/v0.0.21...v0.0.22
 [0.0.21]: https://github.com/superfaceai/parser/compare/v0.0.20...v0.0.21
-[0.0.20]: https://github.com/superfaceai/parser/compare/v0.0.20-beta.0...v0.0.20
-[0.0.20-beta.0]: https://github.com/superfaceai/parser/compare/v0.0.19...v0.0.20-beta.0
+[0.0.20]: https://github.com/superfaceai/parser/compare/v0.0.19...v0.0.20
 [0.0.19]: https://github.com/superfaceai/parser/compare/v0.0.18...v0.0.19
-[0.0.18]: https://github.com/superfaceai/parser/compare/v0.0.18-beta.0...v0.0.18
-[0.0.18-beta.0]: https://github.com/superfaceai/parser/compare/v0.0.17...v0.0.18-beta.0
+[0.0.18]: https://github.com/superfaceai/parser/compare/v0.0.17...v0.0.18
 [0.0.17]: https://github.com/superfaceai/parser/compare/v0.0.16...v0.0.17
 [0.0.16]: https://github.com/superfaceai/parser/compare/v0.0.15...v0.0.16
 [0.0.15]: https://github.com/superfaceai/parser/compare/v0.0.14...v0.0.15
@@ -222,6 +215,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [0.0.8]: https://github.com/superfaceai/parser/compare/v0.0.7...v0.0.8
 [0.0.7]: https://github.com/superfaceai/parser/compare/v0.0.6...v0.0.7
 [0.0.6]: https://github.com/superfaceai/parser/compare/v0.0.5...v0.0.6
-[0.0.5]: https://github.com/superfaceai/parser/compare/v0.0.4-beta3...v0.0.5
-[0.0.4-beta3]: https://github.com/superfaceai/parser/compare/v0.0.3...v0.0.4-beta3
+[0.0.5]: https://github.com/superfaceai/parser/compare/v0.0.3...v0.0.5
 [0.0.3]: https://github.com/superfaceai/parser/compare/v0.0.2...v0.0.3
