@@ -186,8 +186,8 @@ export function formatIssues(issues?: ValidationIssue[]): string {
   return issues
     .map(issue => {
       const location = issue.context
-        ? issue.context.path
-          ? issue.context.path.join(' ')
+        ? issue.context.path.location
+          ? `${issue.context.path.location.start.line}:${issue.context.path.location.start.column} ${issue.context.path.kind}`
           : ''
         : '';
 

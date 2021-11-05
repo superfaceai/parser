@@ -1,4 +1,4 @@
-import { AssignmentNode, LiteralNode } from '@superfaceai/ast';
+import { AssignmentNode, LiteralNode, LocationSpan } from '@superfaceai/ast';
 
 import {
   ObjectCollection,
@@ -7,7 +7,12 @@ import {
   VersionStructure,
 } from './profile-output';
 
-export type ErrorContext = { path?: string[] };
+export type IssueLocation = {
+  kind: string;
+  location?: LocationSpan;
+};
+
+export type ErrorContext = { path: IssueLocation };
 export type ValidationIssue =
   | {
       kind: 'wrongScope';
