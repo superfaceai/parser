@@ -4,9 +4,9 @@ exports[`MapValidatorAdvanced combination of input, result & error Retrieve Mess
 Object {
   "profile-provider": Object {
     "errors": "8:33 JessieExpression - Wrong Input Structure: expected messageId, but got input.wrong.key.in.input
-1:25 PropertyAccessExpression - Wrong Input Structure: expected messageId, but got input.wrong.key.in.input
+8:33 PropertyAccessExpression - Wrong Input Structure: expected messageId, but got input.wrong.key.in.input
 10:26 JessieExpression - Wrong Input Structure: expected messageId, but got input.to
-1:9 PropertyAccessExpression - Wrong Input Structure: expected messageId, but got input.to",
+10:26 PropertyAccessExpression - Wrong Input Structure: expected messageId, but got input.to",
     "warnings": "15:15 OutcomeStatement - Error Not Found: returning \\"ObjectLiteral\\", but there is no error defined in usecase
 19:26 ObjectLiteral - Wrong Object Structure: expected deliveryStatus, but got status, some.key
 26:26 ObjectLiteral - Wrong Object Structure: expected deliveryStatus, but got status",
@@ -25,9 +25,9 @@ Object {
   "profile-provider": Object {
     "errors": "5:11 HttpCallStatement - Wrong Input Structure: expected to, from, text, but got input.channel
 8:26 JessieExpression - Wrong Input Structure: expected to, from, text, but got input.is.wrong
-1:15 PropertyAccessExpression - Wrong Input Structure: expected to, from, text, but got input.is.wrong
+8:26 PropertyAccessExpression - Wrong Input Structure: expected to, from, text, but got input.is.wrong
 9:28 JessieExpression - Wrong Input Structure: expected to, from, text, but got input.very.very.wrong
-1:22 PropertyAccessExpression - Wrong Input Structure: expected to, from, text, but got input.very.very.wrong",
+9:28 PropertyAccessExpression - Wrong Input Structure: expected to, from, text, but got input.very.very.wrong",
     "warnings": "14:25 ObjectLiteral - Wrong Object Structure: expected problem, detail, instance, but got some.key
 18:50 ObjectLiteral - Wrong Object Structure: expected messageId, but got deliveryStatus, messageID
 26:25 ObjectLiteral - Wrong Object Structure: expected problem, detail, instance, but got status, statusID
@@ -49,9 +49,9 @@ exports[`MapValidatorAdvanced combination of input, result & error Send Message 
 Object {
   "profile-provider": Object {
     "errors": "8:26 JessieExpression - Wrong Input Structure: expected to, from, text, but got input.is.wrong
-1:15 PropertyAccessExpression - Wrong Input Structure: expected to, from, text, but got input.is.wrong
+8:26 PropertyAccessExpression - Wrong Input Structure: expected to, from, text, but got input.is.wrong
 9:28 JessieExpression - Wrong Input Structure: expected to, from, text, but got input.very.very.wrong
-1:22 PropertyAccessExpression - Wrong Input Structure: expected to, from, text, but got input.very.very.wrong",
+9:28 PropertyAccessExpression - Wrong Input Structure: expected to, from, text, but got input.very.very.wrong",
     "warnings": "14:25 ObjectLiteral - Wrong Object Structure: expected problem, detail, instance, but got some.key
 18:50 ObjectLiteral - Wrong Object Structure: expected messageId, but got messageID
 24:25 ObjectLiteral - Wrong Object Structure: expected problem, detail, instance, but got status, statusID
