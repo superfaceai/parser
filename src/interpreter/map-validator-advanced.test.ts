@@ -656,5 +656,84 @@ describe('MapValidatorAdvanced', () => {
 
       valid(profileAst, [mapAst]);
     });
+
+    describe('validating enum input passed in throught foreach call', () => {
+      const profileAst = parseProfileFromSource(
+        `
+        usecase GetWeatherForecastInCity {
+          input {
+            city! string!
+            units enum {C, F, K}
+          }
+          
+          result [
+            {
+              averageTemperature! number!
+              date! string!
+              maxTemperature number!
+              minTemperature number!
+            }
+          ]
+
+          error {
+            message string!
+            statusCode!
+          }
+        }
+      `
+      );
+      const mapAst = parseMapFromSource(
+        `
+        map GetWeatherForecastInCity {
+          set {
+            unit = input.units
+          }
+
+          http GET "/api" {
+            response {
+              forecast = call foreach(weather of body.weather) mapWeather(
+                units = unit,
+                weather = weather
+              )
+
+              return map result forecast
+            }
+          }
+        }
+
+        operation pickTemperatures {
+          return if (args.units === 'F') {
+            avgTemp = Number(args.weather.avgtempF)
+            maxTemp = Number(args.weather.maxtempF)
+            minTemp = Number(args.weather.mintempF)
+          }
+          return if (args.units === 'K') {
+            avgTemp = Number(args.weather.avgtempC) + 273
+            maxTemp = Number(args.weather.maxtempC) + 273
+            minTemp = Number(args.weather.mintempC) + 273
+          }
+          return {
+            avgTemp = Number(args.weather.avgtempC)
+            maxTemp = Number(args.weather.maxtempC)
+            minTemp = Number(args.weather.mintempC)
+          }
+        }
+
+        operation mapWeather {
+          set {
+            temperatureWrapper = call pickTemperatures(units = args.units, weather = args.weather)
+          }
+          return {
+            averageTemperature = temperatureWrapper.avgTemp
+            date = args.weather.date
+            maxTemperature = temperatureWrapper.maxTemp
+            minTemperature = temperatureWrapper.minTemp
+          }
+        }
+        `
+      );
+
+      valid(profileAst, [mapAst]);
+    });
   });
 });

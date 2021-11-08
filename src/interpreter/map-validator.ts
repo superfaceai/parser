@@ -34,12 +34,7 @@ import {
   StructureType,
   UseCaseStructure,
 } from './profile-output';
-import {
-  isEnumStructure,
-  isNonNullStructure,
-  isPrimitiveStructure,
-  isScalarStructure,
-} from './profile-output.utils';
+import { isNonNullStructure, isScalarStructure } from './profile-output.utils';
 import {
   compareStructure,
   findTypescriptIdentifier,
@@ -326,21 +321,6 @@ export class MapValidator implements MapAstVisitor {
             continue;
           }
 
-          const wrongStructureIssue: ValidationIssue = {
-            kind: 'wrongStructure',
-            context: {
-              path: this.getPath(node),
-              expected: { kind: 'PrimitiveStructure', type: 'string' },
-              actual: this.inputStructure,
-            },
-          };
-
-          // identifier `input` by itself is always an object
-          if (ts.isIdentifier(typescriptIdentifier)) {
-            this.errors.push(wrongStructureIssue);
-            continue;
-          }
-
           const structure = validateObjectStructure(
             typescriptIdentifier,
             this.inputStructure
@@ -355,17 +335,6 @@ export class MapValidator implements MapAstVisitor {
                 actual: expression,
               },
             });
-            continue;
-          }
-
-          wrongStructureIssue.context.actual = structure;
-          if (isScalarStructure(structure)) {
-            this.warnings.push(wrongStructureIssue);
-            continue;
-          }
-
-          if (!isPrimitiveStructure(structure) && !isEnumStructure(structure)) {
-            this.errors.push(wrongStructureIssue);
             continue;
           }
         }
@@ -465,8 +434,10 @@ export class MapValidator implements MapAstVisitor {
   }
 
   visitInlineCallNode(node: InlineCallNode): boolean {
-    if (node.arguments.length > 0) {
-      node.arguments.forEach(argument => this.visit(argument));
+    if (!this.currentStructure) {
+      if (node.arguments.length > 0) {
+        node.arguments.forEach(argument => this.visit(argument));
+      }
     }
 
     return true;
