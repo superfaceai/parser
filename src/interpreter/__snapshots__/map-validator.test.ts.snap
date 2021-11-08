@@ -490,9 +490,7 @@ Object {
 
 exports[`MapValidator result & error map is using http call then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "6:11 HttpCallStatement - Wrong Structure: expected string, but got \\"ScalarStructure\\"",
-  },
+  "profile-provider": Object {},
 }
 `;
 
