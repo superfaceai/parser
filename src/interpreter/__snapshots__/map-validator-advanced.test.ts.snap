@@ -97,9 +97,3 @@ Object {
   "profile-provider": Object {},
 }
 `;
-
-exports[`MapValidatorAdvanced combination of input, result & error validating enum input passed in throught foreach call then validation will pass 1`] = `
-Object {
-  "profile-provider": Object {},
-}
-`;
