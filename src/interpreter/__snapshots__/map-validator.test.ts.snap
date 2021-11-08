@@ -1,5 +1,35 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`MapValidator input & result map is using http call then validation will fail 1`] = `
+Object {
+  "profile-provider": Object {
+    "errors": "9:24 JessieExpression - Wrong Structure: expected string, but got \\"{}\\"
+1:3 ObjectLiteralExpression - Wrong Structure: expected string, but got \\"{}\\"",
+  },
+}
+`;
+
+exports[`MapValidator input & result map is using http call then validation will pass 1`] = `
+Object {
+  "profile-provider": Object {},
+}
+`;
+
+exports[`MapValidator input & result map is using inline call then validation will fail 1`] = `
+Object {
+  "profile-provider": Object {
+    "errors": "13:35 JessieExpression - Wrong Input Structure: expected from, but got input.wrong
+1:12 PropertyAccessExpression - Wrong Input Structure: expected from, but got input.wrong",
+  },
+}
+`;
+
+exports[`MapValidator input & result map is using inline call then validation will pass 1`] = `
+Object {
+  "profile-provider": Object {},
+}
+`;
+
 exports[`MapValidator input input referenced in ConditionAtomNode then validation will fail 1`] = `
 Object {
   "profile-provider": Object {
@@ -476,27 +506,6 @@ Object {
 1:3 ObjectLiteralExpression - Wrong Structure: expected string, but got \\"{}\\"
 8:31 PrimitiveLiteral - Wrong Structure: expected ObjectStructure, but got \\"some string\\"",
   },
-}
-`;
-
-exports[`MapValidator result & error map is using http call then validation will fail 1`] = `
-Object {
-  "profile-provider": Object {
-    "errors": "8:24 JessieExpression - Wrong Structure: expected string, but got \\"{}\\"
-1:3 ObjectLiteralExpression - Wrong Structure: expected string, but got \\"{}\\"",
-  },
-}
-`;
-
-exports[`MapValidator result & error map is using http call then validation will pass 1`] = `
-Object {
-  "profile-provider": Object {},
-}
-`;
-
-exports[`MapValidator result & error map is using inline call then validation will pass 1`] = `
-Object {
-  "profile-provider": Object {},
 }
 `;
 

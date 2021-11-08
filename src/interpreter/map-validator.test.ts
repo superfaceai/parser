@@ -1721,95 +1721,6 @@ describe('MapValidator', () => {
 
       valid(profileAst, [mapAst]);
     });
-
-    describe('map is using http call', () => {
-      const profileAst = parseProfileFromSource(
-        `usecase Test {
-          input {
-            to string
-            from
-          }
-          result {
-            from string
-            text string
-          }
-        }`
-      );
-      const mapAst1 = parseMapFromSource(
-        `map Test {
-          some.variable = "string"
-          http POST "http://example.com/{some.variable}/{input.from}" {
-            response 200 {
-              map result {
-                from = "some string"
-                text = "some string"
-              }
-            }
-          }
-        }`
-      );
-      const mapAst2 = parseMapFromSource(
-        `map Test {
-          http POST "http://www.example.com/" {
-            response 200 {
-              map result {
-                from = {}
-                text = "some string"
-              }
-            }
-          }
-        }`
-      );
-
-      valid(profileAst, [mapAst1]);
-      invalid(profileAst, [mapAst2]);
-    });
-
-    describe('map is using inline call', () => {
-      const profileAst = parseProfileFromSource(
-        `usecase Test {
-          result {
-            from string
-            text string
-          }
-        }`
-      );
-      const mapAst1 = parseMapFromSource(
-        `operation Foo {
-          return "some string"
-        }
-        
-        operation Bar {
-          return "some string"
-        }
-        
-        map Test {
-          map result {
-            from = call Foo()
-            text = call Bar()
-          }
-        }`
-      );
-      const mapAst2 = parseMapFromSource(
-        `operation Foo {
-          return "some string"
-        }
-        
-        operation Bar {
-          return {
-          }
-        }
-        
-        map Test {
-          map result {
-            from = call Foo()
-            text = call Bar()
-          }
-        }`
-      );
-
-      valid(profileAst, [mapAst1, mapAst2]);
-    });
   });
 
   describe('input', () => {
@@ -1929,6 +1840,169 @@ describe('MapValidator', () => {
 
       valid(profileAst, [mapAst1]);
       invalid(profileAst, [mapAst2]);
+    });
+  });
+
+  describe('input & result', () => {
+    describe('map is using http call', () => {
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+          input {
+            to string
+            from
+          }
+          result {
+            from string
+            text string
+          }
+        }`
+      );
+      const mapAst1 = parseMapFromSource(
+        `map Test {
+          some.variable = "string"
+          http POST "http://example.com/{some.variable}/{input.from}" {
+            response 200 {
+              map result {
+                from = "some string"
+                text = "some string"
+              }
+            }
+          }
+        }`
+      );
+      const mapAst2 = parseMapFromSource(
+        `map Test {
+          some.variable = "string"
+          http POST "http://example.com/{some.variable}/{input.to}" {
+            response 200 {
+              map result {
+                from = "some string"
+                text = "some string"
+              }
+            }
+          }
+        }`
+      );
+      const mapAst3 = parseMapFromSource(
+        `map Test {
+          http POST "http://www.example.com/{input.wrong}" {
+            response 200 {
+              map result {
+                from = "some string"
+                text = "some string"
+              }
+            }
+          }
+        }`
+      );
+      const mapAst4 = parseMapFromSource(
+        `map Test {
+          some.variable = "string"
+          http POST "http://example.com/{some.variable}/{input.from}" {
+            response 200 {
+              map result {
+                from = {}
+                text = "some string"
+              }
+            }
+          }
+        }`
+      );
+
+      valid(profileAst, [mapAst1, mapAst2]);
+      invalid(profileAst, [mapAst3, mapAst4]);
+    });
+
+    describe('map is using inline call', () => {
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+          input {
+            from boolean
+          }
+
+          result {
+            from string
+            text string
+          }
+        }`
+      );
+      const mapAst1 = parseMapFromSource(
+        `operation Foo {
+          return "some string"
+        }
+        
+        operation Bar {
+          return "some string"
+        }
+        
+        map Test {
+          map result {
+            from = call Foo()
+            text = call Bar()
+          }
+        }`
+      );
+      const mapAst2 = parseMapFromSource(
+        `operation Foo {
+          return "some string"
+        }
+        
+        operation Bar {
+          return {}
+        }
+        
+        map Test {
+          from = call Foo(param = input.from)
+          text = call Bar()
+
+          outcomeValue = {
+            from: from,
+            text: text
+          }
+
+          map result outcomeValue
+        }`
+      );
+      const mapAst3 = parseMapFromSource(
+        `operation Foo {
+          return true
+        }
+        
+        operation Bar {
+          return "some string"
+        }
+        
+        map Test {
+          map result {
+            from = call Foo()
+            text = call Bar()
+          }
+        }`
+      );
+      const mapAst4 = parseMapFromSource(
+        `operation Foo {
+          return "some string"
+        }
+        
+        operation Bar {
+          return {}
+        }
+        
+        map Test {
+          from = call Foo(param = input.wrong)
+          text = call Bar()
+
+          outcomeValue = {
+            from: from,
+            text: text
+          }
+
+          map result outcomeValue
+        }`
+      );
+
+      valid(profileAst, [mapAst1, mapAst2]);
+      invalid(profileAst, [mapAst3, mapAst4]);
     });
   });
 
