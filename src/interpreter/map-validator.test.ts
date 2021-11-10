@@ -547,24 +547,18 @@ describe('MapValidator', () => {
       });
 
       describe('that uses dot.notation for fields', () => {
-        const profileAst = parseProfileFromSource(
-          `usecase Test {
-            result {
-              f1 {
-                f2 {
-                  inner number
-                }
-              }
-              f2 number
-            }    
-          }`
-        );
         const mapAst1 = parseMapFromSource(
           `map Test {
             map result {
               f1.f2.inner = 1
               f2 = 2
             }
+
+            output = {}
+            output.f1.f2.inner = 1
+            output.f2 = 2
+
+            map result output
           }`
         );
         const mapAst2 = parseMapFromSource(
@@ -577,11 +571,50 @@ describe('MapValidator', () => {
               f1.f2.inner = 1
               f2.f1 = 2
             }
+
+            output = {}
+            output.f1.f2.inner = false
+            output.f2 = true
+
+            map result output
           }`
         );
 
-        valid(profileAst, [mapAst1]);
-        invalid(profileAst, [mapAst2]);
+        describe('with result', () => {
+          const profileAst = parseProfileFromSource(
+            `usecase Test {
+              result {
+                f1 {
+                  f2 {
+                    inner number
+                  }
+                }
+                f2 number
+              }    
+            }`
+          );
+
+          valid(profileAst, [mapAst1]);
+          invalid(profileAst, [mapAst2]);
+        });
+
+        describe('with strict result', () => {
+          const profileAst = parseProfileFromSource(
+            `usecase Test {
+              result {
+                f1! {
+                  f2! {
+                    inner! number!
+                  }!
+                }!
+                f2! number!
+              }!  
+            }`
+          );
+
+          valid(profileAst, [mapAst1]);
+          invalid(profileAst, [mapAst2]);
+        });
       });
     });
 
