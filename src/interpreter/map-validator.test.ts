@@ -1813,6 +1813,20 @@ describe('MapValidator', () => {
   });
 
   describe('input', () => {
+    const profileAstStrict = parseProfileFromSource(
+      `usecase Test {
+        input {
+          person! {
+            from! string!
+            to! string!
+          }!
+
+          to! string!
+          from! string!
+          text! string!
+        }
+      }`
+    );
     const profileAst = parseProfileFromSource(
       `usecase Test {
         input {
@@ -1865,7 +1879,9 @@ describe('MapValidator', () => {
         }`
       );
 
+      valid(profileAstStrict, [mapAst1]);
       valid(profileAst, [mapAst1]);
+      invalid(profileAstStrict, [mapAst2]);
       invalid(profileAst, [mapAst2]);
     });
 
@@ -1887,7 +1903,9 @@ describe('MapValidator', () => {
         }`
       );
 
+      valid(profileAstStrict, [mapAst1]);
       valid(profileAst, [mapAst1]);
+      invalid(profileAstStrict, [mapAst2]);
       invalid(profileAst, [mapAst2]);
     });
 
@@ -1905,7 +1923,9 @@ describe('MapValidator', () => {
         }`
       );
 
+      valid(profileAstStrict, [mapAst1]);
       valid(profileAst, [mapAst1]);
+      invalid(profileAstStrict, [mapAst2]);
       invalid(profileAst, [mapAst2]);
     });
 
@@ -1927,7 +1947,9 @@ describe('MapValidator', () => {
         }`
       );
 
+      valid(profileAstStrict, [mapAst1]);
       valid(profileAst, [mapAst1]);
+      invalid(profileAstStrict, [mapAst2]);
       invalid(profileAst, [mapAst2]);
     });
   });

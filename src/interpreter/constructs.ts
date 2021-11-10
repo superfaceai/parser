@@ -224,7 +224,11 @@ function getFieldStructure(
 
     return objectStructure.fields[property];
   } else if (ts.isPropertyAccessExpression(node)) {
-    const structure = validateObjectStructure(node, objectStructure);
+    let structure = validateObjectStructure(node, objectStructure);
+
+    if (structure && isNonNullStructure(structure)) {
+      structure = structure.value;
+    }
 
     if (!structure || !isObjectStructure(structure) || !structure.fields) {
       return undefined;
