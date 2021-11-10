@@ -1355,23 +1355,48 @@ describe('MapValidator', () => {
             }
           }`
         );
+        const profileAstStrict = parseProfileFromSource(
+          `usecase Test {
+            result {
+              f1! string!
+              f2! boolean!
+            }!
+          }`
+        );
+
         const mapAst1 = parseMapFromSource(
           `map Test {
             map result {
-            f1: 'some string',
-            f2: true
-          }
+              f1: 'some string',
+              f2: true
+            }
             map result body.map((val) => { return val.toUpperCase(); })
+            map result {
+              f1: any || 'some string',
+              f2: some.var || other.var
+            }
           }`
         );
         const mapAst2 = parseMapFromSource(
           `map Test {
             map result ['some string', true]
+            map result {
+              f1: undefined || 'some string',
+              f2: some.var || other.var
+            }
+            map result {
+              f1: null || undefined || some.var
+            }
+            map result {
+              f1: some.var
+            }
           }`
         );
 
         valid(profileAst, [mapAst1]);
+        valid(profileAstStrict, [mapAst1]);
         invalid(profileAst, [mapAst2]);
+        invalid(profileAstStrict, [mapAst2]);
       });
 
       describe('array', () => {
@@ -1412,7 +1437,6 @@ describe('MapValidator', () => {
         const mapAst1 = parseMapFromSource(
           `map Test {
             map result 'string' + 'true'
-            map result 1 + "true"
             map result "some " + "string"
             map result String(24)
             map result ['some ', 'string'].join('')
@@ -1423,9 +1447,10 @@ describe('MapValidator', () => {
           `map Test {
             map result ['some string', true]
             map result {
-            f1: 'some string',
-            f2: true
-          }
+              f1: 'some string',
+              f2: true
+            }
+            map result 1 + "true"
             map result true
             map result false
             map result 2+25
@@ -1447,23 +1472,48 @@ describe('MapValidator', () => {
             }
           }`
         );
+        const profileAstStrict = parseProfileFromSource(
+          `usecase Test {
+            error {
+              f1! string!
+              f2! boolean!
+            }!
+          }`
+        );
+
         const mapAst1 = parseMapFromSource(
           `map Test {
             map error {
-            f1: 'some string',
-            f2: true
-          }
+              f1: 'some string',
+              f2: true
+            }
             map error body.map((val) => { return val.toUpperCase(); })
+            map error {
+              f1: any || 'some string',
+              f2: some.var || other.var
+            }
           }`
         );
         const mapAst2 = parseMapFromSource(
           `map Test {
             map error ['some string', true]
+            map error {
+              f1: undefined || 'some string',
+              f2: some.var || other.var
+            }
+            map error {
+              f1: null || undefined || some.var
+            }
+            map error {
+              f1: some.var
+            }
           }`
         );
 
         valid(profileAst, [mapAst1]);
+        valid(profileAstStrict, [mapAst1]);
         invalid(profileAst, [mapAst2]);
+        invalid(profileAstStrict, [mapAst2]);
       });
 
       describe('array', () => {
@@ -1504,7 +1554,6 @@ describe('MapValidator', () => {
         const mapAst1 = parseMapFromSource(
           `map Test {
             map error 'string' + 'true'
-            map error 1 + "true"
             map error "some " + "string"
             map error String(24)
             map error ['some ', 'string'].join('')
@@ -1515,9 +1564,10 @@ describe('MapValidator', () => {
           `map Test {
             map error ['some string', true]
             map error {
-            f1: 'some string',
-            f2: true
-          }
+              f1: 'some string',
+              f2: true
+            }
+            map error 1 + "true"
             map error true
             map error false
             map error 2+25

@@ -457,77 +457,33 @@ export const RETURN_CONSTRUCTS: {
 
       // if Output is defined - do check
       if (isNonNullStructure(outputStructure)) {
-        outputStructure = outputStructure.value;
+        if (isScalarStructure(outputStructure.value)) {
+          return mergeResults(...results);
+        }
       }
 
       if (isScalarStructure(outputStructure)) {
         return mergeResults(...results);
       }
 
-      const issue: ValidationIssue = {
-        kind: 'wrongStructure',
-        context: {
-          path: getPath(node),
-          actual: node.getText(),
-          expected: outputStructure,
-        },
-      };
-
-      if (
-        isPrimitiveStructure(outputStructure) &&
-        isBooleanStructure(outputStructure)
-      ) {
-        return mergeResults(
-          ...results,
-          returnIssue(issue, false, true, isOutcomeWithCondition)
-        );
-      }
-
-      const nodeContainsString =
-        ts.isStringLiteral(node.left) || ts.isStringLiteral(node.right);
-      const nodeContainsID =
-        isTypescriptIdentifier(node.left) || isTypescriptIdentifier(node.right);
-
-      if (isTypescriptIdentifier(node.left)) {
-        results.push(
-          visitConstruct(
-            node.left,
-            outputStructure,
-            undefined,
-            isOutcomeWithCondition,
-            RETURN_CONSTRUCTS[node.left.kind]
-          )
-        );
-      }
-
-      if (isTypescriptIdentifier(node.right)) {
-        results.push(
-          visitConstruct(
-            node.right,
-            outputStructure,
-            undefined,
-            isOutcomeWithCondition,
-            RETURN_CONSTRUCTS[node.left.kind]
-          )
-        );
-      }
-
-      if (
-        isStringStructure(outputStructure) &&
-        (nodeContainsString || nodeContainsID) &&
-        node.operatorToken.getText() === '+'
-      ) {
-        return mergeResults(...results, VALID_CONSTRUCT_RESULT);
-      }
-
-      if (isNumberStructure(outputStructure) && !nodeContainsString) {
-        return mergeResults(...results, VALID_CONSTRUCT_RESULT);
-      }
-
-      return mergeResults(
-        ...results,
-        returnIssue(issue, false, true, isOutcomeWithCondition)
+      results.push(
+        visitConstruct(
+          node.left,
+          outputStructure,
+          undefined,
+          isOutcomeWithCondition,
+          RETURN_CONSTRUCTS[node.left.kind]
+        ),
+        visitConstruct(
+          node.right,
+          outputStructure,
+          undefined,
+          isOutcomeWithCondition,
+          RETURN_CONSTRUCTS[node.right.kind]
+        )
       );
+
+      return mergeResults(...results);
     },
   },
 
@@ -563,20 +519,24 @@ export const RETURN_CONSTRUCTS: {
 
       const variables: ReferencedVariables[] = [];
       if (outputStructure && !isScalarStructure(outputStructure)) {
-        if (isNonNullStructure(outputStructure) && node.text === 'undefined') {
-          return returnIssue(
-            {
-              kind: 'wrongStructure',
-              context: {
-                path: getPath(node),
-                actual: getVariableName(node),
-                expected: outputStructure.value,
+        if (node.text === 'undefined') {
+          if (isNonNullStructure(outputStructure)) {
+            return returnIssue(
+              {
+                kind: 'wrongStructure',
+                context: {
+                  path: getPath(node),
+                  actual: getVariableName(node),
+                  expected: outputStructure.value,
+                },
               },
-            },
-            false,
-            true,
-            isOutcomeWithCondition
-          );
+              false,
+              true,
+              isOutcomeWithCondition
+            );
+          } else {
+            return VALID_CONSTRUCT_RESULT;
+          }
         }
 
         variables.push({
