@@ -1,4 +1,9 @@
-import { AssignmentNode, LiteralNode } from '@superfaceai/ast';
+import {
+  AssignmentNode,
+  ComlinkAssignmentNode,
+  ComlinkLiteralNode,
+  LiteralNode,
+} from '@superfaceai/ast';
 
 import {
   ObjectCollection,
@@ -6,6 +11,13 @@ import {
   StructureType,
   VersionStructure,
 } from './profile-output';
+
+export enum ValidationIssueSlot {
+  INPUT = 'input',
+  RESULT = 'result',
+  ASYNCRESULT = 'asyncResult',
+  ERROR = 'error',
+}
 
 export type ErrorContext = { path?: string[] };
 export type ValidationIssue =
@@ -62,14 +74,14 @@ export type ValidationIssue =
       kind: 'wrongObjectStructure';
       context: ErrorContext & {
         expected: ObjectCollection;
-        actual: AssignmentNode[] | string;
+        actual: AssignmentNode[] | ComlinkAssignmentNode[] | string;
       };
     }
   | {
       kind: 'wrongStructure';
       context: ErrorContext & {
         expected: StructureType;
-        actual: LiteralNode | StructureType | string;
+        actual: LiteralNode | ComlinkLiteralNode | StructureType | string;
       };
     }
   | {
@@ -89,5 +101,12 @@ export type ValidationIssue =
         name: string;
         expected: StructureType;
         actual: LiteralNode | string;
+      };
+    }
+  | {
+      kind: 'useCaseSlotNotFound';
+      context: ErrorContext & {
+        slot: ValidationIssueSlot;
+        actual: ComlinkLiteralNode;
       };
     };

@@ -1,4 +1,5 @@
 import {
+  ComlinkLiteralNode,
   isCallStatementNode,
   isHttpCallStatementNode,
   isObjectLiteralNode,
@@ -120,7 +121,10 @@ export function formatIssueContext(issue: ValidationIssue): string {
       }
 
       if (typeof issue.context.actual !== 'string') {
-        if (issue.context.actual.kind === 'PrimitiveLiteral') {
+        if (
+          issue.context.actual.kind === 'PrimitiveLiteral' ||
+          issue.context.actual.kind === 'ComlinkPrimitiveLiteral'
+        ) {
           actual = issue.context.actual.value;
         } else {
           actual = issue.context.actual.kind;
@@ -202,10 +206,11 @@ export function formatIssues(issues?: ValidationIssue[]): string {
  * @param structure represent Result or Error and their descendent structure
  */
 export function compareStructure(
-  node: LiteralNode,
+  node: LiteralNode | ComlinkLiteralNode,
   structure: StructureType
 ): {
   isValid: boolean;
+  listType?: StructureType;
   structureOfFields?: ObjectCollection;
   nonNull?: boolean;
 } {
@@ -225,9 +230,16 @@ export function compareStructure(
       }
       break;
 
+    case 'ListStructure':
+      if (node.kind === 'ComlinkListLiteral') {
+        return { isValid: true, listType: structure.value };
+      }
+      break;
+
     case 'EnumStructure':
       if (
-        isPrimitiveLiteralNode(node) &&
+        (isPrimitiveLiteralNode(node) ||
+          node.kind === 'ComlinkPrimitiveLiteral') &&
         structure.enums.map(enumValue => enumValue.value).includes(node.value)
       ) {
         return { isValid: true };
