@@ -1879,10 +1879,15 @@ describe('MapValidator', () => {
         }`
       );
 
-      valid(profileAstStrict, [mapAst1]);
-      valid(profileAst, [mapAst1]);
-      invalid(profileAstStrict, [mapAst2]);
-      invalid(profileAst, [mapAst2]);
+      describe('with input', () => {
+        valid(profileAst, [mapAst1]);
+        invalid(profileAst, [mapAst2]);
+      });
+
+      describe('with strict input', () => {
+        valid(profileAstStrict, [mapAst1]);
+        invalid(profileAstStrict, [mapAst2]);
+      });
     });
 
     describe('input referenced in SetStatement', () => {
@@ -1903,10 +1908,15 @@ describe('MapValidator', () => {
         }`
       );
 
-      valid(profileAstStrict, [mapAst1]);
-      valid(profileAst, [mapAst1]);
-      invalid(profileAstStrict, [mapAst2]);
-      invalid(profileAst, [mapAst2]);
+      describe('with input', () => {
+        valid(profileAst, [mapAst1]);
+        invalid(profileAst, [mapAst2]);
+      });
+
+      describe('with strict input', () => {
+        valid(profileAstStrict, [mapAst1]);
+        invalid(profileAstStrict, [mapAst2]);
+      });
     });
 
     describe('input referenced in ConditionAtomNode', () => {
@@ -1923,10 +1933,15 @@ describe('MapValidator', () => {
         }`
       );
 
-      valid(profileAstStrict, [mapAst1]);
-      valid(profileAst, [mapAst1]);
-      invalid(profileAstStrict, [mapAst2]);
-      invalid(profileAst, [mapAst2]);
+      describe('with input', () => {
+        valid(profileAst, [mapAst1]);
+        invalid(profileAst, [mapAst2]);
+      });
+
+      describe('with strict input', () => {
+        valid(profileAstStrict, [mapAst1]);
+        invalid(profileAstStrict, [mapAst2]);
+      });
     });
 
     describe('input referenced in arguments of CallStatement', () => {
@@ -1947,10 +1962,15 @@ describe('MapValidator', () => {
         }`
       );
 
-      valid(profileAstStrict, [mapAst1]);
-      valid(profileAst, [mapAst1]);
-      invalid(profileAstStrict, [mapAst2]);
-      invalid(profileAst, [mapAst2]);
+      describe('with input', () => {
+        valid(profileAst, [mapAst1]);
+        invalid(profileAst, [mapAst2]);
+      });
+
+      describe('with strict input', () => {
+        valid(profileAstStrict, [mapAst1]);
+        invalid(profileAstStrict, [mapAst2]);
+      });
     });
   });
 
