@@ -5,7 +5,112 @@ import {
 } from '@superfaceai/ast';
 
 import { parseMap, parseProfile, Source } from '..';
+import { ProfileOutput, ValidationIssue } from '.';
 import { formatIssues, getProfileOutput, validateMap } from './utils';
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace jest {
+    interface Matchers<R> {
+      toBeValidMap(
+        profileOutput: ProfileOutput,
+        warning: string,
+        error?: string
+      ): R;
+    }
+  }
+}
+
+expect.extend({
+  toBeValidMap(
+    map: MapASTNode,
+    profileOutput: ProfileOutput,
+    warning: string,
+    error?: string
+  ) {
+    const result = validateMap(profileOutput, map);
+
+    let message = '';
+    let pass = true;
+    let errors: ValidationIssue[] = [];
+    let warnings: ValidationIssue[] = [];
+
+    if (!result.pass) {
+      errors = result.errors;
+    }
+    if (result.warnings && result.warnings.length > 0) {
+      warnings = result.warnings;
+    }
+
+    if (this.isNot) {
+      pass = false;
+
+      if (!error) {
+        pass = !pass;
+        message = 'expected to fail';
+      } else {
+        const err = formatIssues(errors);
+        const warn = formatIssues(warnings);
+
+        if (!err.includes(error)) {
+          pass = !pass;
+          message = `expected to find error "${error}" in "${err}"`;
+          if (warning !== '' && !warn.includes(warning)) {
+            message += `, expected to find warning "${warning}" in "${warn}"`;
+          }
+        } else if (warning !== '' && !warn.includes(warning)) {
+          pass = !pass;
+          message = `expected to find warning "${warning}" in "${warn}"`;
+        }
+      }
+    } else {
+      const warn = formatIssues(warnings);
+      const err = formatIssues(errors);
+      if (errors.length > 0) {
+        pass = !pass;
+        message = `expected to pass, errors: ${err}, warnings: ${warn}`;
+      } else if (warning && warning !== '' && !warn.includes(warning)) {
+        pass = !pass;
+        message = `expected to find warning "${warning}" in "${warn}"`;
+      }
+    }
+
+    return {
+      pass,
+      message: (): string => message,
+    };
+  },
+});
+
+function validWithWarnings(
+  profile: ProfileDocumentNode,
+  maps: MapASTNode[],
+  ...warnings: string[]
+): void {
+  const profileOutput = getProfileOutput(profile);
+
+  it('then validation will pass with warnings', () => {
+    maps.forEach((map, index) => {
+      expect(map).toBeValidMap(profileOutput, warnings[index]);
+    });
+  });
+}
+
+function invalidWithErrors(
+  profile: ProfileDocumentNode,
+  maps: MapASTNode[],
+  ...results: string[]
+): void {
+  const profileOutput = getProfileOutput(profile);
+
+  it('then validation will fail with errors', () => {
+    let i = 0;
+    maps.forEach(map => {
+      expect(map).not.toBeValidMap(profileOutput, results[i + 1], results[i]);
+      i += 2;
+    });
+  });
+}
 
 function getIssues(profile: ProfileDocumentNode, maps: MapASTNode[]) {
   const profileOutput = getProfileOutput(profile);
@@ -1347,23 +1452,6 @@ describe('MapValidator', () => {
 
     describe('result is a jessie script', () => {
       describe('object', () => {
-        const profileAst = parseProfileFromSource(
-          `usecase Test {
-            result {
-              f1 string
-              f2 boolean
-            }
-          }`
-        );
-        const profileAstStrict = parseProfileFromSource(
-          `usecase Test {
-            result {
-              f1! string!
-              f2! boolean!
-            }!
-          }`
-        );
-
         const mapAst1 = parseMapFromSource(
           `map Test {
             map result {
@@ -1393,10 +1481,50 @@ describe('MapValidator', () => {
           }`
         );
 
-        valid(profileAst, [mapAst1]);
-        valid(profileAstStrict, [mapAst1]);
-        invalid(profileAst, [mapAst2]);
-        invalid(profileAstStrict, [mapAst2]);
+        describe('with result', () => {
+          const profileAst = parseProfileFromSource(
+            `usecase Test {
+              result {
+                f1 string
+                f2 boolean
+              }
+            }`
+          );
+
+          validWithWarnings(profileAst, [mapAst1]);
+          invalidWithErrors(profileAst, [mapAst2], `5:24 JessieExpression - Wrong Structure: expected ObjectStructure, but got "['some string', true]"
+1:22 ArrayLiteralExpression - Wrong Structure: expected ObjectStructure, but got "['some string', true]"`, '');
+        });
+
+        describe('with strict result', () => {
+          const profileAst = parseProfileFromSource(
+            `usecase Test {
+              result {
+                f1! string!
+                f2! boolean!
+              }!
+            }`
+          );
+
+          validWithWarnings(profileAst, [mapAst1]);
+          invalidWithErrors(profileAst, [mapAst2], `5:24 JessieExpression - Wrong Structure: expected ObjectStructure, but got "['some string', true]"
+1:22 ArrayLiteralExpression - Wrong Structure: expected ObjectStructure, but got "['some string', true]"
+6:24 JessieExpression - Wrong Structure: expected ObjectStructure, but got "{
+              f1: undefined || 'some string',
+              f2: some.var || other.var
+            }"
+21:30 Identifier - Wrong Structure: expected string, but got "undefined"
+10:24 JessieExpression - Wrong Structure: expected ObjectStructure, but got "{
+              f1: null || undefined || some.var
+            }"
+21:25 NullKeyword - Wrong Structure: expected string, but got "null"
+29:38 Identifier - Wrong Structure: expected string, but got "undefined"
+1:64 ObjectLiteralExpression - Missing required field
+13:24 JessieExpression - Wrong Structure: expected ObjectStructure, but got "{
+              f1: some.var
+            }"
+1:43 ObjectLiteralExpression - Missing required field`, '');
+        });
       });
 
       describe('array', () => {
@@ -1424,8 +1552,17 @@ describe('MapValidator', () => {
           }`
         );
 
-        valid(profileAst, [mapAst1]);
-        invalid(profileAst, [mapAst2]);
+        validWithWarnings(profileAst, [mapAst1], '');
+        invalidWithErrors(profileAst, [mapAst2], `6:24 JessieExpression - Wrong Structure: expected ListStructure, but got "{...a.map(val => val.toUpperCase())}"
+1:37 ObjectLiteralExpression - Wrong Structure: expected ListStructure, but got "{...a.map(val => val.toUpperCase())}"
+7:24 JessieExpression - Wrong Structure: expected ListStructure, but got "{
+              f1: 'some string',
+              f2: true
+            }"
+1:72 ObjectLiteralExpression - Wrong Structure: expected ListStructure, but got "{
+              f1: 'some string',
+              f2: true
+            }"`, '');
       });
 
       describe('primitive type', () => {
@@ -1457,30 +1594,29 @@ describe('MapValidator', () => {
           }`
         );
 
-        valid(profileAst, [mapAst1]);
-        invalid(profileAst, [mapAst2]);
+        validWithWarnings(profileAst, [mapAst1], '');
+        invalidWithErrors(profileAst, [mapAst2], `5:24 JessieExpression - Wrong Structure: expected string, but got "['some string', true]"
+1:22 ArrayLiteralExpression - Wrong Structure: expected string, but got "['some string', true]"
+6:24 JessieExpression - Wrong Structure: expected string, but got "{
+              f1: 'some string',
+              f2: true
+            }"
+1:72 ObjectLiteralExpression - Wrong Structure: expected string, but got "{
+              f1: 'some string',
+              f2: true
+            }"
+10:24 JessieExpression - Wrong Structure: expected string, but got "1 + "true""
+1:2 FirstLiteralToken - Wrong Structure: expected string, but got "1"
+11:24 PrimitiveLiteral - Wrong Structure: expected string, but got "true"
+12:24 PrimitiveLiteral - Wrong Structure: expected string, but got "false"
+13:24 JessieExpression - Wrong Structure: expected string, but got "2+25"
+1:2 FirstLiteralToken - Wrong Structure: expected string, but got "2"
+3:5 FirstLiteralToken - Wrong Structure: expected string, but got "25"`, '');
       });
     });
 
     describe('error is a jessie script', () => {
       describe('object', () => {
-        const profileAst = parseProfileFromSource(
-          `usecase Test {
-            error {
-              f1 string
-              f2 boolean
-            }
-          }`
-        );
-        const profileAstStrict = parseProfileFromSource(
-          `usecase Test {
-            error {
-              f1! string!
-              f2! boolean!
-            }!
-          }`
-        );
-
         const mapAst1 = parseMapFromSource(
           `map Test {
             map error {
@@ -1510,10 +1646,50 @@ describe('MapValidator', () => {
           }`
         );
 
-        valid(profileAst, [mapAst1]);
-        valid(profileAstStrict, [mapAst1]);
-        invalid(profileAst, [mapAst2]);
-        invalid(profileAstStrict, [mapAst2]);
+        describe('with result', () => {
+          const profileAst = parseProfileFromSource(
+            `usecase Test {
+              error {
+                f1 string
+                f2 boolean
+              }
+            }`
+          );
+
+          validWithWarnings(profileAst, [mapAst1], '');
+          invalidWithErrors(profileAst, [mapAst2], `5:23 JessieExpression - Wrong Structure: expected ObjectStructure, but got "['some string', true]"
+1:22 ArrayLiteralExpression - Wrong Structure: expected ObjectStructure, but got "['some string', true]"`, '');
+        });
+
+        describe('with strict result', () => {
+          const profileAst = parseProfileFromSource(
+            `usecase Test {
+              error {
+                f1! string!
+                f2! boolean!
+              }!
+            }`
+          );
+
+          validWithWarnings(profileAst, [mapAst1], '');
+          invalidWithErrors(profileAst, [mapAst2], `5:23 JessieExpression - Wrong Structure: expected ObjectStructure, but got "['some string', true]"
+1:22 ArrayLiteralExpression - Wrong Structure: expected ObjectStructure, but got "['some string', true]"
+6:23 JessieExpression - Wrong Structure: expected ObjectStructure, but got "{
+              f1: undefined || 'some string',
+              f2: some.var || other.var
+            }"
+21:30 Identifier - Wrong Structure: expected string, but got "undefined"
+10:23 JessieExpression - Wrong Structure: expected ObjectStructure, but got "{
+              f1: null || undefined || some.var
+            }"
+21:25 NullKeyword - Wrong Structure: expected string, but got "null"
+29:38 Identifier - Wrong Structure: expected string, but got "undefined"
+1:64 ObjectLiteralExpression - Missing required field
+13:23 JessieExpression - Wrong Structure: expected ObjectStructure, but got "{
+              f1: some.var
+            }"
+1:43 ObjectLiteralExpression - Missing required field`, '');
+        });
       });
 
       describe('array', () => {
@@ -1541,8 +1717,17 @@ describe('MapValidator', () => {
           }`
         );
 
-        valid(profileAst, [mapAst1]);
-        invalid(profileAst, [mapAst2]);
+        validWithWarnings(profileAst, [mapAst1]);
+        invalidWithErrors(profileAst, [mapAst2], `6:23 JessieExpression - Wrong Structure: expected ListStructure, but got "{...a.map(val => val.toUpperCase())}"
+1:37 ObjectLiteralExpression - Wrong Structure: expected ListStructure, but got "{...a.map(val => val.toUpperCase())}"
+7:23 JessieExpression - Wrong Structure: expected ListStructure, but got "{
+              f1: 'some string',
+              f2: true
+            }"
+1:72 ObjectLiteralExpression - Wrong Structure: expected ListStructure, but got "{
+              f1: 'some string',
+              f2: true
+            }"`, '');
       });
 
       describe('primitive type', () => {
@@ -1574,8 +1759,29 @@ describe('MapValidator', () => {
           }`
         );
 
-        valid(profileAst, [mapAst1]);
-        invalid(profileAst, [mapAst2]);
+        validWithWarnings(profileAst, [mapAst1]);
+        invalidWithErrors(
+          profileAst,
+          [mapAst2],
+          `5:23 JessieExpression - Wrong Structure: expected string, but got "['some string', true]"
+1:22 ArrayLiteralExpression - Wrong Structure: expected string, but got "['some string', true]"
+6:23 JessieExpression - Wrong Structure: expected string, but got "{
+              f1: 'some string',
+              f2: true
+            }"
+1:72 ObjectLiteralExpression - Wrong Structure: expected string, but got "{
+              f1: 'some string',
+              f2: true
+            }"
+10:23 JessieExpression - Wrong Structure: expected string, but got "1 + "true""
+1:2 FirstLiteralToken - Wrong Structure: expected string, but got "1"
+11:23 PrimitiveLiteral - Wrong Structure: expected string, but got "true"
+12:23 PrimitiveLiteral - Wrong Structure: expected string, but got "false"
+13:23 JessieExpression - Wrong Structure: expected string, but got "2+25"
+1:2 FirstLiteralToken - Wrong Structure: expected string, but got "2"
+3:5 FirstLiteralToken - Wrong Structure: expected string, but got "25"`,
+          ''
+        );
       });
     });
 
