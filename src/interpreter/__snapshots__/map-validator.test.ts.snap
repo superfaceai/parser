@@ -893,42 +893,6 @@ Object {
 }
 `;
 
-exports[`MapValidator result & error result is an object that uses dot.notation for fields with result then validation will fail 1`] = `
-Object {
-  "profile-provider": Object {
-    "errors": "ObjectLiteral - Wrong Structure: expected number, but got \\"ObjectLiteral\\"
-ObjectLiteral - Wrong Structure: expected number, but got \\"ObjectLiteral\\"
-15:34 PrimitiveLiteral - Wrong Structure: expected number, but got \\"false\\"
-16:25 PrimitiveLiteral - Wrong Structure: expected number, but got \\"true\\"
-18:24 JessieExpression - Wrong Variable Structure: variable output expected ObjectStructure, but got ObjectLiteral",
-  },
-}
-`;
-
-exports[`MapValidator result & error result is an object that uses dot.notation for fields with result then validation will pass 1`] = `
-Object {
-  "profile-provider": Object {},
-}
-`;
-
-exports[`MapValidator result & error result is an object that uses dot.notation for fields with strict result then validation will fail 1`] = `
-Object {
-  "profile-provider": Object {
-    "errors": "ObjectLiteral - Wrong Structure: expected number, but got \\"ObjectLiteral\\"
-ObjectLiteral - Wrong Structure: expected number, but got \\"ObjectLiteral\\"
-15:34 PrimitiveLiteral - Wrong Structure: expected number, but got \\"false\\"
-16:25 PrimitiveLiteral - Wrong Structure: expected number, but got \\"true\\"
-18:24 JessieExpression - Wrong Variable Structure: variable output expected ObjectStructure, but got ObjectLiteral",
-  },
-}
-`;
-
-exports[`MapValidator result & error result is an object that uses dot.notation for fields with strict result then validation will pass 1`] = `
-Object {
-  "profile-provider": Object {},
-}
-`;
-
 exports[`MapValidator result & error result is conditioned then validation will pass 1`] = `
 Object {
   "profile-provider": Object {
