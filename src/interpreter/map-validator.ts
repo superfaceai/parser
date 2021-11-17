@@ -38,12 +38,9 @@ import { isNonNullStructure, isScalarStructure } from './profile-output.utils';
 import {
   compareStructure,
   findTypescriptIdentifier,
-  findTypescriptProperty,
   getOutcomes,
-  getTypescriptIdentifier,
   getVariableName,
   mergeVariables,
-  validateObjectStructure,
 } from './utils';
 
 const debug = createDebug('superface-parser:map-validator');
@@ -291,53 +288,11 @@ export class MapValidator implements MapAstVisitor {
 
     if (variableExpressions) {
       for (const expression of variableExpressions) {
-        const sourceFile = ts.createSourceFile(
-          'scripts.js',
-          `(${expression})`,
-          ts.ScriptTarget.ES2015,
-          true,
-          ts.ScriptKind.JS
-        );
-
-        const typescriptIdentifier = getTypescriptIdentifier(sourceFile);
-
-        if (!typescriptIdentifier) {
-          throw new Error('Invalid variable!');
-        }
-
-        if (findTypescriptIdentifier('input', typescriptIdentifier)) {
-          if (findTypescriptProperty('auth', typescriptIdentifier)) {
-            continue;
-          }
-
-          if (!this.inputStructure || !this.inputStructure.fields) {
-            this.errors.push({
-              kind: 'inputNotFound',
-              context: {
-                path: this.getPath(node),
-                actual: expression,
-              },
-            });
-            continue;
-          }
-
-          const structure = validateObjectStructure(
-            typescriptIdentifier,
-            this.inputStructure
-          );
-
-          if (!structure) {
-            this.errors.push({
-              kind: 'wrongInput',
-              context: {
-                path: this.getPath(node),
-                expected: this.inputStructure,
-                actual: expression,
-              },
-            });
-            continue;
-          }
-        }
+        this.visit({
+          kind: 'JessieExpression',
+          expression,
+          location: node.location,
+        });
       }
     }
 
