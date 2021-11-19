@@ -14,8 +14,8 @@ declare global {
     interface Matchers<R> {
       toBeValidMap(
         profileOutput: ProfileOutput,
-        warning: string,
-        error?: string
+        warnings?: string[],
+        errors?: string[]
       ): R;
     }
   }
@@ -25,53 +25,101 @@ expect.extend({
   toBeValidMap(
     map: MapASTNode,
     profileOutput: ProfileOutput,
-    warning: string,
-    error?: string
+    warnings?: string[],
+    errors?: string[]
   ) {
     const result = validateMap(profileOutput, map);
 
     let message = '';
     let pass = true;
-    let errors: ValidationIssue[] = [];
-    let warnings: ValidationIssue[] = [];
+
+    const issues: { errors: ValidationIssue[]; warnings: ValidationIssue[] } = {
+      errors: [],
+      warnings: [],
+    };
 
     if (!result.pass) {
-      errors = result.errors;
+      issues.errors = result.errors;
     }
     if (result.warnings && result.warnings.length > 0) {
-      warnings = result.warnings;
+      issues.warnings = result.warnings;
     }
 
     if (this.isNot) {
       pass = false;
 
-      if (!error) {
-        pass = !pass;
-        message = 'expected to fail';
-      } else {
-        const err = formatIssues(errors);
-        const warn = formatIssues(warnings);
+      if (!errors) {
+        return {
+          pass: !pass,
+          message: () => 'Expected to fail, specify the errors',
+        };
+      }
 
+      if (result.pass || result.errors.length === 0) {
+        return {
+          pass: !pass,
+          message: () => 'Expected to fail, specified map is valid',
+        };
+      }
+
+      const err = formatIssues(issues.errors);
+      const warn = formatIssues(issues.warnings);
+
+      message = 'Expected to find errors:\n';
+
+      for (const error of errors) {
         if (!err.includes(error)) {
-          pass = !pass;
-          message = `expected to find error "${error}" in "${err}"`;
-          if (warning !== '' && !warn.includes(warning)) {
-            message += `, expected to find warning "${warning}" in "${warn}"`;
+          if (!pass) {
+            pass = true;
           }
-        } else if (warning !== '' && !warn.includes(warning)) {
-          pass = !pass;
-          message = `expected to find warning "${warning}" in "${warn}"`;
+
+          message += `"${error}"\n`;
         }
       }
+
+      message += `in original errors:\n"${err}"\n`;
+
+      if (warnings && warnings.length > 0) {
+        message += '\nExpected to find warnings:\n';
+
+        for (const warning of warnings) {
+          if (!warn.includes(warning)) {
+            if (!pass) {
+              pass = true;
+            }
+
+            message += `"${warning}"\n`;
+          }
+        }
+
+        message += `in original warnings:\n"${warn}"\n`;
+      }
     } else {
-      const warn = formatIssues(warnings);
-      const err = formatIssues(errors);
-      if (errors.length > 0) {
-        pass = !pass;
-        message = `expected to pass, errors: ${err}, warnings: ${warn}`;
-      } else if (warning && warning !== '' && !warn.includes(warning)) {
-        pass = !pass;
-        message = `expected to find warning "${warning}" in "${warn}"`;
+      const warn = formatIssues(issues.warnings);
+      const err = formatIssues(issues.errors);
+
+      if (!result.pass && result.errors.length > 0) {
+        return {
+          pass: !pass,
+          message: () =>
+            `Expected to pass, specified map is invalid.\nErrors:\n${err}\nWarnings:\n${warn}\n`,
+        };
+      }
+
+      if (warnings && warnings.length > 0) {
+        message += 'Expected to find warnings:\n';
+
+        for (const warning of warnings) {
+          if (!warn.includes(warning)) {
+            if (pass) {
+              pass = false;
+            }
+
+            message += `"${warning}"\n`;
+          }
+        }
+
+        message += `in original warnings:\n"${warn}"\n`;
       }
     }
 
@@ -85,7 +133,7 @@ expect.extend({
 function validWithWarnings(
   profile: ProfileDocumentNode,
   maps: MapASTNode[],
-  ...warnings: string[]
+  ...warnings: string[][]
 ): void {
   const profileOutput = getProfileOutput(profile);
 
@@ -99,7 +147,7 @@ function validWithWarnings(
 function invalidWithErrors(
   profile: ProfileDocumentNode,
   maps: MapASTNode[],
-  ...results: string[]
+  ...results: string[][]
 ): void {
   const profileOutput = getProfileOutput(profile);
 
@@ -703,12 +751,14 @@ describe('MapValidator', () => {
           invalidWithErrors(
             profileAst,
             [mapAst2],
-            `ObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"
-ObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"
-15:34 PrimitiveLiteral - Wrong Structure: expected number, but got "false"
-16:25 PrimitiveLiteral - Wrong Structure: expected number, but got "true"
-18:24 JessieExpression - Wrong Variable Structure: variable output expected ObjectStructure, but got ObjectLiteral`,
-            ''
+            [
+              'ObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"',
+              'ObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"',
+              'PrimitiveLiteral - Wrong Structure: expected number, but got "false"',
+              'PrimitiveLiteral - Wrong Structure: expected number, but got "true"',
+              'JessieExpression - Wrong Variable Structure: variable output expected ObjectStructure, but got ObjectLiteral',
+            ],
+            []
           );
         });
 
@@ -730,12 +780,14 @@ ObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"
           invalidWithErrors(
             profileAst,
             [mapAst2],
-            `ObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"
-ObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"
-15:34 PrimitiveLiteral - Wrong Structure: expected number, but got "false"
-16:25 PrimitiveLiteral - Wrong Structure: expected number, but got "true"
-18:24 JessieExpression - Wrong Variable Structure: variable output expected ObjectStructure, but got ObjectLiteral`,
-            ''
+            [
+              'ObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"',
+              'ObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"',
+              'PrimitiveLiteral - Wrong Structure: expected number, but got "false"',
+              'PrimitiveLiteral - Wrong Structure: expected number, but got "true"',
+              'JessieExpression - Wrong Variable Structure: variable output expected ObjectStructure, but got ObjectLiteral',
+            ],
+            []
           );
         });
       });
