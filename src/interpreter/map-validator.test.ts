@@ -14,8 +14,8 @@ declare global {
     interface Matchers<R> {
       toBeValidMap(
         profileOutput: ProfileOutput,
-        warning: string,
-        error?: string
+        warnings?: string[],
+        errors?: string[]
       ): R;
     }
   }
@@ -25,53 +25,101 @@ expect.extend({
   toBeValidMap(
     map: MapASTNode,
     profileOutput: ProfileOutput,
-    warning: string,
-    error?: string
+    warnings?: string[],
+    errors?: string[]
   ) {
     const result = validateMap(profileOutput, map);
 
     let message = '';
     let pass = true;
-    let errors: ValidationIssue[] = [];
-    let warnings: ValidationIssue[] = [];
+
+    const issues: { errors: ValidationIssue[]; warnings: ValidationIssue[] } = {
+      errors: [],
+      warnings: [],
+    };
 
     if (!result.pass) {
-      errors = result.errors;
+      issues.errors = result.errors;
     }
     if (result.warnings && result.warnings.length > 0) {
-      warnings = result.warnings;
+      issues.warnings = result.warnings;
     }
 
     if (this.isNot) {
       pass = false;
 
-      if (!error) {
-        pass = !pass;
-        message = 'expected to fail';
-      } else {
-        const err = formatIssues(errors);
-        const warn = formatIssues(warnings);
+      if (!errors) {
+        return {
+          pass: !pass,
+          message: () => 'Expected to fail, specify the errors',
+        };
+      }
 
+      if (result.pass) {
+        return {
+          pass: !pass,
+          message: () => 'Expected to fail, specified map is valid',
+        };
+      }
+
+      const err = formatIssues(issues.errors);
+      const warn = formatIssues(issues.warnings);
+
+      message = 'Expected to find errors:\n';
+
+      for (const error of errors) {
         if (!err.includes(error)) {
-          pass = !pass;
-          message = `expected to find error "${error}" in "${err}"`;
-          if (warning !== '' && !warn.includes(warning)) {
-            message += `, expected to find warning "${warning}" in "${warn}"`;
+          if (!pass) {
+            pass = true;
           }
-        } else if (warning !== '' && !warn.includes(warning)) {
-          pass = !pass;
-          message = `expected to find warning "${warning}" in "${warn}"`;
+
+          message += `"${error}"\n`;
         }
       }
+
+      message += `in original errors:\n"${err}"\n`;
+
+      if (warnings && warnings.length > 0) {
+        message += '\nExpected to find warnings:\n';
+
+        for (const warning of warnings) {
+          if (!warn.includes(warning)) {
+            if (!pass) {
+              pass = true;
+            }
+
+            message += `"${warning}"\n`;
+          }
+        }
+
+        message += `in original warnings:\n"${warn}"\n`;
+      }
     } else {
-      const warn = formatIssues(warnings);
-      const err = formatIssues(errors);
-      if (errors.length > 0) {
-        pass = !pass;
-        message = `expected to pass, errors: ${err}, warnings: ${warn}`;
-      } else if (warning && warning !== '' && !warn.includes(warning)) {
-        pass = !pass;
-        message = `expected to find warning "${warning}" in "${warn}"`;
+      const warn = formatIssues(issues.warnings);
+      const err = formatIssues(issues.errors);
+
+      if (!result.pass && result.errors.length > 0) {
+        return {
+          pass: !pass,
+          message: () =>
+            `Expected to pass, specified map is invalid.\nErrors:\n${err}\nWarnings:\n${warn}\n`,
+        };
+      }
+
+      if (warnings && warnings.length > 0) {
+        message += 'Expected to find warnings:\n';
+
+        for (const warning of warnings) {
+          if (!warn.includes(warning)) {
+            if (pass) {
+              pass = false;
+            }
+
+            message += `"${warning}"\n`;
+          }
+        }
+
+        message += `in original warnings:\n"${warn}"\n`;
       }
     }
 
@@ -85,7 +133,7 @@ expect.extend({
 function validWithWarnings(
   profile: ProfileDocumentNode,
   maps: MapASTNode[],
-  ...warnings: string[]
+  ...warnings: string[][]
 ): void {
   const profileOutput = getProfileOutput(profile);
 
@@ -99,7 +147,7 @@ function validWithWarnings(
 function invalidWithErrors(
   profile: ProfileDocumentNode,
   maps: MapASTNode[],
-  ...results: string[]
+  ...results: string[][]
 ): void {
   const profileOutput = getProfileOutput(profile);
 
@@ -2018,10 +2066,16 @@ describe('MapValidator', () => {
       invalidWithErrors(
         profileAst,
         [mapAst3, mapAst4],
-        '5:11 JessieExpression - Wrong Input Structure: expected to, from, but got input.wrong\n1:12 PropertyAccessExpression - Wrong Input Structure: expected to, from, but got input.wrong',
-        '',
-        '9:24 JessieExpression - Wrong Structure: expected string, but got "{}"\n1:3 ObjectLiteralExpression - Wrong Structure: expected string, but got "{}"',
-        ''
+        [
+          'JessieExpression - Wrong Input Structure: expected to, from, but got input.wrong',
+          'PropertyAccessExpression - Wrong Input Structure: expected to, from, but got input.wrong',
+        ],
+        [],
+        [
+          'JessieExpression - Wrong Structure: expected string, but got "{}"',
+          'ObjectLiteralExpression - Wrong Structure: expected string, but got "{}"',
+        ],
+        []
       );
     });
 
@@ -2113,10 +2167,13 @@ describe('MapValidator', () => {
       invalidWithErrors(
         profileAst,
         [mapAst3, mapAst4],
-        '11:20 PrimitiveLiteral - Wrong Structure: expected string, but got "true"',
-        '',
-        '13:35 JessieExpression - Wrong Input Structure: expected from, but got input.wrong\n1:12 PropertyAccessExpression - Wrong Input Structure: expected from, but got input.wrong',
-        ''
+        ['PrimitiveLiteral - Wrong Structure: expected string, but got "true"'],
+        [],
+        [
+          'JessieExpression - Wrong Input Structure: expected from, but got input.wrong',
+          'PropertyAccessExpression - Wrong Input Structure: expected from, but got input.wrong',
+        ],
+        []
       );
     });
   });
