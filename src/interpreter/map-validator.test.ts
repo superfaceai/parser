@@ -5,7 +5,160 @@ import {
 } from '@superfaceai/ast';
 
 import { parseMap, parseProfile, Source } from '..';
+import { ProfileOutput, ValidationIssue } from '.';
 import { formatIssues, getProfileOutput, validateMap } from './utils';
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace jest {
+    interface Matchers<R> {
+      toBeValidMap(
+        profileOutput: ProfileOutput,
+        warnings?: string[],
+        errors?: string[]
+      ): R;
+    }
+  }
+}
+
+expect.extend({
+  toBeValidMap(
+    map: MapASTNode,
+    profileOutput: ProfileOutput,
+    warnings?: string[],
+    errors?: string[]
+  ) {
+    const result = validateMap(profileOutput, map);
+
+    let message = '';
+    let pass = true;
+
+    const issues: { errors: ValidationIssue[]; warnings: ValidationIssue[] } = {
+      errors: [],
+      warnings: [],
+    };
+
+    if (!result.pass) {
+      issues.errors = result.errors;
+    }
+    if (result.warnings && result.warnings.length > 0) {
+      issues.warnings = result.warnings;
+    }
+
+    if (this.isNot) {
+      pass = false;
+
+      if (!errors) {
+        return {
+          pass: !pass,
+          message: () => 'Expected to fail, specify the errors',
+        };
+      }
+
+      if (result.pass) {
+        return {
+          pass: !pass,
+          message: () => 'Expected to fail, specified map is valid',
+        };
+      }
+
+      const err = formatIssues(issues.errors);
+      const warn = formatIssues(issues.warnings);
+
+      message = 'Expected to find errors:\n';
+
+      for (const error of errors) {
+        if (!err.includes(error)) {
+          if (!pass) {
+            pass = true;
+          }
+
+          message += `"${error}"\n`;
+        }
+      }
+
+      message += `in original errors:\n"${err}"\n`;
+
+      if (warnings && warnings.length > 0) {
+        message += '\nExpected to find warnings:\n';
+
+        for (const warning of warnings) {
+          if (!warn.includes(warning)) {
+            if (!pass) {
+              pass = true;
+            }
+
+            message += `"${warning}"\n`;
+          }
+        }
+
+        message += `in original warnings:\n"${warn}"\n`;
+      }
+    } else {
+      const warn = formatIssues(issues.warnings);
+      const err = formatIssues(issues.errors);
+
+      if (!result.pass && result.errors.length > 0) {
+        return {
+          pass: !pass,
+          message: () =>
+            `Expected to pass, specified map is invalid.\nErrors:\n${err}\nWarnings:\n${warn}\n`,
+        };
+      }
+
+      if (warnings && warnings.length > 0) {
+        message += 'Expected to find warnings:\n';
+
+        for (const warning of warnings) {
+          if (!warn.includes(warning)) {
+            if (pass) {
+              pass = false;
+            }
+
+            message += `"${warning}"\n`;
+          }
+        }
+
+        message += `in original warnings:\n"${warn}"\n`;
+      }
+    }
+
+    return {
+      pass,
+      message: (): string => message,
+    };
+  },
+});
+
+function validWithWarnings(
+  profile: ProfileDocumentNode,
+  maps: MapASTNode[],
+  ...warnings: string[][]
+): void {
+  const profileOutput = getProfileOutput(profile);
+
+  it('then validation will pass with warnings', () => {
+    maps.forEach((map, index) => {
+      expect(map).toBeValidMap(profileOutput, warnings[index]);
+    });
+  });
+}
+
+function invalidWithErrors(
+  profile: ProfileDocumentNode,
+  maps: MapASTNode[],
+  ...results: string[][]
+): void {
+  const profileOutput = getProfileOutput(profile);
+
+  it('then validation will fail with errors', () => {
+    let i = 0;
+    maps.forEach(map => {
+      expect(map).not.toBeValidMap(profileOutput, results[i + 1], results[i]);
+      i += 2;
+    });
+  });
+}
 
 function getIssues(profile: ProfileDocumentNode, maps: MapASTNode[]) {
   const profileOutput = getProfileOutput(profile);
@@ -1721,95 +1874,6 @@ describe('MapValidator', () => {
 
       valid(profileAst, [mapAst]);
     });
-
-    describe('map is using http call', () => {
-      const profileAst = parseProfileFromSource(
-        `usecase Test {
-          input {
-            to string
-            from
-          }
-          result {
-            from string
-            text string
-          }
-        }`
-      );
-      const mapAst1 = parseMapFromSource(
-        `map Test {
-          some.variable = "string"
-          http POST "http://example.com/{some.variable}/{input.from}" {
-            response 200 {
-              map result {
-                from = "some string"
-                text = "some string"
-              }
-            }
-          }
-        }`
-      );
-      const mapAst2 = parseMapFromSource(
-        `map Test {
-          http POST "http://www.example.com/" {
-            response 200 {
-              map result {
-                from = {}
-                text = "some string"
-              }
-            }
-          }
-        }`
-      );
-
-      valid(profileAst, [mapAst1]);
-      invalid(profileAst, [mapAst2]);
-    });
-
-    describe('map is using inline call', () => {
-      const profileAst = parseProfileFromSource(
-        `usecase Test {
-          result {
-            from string
-            text string
-          }
-        }`
-      );
-      const mapAst1 = parseMapFromSource(
-        `operation Foo {
-          return "some string"
-        }
-        
-        operation Bar {
-          return "some string"
-        }
-        
-        map Test {
-          map result {
-            from = call Foo()
-            text = call Bar()
-          }
-        }`
-      );
-      const mapAst2 = parseMapFromSource(
-        `operation Foo {
-          return "some string"
-        }
-        
-        operation Bar {
-          return {
-          }
-        }
-        
-        map Test {
-          map result {
-            from = call Foo()
-            text = call Bar()
-          }
-        }`
-      );
-
-      valid(profileAst, [mapAst1, mapAst2]);
-    });
   });
 
   describe('input', () => {
@@ -1929,6 +1993,188 @@ describe('MapValidator', () => {
 
       valid(profileAst, [mapAst1]);
       invalid(profileAst, [mapAst2]);
+    });
+  });
+
+  describe('input & result', () => {
+    describe('map is using http call', () => {
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+          input {
+            to string
+            from
+          }
+          result {
+            from string
+            text string
+          }
+        }`
+      );
+      const mapAst1 = parseMapFromSource(
+        `map Test {
+          some.variable = "string"
+          http POST "http://example.com/{some.variable}/{input.from}" {
+            response 200 {
+              map result {
+                from = "some string"
+                text = "some string"
+              }
+            }
+          }
+        }`
+      );
+      const mapAst2 = parseMapFromSource(
+        `map Test {
+          some.variable = "string"
+          http POST "http://example.com/{some.variable}/{input.to}" {
+            response 200 {
+              map result {
+                from = "some string"
+                text = "some string"
+              }
+            }
+          }
+        }`
+      );
+      const mapAst3 = parseMapFromSource(
+        `map Test {
+          http POST "http://www.example.com/{input.wrong}" {
+            response 200 {
+              map result {
+                from = "some string"
+                text = "some string"
+              }
+            }
+          }
+        }`
+      );
+      const mapAst4 = parseMapFromSource(
+        `map Test {
+          some.variable = "string"
+          http POST "http://example.com/{some.variable}/{input.from}" {
+            response 200 {
+              map result {
+                from = {}
+                text = "some string"
+              }
+            }
+          }
+        }`
+      );
+
+      validWithWarnings(profileAst, [mapAst1, mapAst2]);
+      invalidWithErrors(
+        profileAst,
+        [mapAst3, mapAst4],
+        [
+          'JessieExpression - Wrong Input Structure: expected to, from, but got input.wrong',
+          'PropertyAccessExpression - Wrong Input Structure: expected to, from, but got input.wrong',
+        ],
+        [],
+        [
+          'JessieExpression - Wrong Structure: expected string, but got "{}"',
+          'ObjectLiteralExpression - Wrong Structure: expected string, but got "{}"',
+        ],
+        []
+      );
+    });
+
+    describe('map is using inline call', () => {
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+          input {
+            from boolean
+          }
+
+          result {
+            from string
+            text string
+          }
+        }`
+      );
+      const mapAst1 = parseMapFromSource(
+        `operation Foo {
+          return "some string"
+        }
+        
+        operation Bar {
+          return "some string"
+        }
+        
+        map Test {
+          map result {
+            from = call Foo()
+            text = call Bar()
+          }
+        }`
+      );
+      const mapAst2 = parseMapFromSource(
+        `operation Foo {
+          return "some string"
+        }
+        
+        operation Bar {
+          return {}
+        }
+        
+        map Test {
+          from = call Foo(param = input.from)
+          text = call Bar()
+
+          outcomeValue = {
+            from: from,
+            text: text
+          }
+
+          map result outcomeValue
+        }`
+      );
+      const mapAst3 = parseMapFromSource(
+        `operation Foo {
+          return true
+        }
+        
+        map Test {
+          map result {
+            from = call Foo()
+            text = true
+          }
+        }`
+      );
+      const mapAst4 = parseMapFromSource(
+        `operation Foo {
+          return "some string"
+        }
+        
+        operation Bar {
+          return {}
+        }
+        
+        map Test {
+          from = call Foo(param = input.wrong)
+          text = call Bar()
+
+          outcomeValue = {
+            from: from,
+            text: text
+          }
+
+          map result outcomeValue
+        }`
+      );
+
+      validWithWarnings(profileAst, [mapAst1, mapAst2]);
+      invalidWithErrors(
+        profileAst,
+        [mapAst3, mapAst4],
+        ['PrimitiveLiteral - Wrong Structure: expected string, but got "true"'],
+        [],
+        [
+          'JessieExpression - Wrong Input Structure: expected from, but got input.wrong',
+          'PropertyAccessExpression - Wrong Input Structure: expected from, but got input.wrong',
+        ],
+        []
+      );
     });
   });
 

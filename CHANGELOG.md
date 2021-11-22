@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Remove unnecessary linting of input in HTTP Request node
+- Validate arguments in inline call only against input
+
 ## [1.0.0] - 2021-11-04
 ### Added
 - `ProfileVersion` class representing version of profile in ProfileId
