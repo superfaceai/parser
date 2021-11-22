@@ -389,11 +389,16 @@ export class MapValidator implements MapAstVisitor {
   }
 
   visitInlineCallNode(node: InlineCallNode): boolean {
-    if (!this.currentStructure) {
-      if (node.arguments.length > 0) {
-        node.arguments.forEach(argument => this.visit(argument));
-      }
+    const originalStructure = this.currentStructure;
+
+    // set current structure to undefined to validate only input
+    this.currentStructure = undefined;
+
+    if (node.arguments.length > 0) {
+      node.arguments.forEach(argument => this.visit(argument));
     }
+
+    this.currentStructure = originalStructure;
 
     return true;
   }
