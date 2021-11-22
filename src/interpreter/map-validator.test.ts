@@ -1877,6 +1877,20 @@ describe('MapValidator', () => {
   });
 
   describe('input', () => {
+    const profileAstStrict = parseProfileFromSource(
+      `usecase Test {
+        input {
+          person! {
+            from! string!
+            to! string!
+          }!
+
+          to! string!
+          from! string!
+          text! string!
+        }
+      }`
+    );
     const profileAst = parseProfileFromSource(
       `usecase Test {
         input {
@@ -1929,8 +1943,51 @@ describe('MapValidator', () => {
         }`
       );
 
-      valid(profileAst, [mapAst1]);
-      invalid(profileAst, [mapAst2]);
+      describe('with input', () => {
+        validWithWarnings(
+          profileAst,
+          [mapAst1],
+          [
+            'OutcomeStatement - Result Not Found: returning "OK", but there is no result defined in usecase',
+          ]
+        );
+        invalidWithErrors(
+          profileAst,
+          [mapAst2],
+          [
+            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong',
+            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+          ],
+          [
+            'OutcomeStatement - Result Not Found: returning "OK", but there is no result defined in usecase',
+          ]
+        );
+      });
+
+      describe('with strict input', () => {
+        validWithWarnings(
+          profileAstStrict,
+          [mapAst1],
+          [
+            'OutcomeStatement - Result Not Found: returning "OK", but there is no result defined in usecase',
+          ]
+        );
+        invalidWithErrors(
+          profileAstStrict,
+          [mapAst2],
+          [
+            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong',
+            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+          ],
+          [
+            'OutcomeStatement - Result Not Found: returning "OK", but there is no result defined in usecase',
+          ]
+        );
+      });
     });
 
     describe('input referenced in SetStatement', () => {
@@ -1951,8 +2008,35 @@ describe('MapValidator', () => {
         }`
       );
 
-      valid(profileAst, [mapAst1]);
-      invalid(profileAst, [mapAst2]);
+      describe('with input', () => {
+        validWithWarnings(profileAst, [mapAst1]);
+        invalidWithErrors(
+          profileAst,
+          [mapAst2],
+          [
+            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong',
+            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+          ],
+          []
+        );
+      });
+
+      describe('with strict input', () => {
+        validWithWarnings(profileAstStrict, [mapAst1]);
+        invalidWithErrors(
+          profileAstStrict,
+          [mapAst2],
+          [
+            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong',
+            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+          ],
+          []
+        );
+      });
     });
 
     describe('input referenced in ConditionAtomNode', () => {
@@ -1969,8 +2053,47 @@ describe('MapValidator', () => {
         }`
       );
 
-      valid(profileAst, [mapAst1]);
-      invalid(profileAst, [mapAst2]);
+      describe('with input', () => {
+        validWithWarnings(
+          profileAst,
+          [mapAst1],
+          [
+            'OutcomeStatement - Result Not Found: returning "JessieExpression", but there is no result defined in usecase',
+          ]
+        );
+        invalidWithErrors(
+          profileAst,
+          [mapAst2],
+          [
+            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+          ],
+          [
+            'OutcomeStatement - Result Not Found: returning "JessieExpression", but there is no result defined in usecase',
+          ]
+        );
+      });
+
+      describe('with strict input', () => {
+        validWithWarnings(
+          profileAstStrict,
+          [mapAst1],
+          [
+            'OutcomeStatement - Result Not Found: returning "JessieExpression", but there is no result defined in usecase',
+          ]
+        );
+        invalidWithErrors(
+          profileAstStrict,
+          [mapAst2],
+          [
+            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+          ],
+          [
+            'OutcomeStatement - Result Not Found: returning "JessieExpression", but there is no result defined in usecase',
+          ]
+        );
+      });
     });
 
     describe('input referenced in arguments of CallStatement', () => {
@@ -1991,8 +2114,39 @@ describe('MapValidator', () => {
         }`
       );
 
-      valid(profileAst, [mapAst1]);
-      invalid(profileAst, [mapAst2]);
+      describe('with input', () => {
+        validWithWarnings(profileAst, [mapAst1]);
+        invalidWithErrors(
+          profileAst,
+          [mapAst2],
+          [
+            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.so.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.so.wrong',
+            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.something.really.wrong.do.not.do.this',
+            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.something.really.wrong.do.not.do.this',
+          ],
+          []
+        );
+      });
+
+      describe('with strict input', () => {
+        validWithWarnings(profileAstStrict, [mapAst1]);
+        invalidWithErrors(
+          profileAstStrict,
+          [mapAst2],
+          [
+            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.so.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.so.wrong',
+            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.something.really.wrong.do.not.do.this',
+            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.something.really.wrong.do.not.do.this',
+          ],
+          []
+        );
+      });
     });
   });
 
