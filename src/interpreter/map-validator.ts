@@ -480,22 +480,23 @@ export class MapValidator implements MapAstVisitor {
 
       const variableName = getVariableName(jessieNode);
       const variable = this.variables[variableName];
-      this.currentStructure = type;
 
       if (variable !== undefined) {
-        result = this.visit(variable);
-      }
+        this.currentStructure = type;
 
-      if (!result) {
-        this.addIssue({
-          kind: 'wrongVariableStructure',
-          context: {
-            path: this.getPath(node),
-            name: variableName,
-            expected: this.currentStructure,
-            actual: variable,
-          },
-        });
+        result = this.visit(variable);
+
+        if (!result) {
+          this.addIssue({
+            kind: 'wrongVariableStructure',
+            context: {
+              path: this.getPath(node),
+              name: variableName,
+              expected: this.currentStructure,
+              actual: variable,
+            },
+          });
+        }
       }
     }
 
