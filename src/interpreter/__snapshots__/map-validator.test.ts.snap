@@ -1,79 +1,5 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`MapValidator input input referenced in ConditionAtomNode then validation will fail 1`] = `
-Object {
-  "profile-provider": Object {
-    "errors": "6:22 JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong
-1:19 PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong",
-    "warnings": "6:11 OutcomeStatement - Result Not Found: returning \\"JessieExpression\\", but there is no result defined in usecase",
-  },
-}
-`;
-
-exports[`MapValidator input input referenced in ConditionAtomNode then validation will pass 1`] = `
-Object {
-  "profile-provider": Object {
-    "warnings": "6:11 OutcomeStatement - Result Not Found: returning \\"JessieExpression\\", but there is no result defined in usecase",
-  },
-}
-`;
-
-exports[`MapValidator input input referenced in HttpCallStatement then validation will fail 1`] = `
-Object {
-  "profile-provider": Object {
-    "errors": "8:22 JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong
-1:12 PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong
-11:29 JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong
-1:19 PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong",
-    "warnings": "16:15 OutcomeStatement - Result Not Found: returning \\"OK\\", but there is no result defined in usecase",
-  },
-}
-`;
-
-exports[`MapValidator input input referenced in HttpCallStatement then validation will pass 1`] = `
-Object {
-  "profile-provider": Object {
-    "warnings": "16:15 OutcomeStatement - Result Not Found: returning \\"OK\\", but there is no result defined in usecase",
-  },
-}
-`;
-
-exports[`MapValidator input input referenced in SetStatement then validation will fail 1`] = `
-Object {
-  "profile-provider": Object {
-    "errors": "6:17 JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong
-1:12 PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong
-7:17 JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong
-1:19 PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong",
-  },
-}
-`;
-
-exports[`MapValidator input input referenced in SetStatement then validation will pass 1`] = `
-Object {
-  "profile-provider": Object {},
-}
-`;
-
-exports[`MapValidator input input referenced in arguments of CallStatement then validation will fail 1`] = `
-Object {
-  "profile-provider": Object {
-    "errors": "7:65 JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong
-1:19 PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong
-7:95 JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.so.wrong
-1:15 PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.so.wrong
-7:125 JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.something.really.wrong.do.not.do.this
-1:51 PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.something.really.wrong.do.not.do.this",
-  },
-}
-`;
-
-exports[`MapValidator input input referenced in arguments of CallStatement then validation will pass 1`] = `
-Object {
-  "profile-provider": Object {},
-}
-`;
-
 exports[`MapValidator result & error error is PrimitiveTypeName then validation will fail 1`] = `
 Object {
   "profile-provider": Object {
@@ -83,71 +9,6 @@ Object {
 `;
 
 exports[`MapValidator result & error error is PrimitiveTypeName then validation will pass 1`] = `
-Object {
-  "profile-provider": Object {},
-}
-`;
-
-exports[`MapValidator result & error error is a jessie script array then validation will fail 1`] = `
-Object {
-  "profile-provider": Object {
-    "errors": "6:23 JessieExpression - Wrong Structure: expected ListStructure, but got \\"{...a.map(val => val.toUpperCase())}\\"
-1:37 ObjectLiteralExpression - Wrong Structure: expected ListStructure, but got \\"{...a.map(val => val.toUpperCase())}\\"
-7:23 JessieExpression - Wrong Structure: expected ListStructure, but got \\"{
-              f1: 'some string',
-              f2: true
-            }\\"
-1:72 ObjectLiteralExpression - Wrong Structure: expected ListStructure, but got \\"{
-              f1: 'some string',
-              f2: true
-            }\\"",
-  },
-}
-`;
-
-exports[`MapValidator result & error error is a jessie script array then validation will pass 1`] = `
-Object {
-  "profile-provider": Object {},
-}
-`;
-
-exports[`MapValidator result & error error is a jessie script object then validation will fail 1`] = `
-Object {
-  "profile-provider": Object {
-    "errors": "5:23 JessieExpression - Wrong Structure: expected ObjectStructure, but got \\"['some string', true]\\"
-1:22 ArrayLiteralExpression - Wrong Structure: expected ObjectStructure, but got \\"['some string', true]\\"",
-  },
-}
-`;
-
-exports[`MapValidator result & error error is a jessie script object then validation will pass 1`] = `
-Object {
-  "profile-provider": Object {},
-}
-`;
-
-exports[`MapValidator result & error error is a jessie script primitive type then validation will fail 1`] = `
-Object {
-  "profile-provider": Object {
-    "errors": "5:23 JessieExpression - Wrong Structure: expected string, but got \\"['some string', true]\\"
-1:22 ArrayLiteralExpression - Wrong Structure: expected string, but got \\"['some string', true]\\"
-6:23 JessieExpression - Wrong Structure: expected string, but got \\"{
-            f1: 'some string',
-            f2: true
-          }\\"
-1:66 ObjectLiteralExpression - Wrong Structure: expected string, but got \\"{
-            f1: 'some string',
-            f2: true
-          }\\"
-10:23 PrimitiveLiteral - Wrong Structure: expected string, but got \\"true\\"
-11:23 PrimitiveLiteral - Wrong Structure: expected string, but got \\"false\\"
-12:23 JessieExpression - Wrong Structure: expected string, but got \\"2+25\\"
-1:5 BinaryExpression - Wrong Structure: expected string, but got \\"2+25\\"",
-  },
-}
-`;
-
-exports[`MapValidator result & error error is a jessie script primitive type then validation will pass 1`] = `
 Object {
   "profile-provider": Object {},
 }
@@ -479,29 +340,6 @@ Object {
 }
 `;
 
-exports[`MapValidator result & error map is using http call then validation will fail 1`] = `
-Object {
-  "profile-provider": Object {
-    "errors": "8:24 JessieExpression - Wrong Structure: expected string, but got \\"{}\\"
-1:3 ObjectLiteralExpression - Wrong Structure: expected string, but got \\"{}\\"",
-  },
-}
-`;
-
-exports[`MapValidator result & error map is using http call then validation will pass 1`] = `
-Object {
-  "profile-provider": Object {
-    "warnings": "6:11 HttpCallStatement - Wrong Structure: expected string, but got \\"ScalarStructure\\"",
-  },
-}
-`;
-
-exports[`MapValidator result & error map is using inline call then validation will pass 1`] = `
-Object {
-  "profile-provider": Object {},
-}
-`;
-
 exports[`MapValidator result & error result is PrimitiveTypeName then validation will fail 1`] = `
 Object {
   "profile-provider": Object {
@@ -511,71 +349,6 @@ Object {
 `;
 
 exports[`MapValidator result & error result is PrimitiveTypeName then validation will pass 1`] = `
-Object {
-  "profile-provider": Object {},
-}
-`;
-
-exports[`MapValidator result & error result is a jessie script array then validation will fail 1`] = `
-Object {
-  "profile-provider": Object {
-    "errors": "6:24 JessieExpression - Wrong Structure: expected ListStructure, but got \\"{...a.map(val => val.toUpperCase())}\\"
-1:37 ObjectLiteralExpression - Wrong Structure: expected ListStructure, but got \\"{...a.map(val => val.toUpperCase())}\\"
-7:24 JessieExpression - Wrong Structure: expected ListStructure, but got \\"{
-              f1: 'some string',
-              f2: true
-            }\\"
-1:72 ObjectLiteralExpression - Wrong Structure: expected ListStructure, but got \\"{
-              f1: 'some string',
-              f2: true
-            }\\"",
-  },
-}
-`;
-
-exports[`MapValidator result & error result is a jessie script array then validation will pass 1`] = `
-Object {
-  "profile-provider": Object {},
-}
-`;
-
-exports[`MapValidator result & error result is a jessie script object then validation will fail 1`] = `
-Object {
-  "profile-provider": Object {
-    "errors": "5:24 JessieExpression - Wrong Structure: expected ObjectStructure, but got \\"['some string', true]\\"
-1:22 ArrayLiteralExpression - Wrong Structure: expected ObjectStructure, but got \\"['some string', true]\\"",
-  },
-}
-`;
-
-exports[`MapValidator result & error result is a jessie script object then validation will pass 1`] = `
-Object {
-  "profile-provider": Object {},
-}
-`;
-
-exports[`MapValidator result & error result is a jessie script primitive type then validation will fail 1`] = `
-Object {
-  "profile-provider": Object {
-    "errors": "5:24 JessieExpression - Wrong Structure: expected string, but got \\"['some string', true]\\"
-1:22 ArrayLiteralExpression - Wrong Structure: expected string, but got \\"['some string', true]\\"
-6:24 JessieExpression - Wrong Structure: expected string, but got \\"{
-            f1: 'some string',
-            f2: true
-          }\\"
-1:66 ObjectLiteralExpression - Wrong Structure: expected string, but got \\"{
-            f1: 'some string',
-            f2: true
-          }\\"
-10:24 PrimitiveLiteral - Wrong Structure: expected string, but got \\"true\\"
-11:24 PrimitiveLiteral - Wrong Structure: expected string, but got \\"false\\"
-12:24 JessieExpression - Wrong Structure: expected string, but got \\"2+25\\"
-1:5 BinaryExpression - Wrong Structure: expected string, but got \\"2+25\\"",
-  },
-}
-`;
-
-exports[`MapValidator result & error result is a jessie script primitive type then validation will pass 1`] = `
 Object {
   "profile-provider": Object {},
 }

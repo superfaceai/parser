@@ -35,21 +35,13 @@ import {
   StructureType,
   UseCaseStructure,
 } from './profile-output';
-import {
-  isEnumStructure,
-  isNonNullStructure,
-  isPrimitiveStructure,
-  isScalarStructure,
-} from './profile-output.utils';
+import { isNonNullStructure, isScalarStructure } from './profile-output.utils';
 import {
   compareStructure,
   findTypescriptIdentifier,
-  findTypescriptProperty,
   getOutcomes,
-  getTypescriptIdentifier,
   getVariableName,
   mergeVariables,
-  validateObjectStructure,
 } from './utils';
 
 const debug = createDebug('superface-parser:map-validator');
@@ -297,79 +289,11 @@ export class MapValidator implements MapAstVisitor {
 
     if (variableExpressions) {
       for (const expression of variableExpressions) {
-        const sourceFile = ts.createSourceFile(
-          'scripts.js',
-          `(${expression})`,
-          ts.ScriptTarget.ES2015,
-          true,
-          ts.ScriptKind.JS
-        );
-
-        const typescriptIdentifier = getTypescriptIdentifier(sourceFile);
-
-        if (!typescriptIdentifier) {
-          throw new Error('Invalid variable!');
-        }
-
-        if (findTypescriptIdentifier('input', typescriptIdentifier)) {
-          if (findTypescriptProperty('auth', typescriptIdentifier)) {
-            continue;
-          }
-
-          if (!this.inputStructure || !this.inputStructure.fields) {
-            this.errors.push({
-              kind: 'inputNotFound',
-              context: {
-                path: this.getPath(node),
-                actual: expression,
-              },
-            });
-            continue;
-          }
-
-          const wrongStructureIssue: ValidationIssue = {
-            kind: 'wrongStructure',
-            context: {
-              path: this.getPath(node),
-              expected: { kind: 'PrimitiveStructure', type: 'string' },
-              actual: this.inputStructure,
-            },
-          };
-
-          // identifier `input` by itself is always an object
-          if (ts.isIdentifier(typescriptIdentifier)) {
-            this.errors.push(wrongStructureIssue);
-            continue;
-          }
-
-          const structure = validateObjectStructure(
-            typescriptIdentifier,
-            this.inputStructure
-          );
-
-          if (!structure) {
-            this.errors.push({
-              kind: 'wrongInput',
-              context: {
-                path: this.getPath(node),
-                expected: this.inputStructure,
-                actual: expression,
-              },
-            });
-            continue;
-          }
-
-          wrongStructureIssue.context.actual = structure;
-          if (isScalarStructure(structure)) {
-            this.warnings.push(wrongStructureIssue);
-            continue;
-          }
-
-          if (!isPrimitiveStructure(structure) && !isEnumStructure(structure)) {
-            this.errors.push(wrongStructureIssue);
-            continue;
-          }
-        }
+        this.visit({
+          kind: 'JessieExpression',
+          expression,
+          location: node.location,
+        });
       }
     }
 
@@ -485,9 +409,16 @@ export class MapValidator implements MapAstVisitor {
   }
 
   visitInlineCallNode(node: InlineCallNode): boolean {
+    const originalStructure = this.currentStructure;
+
+    // set current structure to undefined to validate only input
+    this.currentStructure = undefined;
+
     if (node.arguments.length > 0) {
       node.arguments.forEach(argument => this.visit(argument));
     }
+
+    this.currentStructure = originalStructure;
 
     return true;
   }
@@ -569,22 +500,23 @@ export class MapValidator implements MapAstVisitor {
 
       const variableName = getVariableName(jessieNode);
       const variable = this.variables[variableName];
-      this.currentStructure = type;
 
       if (variable !== undefined) {
-        result = this.visit(variable);
-      }
+        this.currentStructure = type;
 
-      if (!result) {
-        this.addIssue({
-          kind: 'wrongVariableStructure',
-          context: {
-            path: this.getPath(node),
-            name: variableName,
-            expected: type,
-            actual: variable,
-          },
-        });
+        result = this.visit(variable);
+
+        if (!result) {
+          this.addIssue({
+            kind: 'wrongVariableStructure',
+            context: {
+              path: this.getPath(node),
+              name: variableName,
+              expected: type,
+              actual: variable,
+            },
+          });
+        }
       }
     }
 

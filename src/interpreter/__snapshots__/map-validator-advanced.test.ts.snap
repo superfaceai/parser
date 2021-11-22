@@ -23,7 +23,8 @@ Object {
 exports[`MapValidatorAdvanced combination of input, result & error Send Message usecase then validation will fail 1`] = `
 Object {
   "profile-provider": Object {
-    "errors": "5:11 HttpCallStatement - Wrong Input Structure: expected to, from, text, but got input.channel
+    "errors": "5:11 JessieExpression - Wrong Input Structure: expected to, from, text, but got input.channel
+1:14 PropertyAccessExpression - Wrong Input Structure: expected to, from, text, but got input.channel
 8:26 JessieExpression - Wrong Input Structure: expected to, from, text, but got input.is.wrong
 1:15 PropertyAccessExpression - Wrong Input Structure: expected to, from, text, but got input.is.wrong
 9:28 JessieExpression - Wrong Input Structure: expected to, from, text, but got input.very.very.wrong
