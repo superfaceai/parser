@@ -666,21 +666,6 @@ Object {
 }
 `;
 
-exports[`MapValidator result & error result is an object that uses dot.notation for fields then validation will fail 1`] = `
-Object {
-  "profile-provider": Object {
-    "errors": "ObjectLiteral - Wrong Structure: expected number, but got \\"ObjectLiteral\\"
-ObjectLiteral - Wrong Structure: expected number, but got \\"ObjectLiteral\\"",
-  },
-}
-`;
-
-exports[`MapValidator result & error result is an object that uses dot.notation for fields then validation will pass 1`] = `
-Object {
-  "profile-provider": Object {},
-}
-`;
-
 exports[`MapValidator result & error result is conditioned then validation will pass 1`] = `
 Object {
   "profile-provider": Object {
@@ -710,9 +695,7 @@ Object {
 
 exports[`MapValidator result & error result is variable reassigned (object) then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "ObjectLiteral - Wrong Object Structure: expected f1, f2, but got , ",
-  },
+  "profile-provider": Object {},
 }
 `;
 
@@ -734,7 +717,7 @@ Object {
 exports[`MapValidator result & error result is variable referenced in outcome then validation will fail 1`] = `
 Object {
   "profile-provider": Object {
-    "errors": "ObjectLiteral - Wrong Structure: expected string, but got \\"ObjectLiteral\\"
+    "errors": "5:13 ObjectLiteral - Wrong Structure: expected string, but got \\"ObjectLiteral\\"
 6:24 JessieExpression - Wrong Variable Structure: variable a expected string, but got ObjectLiteral",
   },
 }

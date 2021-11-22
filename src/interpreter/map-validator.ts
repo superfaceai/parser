@@ -26,6 +26,7 @@ import {
 import createDebug from 'debug';
 import * as ts from 'typescript';
 
+import { buildAssignment } from '.';
 import { RETURN_CONSTRUCTS } from './constructs';
 import { ValidationIssue } from './issue';
 import {
@@ -371,8 +372,27 @@ export class MapValidator implements MapAstVisitor {
 
   visitSetStatementNode(node: SetStatementNode): void {
     node.assignments.forEach(assignment => {
+      // Init new variables if object used in dot notation wasn't defined before
+      if (assignment.key.length > 1) {
+        const keys = [];
+        for (const key of assignment.key) {
+          keys.push(key);
+
+          if (this.variables[keys.join('.')] === undefined) {
+            this.addVariableToStack(
+              buildAssignment(keys, {
+                kind: 'ObjectLiteral',
+                fields: [],
+                location: assignment.location,
+              }),
+              true
+            );
+          }
+        }
+      }
+
       this.visit(assignment.value);
-      this.addVariableToStack(assignment);
+      this.addVariableToStack(assignment, false);
     });
   }
 
@@ -492,7 +512,7 @@ export class MapValidator implements MapAstVisitor {
             context: {
               path: this.getPath(node),
               name: variableName,
-              expected: this.currentStructure,
+              expected: type,
               actual: variable,
             },
           });
@@ -570,22 +590,13 @@ export class MapValidator implements MapAstVisitor {
 
       // it should not validate against final value when dot.notation is used
       if (field.key.length > 1) {
-        const [head, ...tail] = field.key;
-        const assignment: AssignmentNode = {
-          kind: 'Assignment',
-          key: [head],
-          value: {
-            kind: 'ObjectLiteral',
-            fields: [
-              {
-                kind: 'Assignment',
-                key: tail,
-                value: field.value,
-              },
-            ],
-          },
+        const [, ...tail] = field.key;
+
+        const objectLiteral: ObjectLiteralNode = {
+          kind: 'ObjectLiteral',
+          fields: [buildAssignment(tail, field.value)],
         };
-        visitResult = this.visit(assignment);
+        visitResult = this.visit(objectLiteral);
       } else {
         visitResult = this.visit(field);
       }
@@ -653,49 +664,41 @@ export class MapValidator implements MapAstVisitor {
       : [node.kind];
   }
 
-  private cleanUpVariables(key: string): void {
-    for (const variableKey of Object.keys(this.variables)) {
-      if (
-        variableKey.length > key.length &&
-        variableKey[key.length] === '.' &&
-        variableKey.startsWith(key)
-      ) {
-        delete this.variables[variableKey];
-      }
-    }
-  }
-
+  /**
+   * Handles storing variables with dot notation. If there is assignment with
+   * multiple keys, there should be an object containing referenced or other field.
+   * This function handles adding fields to object variable stored in validator for
+   * later validation of this object.
+   */
   private handleVariable(assignment: AssignmentNode): void {
     if (assignment.key.length > 1) {
       const keys: string[] = [];
-      const tmpField: AssignmentNode = {
-        kind: 'Assignment',
-        key: Array.from(assignment.key),
-        value: assignment.value,
-      };
+      const tmpKeys = Array.from(assignment.key);
 
       for (const assignmentKey of assignment.key) {
         keys.push(assignmentKey);
-        tmpField.key.shift();
 
-        if (tmpField.key.length === 0) {
+        if (tmpKeys.length === 1) {
           return;
         }
+
+        tmpKeys.shift();
 
         let isReassigned = false;
         const variable = this.variables[keys.join('.')];
         const value: ObjectLiteralNode = {
           kind: 'ObjectLiteral',
           fields: [],
+          location: variable.location,
         };
 
         if (variable && isObjectLiteralNode(variable)) {
-          const fieldKey = tmpField.key.join('.');
+          const fieldKey = tmpKeys.join('.');
 
           for (const variableField of variable.fields) {
             if (variableField.key.join('.') === fieldKey) {
+              variableField.value = assignment.value;
               isReassigned = true;
-              variableField.value = tmpField.value;
             }
           }
 
@@ -703,28 +706,37 @@ export class MapValidator implements MapAstVisitor {
         }
 
         if (!isReassigned) {
-          value.fields.push(tmpField);
+          value.fields.push(
+            buildAssignment(
+              Array.from(tmpKeys),
+              assignment.value,
+              assignment.location
+            )
+          );
         }
 
-        this.addVariableToStack({
-          kind: 'Assignment',
-          key: keys,
-          value,
-        });
+        this.addVariableToStack(buildAssignment(keys, value), true);
       }
     }
   }
 
-  private addVariableToStack(assignment: AssignmentNode): void {
+  private addVariableToStack(
+    assignment: AssignmentNode,
+    handled: boolean
+  ): void {
     const key = assignment.key.join('.');
 
-    const variable: Record<string, LiteralNode> = {};
-    variable[key] = assignment.value;
+    const variables: Record<string, LiteralNode> = {};
+    variables[key] = assignment.value;
 
-    this.stackTop.variables = mergeVariables(this.stackTop.variables, variable);
+    this.stackTop.variables = mergeVariables(
+      this.stackTop.variables,
+      variables
+    );
 
-    this.handleVariable(assignment);
-    this.cleanUpVariables(key);
+    if (!handled) {
+      this.handleVariable(assignment);
+    }
   }
 
   private newStack(type: Stack['type'], name?: string): void {

@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Fixed
+- Handling variables that are written with dot notation, e.g. `output.is.nested = true`
 - Remove unnecessary linting of input in HTTP Request node
 - Validate arguments in inline call only against input
 - Unwrap non null structure in validation of nested properties

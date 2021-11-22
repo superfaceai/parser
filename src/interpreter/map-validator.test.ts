@@ -55,7 +55,7 @@ expect.extend({
         };
       }
 
-      if (result.pass) {
+      if (result.pass || result.errors.length === 0) {
         return {
           pass: !pass,
           message: () => 'Expected to fail, specified map is valid',
@@ -700,24 +700,18 @@ describe('MapValidator', () => {
       });
 
       describe('that uses dot.notation for fields', () => {
-        const profileAst = parseProfileFromSource(
-          `usecase Test {
-            result {
-              f1 {
-                f2 {
-                  inner number
-                }
-              }
-              f2 number
-            }    
-          }`
-        );
         const mapAst1 = parseMapFromSource(
           `map Test {
             map result {
               f1.f2.inner = 1
               f2 = 2
             }
+
+            output = {}
+            output.f1.f2.inner = 1
+            output.f2 = 2
+
+            map result output
           }`
         );
         const mapAst2 = parseMapFromSource(
@@ -730,11 +724,72 @@ describe('MapValidator', () => {
               f1.f2.inner = 1
               f2.f1 = 2
             }
+
+            output = {}
+            output.f1.f2.inner = false
+            output.f2 = true
+
+            map result output
           }`
         );
 
-        valid(profileAst, [mapAst1]);
-        invalid(profileAst, [mapAst2]);
+        describe('with result', () => {
+          const profileAst = parseProfileFromSource(
+            `usecase Test {
+              result {
+                f1 {
+                  f2 {
+                    inner number
+                  }
+                }
+                f2 number
+              }    
+            }`
+          );
+
+          validWithWarnings(profileAst, [mapAst1]);
+          invalidWithErrors(
+            profileAst,
+            [mapAst2],
+            [
+              'ObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"',
+              'ObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"',
+              'PrimitiveLiteral - Wrong Structure: expected number, but got "false"',
+              'PrimitiveLiteral - Wrong Structure: expected number, but got "true"',
+              'JessieExpression - Wrong Variable Structure: variable output expected ObjectStructure, but got ObjectLiteral',
+            ],
+            []
+          );
+        });
+
+        describe('with strict result', () => {
+          const profileAst = parseProfileFromSource(
+            `usecase Test {
+              result {
+                f1! {
+                  f2! {
+                    inner! number!
+                  }!
+                }!
+                f2! number!
+              }!  
+            }`
+          );
+
+          validWithWarnings(profileAst, [mapAst1]);
+          invalidWithErrors(
+            profileAst,
+            [mapAst2],
+            [
+              'ObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"',
+              'ObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"',
+              'PrimitiveLiteral - Wrong Structure: expected number, but got "false"',
+              'PrimitiveLiteral - Wrong Structure: expected number, but got "true"',
+              'JessieExpression - Wrong Variable Structure: variable output expected ObjectStructure, but got ObjectLiteral',
+            ],
+            []
+          );
+        });
       });
     });
 
