@@ -68,7 +68,7 @@ export function validateScript(input: string): ForbiddenConstructProtoError[] {
 
         errors.push({
           detail: `${ts.SyntaxKind[node.kind]} construct is not supported`,
-          hint: rule.hint(input, node),
+          hints: [rule.hint(input, node)],
           relativeSpan: { start: node.getStart(), end: node.getEnd() },
           category: SyntaxErrorCategory.JESSIE_VALIDATION,
         });
@@ -81,6 +81,7 @@ export function validateScript(input: string): ForbiddenConstructProtoError[] {
         detail: `${ts.SyntaxKind[node.kind]} construct is not supported`,
         relativeSpan: { start: node.getStart(), end: node.getEnd() },
         category: SyntaxErrorCategory.JESSIE_VALIDATION,
+        hints: [],
       });
     }
 

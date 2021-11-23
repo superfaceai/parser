@@ -2,7 +2,7 @@ import { SyntaxError } from './error';
 import { Lexer, LexerTokenStream } from './lexer/lexer';
 import { UnknownTokenData } from './lexer/token';
 import { Source } from './source';
-import { parseProfile, parseRule } from './syntax/parser';
+import { parseMap, parseProfile, parseRule } from './syntax/parser';
 import {
   MatchAttempts,
   RuleResult,
@@ -85,10 +85,10 @@ function toMatchSyntaxError(
   // If there are any trailing non-empty lines, report this as non-pass
   if (i < formatLines.length - 2) {
     const missedLines = formatLines.slice(i + 2);
-    if (missedLines.find(value => value.trim() !== '') !== undefined) {
+    if (missedLines.find(line => line.trim() !== '') !== undefined) {
       message +=
         'Found more lines than expected:' +
-        missedLines.map((l: string) => `\n${l}`).join('');
+        missedLines.map(l => `\n"${l}"`).join('');
 
       return { pass: false, message: () => message };
     }
@@ -450,6 +450,37 @@ df'
         const rule = SyntaxRule.optional(match[0]);
         expect(rule.tryMatch(tokens)).toStrictEqual(match[0].result);
       });
+    });
+  });
+
+  describe('map parser', () => {
+    it('should return correct error with wrong return syntax in operations', () => {
+      const input = `profile = "pro/file@1.0"
+      provider = "provider"
+
+      operation Foo {
+        http GET "url" {
+          response 200 {
+            return map result {
+              results = 1
+            }
+          }
+        }
+      }
+      `;
+
+      const source = new Source(input);
+
+      expect(() => parseMap(source)).toThrowSyntaxError(
+        "Error in script syntax: ',' expected.",
+        '[input]:7:24',
+        '6  |           response 200 {',
+        '7  |             return map result {',
+        '   |                        ^^^^^^',
+        '8  |               results = 1',
+        '',
+        'Hint: This was parsed in script context, it might be an error in comlink syntax instead'
+      );
     });
   });
 });

@@ -13,7 +13,7 @@ declare global {
 expect.extend({
   toBeValidScript(script: string, ...errors: string[]) {
     function formatError(err: ForbiddenConstructProtoError): string {
-      const hint = err.hint ?? 'not provided';
+      const hint = err.hints.join('; ') ?? 'not provided';
 
       return `${err.detail} (hint: ${hint})`;
     }
@@ -35,7 +35,7 @@ expect.extend({
           const err = protoErrors[i];
           if (
             !err.detail.includes(errors[i]) &&
-            !err.hint?.includes(errors[i])
+            !err.hints?.includes(errors[i])
           ) {
             pass = !pass;
             message = `expected to find hint "${errors[i]}" in "${formatError(
@@ -255,7 +255,7 @@ describe('validator', () => {
       expect(errors[0]).toStrictEqual({
         category: 'Jessie validation',
         detail: 'ShorthandPropertyAssignment construct is not supported',
-        hint: 'Use `{ name: name, foo: foo }` instead',
+        hints: ['Use `{ name: name, foo: foo }` instead'],
         relativeSpan: {
           start: 38,
           end: 42,

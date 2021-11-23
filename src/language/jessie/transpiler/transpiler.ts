@@ -83,6 +83,7 @@ export function transpileScript(
         end: (diag.start ?? 0) + Math.max(1, diag.length ?? 0),
       },
       detail,
+      hints: [],
     };
   }
 
