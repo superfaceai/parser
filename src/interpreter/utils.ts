@@ -187,13 +187,12 @@ export function formatIssues(issues?: ValidationIssue[]): string {
 
   return issues
     .map(issue => {
-      const location = issue.context
-        ? issue.context.path
-          ? issue.context.path.join(' ')
-          : ''
-        : '';
+      const { kind, location } = issue.context.path;
+      const path = location
+        ? `${location.start.line}:${location.start.column} ${kind}`
+        : kind;
 
-      return `${location} - ${formatIssueContext(issue)}`;
+      return `${path} - ${formatIssueContext(issue)}`;
     })
     .join('\n');
 }

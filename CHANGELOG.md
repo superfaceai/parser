@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
+- `ErrorContext` field `path` to object containing location span and node kind
+
 ### Fixed
 - Handling variables that are written with dot notation, e.g. `output.is.nested = true`
 - Remove unnecessary linting of input in HTTP Request node

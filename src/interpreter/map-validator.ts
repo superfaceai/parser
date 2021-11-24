@@ -26,7 +26,7 @@ import {
 import createDebug from 'debug';
 import * as ts from 'typescript';
 
-import { buildAssignment } from '.';
+import { buildAssignment, IssueLocation } from '.';
 import { RETURN_CONSTRUCTS } from './constructs';
 import { ValidationIssue } from './issue';
 import {
@@ -440,6 +440,7 @@ export class MapValidator implements MapAstVisitor {
 
     const constructResult = construct.visit(
       rootNode,
+      node.location,
       this.currentStructure,
       this.inputStructure,
       this.isOutcomeWithCondition
@@ -658,10 +659,11 @@ export class MapValidator implements MapAstVisitor {
     return this.isOutcomeWithCondition ? true : isValid;
   }
 
-  private getPath(node: MapASTNode): string[] {
-    return node.location
-      ? [`${node.location.start.line}:${node.location.start.column}`, node.kind]
-      : [node.kind];
+  private getPath(node: MapASTNode): IssueLocation {
+    return {
+      kind: node.kind,
+      location: node.location,
+    };
   }
 
   /**
