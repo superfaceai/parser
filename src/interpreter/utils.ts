@@ -1,4 +1,5 @@
 import {
+  AssignmentNode,
   isCallStatementNode,
   isHttpCallStatementNode,
   isObjectLiteralNode,
@@ -6,6 +7,7 @@ import {
   isPrimitiveLiteralNode,
   isUseCaseDefinitionNode,
   LiteralNode,
+  LocationSpan,
   MapASTNode,
   MapDefinitionNode,
   OperationDefinitionNode,
@@ -470,3 +472,9 @@ export function getVariableName(
 
   return 'undefined';
 }
+
+export const buildAssignment = (
+  key: string[],
+  value: LiteralNode,
+  location?: LocationSpan
+): AssignmentNode => ({ kind: 'Assignment', key, value, location });

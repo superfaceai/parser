@@ -26,7 +26,7 @@ import {
 import createDebug from 'debug';
 import * as ts from 'typescript';
 
-import { IssueLocation } from '.';
+import { buildAssignment, IssueLocation } from '.';
 import { RETURN_CONSTRUCTS } from './constructs';
 import { ValidationIssue } from './issue';
 import {
@@ -35,21 +35,13 @@ import {
   StructureType,
   UseCaseStructure,
 } from './profile-output';
-import {
-  isEnumStructure,
-  isNonNullStructure,
-  isPrimitiveStructure,
-  isScalarStructure,
-} from './profile-output.utils';
+import { isNonNullStructure, isScalarStructure } from './profile-output.utils';
 import {
   compareStructure,
   findTypescriptIdentifier,
-  findTypescriptProperty,
   getOutcomes,
-  getTypescriptIdentifier,
   getVariableName,
   mergeVariables,
-  validateObjectStructure,
 } from './utils';
 
 const debug = createDebug('superface-parser:map-validator');
@@ -297,79 +289,11 @@ export class MapValidator implements MapAstVisitor {
 
     if (variableExpressions) {
       for (const expression of variableExpressions) {
-        const sourceFile = ts.createSourceFile(
-          'scripts.js',
-          `(${expression})`,
-          ts.ScriptTarget.ES2015,
-          true,
-          ts.ScriptKind.JS
-        );
-
-        const typescriptIdentifier = getTypescriptIdentifier(sourceFile);
-
-        if (!typescriptIdentifier) {
-          throw new Error('Invalid variable!');
-        }
-
-        if (findTypescriptIdentifier('input', typescriptIdentifier)) {
-          if (findTypescriptProperty('auth', typescriptIdentifier)) {
-            continue;
-          }
-
-          if (!this.inputStructure || !this.inputStructure.fields) {
-            this.errors.push({
-              kind: 'inputNotFound',
-              context: {
-                path: this.getPath(node),
-                actual: expression,
-              },
-            });
-            continue;
-          }
-
-          const wrongStructureIssue: ValidationIssue = {
-            kind: 'wrongStructure',
-            context: {
-              path: this.getPath(node),
-              expected: { kind: 'PrimitiveStructure', type: 'string' },
-              actual: this.inputStructure,
-            },
-          };
-
-          // identifier `input` by itself is always an object
-          if (ts.isIdentifier(typescriptIdentifier)) {
-            this.errors.push(wrongStructureIssue);
-            continue;
-          }
-
-          const structure = validateObjectStructure(
-            typescriptIdentifier,
-            this.inputStructure
-          );
-
-          if (!structure) {
-            this.errors.push({
-              kind: 'wrongInput',
-              context: {
-                path: this.getPath(node),
-                expected: this.inputStructure,
-                actual: expression,
-              },
-            });
-            continue;
-          }
-
-          wrongStructureIssue.context.actual = structure;
-          if (isScalarStructure(structure)) {
-            this.warnings.push(wrongStructureIssue);
-            continue;
-          }
-
-          if (!isPrimitiveStructure(structure) && !isEnumStructure(structure)) {
-            this.errors.push(wrongStructureIssue);
-            continue;
-          }
-        }
+        this.visit({
+          kind: 'JessieExpression',
+          expression,
+          location: node.location,
+        });
       }
     }
 
@@ -448,8 +372,27 @@ export class MapValidator implements MapAstVisitor {
 
   visitSetStatementNode(node: SetStatementNode): void {
     node.assignments.forEach(assignment => {
+      // Init new variables if object used in dot notation wasn't defined before
+      if (assignment.key.length > 1) {
+        const keys = [];
+        for (const key of assignment.key) {
+          keys.push(key);
+
+          if (this.variables[keys.join('.')] === undefined) {
+            this.addVariableToStack(
+              buildAssignment(keys, {
+                kind: 'ObjectLiteral',
+                fields: [],
+                location: assignment.location,
+              }),
+              true
+            );
+          }
+        }
+      }
+
       this.visit(assignment.value);
-      this.addVariableToStack(assignment);
+      this.addVariableToStack(assignment, false);
     });
   }
 
@@ -466,9 +409,16 @@ export class MapValidator implements MapAstVisitor {
   }
 
   visitInlineCallNode(node: InlineCallNode): boolean {
+    const originalStructure = this.currentStructure;
+
+    // set current structure to undefined to validate only input
+    this.currentStructure = undefined;
+
     if (node.arguments.length > 0) {
       node.arguments.forEach(argument => this.visit(argument));
     }
+
+    this.currentStructure = originalStructure;
 
     return true;
   }
@@ -551,22 +501,23 @@ export class MapValidator implements MapAstVisitor {
 
       const variableName = getVariableName(jessieNode);
       const variable = this.variables[variableName];
-      this.currentStructure = type;
 
       if (variable !== undefined) {
-        result = this.visit(variable);
-      }
+        this.currentStructure = type;
 
-      if (!result) {
-        this.addIssue({
-          kind: 'wrongVariableStructure',
-          context: {
-            path: this.getPath(node),
-            name: variableName,
-            expected: this.currentStructure,
-            actual: variable,
-          },
-        });
+        result = this.visit(variable);
+
+        if (!result) {
+          this.addIssue({
+            kind: 'wrongVariableStructure',
+            context: {
+              path: this.getPath(node),
+              name: variableName,
+              expected: type,
+              actual: variable,
+            },
+          });
+        }
       }
     }
 
@@ -640,22 +591,13 @@ export class MapValidator implements MapAstVisitor {
 
       // it should not validate against final value when dot.notation is used
       if (field.key.length > 1) {
-        const [head, ...tail] = field.key;
-        const assignment: AssignmentNode = {
-          kind: 'Assignment',
-          key: [head],
-          value: {
-            kind: 'ObjectLiteral',
-            fields: [
-              {
-                kind: 'Assignment',
-                key: tail,
-                value: field.value,
-              },
-            ],
-          },
+        const [, ...tail] = field.key;
+
+        const objectLiteral: ObjectLiteralNode = {
+          kind: 'ObjectLiteral',
+          fields: [buildAssignment(tail, field.value)],
         };
-        visitResult = this.visit(assignment);
+        visitResult = this.visit(objectLiteral);
       } else {
         visitResult = this.visit(field);
       }
@@ -724,49 +666,41 @@ export class MapValidator implements MapAstVisitor {
     };
   }
 
-  private cleanUpVariables(key: string): void {
-    for (const variableKey of Object.keys(this.variables)) {
-      if (
-        variableKey.length > key.length &&
-        variableKey[key.length] === '.' &&
-        variableKey.startsWith(key)
-      ) {
-        delete this.variables[variableKey];
-      }
-    }
-  }
-
+  /**
+   * Handles storing variables with dot notation. If there is assignment with
+   * multiple keys, there should be an object containing referenced or other field.
+   * This function handles adding fields to object variable stored in validator for
+   * later validation of this object.
+   */
   private handleVariable(assignment: AssignmentNode): void {
     if (assignment.key.length > 1) {
       const keys: string[] = [];
-      const tmpField: AssignmentNode = {
-        kind: 'Assignment',
-        key: Array.from(assignment.key),
-        value: assignment.value,
-      };
+      const tmpKeys = Array.from(assignment.key);
 
       for (const assignmentKey of assignment.key) {
         keys.push(assignmentKey);
-        tmpField.key.shift();
 
-        if (tmpField.key.length === 0) {
+        if (tmpKeys.length === 1) {
           return;
         }
+
+        tmpKeys.shift();
 
         let isReassigned = false;
         const variable = this.variables[keys.join('.')];
         const value: ObjectLiteralNode = {
           kind: 'ObjectLiteral',
           fields: [],
+          location: variable.location,
         };
 
         if (variable && isObjectLiteralNode(variable)) {
-          const fieldKey = tmpField.key.join('.');
+          const fieldKey = tmpKeys.join('.');
 
           for (const variableField of variable.fields) {
             if (variableField.key.join('.') === fieldKey) {
+              variableField.value = assignment.value;
               isReassigned = true;
-              variableField.value = tmpField.value;
             }
           }
 
@@ -774,28 +708,37 @@ export class MapValidator implements MapAstVisitor {
         }
 
         if (!isReassigned) {
-          value.fields.push(tmpField);
+          value.fields.push(
+            buildAssignment(
+              Array.from(tmpKeys),
+              assignment.value,
+              assignment.location
+            )
+          );
         }
 
-        this.addVariableToStack({
-          kind: 'Assignment',
-          key: keys,
-          value,
-        });
+        this.addVariableToStack(buildAssignment(keys, value), true);
       }
     }
   }
 
-  private addVariableToStack(assignment: AssignmentNode): void {
+  private addVariableToStack(
+    assignment: AssignmentNode,
+    handled: boolean
+  ): void {
     const key = assignment.key.join('.');
 
-    const variable: Record<string, LiteralNode> = {};
-    variable[key] = assignment.value;
+    const variables: Record<string, LiteralNode> = {};
+    variables[key] = assignment.value;
 
-    this.stackTop.variables = mergeVariables(this.stackTop.variables, variable);
+    this.stackTop.variables = mergeVariables(
+      this.stackTop.variables,
+      variables
+    );
 
-    this.handleVariable(assignment);
-    this.cleanUpVariables(key);
+    if (!handled) {
+      this.handleVariable(assignment);
+    }
   }
 
   private newStack(type: Stack['type'], name?: string): void {

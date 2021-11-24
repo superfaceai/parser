@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - `ErrorContext` field `path` to object containing location span and node kind
 
+### Fixed
+- Handling variables that are written with dot notation, e.g. `output.is.nested = true`
+- Remove unnecessary linting of input in HTTP Request node
+- Validate arguments in inline call only against input
+- Unwrap non null structure in validation of nested properties
+- Remove limited validation of binary expressions and let other constructs handle them
+
 ## [1.0.0] - 2021-11-04
 ### Added
 - `ProfileVersion` class representing version of profile in ProfileId
