@@ -5,7 +5,160 @@ import {
 } from '@superfaceai/ast';
 
 import { parseMap, parseProfile, Source } from '..';
+import { ProfileOutput, ValidationIssue } from '.';
 import { formatIssues, getProfileOutput, validateMap } from './utils';
+
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace jest {
+    interface Matchers<R> {
+      toBeValidMap(
+        profileOutput: ProfileOutput,
+        warnings?: string[],
+        errors?: string[]
+      ): R;
+    }
+  }
+}
+
+expect.extend({
+  toBeValidMap(
+    map: MapASTNode,
+    profileOutput: ProfileOutput,
+    warnings?: string[],
+    errors?: string[]
+  ) {
+    const result = validateMap(profileOutput, map);
+
+    let message = '';
+    let pass = true;
+
+    const issues: { errors: ValidationIssue[]; warnings: ValidationIssue[] } = {
+      errors: [],
+      warnings: [],
+    };
+
+    if (!result.pass) {
+      issues.errors = result.errors;
+    }
+    if (result.warnings && result.warnings.length > 0) {
+      issues.warnings = result.warnings;
+    }
+
+    if (this.isNot) {
+      pass = false;
+
+      if (!errors) {
+        return {
+          pass: !pass,
+          message: () => 'Expected to fail, specify the errors',
+        };
+      }
+
+      if (result.pass) {
+        return {
+          pass: !pass,
+          message: () => 'Expected to fail, specified map is valid',
+        };
+      }
+
+      const err = formatIssues(issues.errors);
+      const warn = formatIssues(issues.warnings);
+
+      message = 'Expected to find errors:\n';
+
+      for (const error of errors) {
+        if (!err.includes(error)) {
+          if (!pass) {
+            pass = true;
+          }
+
+          message += `"${error}"\n`;
+        }
+      }
+
+      message += `in original errors:\n"${err}"\n`;
+
+      if (warnings && warnings.length > 0) {
+        message += '\nExpected to find warnings:\n';
+
+        for (const warning of warnings) {
+          if (!warn.includes(warning)) {
+            if (!pass) {
+              pass = true;
+            }
+
+            message += `"${warning}"\n`;
+          }
+        }
+
+        message += `in original warnings:\n"${warn}"\n`;
+      }
+    } else {
+      const warn = formatIssues(issues.warnings);
+      const err = formatIssues(issues.errors);
+
+      if (!result.pass && result.errors.length > 0) {
+        return {
+          pass: !pass,
+          message: () =>
+            `Expected to pass, specified map is invalid.\nErrors:\n${err}\nWarnings:\n${warn}\n`,
+        };
+      }
+
+      if (warnings && warnings.length > 0) {
+        message += 'Expected to find warnings:\n';
+
+        for (const warning of warnings) {
+          if (!warn.includes(warning)) {
+            if (pass) {
+              pass = false;
+            }
+
+            message += `"${warning}"\n`;
+          }
+        }
+
+        message += `in original warnings:\n"${warn}"\n`;
+      }
+    }
+
+    return {
+      pass,
+      message: (): string => message,
+    };
+  },
+});
+
+function validWithWarnings(
+  profile: ProfileDocumentNode,
+  maps: MapASTNode[],
+  ...warnings: string[][]
+): void {
+  const profileOutput = getProfileOutput(profile);
+
+  it('then validation will pass with warnings', () => {
+    maps.forEach((map, index) => {
+      expect(map).toBeValidMap(profileOutput, warnings[index]);
+    });
+  });
+}
+
+function invalidWithErrors(
+  profile: ProfileDocumentNode,
+  maps: MapASTNode[],
+  ...results: string[][]
+): void {
+  const profileOutput = getProfileOutput(profile);
+
+  it('then validation will fail with errors', () => {
+    let i = 0;
+    maps.forEach(map => {
+      expect(map).not.toBeValidMap(profileOutput, results[i + 1], results[i]);
+      i += 2;
+    });
+  });
+}
 
 function getIssues(profile: ProfileDocumentNode, maps: MapASTNode[]) {
   const profileOutput = getProfileOutput(profile);
@@ -322,8 +475,42 @@ describe('MapValidatorAdvanced', () => {
         }`
       );
 
-      valid(profileAst, [mapAst1]);
-      invalid(profileAst, [mapAst2, mapAst3]);
+      validWithWarnings(
+        profileAst,
+        [mapAst1],
+        [
+          'ObjectLiteral - Wrong Object Structure: expected messageId, but got deliveryStatus, messageID',
+          'ObjectLiteral - Wrong Object Structure: expected messageId, but got deliveryStatus, messageID',
+        ]
+      );
+      invalidWithErrors(
+        profileAst,
+        [mapAst2, mapAst3],
+        [
+          'JessieExpression - Wrong Input Structure: expected to, from, text, but got input.is.wrong',
+          'PropertyAccessExpression - Wrong Input Structure: expected to, from, text, but got input.is.wrong',
+          'JessieExpression - Wrong Input Structure: expected to, from, text, but got input.person',
+          'PropertyAccessExpression - Wrong Input Structure: expected to, from, text, but got input.person',
+        ],
+        [
+          'ObjectLiteral - Wrong Object Structure: expected problem, detail, instance, but got some.key',
+          'ObjectLiteral - Wrong Object Structure: expected messageId, but got deliveryStatus, messageID',
+          'ObjectLiteral - Wrong Object Structure: expected problem, detail, instance, but got status, statusID',
+          'ObjectLiteral - Wrong Object Structure: expected messageId, but got status, messageID',
+        ],
+        [
+          'JessieExpression - Wrong Input Structure: expected to, from, text, but got input.is.wrong',
+          'PropertyAccessExpression - Wrong Input Structure: expected to, from, text, but got input.is.wrong',
+          'JessieExpression - Wrong Input Structure: expected to, from, text, but got input.very.very.wrong',
+          'PropertyAccessExpression - Wrong Input Structure: expected to, from, text, but got input.very.very.wrong',
+        ],
+        [
+          'ObjectLiteral - Wrong Object Structure: expected problem, detail, instance, but got some.key',
+          'ObjectLiteral - Wrong Object Structure: expected messageId, but got deliveryStatus, messageID',
+          'ObjectLiteral - Wrong Object Structure: expected problem, detail, instance, but got status, statusID',
+          'ObjectLiteral - Wrong Object Structure: expected messageId, but got status, messageID',
+        ]
+      );
     });
 
     describe('Send Message usecase with any structures', () => {
@@ -471,8 +658,32 @@ describe('MapValidatorAdvanced', () => {
         }`
       );
 
-      valid(profileAst, [mapAst1, mapAst2]);
-      invalid(profileAst, [mapAst3]);
+      validWithWarnings(
+        profileAst,
+        [mapAst1, mapAst2],
+        [
+          'ObjectLiteral - Wrong Object Structure: expected messageId, but got deliveryStatus, messageID',
+          'ObjectLiteral - Wrong Object Structure: expected messageId, but got deliveryStatus, messageID',
+        ]
+      );
+      invalidWithErrors(
+        profileAst,
+        [mapAst3],
+        [
+          'JessieExpression - Wrong Input Structure: expected to, from, text, but got input.is.wrong',
+          'PropertyAccessExpression - Wrong Input Structure: expected to, from, text, but got input.is.wrong',
+          'JessieExpression - Wrong Input Structure: expected to, from, text, but got input.very.very.wrong',
+          'PropertyAccessExpression - Wrong Input Structure: expected to, from, text, but got input.very.very.wrong',
+        ],
+        [
+          'ObjectLiteral - Wrong Object Structure: expected problem, detail, instance, but got some.key',
+          'ObjectLiteral - Wrong Object Structure: expected messageId, but got messageID',
+          'ObjectLiteral - Wrong Object Structure: expected problem, detail, instance, but got status, statusID',
+          'ObjectLiteral - Wrong Object Structure: expected messageId, but got status, messageID',
+          'ObjectLiteral - Wrong Object Structure: expected problem, detail, instance, but got status, statusID',
+          'ObjectLiteral - Wrong Object Structure: expected messageId, but got status, messageID',
+        ]
+      );
     });
 
     describe('Retrieve Message Status usecase', () => {
@@ -549,8 +760,18 @@ describe('MapValidatorAdvanced', () => {
         }`
       );
 
-      valid(profileAst, [mapAst1]);
-      invalid(profileAst, [mapAst2]);
+      validWithWarnings(profileAst, [mapAst1]);
+      invalidWithErrors(
+        profileAst,
+        [mapAst2],
+        [
+          'JessieExpression - Wrong Input Structure: expected messageId, but got input.wrong.key.in.input',
+          'PropertyAccessExpression - Wrong Input Structure: expected messageId, but got input.wrong.key.in.input',
+          'JessieExpression - Wrong Input Structure: expected messageId, but got input.to',
+          'PropertyAccessExpression - Wrong Input Structure: expected messageId, but got input.to',
+        ],
+        []
+      );
     });
 
     describe('swapi get character information', () => {

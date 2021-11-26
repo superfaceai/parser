@@ -3,6 +3,7 @@ import {
   ComlinkAssignmentNode,
   ComlinkLiteralNode,
   LiteralNode,
+  LocationSpan,
 } from '@superfaceai/ast';
 
 import {
@@ -19,7 +20,13 @@ export enum ValidationIssueSlot {
   ERROR = 'error',
 }
 
-export type ErrorContext = { path?: string[] };
+export type IssueLocation = {
+  kind: string;
+  location?: LocationSpan;
+};
+
+export type ErrorContext = { path: IssueLocation };
+
 export type ValidationIssue =
   | {
       kind: 'wrongScope';
