@@ -204,6 +204,7 @@ export function tryParseStringLiteral(
             relativeSpan: { start: 0, end: eatenChars },
             detail: 'Unexpected EOF',
             category: SyntaxErrorCategory.LEXER,
+            hints: [],
           },
         ],
       };
@@ -221,6 +222,7 @@ export function tryParseStringLiteral(
               relativeSpan: { start: 0, end: eatenChars + 1 },
               detail: 'Invalid escape sequence',
               category: SyntaxErrorCategory.LEXER,
+              hints: [],
             },
           ],
         };

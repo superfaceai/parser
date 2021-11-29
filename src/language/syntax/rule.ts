@@ -786,10 +786,10 @@ export class SyntaxRuleNever<R> extends SyntaxRule<R> {
     super();
   }
 
-  tryMatch(_tokens: LexerTokenStream): RuleResult<R> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<R> {
     return {
       kind: 'nomatch',
-      attempts: new MatchAttempts(undefined, [this]),
+      attempts: new MatchAttempts(tokens.peek().value, [this]),
     };
   }
 
@@ -804,7 +804,7 @@ export class SyntaxRuleDebugLog<R> extends SyntaxRule<R> {
   }
 
   tryMatch(tokens: LexerTokenStream): RuleResult<R> {
-    const nextToken = tokens.peek();
+    const nextToken = tokens.peek().value;
 
     let result;
     try {

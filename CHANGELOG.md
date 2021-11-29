@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Validate arguments in inline call only against input
 - Unwrap non null structure in validation of nested properties
 - Remove limited validation of binary expressions and let other constructs handle them
+- `SyntaxRuleNever` causing a wrong error message
 
 ## [1.0.0] - 2021-11-04
 ### Added

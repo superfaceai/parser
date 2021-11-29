@@ -139,19 +139,37 @@ function generateErrorVisualization(
   const maxLineNumberLog =
     Math.log10(sourceLocation.start.line + sourceTextLines.length) + 1;
 
-  const visualization = renderErrorVisualization(
-    sourceTextLines,
-    location,
-    maxLineNumberLog,
-    sourceLocation.start.line + visBlock.lineOffset,
-    visBlock.start
-  );
+  // Generate visualization only if the error span is not empty
+  let visualization = '';
+  if (location.start.charIndex < location.end.charIndex) {
+    visualization = renderErrorVisualization(
+      sourceTextLines,
+      location,
+      maxLineNumberLog,
+      sourceLocation.start.line + visBlock.lineOffset,
+      visBlock.start
+    );
+  }
 
   return {
     visualization,
     maxLineNumberLog,
     sourceLocation,
   };
+}
+
+function isString(i: string | undefined): i is string {
+  return i !== undefined;
+}
+
+function formatHints(...hints: (string | undefined)[]): string {
+  const filtered: string[] = hints.filter(isString);
+
+  if (filtered.length === 0) {
+    return '';
+  }
+
+  return filtered.map(h => `Hint: ${h}`).join('\n');
 }
 
 export const enum SyntaxErrorCategory {
@@ -164,18 +182,42 @@ export const enum SyntaxErrorCategory {
   /** Jessie forbidden construct error */
   JESSIE_VALIDATION = 'Jessie validation',
 }
+function errorCategoryStrings(category: SyntaxErrorCategory): {
+  categoryDetail?: string;
+  categoryHint?: string;
+} {
+  const result: {
+    categoryDetail?: string;
+    categoryHint?: string;
+  } = {
+    categoryDetail: undefined,
+    categoryHint: undefined,
+  };
+
+  switch (category) {
+    case SyntaxErrorCategory.JESSIE_SYNTAX:
+    case SyntaxErrorCategory.JESSIE_VALIDATION:
+      result.categoryDetail = 'Error in script syntax';
+      result.categoryHint =
+        'This was parsed in script context, it might be an error in comlink syntax instead';
+      break;
+  }
+
+  return result;
+}
 
 export type ProtoError = {
   /** Relative span of this error with respect to the token it is attached to. */
   readonly relativeSpan: CharIndexSpan;
   readonly detail?: string;
   readonly category: SyntaxErrorCategory;
-  readonly hint?: string;
+  readonly hints: string[];
 };
 
 export class SyntaxError {
   /** Additional message attached to the error. */
   readonly detail: string;
+  readonly hints: string[];
 
   constructor(
     /** Input source that is being parsed. */
@@ -185,10 +227,11 @@ export class SyntaxError {
     /** Category of this error. */
     readonly category: SyntaxErrorCategory,
     detail?: string,
-    /** Optional hint that is emitted to help with the resolution. */
-    readonly hint?: string
+    /** Optional hints that are emitted to help with the resolution. */
+    hints?: string[]
   ) {
     this.detail = detail ?? 'Invalid or unexpected token';
+    this.hints = hints ?? [];
   }
 
   static fromSyntaxRuleNoMatch(
@@ -219,6 +262,7 @@ export class SyntaxError {
       }
     }
 
+    // The default location is invalid on purpose
     const location = result.attempts.token?.location ?? {
       start: { line: 0, column: 0, charIndex: 0 },
       end: { line: 0, column: 0, charIndex: 0 },
@@ -251,21 +295,22 @@ export class SyntaxError {
     const { visualization, maxLineNumberLog, sourceLocation } =
       generateErrorVisualization(this.source, this.location);
 
-    let categoryInfo = '';
-    switch (this.category) {
-      case SyntaxErrorCategory.JESSIE_SYNTAX:
-      case SyntaxErrorCategory.JESSIE_VALIDATION:
-        categoryInfo = 'Error in script syntax: ';
-        break;
+    const { categoryDetail, categoryHint } = errorCategoryStrings(
+      this.category
+    );
+
+    let detail = this.detail;
+    if (categoryDetail !== undefined) {
+      detail = `${categoryDetail}: ${detail}`;
     }
 
-    const errorLine = `SyntaxError: ${categoryInfo}${this.detail}`;
+    const errorLine = `SyntaxError: ${detail}`;
     const locationLinePrefix = ' '.repeat(maxLineNumberLog) + '--> ';
     const locationLine = `${locationLinePrefix}${this.source.fileName}:${sourceLocation.start.line}:${sourceLocation.start.column}`;
 
-    const maybeHint = this.hint ? `Hint: ${this.hint}\n` : '';
+    const maybeHints = formatHints(...this.hints, categoryHint);
 
-    return `${errorLine}\n${locationLine}\n${visualization}\n${maybeHint}`;
+    return `${errorLine}\n${locationLine}\n${visualization}\n${maybeHints}`;
   }
 
   get message(): string {

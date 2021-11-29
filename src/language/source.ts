@@ -10,9 +10,9 @@ export type Location = AstLocation;
 export type LocationSpan = AstLocationSpan;
 export type LocationOffset = {
   /** Line offset - this is basically how many lines there are preceding the one in question */
-  line: 0;
+  line: number;
   /** Column offset - this only applies to the first line */
-  column: 0;
+  column: number;
 };
 
 export type CharIndexSpan = {
