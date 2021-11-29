@@ -451,20 +451,44 @@ function HTTP_CALL_STATEMENT_RESPONSE_HANDLER(
   );
 }
 
-// const HTTP_CALL_STATEMENT_SERVICE = SyntaxRule.identifier('default').or(
-//   SyntaxRule.string()
-// ).lookahead(
-//   // expect url to follow
-//   SyntaxRule.string()
-// )
+const HTTP_CALL_STATEMENT_HEAD: SyntaxRule<
+  {
+    verb: string;
+    service: string | undefined;
+    url: string;
+  } & HasLocation
+> = SyntaxRule.followedBy(
+  SyntaxRule.identifier(), // verb
+  // service
+  SyntaxRule.optional(
+    SyntaxRule.or(
+      SyntaxRule.identifier('default'),
+      SyntaxRule.string().lookahead(SyntaxRule.string())
+    )
+  ),
+  // url
+  SyntaxRule.string()
+).map(([verb, maybeService, url]) => {
+  // if service is `default` then treat it as undefined
+  const service =
+    maybeService?.data.kind === LexerTokenKind.STRING
+      ? maybeService.data.string
+      : undefined;
+
+  return {
+    verb: verb.data.identifier,
+    service,
+    url: url.data.string,
+    location: computeLocationSpan(verb, maybeService, url),
+  };
+});
 
 export function HTTP_CALL_STATEMENT_FACTORY(
   substatementRule: SyntaxRule<WithLocation<OutcomeStatementNode>>
 ): SyntaxRule<WithLocation<HttpCallStatementNode>> {
   return SyntaxRule.followedBy(
     SyntaxRule.identifier('http'),
-    SyntaxRule.identifier(), // verb
-    SyntaxRule.string(), // url
+    HTTP_CALL_STATEMENT_HEAD,
     SyntaxRule.separator('{'),
     HTTP_REQUEST_OPTIONAL,
     SyntaxRule.optional(
@@ -474,8 +498,7 @@ export function HTTP_CALL_STATEMENT_FACTORY(
   ).map(
     ([
       keyword,
-      verb,
-      url,
+      head,
       _sepStart,
       maybeRequest,
       maybeResponseHandlers,
@@ -483,8 +506,9 @@ export function HTTP_CALL_STATEMENT_FACTORY(
     ]): WithLocation<HttpCallStatementNode> => {
       return {
         kind: 'HttpCallStatement',
-        method: verb.data.identifier,
-        url: url.data.string,
+        method: head.verb,
+        // service: head.service,
+        url: head.url,
         request: maybeRequest,
         responseHandlers: maybeResponseHandlers ?? [],
         location: computeLocationSpan(keyword, sepEnd),
