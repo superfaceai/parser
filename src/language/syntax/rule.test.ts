@@ -245,6 +245,7 @@ describe('syntax rule factory', () => {
       expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
         match: tokMatch(tokens[0]),
+        optionalAttempts: undefined,
       });
     });
 
@@ -307,9 +308,11 @@ describe('syntax rule factory', () => {
       ];
       const stream = new ArrayLexerStream(tokens);
 
-      const rule = SyntaxRule.identifier('result')
-        .followedBy(SyntaxRule.operator(':'))
-        .andFollowedBy(SyntaxRule.literal());
+      const rule = SyntaxRule.followedBy(
+        SyntaxRule.identifier('result'),
+        SyntaxRule.operator(':'),
+        SyntaxRule.literal()
+      );
 
       expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',
@@ -327,9 +330,11 @@ describe('syntax rule factory', () => {
       const stream = new ArrayLexerStream(tokens);
 
       const firstRule = SyntaxRule.identifier('field');
-      const rule = firstRule
-        .followedBy(SyntaxRule.operator(':'))
-        .andFollowedBy(SyntaxRule.literal());
+      const rule = SyntaxRule.followedBy(
+        firstRule,
+        SyntaxRule.operator(':'),
+        SyntaxRule.literal()
+      );
 
       expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'nomatch',
@@ -346,9 +351,11 @@ describe('syntax rule factory', () => {
       const stream = new ArrayLexerStream(tokens);
 
       const secondRule = SyntaxRule.operator('!');
-      const rule = SyntaxRule.identifier('result')
-        .followedBy(secondRule)
-        .andFollowedBy(SyntaxRule.literal());
+      const rule = SyntaxRule.followedBy(
+        SyntaxRule.identifier('result'),
+        secondRule,
+        SyntaxRule.literal()
+      );
 
       expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'nomatch',
@@ -365,9 +372,11 @@ describe('syntax rule factory', () => {
       const stream = new ArrayLexerStream(tokens);
 
       const thirdRule = SyntaxRule.identifier();
-      const rule = SyntaxRule.identifier('result')
-        .followedBy(SyntaxRule.operator(':'))
-        .andFollowedBy(thirdRule);
+      const rule = SyntaxRule.followedBy(
+        SyntaxRule.identifier('result'),
+        SyntaxRule.operator(':'),
+        thirdRule
+      );
 
       expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'nomatch',
