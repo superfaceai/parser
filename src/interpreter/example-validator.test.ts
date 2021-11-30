@@ -2,7 +2,7 @@ import { ProfileDocumentNode } from '@superfaceai/ast';
 
 import { parseProfile, Source } from '..';
 import { formatIssues } from '.';
-import { ExamplesValidator } from './example-validator';
+import { ExampleValidator } from './example-validator';
 
 const parseProfileFromSource = (source: string): ProfileDocumentNode =>
   parseProfile(
@@ -26,7 +26,7 @@ describe('ExampleValidator', () => {
             }
         }`
       );
-      const exampleValidator = new ExamplesValidator(profileAst);
+      const exampleValidator = new ExampleValidator(profileAst);
       const result = exampleValidator.validate();
 
       expect(!result.pass && formatIssues(result.errors)).toEqual(
@@ -47,7 +47,7 @@ describe('ExampleValidator', () => {
             }
         }`
       );
-      const exampleValidator = new ExamplesValidator(profileAst);
+      const exampleValidator = new ExampleValidator(profileAst);
       const result = exampleValidator.validate();
 
       expect(!result.pass && formatIssues(result.errors)).toEqual(
@@ -65,7 +65,7 @@ describe('ExampleValidator', () => {
             }
         }`
       );
-      const exampleValidator = new ExamplesValidator(profileAst);
+      const exampleValidator = new ExampleValidator(profileAst);
       const result = exampleValidator.validate();
 
       expect(!result.pass && formatIssues(result.errors)).toEqual(
@@ -89,7 +89,7 @@ describe('ExampleValidator', () => {
               }
           }`
       );
-      const exampleValidator = new ExamplesValidator(profileAst);
+      const exampleValidator = new ExampleValidator(profileAst);
       const result = exampleValidator.validate();
 
       expect(!result.pass && formatIssues(result.errors)).toEqual(

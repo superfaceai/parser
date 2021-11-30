@@ -30,11 +30,12 @@ import {
   compareStructure,
   isNonNullStructure,
   isScalarStructure,
+  IssueLocation,
   ProfileIOAnalyzer,
   ProfileOutput,
   StructureType,
+  UseCaseSlotType,
   ValidationIssue,
-  ValidationIssueSlot,
   ValidationResult,
 } from '.';
 
@@ -45,11 +46,11 @@ function assertUnreachable(node: ProfileASTNode): never {
   throw new Error(`Invalid Node kind: ${node.kind}`);
 }
 
-export class ExamplesValidator implements ProfileAstVisitor {
+export class ExampleValidator implements ProfileAstVisitor {
   private errors: ValidationIssue[] = [];
   private warnings: ValidationIssue[] = [];
 
-  private slotType: ValidationIssueSlot | undefined;
+  private slotType: UseCaseSlotType | undefined;
   private currentStructure: StructureType | undefined;
   private currentUseCase: string | undefined;
 
@@ -72,7 +73,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
       : { pass: true, warnings: this.warnings };
   }
 
-  visit(node: ComlinkLiteralNode): boolean;
+  visit(node: ComlinkLiteralNode | ComlinkAssignmentNode): boolean;
   visit(node: ProfileASTNode): void;
   visit(node: ProfileASTNode): boolean | void {
     debug('Visiting node:', node.kind);
@@ -94,6 +95,8 @@ export class ExamplesValidator implements ProfileAstVisitor {
         return this.visitComlinkListLiteralNode(node);
       case 'ComlinkObjectLiteral':
         return this.visitComlinkObjectLiteralNode(node);
+      case 'ComlinkAssignment':
+        return this.visitComlinkAssignmentNode(node);
       // UNUSED
       case 'FieldDefinition':
         return this.visitFieldDefinitionNode(node);
@@ -157,7 +160,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
       this.currentStructure = this.profileOutput?.usecases.find(
         usecase => usecase.useCaseName === this.currentUseCase
       )?.input;
-      this.slotType = ValidationIssueSlot.INPUT;
+      this.slotType = UseCaseSlotType.INPUT;
 
       this.visit(node.input);
 
@@ -169,7 +172,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
       this.currentStructure = this.profileOutput?.usecases.find(
         usecase => usecase.useCaseName === this.currentUseCase
       )?.result;
-      this.slotType = ValidationIssueSlot.RESULT;
+      this.slotType = UseCaseSlotType.RESULT;
 
       this.visit(node.result);
 
@@ -181,7 +184,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
       this.currentStructure = this.profileOutput?.usecases.find(
         usecase => usecase.useCaseName === this.currentUseCase
       )?.async;
-      this.slotType = ValidationIssueSlot.ASYNCRESULT;
+      this.slotType = UseCaseSlotType.ASYNCRESULT;
 
       this.visit(node.asyncResult);
 
@@ -193,7 +196,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
       this.currentStructure = this.profileOutput?.usecases.find(
         usecase => usecase.useCaseName === this.currentUseCase
       )?.error;
-      this.slotType = ValidationIssueSlot.ERROR;
+      this.slotType = UseCaseSlotType.ERROR;
 
       this.visit(node.error);
 
@@ -212,7 +215,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
         kind: 'useCaseSlotNotFound',
         context: {
           path: this.getPath(node),
-          slot: this.slotType,
+          expected: this.slotType,
           actual: node,
         },
       });
@@ -254,7 +257,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
         kind: 'useCaseSlotNotFound',
         context: {
           path: this.getPath(node),
-          slot: this.slotType,
+          expected: this.slotType,
           actual: node,
         },
       });
@@ -312,7 +315,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
         kind: 'useCaseSlotNotFound',
         context: {
           path: this.getPath(node),
-          slot: this.slotType,
+          expected: this.slotType,
           actual: node,
         },
       });
@@ -391,9 +394,9 @@ export class ExamplesValidator implements ProfileAstVisitor {
             ],
           },
         };
-        visitResult = this.visitComlinkAssignmentNode(assignment);
+        visitResult = this.visit(assignment);
       } else {
-        visitResult = this.visitComlinkAssignmentNode(field);
+        visitResult = this.visit(field);
       }
 
       result &&= visitResult;
@@ -405,7 +408,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
         kind: 'missingRequired',
         context: {
           path: this.getPath(node),
-          field: value ? value.kind : 'undefined',
+          expected: value ? value.kind : 'undefined',
         },
       });
     }
@@ -472,9 +475,10 @@ export class ExamplesValidator implements ProfileAstVisitor {
     throw new Error('not implemented');
   }
 
-  private getPath(node: ProfileASTNode): string[] {
-    return node.location
-      ? [`${node.location.start.line}:${node.location.start.column}`, node.kind]
-      : [node.kind];
+  private getPath(node: ProfileASTNode): IssueLocation {
+    return {
+      kind: node.kind,
+      location: node.location,
+    };
   }
 }
