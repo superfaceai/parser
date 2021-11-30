@@ -1,4 +1,8 @@
 import {
+  ComlinkAssignmentNode,
+  ComlinkListLiteralNode,
+  ComlinkObjectLiteralNode,
+  ComlinkPrimitiveLiteralNode,
   DocumentedNode,
   EnumDefinitionNode,
   EnumValueNode,
@@ -20,6 +24,7 @@ import {
   Type,
   UnionDefinitionNode,
   UseCaseDefinitionNode,
+  UseCaseExampleNode,
   UseCaseSlotDefinitionNode,
 } from '@superfaceai/ast';
 import createDebug from 'debug';
@@ -126,10 +131,15 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
       case 'UseCaseSlotDefinition':
         return this.visitUseCaseSlotDefinition(node);
       case 'UseCaseExample':
+        return this.visitUseCaseExampleNode(node);
       case 'ComlinkPrimitiveLiteral':
+        return this.visitComlinkPrimitiveLiteralNode(node);
       case 'ComlinkListLiteral':
+        return this.visitComlinkListLiteralNode(node);
       case 'ComlinkObjectLiteral':
-        throw new Error('TODO: Not implemented');
+        return this.visitComlinkObjectLiteralNode(node);
+      case 'ComlinkAssignment':
+        return this.visitComlinkAssignmentNode(node);
       default:
         assertUnreachable(node);
     }
@@ -289,6 +299,26 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
       result: this.visit(node.result),
       error: this.visit(node.error),
     });
+  }
+
+  visitUseCaseExampleNode(_node: UseCaseExampleNode): void {
+    throw new Error('Not Implemented');
+  }
+
+  visitComlinkPrimitiveLiteralNode(_node: ComlinkPrimitiveLiteralNode): void {
+    throw new Error('Not Implemented');
+  }
+
+  visitComlinkListLiteralNode(_node: ComlinkListLiteralNode): void {
+    throw new Error('Not Implemented');
+  }
+
+  visitComlinkObjectLiteralNode(_node: ComlinkObjectLiteralNode): void {
+    throw new Error('Not Implemented');
+  }
+
+  visitComlinkAssignmentNode(_node: ComlinkAssignmentNode): void {
+    throw new Error('Not Implemented');
   }
 
   /**
