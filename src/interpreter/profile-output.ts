@@ -136,7 +136,4 @@ export interface ProfileOutput extends DocumentedStructure {
 }
 
 export type ObjectCollection = Record<string, StructureType>;
-export type ArrayCollection = Record<
-  number,
-  Exclude<StructureType, UnionStructure>
->;
+export type ArrayCollection = Exclude<StructureType, UnionStructure>[];

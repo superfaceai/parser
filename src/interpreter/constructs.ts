@@ -1,7 +1,7 @@
 import { LocationSpan } from '@superfaceai/ast';
 import * as ts from 'typescript';
 
-import { IssueLocation } from '.';
+import { IssueLocation, UseCaseSlotType } from '.';
 import { ValidationIssue } from './issue';
 import { ValidationResult } from './map-validator';
 import {
@@ -206,7 +206,7 @@ function compareStructures(
     pass: false,
     errors: [
       {
-        kind: 'wrongStructure',
+        kind: 'wrongInput',
         context: {
           path: getPath(node, initialLocation),
           expected: outputStructure,
@@ -560,9 +560,10 @@ export const RETURN_CONSTRUCTS: {
         if (!inputStructure || !inputStructure.fields) {
           return returnIssue(
             {
-              kind: 'inputNotFound',
+              kind: 'useCaseSlotNotFound',
               context: {
                 path: getPath(node, initialLocation),
+                expected: UseCaseSlotType.INPUT,
                 actual: getVariableName(node),
               },
             },
@@ -635,9 +636,10 @@ export const RETURN_CONSTRUCTS: {
         if (!inputStructure || !inputStructure.fields) {
           return returnIssue(
             {
-              kind: 'inputNotFound',
+              kind: 'useCaseSlotNotFound',
               context: {
                 path: getPath(node, initialLocation),
+                expected: UseCaseSlotType.INPUT,
                 actual: getVariableName(node),
               },
             },
@@ -709,9 +711,10 @@ export const RETURN_CONSTRUCTS: {
 
         if (!inputStructure || !inputStructure.fields) {
           const issue: ValidationIssue = {
-            kind: 'inputNotFound',
+            kind: 'useCaseSlotNotFound',
             context: {
               path: getPath(node, initialLocation),
+              expected: UseCaseSlotType.INPUT,
               actual: getVariableName(node),
             },
           };
@@ -876,7 +879,7 @@ export const RETURN_CONSTRUCTS: {
           kind: 'missingRequired',
           context: {
             path: getPath(node, initialLocation),
-            field: key,
+            expected: key,
           },
         };
 
@@ -888,7 +891,7 @@ export const RETURN_CONSTRUCTS: {
           kind: 'wrongObjectStructure',
           context: {
             path: getPath(node, initialLocation),
-            expected: structureOfProperties,
+            expected: outputStructure,
             actual: node.getText(),
           },
         };

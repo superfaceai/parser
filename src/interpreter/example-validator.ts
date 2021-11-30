@@ -273,7 +273,10 @@ export class ExampleValidator implements ProfileAstVisitor {
       return true;
     }
 
-    const { listType, isValid } = compareStructure(node, this.currentStructure);
+    const { listStructure, isValid } = compareStructure(
+      node,
+      this.currentStructure
+    );
 
     if (!isValid) {
       this.errors.push({
@@ -288,12 +291,12 @@ export class ExampleValidator implements ProfileAstVisitor {
       return false;
     }
 
-    if (!listType) {
+    if (!listStructure) {
       throw new Error('this should not happen');
     }
 
     const originalStructure = this.currentStructure;
-    this.currentStructure = listType;
+    this.currentStructure = listStructure.value;
 
     let result = true;
     for (const item of node.items) {
@@ -331,7 +334,7 @@ export class ExampleValidator implements ProfileAstVisitor {
       return true;
     }
 
-    const { structureOfFields, isValid } = compareStructure(
+    const { objectStructure, isValid } = compareStructure(
       node,
       this.currentStructure
     );
@@ -349,13 +352,13 @@ export class ExampleValidator implements ProfileAstVisitor {
       return false;
     }
 
-    if (!structureOfFields) {
+    if (!objectStructure || !objectStructure.fields) {
       throw new Error('This should not happen!');
     }
 
     // all fields
-    const profileFields = Object.entries(structureOfFields);
-    const profileFieldNames = Object.keys(structureOfFields);
+    const profileFields = Object.entries(objectStructure.fields);
+    const profileFieldNames = Object.keys(objectStructure.fields);
     const mapFieldNames = node.fields.map(field => field.key[0]);
 
     // required fields
@@ -375,7 +378,7 @@ export class ExampleValidator implements ProfileAstVisitor {
     let result = true;
     for (const field of matchingFields) {
       let visitResult = true;
-      this.currentStructure = structureOfFields[field.key[0]];
+      this.currentStructure = objectStructure.fields[field.key[0]];
 
       // it should not validate against final value when dot.notation is used
       if (field.key.length > 1) {
@@ -418,8 +421,8 @@ export class ExampleValidator implements ProfileAstVisitor {
         kind: 'wrongObjectStructure',
         context: {
           path: this.getPath(node),
-          expected: structureOfFields,
-          actual: node.fields,
+          expected: objectStructure,
+          actual: node,
         },
       });
     }
