@@ -296,10 +296,10 @@ export class ExampleValidator implements ProfileAstVisitor {
     }
 
     const originalStructure = this.currentStructure;
-    this.currentStructure = listStructure.value;
 
     let result = true;
     for (const item of node.items) {
+      this.currentStructure = listStructure.value;
       result &&= this.visit(item);
     }
 

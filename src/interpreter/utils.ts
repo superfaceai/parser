@@ -4,6 +4,7 @@ import {
   ComlinkLiteralNode,
   isCallStatementNode,
   isComlinkListLiteralNode,
+  isComlinkObjectLiteralNode,
   isComlinkPrimitiveLiteralNode,
   isHttpCallStatementNode,
   isObjectLiteralNode,
@@ -16,11 +17,13 @@ import {
   MapDefinitionNode,
   OperationDefinitionNode,
   OutcomeStatementNode,
+  ProfileASTNode,
   ProfileDocumentNode,
 } from '@superfaceai/ast';
 import * as ts from 'typescript';
 
 import { TypescriptIdentifier } from './constructs';
+import { ExampleValidator } from './example-validator';
 import { UseCaseSlotType, ValidationIssue } from './issue';
 import { MapValidator, ValidationResult } from './map-validator';
 import { ProfileIOAnalyzer } from './profile-io-analyzer';
@@ -207,7 +210,7 @@ export function compareStructure(
   switch (structure.kind) {
     case 'PrimitiveStructure':
       if (
-        isPrimitiveLiteralNode(node) &&
+        (isPrimitiveLiteralNode(node) || isComlinkPrimitiveLiteralNode(node)) &&
         typeof node.value === structure.type
       ) {
         return { isValid: true };
@@ -215,7 +218,7 @@ export function compareStructure(
       break;
 
     case 'ObjectStructure':
-      if (isObjectLiteralNode(node)) {
+      if (isObjectLiteralNode(node) || isComlinkObjectLiteralNode(node)) {
         return { isValid: true, objectStructure: structure };
       }
       break;
@@ -323,6 +326,15 @@ export const getProfileOutput = (
   const analyzer = new ProfileIOAnalyzer();
 
   return analyzer.visit(profile);
+};
+
+export const validateExamples = (
+  profileAst: ProfileASTNode,
+  profileOutput?: ProfileOutput
+): ValidationResult => {
+  const exampleValidator = new ExampleValidator(profileAst, profileOutput);
+
+  return exampleValidator.validate();
 };
 
 export const validateMap = (
