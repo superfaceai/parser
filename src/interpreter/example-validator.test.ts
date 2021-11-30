@@ -34,7 +34,7 @@ describe('ExampleValidator', () => {
       );
     });
 
-    it('in enum', () => {
+    it('enum', () => {
       const profileAst = parseProfileFromSource(
         `usecase Test {
             result enum {
@@ -55,13 +55,22 @@ describe('ExampleValidator', () => {
       );
     });
 
-    it('in list', () => {
+    it('list', () => {
       const profileAst = parseProfileFromSource(
         `usecase Test {
             result [boolean | number]
+            error [{code number}]
+
+            example success {
+              result ["string", "string"]
+            }
 
             example fail {
-                result ["string", "string"]
+              error [
+                {
+                  code = 'string'
+                }
+              ]
             }
         }`
       );
@@ -69,11 +78,11 @@ describe('ExampleValidator', () => {
       const result = exampleValidator.validate();
 
       expect(!result.pass && formatIssues(result.errors)).toEqual(
-        '8:25 ComlinkPrimitiveLiteral - Wrong Structure: expected UnionStructure, but got "string"'
+        '9:23 ComlinkPrimitiveLiteral - Wrong Structure: expected UnionStructure, but got "string"\n15:26 ComlinkPrimitiveLiteral - Wrong Structure: expected number, but got "string"'
       );
     });
 
-    it('in object', () => {
+    it('object', () => {
       const profileAst = parseProfileFromSource(
         `usecase Test {
               result {
@@ -93,7 +102,7 @@ describe('ExampleValidator', () => {
       const result = exampleValidator.validate();
 
       expect(!result.pass && formatIssues(result.errors)).toEqual(
-        '11:26 ComlinkObjectLiteral - Wrong Structure: expected ObjectStructure, but got "ComlinkObjectLiteral"'
+        '13:28 ComlinkPrimitiveLiteral - Wrong Structure: expected ListStructure, but got "string"'
       );
     });
   });
