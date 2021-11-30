@@ -30,6 +30,7 @@ import {
   compareStructure,
   isNonNullStructure,
   isScalarStructure,
+  IssueLocation,
   ProfileIOAnalyzer,
   ProfileOutput,
   StructureType,
@@ -290,10 +291,10 @@ export class ExamplesValidator implements ProfileAstVisitor {
     }
 
     const originalStructure = this.currentStructure;
-    this.currentStructure = listType;
 
     let result = true;
     for (const item of node.items) {
+      this.currentStructure = listType;
       result &&= this.visit(item);
     }
 
@@ -472,9 +473,10 @@ export class ExamplesValidator implements ProfileAstVisitor {
     throw new Error('not implemented');
   }
 
-  private getPath(node: ProfileASTNode): string[] {
-    return node.location
-      ? [`${node.location.start.line}:${node.location.start.column}`, node.kind]
-      : [node.kind];
+  private getPath(node: ProfileASTNode): IssueLocation {
+    return {
+      kind: node.kind,
+      location: node.location,
+    };
   }
 }

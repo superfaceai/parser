@@ -13,11 +13,13 @@ import {
   MapDefinitionNode,
   OperationDefinitionNode,
   OutcomeStatementNode,
+  ProfileASTNode,
   ProfileDocumentNode,
 } from '@superfaceai/ast';
 import * as ts from 'typescript';
 
 import { TypescriptIdentifier } from './constructs';
+import { ExamplesValidator } from './example-validator';
 import { ValidationIssue } from './issue';
 import { MapValidator, ValidationResult } from './map-validator';
 import { ProfileIOAnalyzer } from './profile-io-analyzer';
@@ -218,7 +220,8 @@ export function compareStructure(
   switch (structure.kind) {
     case 'PrimitiveStructure':
       if (
-        isPrimitiveLiteralNode(node) &&
+        (isPrimitiveLiteralNode(node) ||
+          node.kind === 'ComlinkPrimitiveLiteral') &&
         typeof node.value === structure.type
       ) {
         return { isValid: true };
@@ -226,7 +229,7 @@ export function compareStructure(
       break;
 
     case 'ObjectStructure':
-      if (isObjectLiteralNode(node)) {
+      if (isObjectLiteralNode(node) || node.kind === 'ComlinkObjectLiteral') {
         return { isValid: true, structureOfFields: structure.fields };
       }
       break;
@@ -334,6 +337,15 @@ export const getProfileOutput = (
   const analyzer = new ProfileIOAnalyzer();
 
   return analyzer.visit(profile);
+};
+
+export const validateExamples = (
+  profileAst: ProfileASTNode,
+  profileOutput?: ProfileOutput
+): ValidationResult => {
+  const exampleValidator = new ExamplesValidator(profileAst, profileOutput);
+
+  return exampleValidator.validate();
 };
 
 export const validateMap = (
