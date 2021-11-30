@@ -7,7 +7,7 @@ const SCRIPT_OUTPUT_TARGET = ts.ScriptTarget.ES3;
 const AFTER_TRANSFORMERS: ts.TransformerFactory<ts.SourceFile>[] = [];
 
 export type JessieSyntaxProtoError = ProtoError & {
-  category: SyntaxErrorCategory.JESSIE_SYNTAX;
+  category: SyntaxErrorCategory.SCRIPT_SYNTAX;
 };
 
 export function transpileScript(
@@ -77,7 +77,7 @@ export function transpileScript(
     }
 
     syntaxProtoError = {
-      category: SyntaxErrorCategory.JESSIE_SYNTAX,
+      category: SyntaxErrorCategory.SCRIPT_SYNTAX,
       relativeSpan: {
         start: diag.start ?? 0,
         end: (diag.start ?? 0) + Math.max(1, diag.length ?? 0),
