@@ -253,7 +253,7 @@ describe('validator', () => {
 
       expect(errors.length).toBe(1);
       expect(errors[0]).toStrictEqual({
-        category: 'Jessie validation',
+        category: 'Script validation',
         detail: 'ShorthandPropertyAssignment construct is not supported',
         hints: ['Use `{ name: name, foo: foo }` instead'],
         relativeSpan: {

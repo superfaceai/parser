@@ -158,48 +158,33 @@ function generateErrorVisualization(
   };
 }
 
-function isString(i: string | undefined): i is string {
-  return i !== undefined;
-}
-
-function formatHints(...hints: (string | undefined)[]): string {
-  const filtered: string[] = hints.filter(isString);
-
-  if (filtered.length === 0) {
-    return '';
-  }
-
-  return filtered.map(h => `Hint: ${h}`).join('\n');
-}
-
 export const enum SyntaxErrorCategory {
   /** Lexer token error */
   LEXER = 'Lexer',
   /** Parser rule error */
   PARSER = 'Parser',
-  /** Jessie syntax error */
-  JESSIE_SYNTAX = 'Jessie syntax',
-  /** Jessie forbidden construct error */
-  JESSIE_VALIDATION = 'Jessie validation',
+  /** Script syntax error */
+  SCRIPT_SYNTAX = 'Script syntax',
+  /** Script forbidden construct error */
+  SCRIPT_VALIDATION = 'Script validation',
 }
-function errorCategoryStrings(category: SyntaxErrorCategory): {
+type ErrorCategoryStrings = {
   categoryDetail?: string;
-  categoryHint?: string;
-} {
-  const result: {
-    categoryDetail?: string;
-    categoryHint?: string;
-  } = {
+  categoryHints: string[]
+};
+function errorCategoryStrings(category: SyntaxErrorCategory): ErrorCategoryStrings {
+  const result: ErrorCategoryStrings = {
     categoryDetail: undefined,
-    categoryHint: undefined,
+    categoryHints: [],
   };
 
   switch (category) {
-    case SyntaxErrorCategory.JESSIE_SYNTAX:
-    case SyntaxErrorCategory.JESSIE_VALIDATION:
+    case SyntaxErrorCategory.SCRIPT_SYNTAX:
+    case SyntaxErrorCategory.SCRIPT_VALIDATION:
       result.categoryDetail = 'Error in script syntax';
-      result.categoryHint =
-        'This was parsed in script context, it might be an error in comlink syntax instead';
+      result.categoryHints.push(
+        'This was parsed in script context, it might be an error in comlink syntax instead'
+      );
       break;
   }
 
@@ -230,8 +215,15 @@ export class SyntaxError {
     /** Optional hints that are emitted to help with the resolution. */
     hints?: string[]
   ) {
+    const { categoryDetail, categoryHints } = errorCategoryStrings(this.category);
+
     this.detail = detail ?? 'Invalid or unexpected token';
+    if (categoryDetail !== undefined) {
+      this.detail = `${categoryDetail}: ${this.detail}`;
+    }
+
     this.hints = hints ?? [];
+    this.hints.push(...categoryHints);
   }
 
   static fromSyntaxRuleNoMatch(
@@ -290,27 +282,32 @@ export class SyntaxError {
     );
   }
 
-  format(): string {
+  formatVisualization(): string {
     // Generate the lines
-    const { visualization, maxLineNumberLog, sourceLocation } =
-      generateErrorVisualization(this.source, this.location);
+    const { visualization, maxLineNumberLog, sourceLocation } = generateErrorVisualization(this.source, this.location);
 
-    const { categoryDetail, categoryHint } = errorCategoryStrings(
-      this.category
-    );
-
-    let detail = this.detail;
-    if (categoryDetail !== undefined) {
-      detail = `${categoryDetail}: ${detail}`;
-    }
-
-    const errorLine = `SyntaxError: ${detail}`;
     const locationLinePrefix = ' '.repeat(maxLineNumberLog) + '--> ';
     const locationLine = `${locationLinePrefix}${this.source.fileName}:${sourceLocation.start.line}:${sourceLocation.start.column}`;
 
-    const maybeHints = formatHints(...this.hints, categoryHint);
+    return `${locationLine}\n${visualization}`;
+  }
 
-    return `${errorLine}\n${locationLine}\n${visualization}\n${maybeHints}`;
+  formatHints(): string {
+    function isString(i: string | undefined): i is string {
+      return i !== undefined;
+    }
+
+    const filtered: string[] = this.hints.filter(isString);
+
+    if (filtered.length === 0) {
+      return '';
+    }
+
+    return filtered.map(h => `Hint: ${h}`).join('\n');
+  }
+
+  format(): string {
+    return `SyntaxError: ${this.detail}\n${this.formatVisualization()}\n${this.formatHints()}`;
   }
 
   get message(): string {
