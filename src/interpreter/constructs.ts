@@ -304,6 +304,7 @@ export const RETURN_CONSTRUCTS: {
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
+      // TODO: take `UnionStructure` in consideration
       if (
         isScalarStructure(outputStructure) ||
         isStringStructure(outputStructure)
@@ -341,6 +342,7 @@ export const RETURN_CONSTRUCTS: {
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
+      // TODO: take `UnionStructure` in consideration
       if (
         isScalarStructure(outputStructure) ||
         isNumberStructure(outputStructure)
@@ -378,6 +380,7 @@ export const RETURN_CONSTRUCTS: {
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
+      // TODO: take `UnionStructure` in consideration
       if (
         isScalarStructure(outputStructure) ||
         (isPrimitiveStructure(outputStructure) &&
@@ -416,6 +419,7 @@ export const RETURN_CONSTRUCTS: {
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
+      // TODO: take `UnionStructure` in consideration
       if (
         isScalarStructure(outputStructure) ||
         (isPrimitiveStructure(outputStructure) &&
@@ -811,6 +815,7 @@ export const RETURN_CONSTRUCTS: {
         return mergeResults(...results);
       }
 
+      // TODO: take `UnionStructure` in consideration
       if (!isObjectStructure(outputStructure)) {
         const issue: ValidationIssue = {
           kind: 'wrongStructure',
@@ -950,6 +955,7 @@ export const RETURN_CONSTRUCTS: {
         },
       };
 
+      // TODO: take `UnionStructure` in consideration
       if (!isListStructure(outputStructure)) {
         return mergeResults(
           ...results,
@@ -987,8 +993,6 @@ export const RETURN_CONSTRUCTS: {
         throw new Error('This should not happen!');
       }
 
-      const typeValues = Object.values(structureOfTypes);
-
       for (const element of node.elements) {
         if (isTypescriptIdentifier(element)) {
           results.push(
@@ -1006,7 +1010,7 @@ export const RETURN_CONSTRUCTS: {
 
         let diff = 0;
 
-        for (const value of typeValues) {
+        for (const value of structureOfTypes) {
           const result = visitConstruct(
             element,
             initialLocation,
@@ -1021,7 +1025,7 @@ export const RETURN_CONSTRUCTS: {
           }
         }
 
-        if (diff === typeValues.length) {
+        if (diff === structureOfTypes.length) {
           results.push(
             returnIssue(
               wrongStructureIssue,
