@@ -752,11 +752,11 @@ describe('MapValidator', () => {
             profileAst,
             [mapAst2],
             [
-              'ObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"',
-              'ObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"',
-              'PrimitiveLiteral - Wrong Structure: expected number, but got "false"',
-              'PrimitiveLiteral - Wrong Structure: expected number, but got "true"',
-              'JessieExpression - Wrong Variable Structure: variable output expected ObjectStructure, but got ObjectLiteral',
+              'ObjectLiteral - Wrong Structure: expected "number", but got "{ f1: 2 }"',
+              'ObjectLiteral - Wrong Structure: expected "number", but got "{ f1: 2 }"',
+              'PrimitiveLiteral - Wrong Structure: expected "number", but got "false"',
+              'PrimitiveLiteral - Wrong Structure: expected "number", but got "true"',
+              'JessieExpression - Wrong Variable Structure: variable output expected "{ f1: { f2: { inner: number } }, f2: number }", but got "{ f1.f2.inner: false, f2: true }"',
             ],
             []
           );
@@ -781,11 +781,11 @@ describe('MapValidator', () => {
             profileAst,
             [mapAst2],
             [
-              'ObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"',
-              'ObjectLiteral - Wrong Structure: expected number, but got "ObjectLiteral"',
-              'PrimitiveLiteral - Wrong Structure: expected number, but got "false"',
-              'PrimitiveLiteral - Wrong Structure: expected number, but got "true"',
-              'JessieExpression - Wrong Variable Structure: variable output expected ObjectStructure, but got ObjectLiteral',
+              'ObjectLiteral - Wrong Structure: expected "number", but got "{ f1: 2 }"',
+              'ObjectLiteral - Wrong Structure: expected "number", but got "{ f1: 2 }"',
+              'PrimitiveLiteral - Wrong Structure: expected "number", but got "false"',
+              'PrimitiveLiteral - Wrong Structure: expected "number", but got "true"',
+              'JessieExpression - Wrong Variable Structure: variable output expected "NonNull { f1: NonNull { f2: NonNull { inner: NonNull number } }, f2: NonNull number }", but got "{ f1.f2.inner: false, f2: true }"',
             ],
             []
           );
@@ -1599,8 +1599,7 @@ describe('MapValidator', () => {
             profileAst,
             [mapAst2],
             [
-              'JessieExpression - Wrong Structure: expected ObjectStructure, but got "[\'some string\', true]"',
-              'ArrayLiteralExpression - Wrong Structure: expected ObjectStructure, but got "[\'some string\', true]"',
+              'ArrayLiteralExpression - Wrong Structure: expected "{ f1: string, f2: boolean }", but got "[\'some string\', true]"',
             ],
             []
           );
@@ -1621,22 +1620,11 @@ describe('MapValidator', () => {
             profileAst,
             [mapAst2],
             [
-              'JessieExpression - Wrong Structure: expected ObjectStructure, but got "[\'some string\', true]"',
-              'ArrayLiteralExpression - Wrong Structure: expected ObjectStructure, but got "[\'some string\', true]"',
-              `JessieExpression - Wrong Structure: expected ObjectStructure, but got "{
-              f1: undefined || 'some string',
-              f2: some.var || other.var
-            }"`,
-              'Identifier - Wrong Structure: expected string, but got "undefined"',
-              `JessieExpression - Wrong Structure: expected ObjectStructure, but got "{
-              f1: null || undefined || some.var
-            }"`,
-              'NullKeyword - Wrong Structure: expected string, but got "null"',
-              'Identifier - Wrong Structure: expected string, but got "undefined"',
+              'ArrayLiteralExpression - Wrong Structure: expected "{ f1: NonNull string, f2: NonNull boolean }", but got "[\'some string\', true]"',
+              'Identifier - Wrong Structure: expected "string", but got "undefined"',
+              'NullKeyword - Wrong Structure: expected "NonNull string", but got "null"',
+              'Identifier - Wrong Structure: expected "string", but got "undefined"',
               'ObjectLiteralExpression - Missing required field',
-              `JessieExpression - Wrong Structure: expected ObjectStructure, but got "{
-              f1: some.var
-            }"`,
               'ObjectLiteralExpression - Missing required field',
             ],
             []
@@ -1674,13 +1662,8 @@ describe('MapValidator', () => {
           profileAst,
           [mapAst2],
           [
-            'JessieExpression - Wrong Structure: expected ListStructure, but got "{...a.map(val => val.toUpperCase())}"',
-            'ObjectLiteralExpression - Wrong Structure: expected ListStructure, but got "{...a.map(val => val.toUpperCase())}"',
-            `JessieExpression - Wrong Structure: expected ListStructure, but got "{
-              f1: 'some string',
-              f2: true
-            }"`,
-            `ObjectLiteralExpression - Wrong Structure: expected ListStructure, but got "{
+            'ObjectLiteralExpression - Wrong Structure: expected "[string | boolean]", but got "{...a.map(val => val.toUpperCase())}"',
+            `ObjectLiteralExpression - Wrong Structure: expected "[string | boolean]", but got "{
               f1: 'some string',
               f2: true
             }"`,
@@ -1723,23 +1706,16 @@ describe('MapValidator', () => {
           profileAst,
           [mapAst2],
           [
-            'JessieExpression - Wrong Structure: expected string, but got "[\'some string\', true]"',
-            'ArrayLiteralExpression - Wrong Structure: expected string, but got "[\'some string\', true]"',
-            `JessieExpression - Wrong Structure: expected string, but got "{
+            'ArrayLiteralExpression - Wrong Structure: expected "string", but got "[\'some string\', true]"',
+            `ObjectLiteralExpression - Wrong Structure: expected "string", but got "{
               f1: 'some string',
               f2: true
             }"`,
-            `ObjectLiteralExpression - Wrong Structure: expected string, but got "{
-              f1: 'some string',
-              f2: true
-            }"`,
-            'JessieExpression - Wrong Structure: expected string, but got "1 + "true""',
-            'FirstLiteralToken - Wrong Structure: expected string, but got "1"',
-            'PrimitiveLiteral - Wrong Structure: expected string, but got "true"',
-            'PrimitiveLiteral - Wrong Structure: expected string, but got "false"',
-            'JessieExpression - Wrong Structure: expected string, but got "2+25"',
-            'FirstLiteralToken - Wrong Structure: expected string, but got "2"',
-            'FirstLiteralToken - Wrong Structure: expected string, but got "25"',
+            'FirstLiteralToken - Wrong Structure: expected "string", but got "1"',
+            'PrimitiveLiteral - Wrong Structure: expected "string", but got "true"',
+            'PrimitiveLiteral - Wrong Structure: expected "string", but got "false"',
+            'FirstLiteralToken - Wrong Structure: expected "string", but got "2"',
+            'FirstLiteralToken - Wrong Structure: expected "string", but got "25"',
           ],
           []
         );
@@ -1792,8 +1768,7 @@ describe('MapValidator', () => {
             profileAst,
             [mapAst2],
             [
-              'JessieExpression - Wrong Structure: expected ObjectStructure, but got "[\'some string\', true]"',
-              'ArrayLiteralExpression - Wrong Structure: expected ObjectStructure, but got "[\'some string\', true]"',
+              'ArrayLiteralExpression - Wrong Structure: expected "{ f1: string, f2: boolean }", but got "[\'some string\', true]"',
             ],
             []
           );
@@ -1814,22 +1789,11 @@ describe('MapValidator', () => {
             profileAst,
             [mapAst2],
             [
-              'JessieExpression - Wrong Structure: expected ObjectStructure, but got "[\'some string\', true]"',
-              'ArrayLiteralExpression - Wrong Structure: expected ObjectStructure, but got "[\'some string\', true]"',
-              `JessieExpression - Wrong Structure: expected ObjectStructure, but got "{
-              f1: undefined || 'some string',
-              f2: some.var || other.var
-            }"`,
-              'Identifier - Wrong Structure: expected string, but got "undefined"',
-              `JessieExpression - Wrong Structure: expected ObjectStructure, but got "{
-              f1: null || undefined || some.var
-            }"`,
-              'NullKeyword - Wrong Structure: expected string, but got "null"',
-              'Identifier - Wrong Structure: expected string, but got "undefined"',
+              'ArrayLiteralExpression - Wrong Structure: expected "{ f1: NonNull string, f2: NonNull boolean }", but got "[\'some string\', true]"',
+              'Identifier - Wrong Structure: expected "string", but got "undefined"',
+              'NullKeyword - Wrong Structure: expected "NonNull string", but got "null"',
+              'Identifier - Wrong Structure: expected "string", but got "undefined"',
               'ObjectLiteralExpression - Missing required field',
-              `JessieExpression - Wrong Structure: expected ObjectStructure, but got "{
-              f1: some.var
-            }"`,
               'ObjectLiteralExpression - Missing required field',
             ],
             []
@@ -1867,13 +1831,8 @@ describe('MapValidator', () => {
           profileAst,
           [mapAst2],
           [
-            'JessieExpression - Wrong Structure: expected ListStructure, but got "{...a.map(val => val.toUpperCase())}"',
-            'ObjectLiteralExpression - Wrong Structure: expected ListStructure, but got "{...a.map(val => val.toUpperCase())}"',
-            `JessieExpression - Wrong Structure: expected ListStructure, but got "{
-              f1: 'some string',
-              f2: true
-            }"`,
-            `ObjectLiteralExpression - Wrong Structure: expected ListStructure, but got "{
+            'ObjectLiteralExpression - Wrong Structure: expected "[string | boolean]", but got "{...a.map(val => val.toUpperCase())}"',
+            `ObjectLiteralExpression - Wrong Structure: expected "[string | boolean]", but got "{
               f1: 'some string',
               f2: true
             }"`,
@@ -1916,23 +1875,16 @@ describe('MapValidator', () => {
           profileAst,
           [mapAst2],
           [
-            'JessieExpression - Wrong Structure: expected string, but got "[\'some string\', true]"',
-            'ArrayLiteralExpression - Wrong Structure: expected string, but got "[\'some string\', true]"',
-            `JessieExpression - Wrong Structure: expected string, but got "{
+            'ArrayLiteralExpression - Wrong Structure: expected "string", but got "[\'some string\', true]"',
+            `ObjectLiteralExpression - Wrong Structure: expected "string", but got "{
               f1: 'some string',
               f2: true
             }"`,
-            `ObjectLiteralExpression - Wrong Structure: expected string, but got "{
-              f1: 'some string',
-              f2: true
-            }"`,
-            'JessieExpression - Wrong Structure: expected string, but got "1 + "true""',
-            'FirstLiteralToken - Wrong Structure: expected string, but got "1"',
-            'PrimitiveLiteral - Wrong Structure: expected string, but got "true"',
-            'PrimitiveLiteral - Wrong Structure: expected string, but got "false"',
-            'JessieExpression - Wrong Structure: expected string, but got "2+25"',
-            'FirstLiteralToken - Wrong Structure: expected string, but got "2"',
-            'FirstLiteralToken - Wrong Structure: expected string, but got "25"',
+            'FirstLiteralToken - Wrong Structure: expected "string", but got "1"',
+            'PrimitiveLiteral - Wrong Structure: expected "string", but got "true"',
+            'PrimitiveLiteral - Wrong Structure: expected "string", but got "false"',
+            'FirstLiteralToken - Wrong Structure: expected "string", but got "2"',
+            'FirstLiteralToken - Wrong Structure: expected "string", but got "25"',
           ],
           []
         );
@@ -2205,20 +2157,18 @@ describe('MapValidator', () => {
           profileAst,
           [mapAst1],
           [
-            'OutcomeStatement - Result Not Found: returning "OK", but there is no result defined in usecase',
+            'OutcomeStatement - Result Not Found: returning ""OK"", but there is no Result defined in usecase',
           ]
         );
         invalidWithErrors(
           profileAst,
           [mapAst2],
           [
-            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong',
-            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong',
-            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
-            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected "{ person: { from: string, to: string }, to: string, from: string, text: string }", but got "input.wrong"',
+            'PropertyAccessExpression - Wrong Input Structure: expected "{ person: { from: string, to: string }, to: string, from: string, text: string }", but got "input.person.wrong"',
           ],
           [
-            'OutcomeStatement - Result Not Found: returning "OK", but there is no result defined in usecase',
+            'OutcomeStatement - Result Not Found: returning ""OK"", but there is no Result defined in usecase',
           ]
         );
       });
@@ -2228,20 +2178,18 @@ describe('MapValidator', () => {
           profileAstStrict,
           [mapAst1],
           [
-            'OutcomeStatement - Result Not Found: returning "OK", but there is no result defined in usecase',
+            'OutcomeStatement - Result Not Found: returning ""OK"", but there is no Result defined in usecase',
           ]
         );
         invalidWithErrors(
           profileAstStrict,
           [mapAst2],
           [
-            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong',
-            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong',
-            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
-            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected "{ person: NonNull { from: NonNull string, to: NonNull string }, to: NonNull string, from: NonNull string, text: NonNull string }", but got "input.wrong"',
+            'PropertyAccessExpression - Wrong Input Structure: expected "{ person: NonNull { from: NonNull string, to: NonNull string }, to: NonNull string, from: NonNull string, text: NonNull string }", but got "input.person.wrong"',
           ],
           [
-            'OutcomeStatement - Result Not Found: returning "OK", but there is no result defined in usecase',
+            'OutcomeStatement - Result Not Found: returning ""OK"", but there is no Result defined in usecase',
           ]
         );
       });
@@ -2271,10 +2219,8 @@ describe('MapValidator', () => {
           profileAst,
           [mapAst2],
           [
-            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong',
-            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong',
-            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
-            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected "{ person: { from: string, to: string }, to: string, from: string, text: string }", but got "input.wrong"',
+            'PropertyAccessExpression - Wrong Input Structure: expected "{ person: { from: string, to: string }, to: string, from: string, text: string }", but got "input.person.wrong"',
           ],
           []
         );
@@ -2286,10 +2232,8 @@ describe('MapValidator', () => {
           profileAstStrict,
           [mapAst2],
           [
-            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong',
-            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.wrong',
-            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
-            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected "{ person: NonNull { from: NonNull string, to: NonNull string }, to: NonNull string, from: NonNull string, text: NonNull string }", but got "input.wrong"',
+            'PropertyAccessExpression - Wrong Input Structure: expected "{ person: NonNull { from: NonNull string, to: NonNull string }, to: NonNull string, from: NonNull string, text: NonNull string }", but got "input.person.wrong"',
           ],
           []
         );
@@ -2315,18 +2259,17 @@ describe('MapValidator', () => {
           profileAst,
           [mapAst1],
           [
-            'OutcomeStatement - Result Not Found: returning "JessieExpression", but there is no result defined in usecase',
+            'OutcomeStatement - Result Not Found: returning "input.person.from", but there is no Result defined in usecase',
           ]
         );
         invalidWithErrors(
           profileAst,
           [mapAst2],
           [
-            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
-            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+            ' PropertyAccessExpression - Wrong Input Structure: expected "{ person: { from: string, to: string }, to: string, from: string, text: string }", but got "input.person.wrong"'
           ],
           [
-            'OutcomeStatement - Result Not Found: returning "JessieExpression", but there is no result defined in usecase',
+            'OutcomeStatement - Result Not Found: returning "input.person.wrong", but there is no Result defined in usecase',
           ]
         );
       });
@@ -2336,18 +2279,17 @@ describe('MapValidator', () => {
           profileAstStrict,
           [mapAst1],
           [
-            'OutcomeStatement - Result Not Found: returning "JessieExpression", but there is no result defined in usecase',
+            'OutcomeStatement - Result Not Found: returning "input.person.from", but there is no Result defined in usecase',
           ]
         );
         invalidWithErrors(
           profileAstStrict,
           [mapAst2],
           [
-            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
-            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
+            'PropertyAccessExpression - Wrong Input Structure: expected "{ person: NonNull { from: NonNull string, to: NonNull string }, to: NonNull string, from: NonNull string, text: NonNull string }", but got "input.person.wrong"',
           ],
           [
-            'OutcomeStatement - Result Not Found: returning "JessieExpression", but there is no result defined in usecase',
+            'OutcomeStatement - Result Not Found: returning "input.person.wrong", but there is no Result defined in usecase'
           ]
         );
       });
@@ -2377,12 +2319,9 @@ describe('MapValidator', () => {
           profileAst,
           [mapAst2],
           [
-            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
-            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
-            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.so.wrong',
-            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.so.wrong',
-            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.something.really.wrong.do.not.do.this',
-            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.something.really.wrong.do.not.do.this',
+            'PropertyAccessExpression - Wrong Input Structure: expected "{ person: { from: string, to: string }, to: string, from: string, text: string }", but got "input.person.wrong"',
+            'PropertyAccessExpression - Wrong Input Structure: expected "{ person: { from: string, to: string }, to: string, from: string, text: string }", but got "input.so.wrong"',
+            'PropertyAccessExpression - Wrong Input Structure: expected "{ person: { from: string, to: string }, to: string, from: string, text: string }", but got "input.person.something.really.wrong.do.not.do.this"',
           ],
           []
         );
@@ -2394,12 +2333,9 @@ describe('MapValidator', () => {
           profileAstStrict,
           [mapAst2],
           [
-            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
-            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.wrong',
-            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.so.wrong',
-            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.so.wrong',
-            'JessieExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.something.really.wrong.do.not.do.this',
-            'PropertyAccessExpression - Wrong Input Structure: expected person, to, from, text, but got input.person.something.really.wrong.do.not.do.this',
+            'PropertyAccessExpression - Wrong Input Structure: expected "{ person: NonNull { from: NonNull string, to: NonNull string }, to: NonNull string, from: NonNull string, text: NonNull string }", but got "input.person.wrong"',
+            'PropertyAccessExpression - Wrong Input Structure: expected "{ person: NonNull { from: NonNull string, to: NonNull string }, to: NonNull string, from: NonNull string, text: NonNull string }", but got "input.so.wrong"',
+            'PropertyAccessExpression - Wrong Input Structure: expected "{ person: NonNull { from: NonNull string, to: NonNull string }, to: NonNull string, from: NonNull string, text: NonNull string }", but got "input.person.something.really.wrong.do.not.do.this"',
           ],
           []
         );
@@ -2478,13 +2414,11 @@ describe('MapValidator', () => {
         profileAst,
         [mapAst3, mapAst4],
         [
-          'JessieExpression - Wrong Input Structure: expected to, from, but got input.wrong',
-          'PropertyAccessExpression - Wrong Input Structure: expected to, from, but got input.wrong',
+          'PropertyAccessExpression - Wrong Input Structure: expected "{ to: string, from: any }", but got "input.wrong"',
         ],
         [],
         [
-          'JessieExpression - Wrong Structure: expected string, but got "{}"',
-          'ObjectLiteralExpression - Wrong Structure: expected string, but got "{}"',
+          'ObjectLiteralExpression - Wrong Structure: expected "string", but got "{}"',
         ],
         []
       );
@@ -2578,11 +2512,12 @@ describe('MapValidator', () => {
       invalidWithErrors(
         profileAst,
         [mapAst3, mapAst4],
-        ['PrimitiveLiteral - Wrong Structure: expected string, but got "true"'],
+        [
+          'PrimitiveLiteral - Wrong Structure: expected "string", but got "true"',
+        ],
         [],
         [
-          'JessieExpression - Wrong Input Structure: expected from, but got input.wrong',
-          'PropertyAccessExpression - Wrong Input Structure: expected from, but got input.wrong',
+          'PropertyAccessExpression - Wrong Input Structure: expected "{ from: boolean }", but got "input.wrong"',
         ],
         []
       );

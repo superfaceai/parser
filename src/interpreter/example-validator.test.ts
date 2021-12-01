@@ -30,7 +30,7 @@ describe('ExampleValidator', () => {
       const result = exampleValidator.validate();
 
       expect(!result.pass && formatIssues(result.errors)).toEqual(
-        '8:24 ComlinkPrimitiveLiteral - Wrong Structure: expected boolean, but got "1"'
+        '8:24 ComlinkPrimitiveLiteral - Wrong Structure: expected "boolean", but got "1"'
       );
     });
 
@@ -51,7 +51,7 @@ describe('ExampleValidator', () => {
       const result = exampleValidator.validate();
 
       expect(!result.pass && formatIssues(result.errors)).toEqual(
-        '11:24 ComlinkPrimitiveLiteral - Wrong Structure: expected NOTFOUND or BADREQUEST, but got "NOTFOUNDFOUND"'
+        '11:24 ComlinkPrimitiveLiteral - Wrong Structure: expected "NOTFOUND or BADREQUEST", but got ""NOTFOUNDFOUND""'
       );
     });
 
@@ -78,7 +78,7 @@ describe('ExampleValidator', () => {
       const result = exampleValidator.validate();
 
       expect(!result.pass && formatIssues(result.errors)).toEqual(
-        '9:23 ComlinkPrimitiveLiteral - Wrong Structure: expected UnionStructure, but got "string"\n15:26 ComlinkPrimitiveLiteral - Wrong Structure: expected number, but got "string"'
+        '9:23 ComlinkPrimitiveLiteral - Wrong Structure: expected "boolean | number", but got ""string""\n15:26 ComlinkPrimitiveLiteral - Wrong Structure: expected "number", but got ""string""'
       );
     });
 
@@ -102,7 +102,7 @@ describe('ExampleValidator', () => {
       const result = exampleValidator.validate();
 
       expect(!result.pass && formatIssues(result.errors)).toEqual(
-        '13:28 ComlinkPrimitiveLiteral - Wrong Structure: expected ListStructure, but got "string"'
+        '13:28 ComlinkPrimitiveLiteral - Wrong Structure: expected "[boolean | number]", but got ""string""'
       );
     });
   });
