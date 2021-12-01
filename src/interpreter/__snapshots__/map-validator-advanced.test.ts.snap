@@ -3,7 +3,7 @@
 exports[`MapValidatorAdvanced combination of input, result & error nested then validation will fail 1`] = `
 Object {
   "profile-provider": Object {
-    "errors": "22:25 PrimitiveLiteral - Wrong Structure: expected INVALID_CHARACTER or INVALID_PERSON, but got \\"NOT_FOUND\\"",
+    "errors": "22:25 PrimitiveLiteral - Wrong Structure: expected \\"INVALID_CHARACTER or INVALID_PERSON\\", but got \\"\\"NOT_FOUND\\"\\"",
   },
 }
 `;
@@ -11,7 +11,7 @@ Object {
 exports[`MapValidatorAdvanced combination of input, result & error nested then validation will pass 1`] = `
 Object {
   "profile-provider": Object {
-    "warnings": "19:49 PrimitiveLiteral - Wrong Structure: expected INVALID_CHARACTER or INVALID_PERSON, but got \\"PERSON_NOT_FOUND\\"",
+    "warnings": "19:49 PrimitiveLiteral - Wrong Structure: expected \\"INVALID_CHARACTER or INVALID_PERSON\\", but got \\"\\"PERSON_NOT_FOUND\\"\\"",
   },
 }
 `;
