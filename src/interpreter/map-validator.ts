@@ -379,8 +379,10 @@ export class MapValidator implements MapAstVisitor {
       // Init new variables if object used in dot notation wasn't defined before
       if (assignment.key.length > 1) {
         const keys = [];
-        for (const key of assignment.key) {
-          keys.push(key);
+        for (let i = 0; i < assignment.key.length - 1; i++) {
+          const item = assignment.key[i];
+
+          keys.push(item);
 
           if (this.variables[keys.join('.')] === undefined) {
             this.addVariableToStack(
