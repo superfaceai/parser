@@ -6,6 +6,7 @@ import {
   HttpRequestNode,
   HttpResponseHandlerNode,
   InlineCallNode,
+  isInlineCallNode,
   isMapDefinitionNode,
   isObjectLiteralNode,
   isOperationDefinitionNode,
@@ -479,7 +480,7 @@ export class MapValidator implements MapAstVisitor {
       const variableName = getVariableName(jessieNode);
       const variable = this.variables[variableName];
 
-      if (variable !== undefined) {
+      if (variable !== undefined && !isInlineCallNode(variable)) {
         this.currentStructure = type;
 
         result = this.visit(variable);
