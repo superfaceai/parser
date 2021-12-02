@@ -27,6 +27,7 @@ import {
 import createDebug from 'debug';
 
 import {
+  assertDefinedStructure,
   compareStructure,
   isNonNullStructure,
   isScalarStructure,
@@ -156,10 +157,12 @@ export class ExampleValidator implements ProfileAstVisitor {
   }
 
   visitUseCaseExampleNode(node: UseCaseExampleNode): void {
+    const usecase = this.profileOutput?.usecases.find(
+      usecase => usecase.useCaseName === this.currentUseCase
+    );
+
     if (node.input) {
-      this.currentStructure = this.profileOutput?.usecases.find(
-        usecase => usecase.useCaseName === this.currentUseCase
-      )?.input;
+      this.currentStructure = usecase?.input;
       this.slotType = UseCaseSlotType.INPUT;
 
       this.visit(node.input);
@@ -169,9 +172,7 @@ export class ExampleValidator implements ProfileAstVisitor {
     }
 
     if (node.result) {
-      this.currentStructure = this.profileOutput?.usecases.find(
-        usecase => usecase.useCaseName === this.currentUseCase
-      )?.result;
+      this.currentStructure = usecase?.result;
       this.slotType = UseCaseSlotType.RESULT;
 
       this.visit(node.result);
@@ -181,9 +182,7 @@ export class ExampleValidator implements ProfileAstVisitor {
     }
 
     if (node.asyncResult) {
-      this.currentStructure = this.profileOutput?.usecases.find(
-        usecase => usecase.useCaseName === this.currentUseCase
-      )?.async;
+      this.currentStructure = usecase?.async;
       this.slotType = UseCaseSlotType.ASYNCRESULT;
 
       this.visit(node.asyncResult);
@@ -193,9 +192,7 @@ export class ExampleValidator implements ProfileAstVisitor {
     }
 
     if (node.error) {
-      this.currentStructure = this.profileOutput?.usecases.find(
-        usecase => usecase.useCaseName === this.currentUseCase
-      )?.error;
+      this.currentStructure = usecase?.error;
       this.slotType = UseCaseSlotType.ERROR;
 
       this.visit(node.error);
@@ -206,30 +203,11 @@ export class ExampleValidator implements ProfileAstVisitor {
   }
 
   visitComlinkPrimitiveLiteralNode(node: ComlinkPrimitiveLiteralNode): boolean {
-    if (!this.slotType) {
-      throw new Error('No slot type defined');
-    }
-
-    if (!this.currentStructure) {
-      this.warnings.push({
-        kind: 'useCaseSlotNotFound',
-        context: {
-          path: this.getPath(node),
-          expected: this.slotType,
-          actual: node,
-        },
-      });
-
+    if (this.structureIsPrepared(node)) {
       return true;
     }
 
-    if (isNonNullStructure(this.currentStructure)) {
-      this.currentStructure = this.currentStructure.value;
-    }
-
-    if (isScalarStructure(this.currentStructure)) {
-      return true;
-    }
+    assertDefinedStructure(this.currentStructure);
 
     const { isValid } = compareStructure(node, this.currentStructure);
 
@@ -248,30 +226,11 @@ export class ExampleValidator implements ProfileAstVisitor {
   }
 
   visitComlinkListLiteralNode(node: ComlinkListLiteralNode): boolean {
-    if (!this.slotType) {
-      throw new Error('no slot type defined');
-    }
-
-    if (!this.currentStructure) {
-      this.warnings.push({
-        kind: 'useCaseSlotNotFound',
-        context: {
-          path: this.getPath(node),
-          expected: this.slotType,
-          actual: node,
-        },
-      });
-
+    if (this.structureIsPrepared(node)) {
       return true;
     }
 
-    if (isNonNullStructure(this.currentStructure)) {
-      this.currentStructure = this.currentStructure.value;
-    }
-
-    if (isScalarStructure(this.currentStructure)) {
-      return true;
-    }
+    assertDefinedStructure(this.currentStructure);
 
     const { listStructure, isValid } = compareStructure(
       node,
@@ -292,7 +251,7 @@ export class ExampleValidator implements ProfileAstVisitor {
     }
 
     if (!listStructure) {
-      throw new Error('this should not happen');
+      throw new Error('Validated list structure is not defined');
     }
 
     const originalStructure = this.currentStructure;
@@ -309,30 +268,11 @@ export class ExampleValidator implements ProfileAstVisitor {
   }
 
   visitComlinkObjectLiteralNode(node: ComlinkObjectLiteralNode): boolean {
-    if (!this.slotType) {
-      throw new Error('no slot type defined');
-    }
-
-    if (!this.currentStructure) {
-      this.warnings.push({
-        kind: 'useCaseSlotNotFound',
-        context: {
-          path: this.getPath(node),
-          expected: this.slotType,
-          actual: node,
-        },
-      });
-
+    if (this.structureIsPrepared(node)) {
       return true;
     }
 
-    if (isNonNullStructure(this.currentStructure)) {
-      this.currentStructure = this.currentStructure.value;
-    }
-
-    if (isScalarStructure(this.currentStructure)) {
-      return true;
-    }
+    assertDefinedStructure(this.currentStructure);
 
     const { objectStructure, isValid } = compareStructure(
       node,
@@ -353,7 +293,9 @@ export class ExampleValidator implements ProfileAstVisitor {
     }
 
     if (!objectStructure || !objectStructure.fields) {
-      throw new Error('This should not happen!');
+      throw new Error(
+        'Validated object structure is not defined or does not contain fields'
+      );
     }
 
     // all fields
@@ -476,6 +418,35 @@ export class ExampleValidator implements ProfileAstVisitor {
 
   visitPrimitiveTypeNameNode(_node: PrimitiveTypeNameNode): void {
     throw new Error('not implemented');
+  }
+
+  private structureIsPrepared(node: ComlinkLiteralNode): boolean {
+    if (!this.slotType) {
+      throw new Error('No slot type defined');
+    }
+
+    if (!this.currentStructure) {
+      this.warnings.push({
+        kind: 'useCaseSlotNotFound',
+        context: {
+          path: this.getPath(node),
+          expected: this.slotType,
+          actual: node,
+        },
+      });
+
+      return true;
+    }
+
+    if (isNonNullStructure(this.currentStructure)) {
+      this.currentStructure = this.currentStructure.value;
+    }
+
+    if (isScalarStructure(this.currentStructure)) {
+      return true;
+    }
+
+    return false;
   }
 
   private getPath(node: ProfileASTNode): IssueLocation {

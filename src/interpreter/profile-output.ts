@@ -137,3 +137,11 @@ export interface ProfileOutput extends DocumentedStructure {
 
 export type ObjectCollection = Record<string, StructureType>;
 export type ArrayCollection = Exclude<StructureType, UnionStructure>[];
+
+export function assertDefinedStructure(
+  structure: StructureType | undefined
+): asserts structure is StructureType {
+  if (structure === undefined) {
+    throw new Error('Structure is undefined');
+  }
+}

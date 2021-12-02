@@ -2266,7 +2266,7 @@ describe('MapValidator', () => {
           profileAst,
           [mapAst2],
           [
-            ' PropertyAccessExpression - Wrong Input Structure: expected "{ person: { from: string, to: string }, to: string, from: string, text: string }", but got "input.person.wrong"'
+            'PropertyAccessExpression - Wrong Input Structure: expected "{ person: { from: string, to: string }, to: string, from: string, text: string }", but got "input.person.wrong"',
           ],
           [
             'OutcomeStatement - Result Not Found: returning "input.person.wrong", but there is no Result defined in usecase',
@@ -2289,7 +2289,7 @@ describe('MapValidator', () => {
             'PropertyAccessExpression - Wrong Input Structure: expected "{ person: NonNull { from: NonNull string, to: NonNull string }, to: NonNull string, from: NonNull string, text: NonNull string }", but got "input.person.wrong"',
           ],
           [
-            'OutcomeStatement - Result Not Found: returning "input.person.wrong", but there is no Result defined in usecase'
+            'OutcomeStatement - Result Not Found: returning "input.person.wrong", but there is no Result defined in usecase',
           ]
         );
       });
