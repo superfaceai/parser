@@ -870,25 +870,25 @@ describe('map strict', () => {
             {
               kind: 'HttpCallStatement',
               method: 'POST',
-              service: 'service-id',
+              serviceId: 'service-id',
               url: 'hello.localhost'
             },
             {
               kind: 'HttpCallStatement',
               method: 'GET',
-              service: undefined,
+              serviceId: undefined,
               url: 'hi.localhost'
             },
             {
               kind: 'HttpCallStatement',
               method: 'PUT',
-              service: 'default',
+              serviceId: 'default',
               url: 'heya.localhost'
             },
             {
               kind: 'HttpCallStatement',
               method: 'DELETE',
-              service: undefined,
+              serviceId: undefined,
               url: 'ahoy.localhost'
             },
           ]

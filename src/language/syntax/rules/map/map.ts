@@ -454,7 +454,7 @@ function HTTP_CALL_STATEMENT_RESPONSE_HANDLER(
 const HTTP_CALL_STATEMENT_HEAD: SyntaxRule<
   {
     verb: string;
-    service: string | undefined;
+    serviceId: string | undefined;
     url: string;
   } & HasLocation
 > = SyntaxRule.followedBy(
@@ -470,14 +470,14 @@ const HTTP_CALL_STATEMENT_HEAD: SyntaxRule<
   SyntaxRule.string()
 ).map(([verb, maybeService, url]) => {
   // if service is `default` then treat it as undefined
-  const service =
+  const serviceId =
     maybeService?.data.kind === LexerTokenKind.STRING
       ? maybeService.data.string
       : undefined;
 
   return {
     verb: verb.data.identifier,
-    service,
+    serviceId,
     url: url.data.string,
     location: computeLocationSpan(verb, maybeService, url),
   };
@@ -507,7 +507,7 @@ export function HTTP_CALL_STATEMENT_FACTORY(
       return {
         kind: 'HttpCallStatement',
         method: head.verb,
-        // service: head.service,
+        serviceId: head.serviceId,
         url: head.url,
         request: maybeRequest,
         responseHandlers: maybeResponseHandlers ?? [],
