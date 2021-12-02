@@ -316,19 +316,38 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
   }
 
   // TODO: Implemented in another PR
-  visitUseCaseExampleNode(_node: UseCaseExampleNode, ..._parameters: unknown[]): unknown {
+  visitUseCaseExampleNode(
+    _node: UseCaseExampleNode,
+    ..._parameters: unknown[]
+  ): unknown {
     throw new Error('Method not implemented.');
   }
-  visitComlinkPrimitiveLiteralNode(_node: ComlinkPrimitiveLiteralNode, ..._parameters: unknown[]): unknown {
+
+  visitComlinkPrimitiveLiteralNode(
+    _node: ComlinkPrimitiveLiteralNode,
+    ..._parameters: unknown[]
+  ): unknown {
     throw new Error('Method not implemented.');
   }
-  visitComlinkObjectLiteralNode(_node: ComlinkObjectLiteralNode, ..._parameters: unknown[]): unknown {
+
+  visitComlinkObjectLiteralNode(
+    _node: ComlinkObjectLiteralNode,
+    ..._parameters: unknown[]
+  ): unknown {
     throw new Error('Method not implemented.');
   }
-  visitComlinkListLiteralNode(_node: ComlinkListLiteralNode, ..._parameters: unknown[]): unknown {
+
+  visitComlinkListLiteralNode(
+    _node: ComlinkListLiteralNode,
+    ..._parameters: unknown[]
+  ): unknown {
     throw new Error('Method not implemented.');
   }
-  visitComlinkAssignmentNode(_node: ComlinkAssignmentNode, ..._parameters: unknown[]): unknown {
+
+  visitComlinkAssignmentNode(
+    _node: ComlinkAssignmentNode,
+    ..._parameters: unknown[]
+  ): unknown {
     throw new Error('Method not implemented.');
   }
 }

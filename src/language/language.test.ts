@@ -871,30 +871,30 @@ describe('map strict', () => {
               kind: 'HttpCallStatement',
               method: 'POST',
               serviceId: 'service-id',
-              url: 'hello.localhost'
+              url: 'hello.localhost',
             },
             {
               kind: 'HttpCallStatement',
               method: 'GET',
               serviceId: undefined,
-              url: 'hi.localhost'
+              url: 'hi.localhost',
             },
             {
               kind: 'HttpCallStatement',
               method: 'PUT',
               serviceId: 'default',
-              url: 'heya.localhost'
+              url: 'heya.localhost',
             },
             {
               kind: 'HttpCallStatement',
               method: 'DELETE',
               serviceId: undefined,
-              url: 'ahoy.localhost'
+              url: 'ahoy.localhost',
             },
-          ]
-        }
-      ]
-    })
+          ],
+        },
+      ],
+    });
   });
 });
 
