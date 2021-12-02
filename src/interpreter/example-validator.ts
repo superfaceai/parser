@@ -27,6 +27,7 @@ import {
 import createDebug from 'debug';
 
 import {
+  assertDefinedStructure,
   compareStructure,
   isNonNullStructure,
   isScalarStructure,
@@ -73,7 +74,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
       : { pass: true, warnings: this.warnings };
   }
 
-  visit(node: ComlinkLiteralNode): boolean;
+  visit(node: ComlinkLiteralNode | ComlinkAssignmentNode): boolean;
   visit(node: ProfileASTNode): void;
   visit(node: ProfileASTNode): boolean | void {
     debug('Visiting node:', node.kind);
@@ -95,6 +96,8 @@ export class ExamplesValidator implements ProfileAstVisitor {
         return this.visitComlinkListLiteralNode(node);
       case 'ComlinkObjectLiteral':
         return this.visitComlinkObjectLiteralNode(node);
+      case 'ComlinkAssignment':
+        return this.visitComlinkAssignmentNode(node);
       // UNUSED
       case 'FieldDefinition':
         return this.visitFieldDefinitionNode(node);
@@ -154,10 +157,12 @@ export class ExamplesValidator implements ProfileAstVisitor {
   }
 
   visitUseCaseExampleNode(node: UseCaseExampleNode): void {
+    const usecase = this.profileOutput?.usecases.find(
+      usecase => usecase.useCaseName === this.currentUseCase
+    );
+
     if (node.input) {
-      this.currentStructure = this.profileOutput?.usecases.find(
-        usecase => usecase.useCaseName === this.currentUseCase
-      )?.input;
+      this.currentStructure = usecase?.input;
       this.slotType = ValidationIssueSlot.INPUT;
 
       this.visit(node.input);
@@ -167,9 +172,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
     }
 
     if (node.result) {
-      this.currentStructure = this.profileOutput?.usecases.find(
-        usecase => usecase.useCaseName === this.currentUseCase
-      )?.result;
+      this.currentStructure = usecase?.result;
       this.slotType = ValidationIssueSlot.RESULT;
 
       this.visit(node.result);
@@ -179,9 +182,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
     }
 
     if (node.asyncResult) {
-      this.currentStructure = this.profileOutput?.usecases.find(
-        usecase => usecase.useCaseName === this.currentUseCase
-      )?.async;
+      this.currentStructure = usecase?.async;
       this.slotType = ValidationIssueSlot.ASYNCRESULT;
 
       this.visit(node.asyncResult);
@@ -191,9 +192,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
     }
 
     if (node.error) {
-      this.currentStructure = this.profileOutput?.usecases.find(
-        usecase => usecase.useCaseName === this.currentUseCase
-      )?.error;
+      this.currentStructure = usecase?.error;
       this.slotType = ValidationIssueSlot.ERROR;
 
       this.visit(node.error);
@@ -204,30 +203,11 @@ export class ExamplesValidator implements ProfileAstVisitor {
   }
 
   visitComlinkPrimitiveLiteralNode(node: ComlinkPrimitiveLiteralNode): boolean {
-    if (!this.slotType) {
-      throw new Error('No slot type defined');
-    }
-
-    if (!this.currentStructure) {
-      this.warnings.push({
-        kind: 'useCaseSlotNotFound',
-        context: {
-          path: this.getPath(node),
-          slot: this.slotType,
-          actual: node,
-        },
-      });
-
+    if (this.structureIsPrepared(node)) {
       return true;
     }
 
-    if (isNonNullStructure(this.currentStructure)) {
-      this.currentStructure = this.currentStructure.value;
-    }
-
-    if (isScalarStructure(this.currentStructure)) {
-      return true;
-    }
+    assertDefinedStructure(this.currentStructure);
 
     const { isValid } = compareStructure(node, this.currentStructure);
 
@@ -246,30 +226,11 @@ export class ExamplesValidator implements ProfileAstVisitor {
   }
 
   visitComlinkListLiteralNode(node: ComlinkListLiteralNode): boolean {
-    if (!this.slotType) {
-      throw new Error('no slot type defined');
-    }
-
-    if (!this.currentStructure) {
-      this.warnings.push({
-        kind: 'useCaseSlotNotFound',
-        context: {
-          path: this.getPath(node),
-          slot: this.slotType,
-          actual: node,
-        },
-      });
-
+    if (this.structureIsPrepared(node)) {
       return true;
     }
 
-    if (isNonNullStructure(this.currentStructure)) {
-      this.currentStructure = this.currentStructure.value;
-    }
-
-    if (isScalarStructure(this.currentStructure)) {
-      return true;
-    }
+    assertDefinedStructure(this.currentStructure);
 
     const { listType, isValid } = compareStructure(node, this.currentStructure);
 
@@ -287,7 +248,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
     }
 
     if (!listType) {
-      throw new Error('this should not happen');
+      throw new Error('Validated types in list structure are not defined');
     }
 
     const originalStructure = this.currentStructure;
@@ -304,30 +265,11 @@ export class ExamplesValidator implements ProfileAstVisitor {
   }
 
   visitComlinkObjectLiteralNode(node: ComlinkObjectLiteralNode): boolean {
-    if (!this.slotType) {
-      throw new Error('no slot type defined');
-    }
-
-    if (!this.currentStructure) {
-      this.warnings.push({
-        kind: 'useCaseSlotNotFound',
-        context: {
-          path: this.getPath(node),
-          slot: this.slotType,
-          actual: node,
-        },
-      });
-
+    if (this.structureIsPrepared(node)) {
       return true;
     }
 
-    if (isNonNullStructure(this.currentStructure)) {
-      this.currentStructure = this.currentStructure.value;
-    }
-
-    if (isScalarStructure(this.currentStructure)) {
-      return true;
-    }
+    assertDefinedStructure(this.currentStructure);
 
     const { structureOfFields, isValid } = compareStructure(
       node,
@@ -348,7 +290,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
     }
 
     if (!structureOfFields) {
-      throw new Error('This should not happen!');
+      throw new Error('Validated object structure does not exist');
     }
 
     // all fields
@@ -392,9 +334,9 @@ export class ExamplesValidator implements ProfileAstVisitor {
             ],
           },
         };
-        visitResult = this.visitComlinkAssignmentNode(assignment);
+        visitResult = this.visit(assignment);
       } else {
-        visitResult = this.visitComlinkAssignmentNode(field);
+        visitResult = this.visit(field);
       }
 
       result &&= visitResult;
@@ -471,6 +413,35 @@ export class ExamplesValidator implements ProfileAstVisitor {
 
   visitPrimitiveTypeNameNode(_node: PrimitiveTypeNameNode): void {
     throw new Error('not implemented');
+  }
+
+  private structureIsPrepared(node: ComlinkLiteralNode): boolean {
+    if (!this.slotType) {
+      throw new Error('No slot type defined');
+    }
+
+    if (!this.currentStructure) {
+      this.warnings.push({
+        kind: 'useCaseSlotNotFound',
+        context: {
+          path: this.getPath(node),
+          slot: this.slotType,
+          actual: node,
+        },
+      });
+
+      return true;
+    }
+
+    if (isNonNullStructure(this.currentStructure)) {
+      this.currentStructure = this.currentStructure.value;
+    }
+
+    if (isScalarStructure(this.currentStructure)) {
+      return true;
+    }
+
+    return false;
   }
 
   private getPath(node: ProfileASTNode): IssueLocation {

@@ -140,3 +140,11 @@ export type ArrayCollection = Record<
   number,
   Exclude<StructureType, UnionStructure>
 >;
+
+export function assertDefinedStructure(
+  structure: StructureType | undefined
+): asserts structure is StructureType {
+  if (structure === undefined) {
+    throw new Error('Structure is undefined');
+  }
+}

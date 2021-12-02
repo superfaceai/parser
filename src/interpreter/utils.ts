@@ -2,6 +2,9 @@ import {
   AssignmentNode,
   ComlinkLiteralNode,
   isCallStatementNode,
+  isComlinkListLiteralNode,
+  isComlinkObjectLiteralNode,
+  isComlinkPrimitiveLiteralNode,
   isHttpCallStatementNode,
   isObjectLiteralNode,
   isOutcomeStatementNode,
@@ -144,7 +147,7 @@ export function formatIssueContext(issue: ValidationIssue): string {
 
     case 'wrongInput':
       if (!issue.context.expected.fields) {
-        throw new Error('This should not happen!');
+        throw new Error('Validated object structure does not contain fields');
       }
       expected = Object.keys(issue.context.expected.fields).join(', ');
 
@@ -220,8 +223,7 @@ export function compareStructure(
   switch (structure.kind) {
     case 'PrimitiveStructure':
       if (
-        (isPrimitiveLiteralNode(node) ||
-          node.kind === 'ComlinkPrimitiveLiteral') &&
+        (isPrimitiveLiteralNode(node) || isComlinkPrimitiveLiteralNode(node)) &&
         typeof node.value === structure.type
       ) {
         return { isValid: true };
@@ -229,21 +231,20 @@ export function compareStructure(
       break;
 
     case 'ObjectStructure':
-      if (isObjectLiteralNode(node) || node.kind === 'ComlinkObjectLiteral') {
+      if (isObjectLiteralNode(node) || isComlinkObjectLiteralNode(node)) {
         return { isValid: true, structureOfFields: structure.fields };
       }
       break;
 
     case 'ListStructure':
-      if (node.kind === 'ComlinkListLiteral') {
+      if (isComlinkListLiteralNode(node)) {
         return { isValid: true, listType: structure.value };
       }
       break;
 
     case 'EnumStructure':
       if (
-        (isPrimitiveLiteralNode(node) ||
-          node.kind === 'ComlinkPrimitiveLiteral') &&
+        (isPrimitiveLiteralNode(node) || isComlinkPrimitiveLiteralNode(node)) &&
         structure.enums.map(enumValue => enumValue.value).includes(node.value)
       ) {
         return { isValid: true };

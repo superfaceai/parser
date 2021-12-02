@@ -266,7 +266,7 @@ function getFieldStructure(
 ): StructureType | undefined {
   if (ts.isIdentifier(node)) {
     if (!objectStructure.fields) {
-      throw new Error('This should not happen!');
+      throw new Error('Validated object structure does not contain fields');
     }
 
     return objectStructure.fields[property];
@@ -831,7 +831,7 @@ export const RETURN_CONSTRUCTS: {
       }
 
       if (!structureOfProperties) {
-        throw new Error('This should not happen!');
+        throw new Error('Validated object structure does not contain fields');
       }
 
       // all fields
@@ -981,7 +981,7 @@ export const RETURN_CONSTRUCTS: {
       }
 
       if (!structureOfTypes) {
-        throw new Error('This should not happen!');
+        throw new Error('Validated types in list structure are not defined');
       }
 
       const typeValues = Object.values(structureOfTypes);

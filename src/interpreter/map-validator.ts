@@ -562,7 +562,7 @@ export class MapValidator implements MapAstVisitor {
     }
 
     if (!structureOfFields) {
-      throw new Error('This should not happen!');
+      throw new Error('Validated object structure does not contain fields');
     }
 
     // all fields
