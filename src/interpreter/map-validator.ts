@@ -26,7 +26,7 @@ import {
 import createDebug from 'debug';
 import * as ts from 'typescript';
 
-import { buildAssignment, IssueLocation } from '.';
+import { buildAssignment, isCompatible, IssueLocation } from '.';
 import { RETURN_CONSTRUCTS } from './constructs';
 import { ValidationIssue } from './issue';
 import {
@@ -136,6 +136,11 @@ export class MapValidator implements MapAstVisitor {
   }
 
   visitMapDocumentNode(node: MapDocumentNode): void {
+    if (!isCompatible(node.astMetadata)) {
+      // TODO: throw error or add error to state and stop validation?
+      throw new Error('Specified AST is not compatible with linter');
+    }
+
     // check the valid ProfileID
     this.visit(node.header);
 

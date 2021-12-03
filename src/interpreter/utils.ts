@@ -1,5 +1,6 @@
 import {
   AssignmentNode,
+  AstMetadata,
   isCallStatementNode,
   isHttpCallStatementNode,
   isObjectLiteralNode,
@@ -16,6 +17,7 @@ import {
 } from '@superfaceai/ast';
 import * as ts from 'typescript';
 
+import { PARSED_AST_VERSION, PARSED_VERSION } from '../metadata';
 import { TypescriptIdentifier } from './constructs';
 import { ValidationIssue } from './issue';
 import { MapValidator, ValidationResult } from './map-validator';
@@ -478,3 +480,26 @@ export const buildAssignment = (
   value: LiteralNode,
   location?: LocationSpan
 ): AssignmentNode => ({ kind: 'Assignment', key, value, location });
+
+// TODO: compare minor or not?
+export function isCompatible(metadata: AstMetadata): boolean {
+  // check ast versions
+  const givenASTVersion = metadata.astVersion;
+  if (
+    givenASTVersion.major < PARSED_AST_VERSION.major ||
+    givenASTVersion.minor < PARSED_AST_VERSION.minor
+  ) {
+    return false;
+  }
+
+  // check parser versions
+  const givenParserVersion = metadata.parserVersion;
+  if (
+    givenParserVersion.major < PARSED_VERSION.major ||
+    givenParserVersion.minor < PARSED_VERSION.minor
+  ) {
+    return false;
+  }
+
+  return true;
+}
