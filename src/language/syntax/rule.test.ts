@@ -456,7 +456,7 @@ describe('syntax rule factory', () => {
       const stream = new ArrayLexerStream(tokens);
 
       const innerRule = SyntaxRule.identifier('field');
-      const rule = SyntaxRule.optional(SyntaxRule.repeat(innerRule));
+      const rule = SyntaxRule.optionalRepeat(innerRule);
 
       expect(rule.tryMatch(stream)).toStrictEqual({
         kind: 'match',

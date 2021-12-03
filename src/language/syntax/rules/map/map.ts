@@ -92,7 +92,7 @@ const CALL_STATEMENT_HEAD = SyntaxRule.followedBy(
   SyntaxRule.optional(ITERATION_ATOM),
   SyntaxRule.identifier(),
   SyntaxRule.separator('('),
-  SyntaxRule.optional(SyntaxRule.repeat(ARGUMENT_LIST_ASSIGNMENT)),
+  SyntaxRule.optionalRepeat(ARGUMENT_LIST_ASSIGNMENT),
   SyntaxRule.separator(')'),
   SyntaxRule.optional(CONDITION_ATOM)
 ).map(
@@ -145,7 +145,7 @@ export const OBJECT_LITERAL_ASSIGNMENT = ASSIGNMENT_FACTORY(
 
 export const OBJECT_LITERAL = SyntaxRule.followedBy(
   SyntaxRule.separator('{'),
-  SyntaxRule.optional(SyntaxRule.repeat(OBJECT_LITERAL_ASSIGNMENT)),
+  SyntaxRule.optionalRepeat(OBJECT_LITERAL_ASSIGNMENT),
   SyntaxRule.separator('}')
 ).map(([sepStart, maybeFields, sepEnd]): WithLocation<ObjectLiteralNode> => {
   return {
@@ -223,7 +223,7 @@ export function CALL_STATEMENT_FACTORY(
   return SyntaxRule.followedBy(
     CALL_STATEMENT_HEAD,
     SyntaxRule.separator('{'),
-    SyntaxRule.optional(SyntaxRule.repeat(SET_STATEMENT.or(substatementRule))),
+    SyntaxRule.optionalRepeat(SET_STATEMENT.or(substatementRule)),
 
     SyntaxRule.separator('}')
   ).map(
@@ -427,7 +427,7 @@ function HTTP_CALL_STATEMENT_RESPONSE_HANDLER(
     MAYBE_CONTENT_TYPE,
     SyntaxRule.optional(SyntaxRule.string()), // content language
     SyntaxRule.separator('{'),
-    SyntaxRule.optional(SyntaxRule.repeat(SET_STATEMENT.or(substatementRule))),
+    SyntaxRule.optionalRepeat(SET_STATEMENT.or(substatementRule)),
     SyntaxRule.separator('}')
   ).map(
     ([
@@ -491,8 +491,8 @@ export function HTTP_CALL_STATEMENT_FACTORY(
     HTTP_CALL_STATEMENT_HEAD,
     SyntaxRule.separator('{'),
     HTTP_REQUEST_OPTIONAL,
-    SyntaxRule.optional(
-      SyntaxRule.repeat(HTTP_CALL_STATEMENT_RESPONSE_HANDLER(substatementRule))
+    SyntaxRule.optionalRepeat(
+      HTTP_CALL_STATEMENT_RESPONSE_HANDLER(substatementRule)
     ),
     SyntaxRule.separator('}')
   ).map(
@@ -612,7 +612,7 @@ export const MAP_DEFINITION: SyntaxRule<WithLocation<MapDefinitionNode>> =
       SyntaxRule.identifier('map'),
       SyntaxRule.identifier(),
       SyntaxRule.separator('{'),
-      SyntaxRule.optional(SyntaxRule.repeat(MAP_SUBSTATEMENT)),
+      SyntaxRule.optionalRepeat(MAP_SUBSTATEMENT),
       SyntaxRule.separator('}')
     ).map(
       ([
@@ -642,7 +642,7 @@ export const OPERATION_DEFINITION: SyntaxRule<
     SyntaxRule.identifier('operation'),
     SyntaxRule.identifier(),
     SyntaxRule.separator('{'),
-    SyntaxRule.optional(SyntaxRule.repeat(OPERATION_SUBSTATEMENT)),
+    SyntaxRule.optionalRepeat(OPERATION_SUBSTATEMENT),
     SyntaxRule.separator('}')
   ).map(
     ([
@@ -672,7 +672,7 @@ export const MAP_DOCUMENT: SyntaxRule<WithLocation<MapDocumentNode>> =
   SyntaxRule.followedBy(
     SyntaxRule.separator('SOF'),
     MAP_HEADER,
-    SyntaxRule.optional(SyntaxRule.repeat(MAP_DOCUMENT_DEFINITION)),
+    SyntaxRule.optionalRepeat(MAP_DOCUMENT_DEFINITION),
     SyntaxRule.separator('EOF'),
     new SyntaxRuleSourceChecksum()
   ).map(

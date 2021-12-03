@@ -164,7 +164,7 @@ export const MODEL_TYPE_NAME: SyntaxRule<WithLocation<ModelTypeNameNode>> =
 export const OBJECT_DEFINITION: SyntaxRule<WithLocation<ObjectDefinitionNode>> =
   SyntaxRule.followedBy(
     SyntaxRule.separator('{'),
-    SyntaxRule.optional(SyntaxRule.repeat(FIELD_DEFINITION_MUT)),
+    SyntaxRule.optionalRepeat(FIELD_DEFINITION_MUT),
     SyntaxRule.separator('}')
   ).map(
     ([sepStart, maybeFields, sepEnd]): WithLocation<ObjectDefinitionNode> => {
@@ -226,9 +226,7 @@ const NON_UNION_TYPE: SyntaxRule<
   );
 
 export const TYPE: SyntaxRule<WithLocation<Type>> = NON_UNION_TYPE.followedBy(
-  SyntaxRule.optional(
-    SyntaxRule.repeat(SyntaxRule.operator('|').followedBy(NON_UNION_TYPE))
-  )
+  SyntaxRule.optionalRepeat(SyntaxRule.operator('|').followedBy(NON_UNION_TYPE))
 ).map(([firstType, maybeRestPairs]): WithLocation<Type> => {
   // Handle unions
   if (maybeRestPairs !== undefined) {
@@ -461,12 +459,10 @@ export const USECASE_DEFINITION: SyntaxRule<
       USECASE_SLOT_DEFINITION_FACTORY<Type>(['async', 'result'], TYPE)
     ),
     SyntaxRule.optional(USECASE_SLOT_DEFINITION_FACTORY<Type>(['error'], TYPE)),
-    SyntaxRule.optional(
-      SyntaxRule.repeat(
-        USECASE_SLOT_DEFINITION_FACTORY<UseCaseExampleNode>(
-          ['example'],
-          USECASE_EXAMPLE
-        )
+    SyntaxRule.optionalRepeat(
+      USECASE_SLOT_DEFINITION_FACTORY<UseCaseExampleNode>(
+        ['example'],
+        USECASE_EXAMPLE
       )
     ),
     SyntaxRule.separator('}')
@@ -617,7 +613,7 @@ export const PROFILE_DOCUMENT: SyntaxRule<WithLocation<ProfileDocumentNode>> =
   SyntaxRule.followedBy(
     SyntaxRule.separator('SOF'),
     PROFILE_HEADER,
-    SyntaxRule.optional(SyntaxRule.repeat(PROFILE_DOCUMENT_DEFINITION)),
+    SyntaxRule.optionalRepeat(PROFILE_DOCUMENT_DEFINITION),
     SyntaxRule.separator('EOF'),
     new SyntaxRuleSourceChecksum()
   ).map(

@@ -60,7 +60,7 @@ export const COMLINK_OBJECT_LITERAL: SyntaxRule<
   WithLocation<ComlinkObjectLiteralNode>
 > = SyntaxRule.followedBy(
   SyntaxRule.separator('{'),
-  SyntaxRule.optional(SyntaxRule.repeat(COMLINK_OBJECT_LITERAL_ASSIGNMENT)),
+  SyntaxRule.optionalRepeat(COMLINK_OBJECT_LITERAL_ASSIGNMENT),
   SyntaxRule.separator('}')
 ).map(
   ([sepStart, maybeFields, sepEnd]): WithLocation<ComlinkObjectLiteralNode> => {
@@ -76,8 +76,8 @@ export const COMLINK_LIST_LITERAL: SyntaxRule<
   WithLocation<ComlinkListLiteralNode>
 > = SyntaxRule.followedBy(
   SyntaxRule.separator('['),
-  SyntaxRule.optional(
-    SyntaxRule.repeat(expectTerminated(COMLINK_LITERAL_MUT, ',', '\n', ']'))
+  SyntaxRule.optionalRepeat(
+    expectTerminated(COMLINK_LITERAL_MUT, ',', '\n', ']')
   ),
   SyntaxRule.separator(']')
 ).map(
