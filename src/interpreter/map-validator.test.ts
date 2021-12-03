@@ -1599,7 +1599,7 @@ describe('MapValidator', () => {
             profileAst,
             [mapAst2],
             [
-              'ArrayLiteralExpression - Wrong Structure: expected {f1: string, f2: boolean}, but got [\'some string\', true]',
+              "ArrayLiteralExpression - Wrong Structure: expected {f1: string, f2: boolean}, but got ['some string', true]",
             ],
             []
           );
@@ -1620,7 +1620,7 @@ describe('MapValidator', () => {
             profileAst,
             [mapAst2],
             [
-              'ArrayLiteralExpression - Wrong Structure: expected {f1: string!, f2: boolean!}, but got [\'some string\', true]',
+              "ArrayLiteralExpression - Wrong Structure: expected {f1: string!, f2: boolean!}, but got ['some string', true]",
               'Identifier - Wrong Structure: expected string, but got undefined',
               'NullKeyword - Wrong Structure: expected string!, but got null',
               'Identifier - Wrong Structure: expected string, but got undefined',
@@ -1706,7 +1706,7 @@ describe('MapValidator', () => {
           profileAst,
           [mapAst2],
           [
-            'ArrayLiteralExpression - Wrong Structure: expected string, but got [\'some string\', true]',
+            "ArrayLiteralExpression - Wrong Structure: expected string, but got ['some string', true]",
             `ObjectLiteralExpression - Wrong Structure: expected string, but got {
               f1: 'some string',
               f2: true
@@ -1768,7 +1768,7 @@ describe('MapValidator', () => {
             profileAst,
             [mapAst2],
             [
-              'ArrayLiteralExpression - Wrong Structure: expected {f1: string, f2: boolean}, but got [\'some string\', true]',
+              "ArrayLiteralExpression - Wrong Structure: expected {f1: string, f2: boolean}, but got ['some string', true]",
             ],
             []
           );
@@ -1789,7 +1789,7 @@ describe('MapValidator', () => {
             profileAst,
             [mapAst2],
             [
-              'ArrayLiteralExpression - Wrong Structure: expected {f1: string!, f2: boolean!}, but got [\'some string\', true]',
+              "ArrayLiteralExpression - Wrong Structure: expected {f1: string!, f2: boolean!}, but got ['some string', true]",
               'Identifier - Wrong Structure: expected string, but got undefined',
               'NullKeyword - Wrong Structure: expected string!, but got null',
               'Identifier - Wrong Structure: expected string, but got undefined',
@@ -1875,7 +1875,7 @@ describe('MapValidator', () => {
           profileAst,
           [mapAst2],
           [
-            'ArrayLiteralExpression - Wrong Structure: expected string, but got [\'some string\', true]',
+            "ArrayLiteralExpression - Wrong Structure: expected string, but got ['some string', true]",
             `ObjectLiteralExpression - Wrong Structure: expected string, but got {
               f1: 'some string',
               f2: true
@@ -2512,9 +2512,7 @@ describe('MapValidator', () => {
       invalidWithErrors(
         profileAst,
         [mapAst3, mapAst4],
-        [
-          'PrimitiveLiteral - Wrong Structure: expected string, but got true',
-        ],
+        ['PrimitiveLiteral - Wrong Structure: expected string, but got true'],
         [],
         [
           'PropertyAccessExpression - Wrong Input Structure: expected {from: boolean}, but got input.wrong',

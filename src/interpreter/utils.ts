@@ -172,9 +172,7 @@ export function formatIssueContext(issue: ValidationIssue): string {
       expected = formatStructure(issue.context.expected);
       actual = formatLiteral(issue.context.actual);
 
-      return `Wrong Variable Structure: variable ${
-        issue.context.name
-      } expected ${expected}, but got ${actual}`;
+      return `Wrong Variable Structure: variable ${issue.context.name} expected ${expected}, but got ${actual}`;
 
     default:
       throw new Error('Invalid issue!');
