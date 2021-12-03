@@ -170,9 +170,11 @@ export const enum SyntaxErrorCategory {
 }
 type ErrorCategoryStrings = {
   categoryDetail?: string;
-  categoryHints: string[]
+  categoryHints: string[];
 };
-function errorCategoryStrings(category: SyntaxErrorCategory): ErrorCategoryStrings {
+function errorCategoryStrings(
+  category: SyntaxErrorCategory
+): ErrorCategoryStrings {
   const result: ErrorCategoryStrings = {
     categoryDetail: undefined,
     categoryHints: [],
@@ -215,7 +217,9 @@ export class SyntaxError {
     /** Optional hints that are emitted to help with the resolution. */
     hints?: string[]
   ) {
-    const { categoryDetail, categoryHints } = errorCategoryStrings(this.category);
+    const { categoryDetail, categoryHints } = errorCategoryStrings(
+      this.category
+    );
 
     this.detail = detail ?? 'Invalid or unexpected token';
     if (categoryDetail !== undefined) {
@@ -284,7 +288,8 @@ export class SyntaxError {
 
   formatVisualization(): string {
     // Generate the lines
-    const { visualization, maxLineNumberLog, sourceLocation } = generateErrorVisualization(this.source, this.location);
+    const { visualization, maxLineNumberLog, sourceLocation } =
+      generateErrorVisualization(this.source, this.location);
 
     const locationLinePrefix = ' '.repeat(maxLineNumberLog) + '--> ';
     const locationLine = `${locationLinePrefix}${this.source.fileName}:${sourceLocation.start.line}:${sourceLocation.start.column}`;
@@ -307,7 +312,9 @@ export class SyntaxError {
   }
 
   format(): string {
-    return `SyntaxError: ${this.detail}\n${this.formatVisualization()}\n${this.formatHints()}`;
+    return `SyntaxError: ${
+      this.detail
+    }\n${this.formatVisualization()}\n${this.formatHints()}`;
   }
 
   get message(): string {
