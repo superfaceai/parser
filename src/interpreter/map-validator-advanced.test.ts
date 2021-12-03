@@ -477,34 +477,34 @@ describe('MapValidatorAdvanced', () => {
         profileAst,
         [mapAst1],
         [
-          'ObjectLiteral - Wrong Object Structure: expected "{ messageId: string }", but got "{ deliveryStatus: "accepted", messageID: 1 }"',
-          'ObjectLiteral - Wrong Object Structure: expected "{ messageId: string }", but got "{ deliveryStatus: "seen", messageID: 1 }"',
+          'ObjectLiteral - Wrong Object Structure: expected {messageId: string}, but got {deliveryStatus: "accepted", messageID: 1}',
+          'ObjectLiteral - Wrong Object Structure: expected {messageId: string}, but got {deliveryStatus: "seen", messageID: 1}',
         ]
       );
       invalidWithErrors(
         profileAst,
         [mapAst2, mapAst3],
         [
-          'PropertyAccessExpression - Wrong Input Structure: expected "{ to: string, from: string, text: string }", but got "input.channel"',
-          'PropertyAccessExpression - Wrong Input Structure: expected "{ to: string, from: string, text: string }", but got "input.is.wrong"',
-          'PropertyAccessExpression - Wrong Input Structure: expected "{ to: string, from: string, text: string }", but got "input.person"',
+          'PropertyAccessExpression - Wrong Input Structure: expected {to: string, from: string, text: string}, but got input.channel',
+          'PropertyAccessExpression - Wrong Input Structure: expected {to: string, from: string, text: string}, but got input.is.wrong',
+          'PropertyAccessExpression - Wrong Input Structure: expected {to: string, from: string, text: string}, but got input.person',
         ],
         [
-          'ObjectLiteral - Wrong Object Structure: expected "{ problem: string, detail: string, instance: string }", but got "{ some.key: "some error outcome" }"',
-          'ObjectLiteral - Wrong Object Structure: expected "{ messageId: string }", but got "{ deliveryStatus: {}, messageID: false }"',
-          'ObjectLiteral - Wrong Object Structure: expected "{ problem: string, detail: string, instance: string }", but got "{ status: "ERROR.", statusID: "1" }"',
-          'ObjectLiteral - Wrong Object Structure: expected "{ messageId: string }", but got "{ status: "OK.", messageID: false }"',
+          'ObjectLiteral - Wrong Object Structure: expected {problem: string, detail: string, instance: string}, but got {some.key: "some error outcome"}',
+          'ObjectLiteral - Wrong Object Structure: expected {messageId: string}, but got {deliveryStatus: {}, messageID: false}',
+          'ObjectLiteral - Wrong Object Structure: expected {problem: string, detail: string, instance: string}, but got {status: "ERROR.", statusID: "1"}',
+          'ObjectLiteral - Wrong Object Structure: expected {messageId: string}, but got {status: "OK.", messageID: false}',
         ],
         [
-          'PropertyAccessExpression - Wrong Input Structure: expected "{ to: string, from: string, text: string }", but got "input.channel"',
-          'PropertyAccessExpression - Wrong Input Structure: expected "{ to: string, from: string, text: string }", but got "input.is.wrong"',
-          'PropertyAccessExpression - Wrong Input Structure: expected "{ to: string, from: string, text: string }", but got "input.very.very.wrong"',
+          'PropertyAccessExpression - Wrong Input Structure: expected {to: string, from: string, text: string}, but got input.channel',
+          'PropertyAccessExpression - Wrong Input Structure: expected {to: string, from: string, text: string}, but got input.is.wrong',
+          'PropertyAccessExpression - Wrong Input Structure: expected {to: string, from: string, text: string}, but got input.very.very.wrong',
         ],
         [
-          'ObjectLiteral - Wrong Object Structure: expected "{ problem: string, detail: string, instance: string }", but got "{ some.key: "some error outcome" }"',
-          'ObjectLiteral - Wrong Object Structure: expected "{ messageId: string }", but got "{ deliveryStatus: {}, messageID: false }"',
-          'ObjectLiteral - Wrong Object Structure: expected "{ problem: string, detail: string, instance: string }", but got "{ status: "ERROR.", statusID: "1" }"',
-          'ObjectLiteral - Wrong Object Structure: expected "{ messageId: string }", but got "{ status: "OK.", messageID: false }"',
+          'ObjectLiteral - Wrong Object Structure: expected {problem: string, detail: string, instance: string}, but got {some.key: "some error outcome"}',
+          'ObjectLiteral - Wrong Object Structure: expected {messageId: string}, but got {deliveryStatus: {}, messageID: false}',
+          'ObjectLiteral - Wrong Object Structure: expected {problem: string, detail: string, instance: string}, but got {status: "ERROR.", statusID: "1"}',
+          'ObjectLiteral - Wrong Object Structure: expected {messageId: string}, but got {status: "OK.", messageID: false}',
         ]
       );
     });
@@ -658,24 +658,24 @@ describe('MapValidatorAdvanced', () => {
         profileAst,
         [mapAst1, mapAst2],
         [
-          'ObjectLiteral - Wrong Object Structure: expected "{ messageId: string }", but got "{ deliveryStatus: "accepted", messageID: 1 }"',
-          'ObjectLiteral - Wrong Object Structure: expected "{ messageId: string }", but got "{ deliveryStatus: "seen", messageID: 1 }"',
+          'ObjectLiteral - Wrong Object Structure: expected {messageId: string}, but got {deliveryStatus: "accepted", messageID: 1}',
+          'ObjectLiteral - Wrong Object Structure: expected {messageId: string}, but got {deliveryStatus: "seen", messageID: 1}',
         ]
       );
       invalidWithErrors(
         profileAst,
         [mapAst3],
         [
-          'PropertyAccessExpression - Wrong Input Structure: expected "{ to: any, from: any, text: any }", but got "input.is.wrong"',
-          'PropertyAccessExpression - Wrong Input Structure: expected "{ to: any, from: any, text: any }", but got "input.very.very.wrong"',
+          'PropertyAccessExpression - Wrong Input Structure: expected {to: any, from: any, text: any}, but got input.is.wrong',
+          'PropertyAccessExpression - Wrong Input Structure: expected {to: any, from: any, text: any}, but got input.very.very.wrong',
         ],
         [
-          'ObjectLiteral - Wrong Object Structure: expected "{ problem: any, detail: any, instance: any }", but got "{ some.key: "some error outcome" }"',
-          'ObjectLiteral - Wrong Object Structure: expected "{ messageId: string }", but got "{ messageID: false }"',
-          'ObjectLiteral - Wrong Object Structure: expected "{ problem: any, detail: any, instance: any }", but got "{ status: "ERROR.", statusID: "1" }"',
-          'ObjectLiteral - Wrong Object Structure: expected "{ messageId: string }", but got "{ status: "OK.", messageID: false }"',
-          'ObjectLiteral - Wrong Object Structure: expected "{ problem: any, detail: any, instance: any }", but got "{ status: "ERROR.", statusID: "1" }"',
-          'ObjectLiteral - Wrong Object Structure: expected "{ messageId: string }", but got "{ status: "OK.", messageID: false }"',
+          'ObjectLiteral - Wrong Object Structure: expected {problem: any, detail: any, instance: any}, but got {some.key: "some error outcome"}',
+          'ObjectLiteral - Wrong Object Structure: expected {messageId: string}, but got {messageID: false}',
+          'ObjectLiteral - Wrong Object Structure: expected {problem: any, detail: any, instance: any}, but got {status: "ERROR.", statusID: "1"}',
+          'ObjectLiteral - Wrong Object Structure: expected {messageId: string}, but got {status: "OK.", messageID: false}',
+          'ObjectLiteral - Wrong Object Structure: expected {problem: any, detail: any, instance: any}, but got {status: "ERROR.", statusID: "1"}',
+          'ObjectLiteral - Wrong Object Structure: expected {messageId: string}, but got {status: "OK.", messageID: false}',
         ]
       );
     });
@@ -759,8 +759,8 @@ describe('MapValidatorAdvanced', () => {
         profileAst,
         [mapAst2],
         [
-          'PropertyAccessExpression - Wrong Input Structure: expected "{ messageId: string }", but got "input.wrong.key.in.input"',
-          'PropertyAccessExpression - Wrong Input Structure: expected "{ messageId: string }", but got "input.to"',
+          'PropertyAccessExpression - Wrong Input Structure: expected {messageId: string}, but got input.wrong.key.in.input',
+          'PropertyAccessExpression - Wrong Input Structure: expected {messageId: string}, but got input.to',
         ],
         []
       );
