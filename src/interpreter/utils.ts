@@ -63,11 +63,11 @@ function formatStructure(structure: StructureType | string): string {
     case 'ListStructure':
       return `[${formatStructure(structure.value)}]`;
     case 'NonNullStructure':
-      return `NonNull ${formatStructure(structure.value)}`;
+      return `${formatStructure(structure.value)}!`;
     case 'ObjectStructure':
-      return `{ ${Object.entries(structure.fields ?? [])
+      return `{${Object.entries(structure.fields ?? [])
         .map(([key, type]) => `${key}: ${formatStructure(type)}`)
-        .join(', ')} }`;
+        .join(', ')}}`;
     case 'PrimitiveStructure':
       return structure.type;
     case 'ScalarStructure':
@@ -95,7 +95,7 @@ function formatLiteral(
       return formatPrimitive(literal.value);
     case 'ObjectLiteral':
     case 'ComlinkObjectLiteral':
-      return `{ ${literal.fields.map(formatLiteral).join(', ')} }`;
+      return `{${literal.fields.map(formatLiteral).join(', ')}}`;
     case 'JessieExpression':
       return literal.source ?? literal.expression;
     case 'InlineCall':
@@ -103,7 +103,7 @@ function formatLiteral(
         .map(formatLiteral)
         .join(', ')})`;
     case 'ComlinkListLiteral':
-      return `[ ${literal.items.map(formatLiteral).join(', ')} ]`;
+      return `[${literal.items.map(formatLiteral).join(', ')}]`;
 
     case 'ComlinkAssignment':
     case 'Assignment':
@@ -143,7 +143,7 @@ export function formatIssueContext(issue: ValidationIssue): string {
     case 'useCaseSlotNotFound':
       actual = `${
         issue.context.expected === UseCaseSlotType.INPUT ? '' : 'returning '
-      }"${formatLiteral(issue.context.actual)}"`;
+      }${formatLiteral(issue.context.actual)}`;
 
       return `${issue.context.expected} Not Found: ${actual}, but there is no ${issue.context.expected} defined in usecase`;
 
@@ -151,13 +151,13 @@ export function formatIssueContext(issue: ValidationIssue): string {
       expected = formatStructure(issue.context.expected);
       actual = formatLiteral(issue.context.actual);
 
-      return `Wrong Object Structure: expected "${expected}", but got "${actual}"`;
+      return `Wrong Object Structure: expected ${expected}, but got ${actual}`;
 
     case 'wrongStructure':
       expected = formatStructure(issue.context.expected);
       actual = formatLiteral(issue.context.actual);
 
-      return `Wrong Structure: expected "${expected}", but got "${actual}"`;
+      return `Wrong Structure: expected ${expected}, but got ${actual}`;
 
     case 'missingRequired':
       return 'Missing required field';
@@ -166,7 +166,7 @@ export function formatIssueContext(issue: ValidationIssue): string {
       expected = formatStructure(issue.context.expected);
       actual = formatStructure(issue.context.actual);
 
-      return `Wrong Input Structure: expected "${expected}", but got "${actual}"`;
+      return `Wrong Input Structure: expected ${expected}, but got ${actual}`;
 
     case 'wrongVariableStructure':
       expected = formatStructure(issue.context.expected);
@@ -174,7 +174,7 @@ export function formatIssueContext(issue: ValidationIssue): string {
 
       return `Wrong Variable Structure: variable ${
         issue.context.name
-      } expected "${expected}", but got "${actual.toString()}"`;
+      } expected ${expected}, but got ${actual}`;
 
     default:
       throw new Error('Invalid issue!');
