@@ -29,6 +29,7 @@ import {
 } from '@superfaceai/ast';
 import createDebug from 'debug';
 
+import { isCompatible } from '.';
 import {
   DocumentedStructure,
   ObjectStructure,
@@ -245,6 +246,11 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
   }
 
   visitProfileDocumentNode(node: ProfileDocumentNode): ProfileOutput {
+    if (!isCompatible(node.astMetadata)) {
+      // TODO: throw error or add error to state and stop validation?
+      throw new Error('Specified AST is not compatible with linter');
+    }
+
     const fields = node.definitions.filter(isNamedFieldDefinitionNode);
     const models = node.definitions.filter(isNamedModelDefinitionNode);
 
