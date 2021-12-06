@@ -481,23 +481,14 @@ export const buildAssignment = (
   location?: LocationSpan
 ): AssignmentNode => ({ kind: 'Assignment', key, value, location });
 
-// TODO: compare minor or not?
 export function isCompatible(metadata: AstMetadata): boolean {
   // check ast versions
-  const givenASTVersion = metadata.astVersion;
-  if (
-    givenASTVersion.major < PARSED_AST_VERSION.major ||
-    givenASTVersion.minor < PARSED_AST_VERSION.minor
-  ) {
+  if (metadata.astVersion.major < PARSED_AST_VERSION.major) {
     return false;
   }
 
   // check parser versions
-  const givenParserVersion = metadata.parserVersion;
-  if (
-    givenParserVersion.major < PARSED_VERSION.major ||
-    givenParserVersion.minor < PARSED_VERSION.minor
-  ) {
+  if (metadata.parserVersion.major < PARSED_VERSION.major) {
     return false;
   }
 
