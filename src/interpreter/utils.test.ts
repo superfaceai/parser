@@ -1,13 +1,26 @@
 import {
+  AstMetadata,
   CallStatementNode,
   HttpCallStatementNode,
   OutcomeStatementNode,
   SetStatementNode,
 } from '@superfaceai/ast';
+import { mocked } from 'ts-jest/utils';
 
+import { parseMetadataVersion } from '../metadata';
+import { isCompatible } from '.';
 import { getOutcomes } from './utils';
 
+jest.mock('../metadata', () => ({
+  ...jest.requireActual('../metadata'),
+  parseMetadataVersion: jest.fn(),
+}));
+
 describe('utils', () => {
+  afterEach(() => {
+    jest.resetAllMocks();
+  });
+
   describe('getOutcomes', () => {
     const OUTCOMES: OutcomeStatementNode[] = [
       {
@@ -104,6 +117,86 @@ describe('utils', () => {
       expect(outcomes).toHaveLength(2);
       expect(outcomes).toContain(OUTCOMES[1]);
       expect(outcomes).toContain(OUTCOMES[3]);
+    });
+  });
+
+  describe('isCompatible', () => {
+    const newMetadata: AstMetadata = {
+      astVersion: {
+        major: 3,
+        minor: 1,
+        patch: 0,
+      },
+      parserVersion: {
+        major: 2,
+        minor: 4,
+        patch: 0,
+      },
+      sourceChecksum: '',
+    };
+    const oldMetaData: AstMetadata = {
+      astVersion: {
+        major: 0,
+        minor: 1,
+        patch: 0,
+      },
+      parserVersion: {
+        major: 0,
+        minor: 0,
+        patch: 12,
+      },
+      sourceChecksum: '',
+    };
+
+    describe('returns false', () => {
+      it('when specified AST is old and current AST version is newer', () => {
+        const parseMetadataVersionSpy = mocked(
+          parseMetadataVersion
+        ).mockReturnValue({ major: 1, minor: 0, patch: 0 });
+
+        expect(isCompatible(oldMetaData)).toBeFalsy();
+        expect(parseMetadataVersionSpy).toBeCalledTimes(1);
+      });
+
+      it('when specified AST is old and current Parser version is newer', () => {
+        // first call to get PARSED_AST_VERSION, another to PARSED_VERSION
+        const parseMetadataVersionSpy = mocked(
+          parseMetadataVersion
+        ).mockReturnValueOnce({ major: 0, minor: 1, patch: 0 })
+        .mockReturnValueOnce({ major: 1, minor: 0, patch: 0 });
+
+        expect(isCompatible(oldMetaData)).toBeFalsy();
+        expect(parseMetadataVersionSpy).toBeCalledTimes(2);
+      });
+
+      it('when specified AST is new and current AST version is older', () => {
+        const parseMetadataVersionSpy = mocked(
+          parseMetadataVersion
+        ).mockReturnValueOnce({ major: 1, minor: 0, patch: 0 });
+
+        expect(isCompatible(newMetadata)).toBeFalsy();
+        expect(parseMetadataVersionSpy).toBeCalledTimes(1);
+      });
+
+      it('when specified AST is new and current Parser version is older', () => {
+        const parseMetadataVersionSpy = mocked(parseMetadataVersion)
+          .mockReturnValueOnce({ major: 3, minor: 1, patch: 0 })
+          .mockReturnValueOnce({ major: 1, minor: 0, patch: 0 });
+
+        expect(isCompatible(newMetadata)).toBeFalsy();
+        expect(parseMetadataVersionSpy).toBeCalledTimes(2);
+      });
+    });
+
+    describe('returns true', () => {
+      it('when specified AST has identical major versions in metadata', () => {
+        const parseMetadataVersionSpy = mocked(parseMetadataVersion)
+          .mockReturnValueOnce({ major: 3, minor: 0, patch: 0 })
+          .mockReturnValueOnce({ major: 2, minor: 0, patch: 0 });
+
+        expect(isCompatible(newMetadata)).toBeTruthy();
+        expect(parseMetadataVersionSpy).toBeCalledTimes(2);
+      });
     });
   });
 });
