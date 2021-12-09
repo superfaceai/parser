@@ -399,7 +399,10 @@ export class MapValidator implements MapAstVisitor {
       }
 
       this.visit(assignment.value);
-      this.addVariableToStack(assignment, false);
+
+      if (!isInlineCallNode(assignment.value)) {
+        this.addVariableToStack(assignment, false);
+      }
     });
   }
 
@@ -480,12 +483,11 @@ export class MapValidator implements MapAstVisitor {
       const variableName = getVariableName(jessieNode);
       const variable = this.variables[variableName];
 
-      if (variable !== undefined && !isInlineCallNode(variable)) {
+      if (variable !== undefined) {
         this.currentStructure = type;
 
         result = this.visit(variable);
 
-        // TODO: research if wrongVariableStructure issue is needed
         if (!result) {
           this.addIssue({
             kind: 'wrongVariableStructure',
