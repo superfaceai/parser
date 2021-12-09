@@ -483,18 +483,12 @@ export const buildAssignment = (
 
 export function isCompatible(metadata: AstMetadata): boolean {
   // check ast versions
-  if (
-    metadata.astVersion.major < PARSED_AST_VERSION.major ||
-    metadata.astVersion.major > PARSED_AST_VERSION.major
-  ) {
+  if (metadata.astVersion.major !== PARSED_AST_VERSION.major) {
     return false;
   }
 
   // check parser versions
-  if (
-    metadata.parserVersion.major < PARSED_VERSION.major ||
-    metadata.parserVersion.major > PARSED_VERSION.major
-  ) {
+  if (metadata.parserVersion.major !== PARSED_VERSION.major) {
     return false;
   }
 
