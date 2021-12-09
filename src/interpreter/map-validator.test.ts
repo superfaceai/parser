@@ -48,7 +48,7 @@ expect.extend({
     if (this.isNot) {
       pass = false;
 
-      if (!errors) {
+      if (!errors || errors.length === 0) {
         return {
           pass: !pass,
           message: () => 'Expected to fail, specify the errors',
@@ -1583,6 +1583,32 @@ describe('MapValidator', () => {
             }
           }`
         );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            f1 = 'string'
+            f2 = true
+
+            res = {
+              f1: f1,
+              f2: f2,
+            }
+
+            map result res
+          }`
+        );
+        const mapAst4 = parseMapFromSource(
+          `map Test {
+            f1 = 1
+            f2 = 2
+
+            res = {
+              f1: f1,
+              f2: f2,
+            }
+
+            map result res
+          }`
+        );
 
         describe('with result', () => {
           const profileAst = parseProfileFromSource(
@@ -1594,12 +1620,23 @@ describe('MapValidator', () => {
             }`
           );
 
-          validWithWarnings(profileAst, [mapAst1]);
+          validWithWarnings(profileAst, [mapAst1, mapAst3]);
           invalidWithErrors(
             profileAst,
-            [mapAst2],
+            [mapAst2, mapAst4],
             [
               "ArrayLiteralExpression - Wrong Structure: expected {f1: string, f2: boolean}, but got ['some string', true]",
+            ],
+            [],
+            [
+              'PrimitiveLiteral - Wrong Structure: expected string, but got 1',
+              'JessieExpression - Wrong Variable Structure: variable f1 expected string, but got 1',
+              'PrimitiveLiteral - Wrong Structure: expected boolean, but got 2',
+              'JessieExpression - Wrong Variable Structure: variable f2 expected boolean, but got 2',
+              `JessieExpression - Wrong Variable Structure: variable res expected {f1: string, f2: boolean}, but got {
+              f1: f1,
+              f2: f2,
+            }`,
             ],
             []
           );
@@ -1615,10 +1652,10 @@ describe('MapValidator', () => {
             }`
           );
 
-          validWithWarnings(profileAst, [mapAst1]);
+          validWithWarnings(profileAst, [mapAst1, mapAst3]);
           invalidWithErrors(
             profileAst,
-            [mapAst2],
+            [mapAst2, mapAst4],
             [
               "ArrayLiteralExpression - Wrong Structure: expected {f1: string!, f2: boolean!}, but got ['some string', true]",
               'Identifier - Wrong Structure: expected string, but got undefined',
@@ -1626,6 +1663,17 @@ describe('MapValidator', () => {
               'Identifier - Wrong Structure: expected string, but got undefined',
               'ObjectLiteralExpression - Missing required field',
               'ObjectLiteralExpression - Missing required field',
+            ],
+            [],
+            [
+              'PrimitiveLiteral - Wrong Structure: expected string, but got 1',
+              'JessieExpression - Wrong Variable Structure: variable f1 expected string!, but got 1',
+              'PrimitiveLiteral - Wrong Structure: expected boolean, but got 2',
+              'JessieExpression - Wrong Variable Structure: variable f2 expected boolean!, but got 2',
+              `JessieExpression - Wrong Variable Structure: variable res expected {f1: string!, f2: boolean!}!, but got {
+              f1: f1,
+              f2: f2,
+            }`,
             ],
             []
           );
