@@ -1,4 +1,8 @@
 import {
+  ComlinkAssignmentNode,
+  ComlinkListLiteralNode,
+  ComlinkObjectLiteralNode,
+  ComlinkPrimitiveLiteralNode,
   DocumentedNode,
   EnumDefinitionNode,
   EnumValueNode,
@@ -20,6 +24,7 @@ import {
   Type,
   UnionDefinitionNode,
   UseCaseDefinitionNode,
+  UseCaseExampleNode,
   UseCaseSlotDefinitionNode,
 } from '@superfaceai/ast';
 import createDebug from 'debug';
@@ -129,6 +134,7 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
       case 'ComlinkPrimitiveLiteral':
       case 'ComlinkListLiteral':
       case 'ComlinkObjectLiteral':
+      case 'ComlinkAssignment':
         throw new Error('TODO: Not implemented');
       default:
         assertUnreachable(node);
@@ -307,5 +313,41 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
     for (const model of models) {
       this.namedModels[model.modelName] = model;
     }
+  }
+
+  // TODO: Implemented in another PR
+  visitUseCaseExampleNode(
+    _node: UseCaseExampleNode,
+    ..._parameters: unknown[]
+  ): unknown {
+    throw new Error('Method not implemented.');
+  }
+
+  visitComlinkPrimitiveLiteralNode(
+    _node: ComlinkPrimitiveLiteralNode,
+    ..._parameters: unknown[]
+  ): unknown {
+    throw new Error('Method not implemented.');
+  }
+
+  visitComlinkObjectLiteralNode(
+    _node: ComlinkObjectLiteralNode,
+    ..._parameters: unknown[]
+  ): unknown {
+    throw new Error('Method not implemented.');
+  }
+
+  visitComlinkListLiteralNode(
+    _node: ComlinkListLiteralNode,
+    ..._parameters: unknown[]
+  ): unknown {
+    throw new Error('Method not implemented.');
+  }
+
+  visitComlinkAssignmentNode(
+    _node: ComlinkAssignmentNode,
+    ..._parameters: unknown[]
+  ): unknown {
+    throw new Error('Method not implemented.');
   }
 }

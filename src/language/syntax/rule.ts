@@ -28,6 +28,18 @@ export class MatchAttempts {
   ) {}
 
   static merge(
+    first: MatchAttempts,
+    second: MatchAttempts | undefined
+  ): MatchAttempts;
+  static merge(
+    first: MatchAttempts | undefined,
+    second: MatchAttempts
+  ): MatchAttempts;
+  static merge(
+    first: MatchAttempts | undefined,
+    second: MatchAttempts | undefined
+  ): MatchAttempts | undefined;
+  static merge(
     first: MatchAttempts | undefined,
     second: MatchAttempts | undefined
   ): MatchAttempts | undefined {
@@ -174,19 +186,26 @@ export abstract class SyntaxRule<T> {
 
   // Combinators
 
-  or<R>(rule: SyntaxRule<R>): SyntaxRuleOr<T, R> {
+  static or<R extends SyntaxRule<unknown>[]>(
+    ...rules: R
+  ): SyntaxRuleOr<PeelTupleSyntaxRule<R>> {
+    return new SyntaxRuleOr(...rules) as SyntaxRuleOr<PeelTupleSyntaxRule<R>>;
+  }
+
+  static followedBy<R extends SyntaxRule<unknown>[]>(
+    ...rules: R
+  ): SyntaxRuleFollowedBy<PeelTupleSyntaxRule<R>> {
+    return new SyntaxRuleFollowedBy(...rules) as SyntaxRuleFollowedBy<
+      PeelTupleSyntaxRule<R>
+    >;
+  }
+
+  or<R>(rule: SyntaxRule<R>): SyntaxRuleOr<[T, R]> {
     return new SyntaxRuleOr(this, rule);
   }
 
-  /**
-   * To cascade multiple `followedBy` rules, use `.andFollowedBy` method on the
-   * `SyntaxRuleFollowedBy` object that is returned to flatten nested tuples.
-   */
-  followedBy<R>(rule: SyntaxRule<R>): SyntaxRuleFollowedBy<[T], R> {
-    return new SyntaxRuleFollowedBy(
-      this.map(m => [m]),
-      rule
-    );
+  followedBy<R>(rule: SyntaxRule<R>): SyntaxRuleFollowedBy<[T, R]> {
+    return new SyntaxRuleFollowedBy(this, rule);
   }
 
   // Cannot return `SyntaxRuleMap` because that would confuse TS into thinking `SyntaxRule` is contravariant over `T`
@@ -203,19 +222,19 @@ export abstract class SyntaxRule<T> {
 
   /** Ensures that `this` is followed by `rule` without consuming any tokens after `this`. */
   lookahead<R>(rule: SyntaxRule<R>): SyntaxRule<T> {
-    return this.followedBy(new SyntaxRuleLookahead(rule)).map(
+    return new SyntaxRuleFollowedBy(this, new SyntaxRuleLookahead(rule)).map(
       ([me, _lookahead]) => me
     );
   }
 
   /** Skips `rule` following `this` without affecting the returned type. */
   skip<R>(rule: SyntaxRule<R>): SyntaxRule<T> {
-    return this.followedBy(rule).map(([me, _skipped]) => me);
+    return new SyntaxRuleFollowedBy(this, rule).map(([me, _skipped]) => me);
   }
 
-  /** Forgets `this` and expectes `rule` to follow. */
+  /** Forgets `this` and expects `rule` to follow. */
   forgetFollowedBy<R>(rule: SyntaxRule<R>): SyntaxRule<R> {
-    return this.followedBy(rule).map(([_me, newres]) => newres);
+    return new SyntaxRuleFollowedBy(this, rule).map(([_me, newres]) => newres);
   }
 
   static repeat<R>(rule: SyntaxRule<R>): SyntaxRuleRepeat<R> {
@@ -226,14 +245,23 @@ export abstract class SyntaxRule<T> {
     return new SyntaxRuleOptional(rule);
   }
 
+  static optionalRepeat<R>(
+    rule: SyntaxRule<R>
+  ): SyntaxRuleOptional<[R, ...R[]]> {
+    return new SyntaxRuleOptional(new SyntaxRuleRepeat(rule));
+  }
+
   /**
    * Returns `rule` that cannot be preceded by a newline.
    * Example usage: `SyntaxRule.identifier('slot').followedBy(SyntaxRule.sameLine(SyntaxRule.string()))`
    */
   static sameLine<R>(rule: SyntaxRule<R>): SyntaxRule<R> {
-    return new SyntaxRuleLookahead(SyntaxRule.newline(), true)
-      .followedBy(rule)
-      .map(([_, r]) => r);
+    return new SyntaxRuleFollowedBy(
+      // This behavior is special, because `SyntaxRuleNewline` changes the token filter in the `tokens` stream
+      // otherwise this construct would not be of much use
+      new SyntaxRuleLookahead(SyntaxRule.newline(), true),
+      rule
+    ).map(([_, r]) => r);
   }
 
   debug(): SyntaxRule<T> {
@@ -465,95 +493,113 @@ export class SyntaxRuleJessie extends SyntaxRule<
 
 // COMBINATORS //
 
-export class SyntaxRuleOr<F, S> extends SyntaxRule<F | S> {
-  constructor(readonly first: SyntaxRule<F>, readonly second: SyntaxRule<S>) {
+type PeelTupleSyntaxRule<R> = {
+  [k in keyof R]: R[k] extends SyntaxRule<infer T> ? T : never;
+};
+/** Wraps `[A, B, C]` into `[SyntaxRule<A>, SyntaxRule<B>, SyntaxRule<C>]`. */
+type WrapTupleSyntaxRule<R> = { [k in keyof R]: SyntaxRule<R[k]> };
+/** Returns type of tuple items as an union: `[A, B, C]` -> `A | B | C`. */
+type TupleItemsUnion<T> = T extends (infer E)[] ? E : never;
+
+export class SyntaxRuleOr<T extends readonly unknown[]> extends SyntaxRule<
+  TupleItemsUnion<T>
+> {
+  readonly rules: WrapTupleSyntaxRule<T>;
+
+  constructor(...rules: WrapTupleSyntaxRule<T>) {
     super();
+
+    this.rules = rules;
   }
 
-  static chainOr<R>(...rest: SyntaxRule<R>[]): SyntaxRule<R> {
-    if (rest.length === 0) {
-      return new SyntaxRuleNever<R>();
+  tryMatch(tokens: LexerTokenStream): RuleResult<TupleItemsUnion<T>> {
+    let attempts = undefined;
+
+    for (const rule of this.rules) {
+      // Basic rules automatically restore `tokens` state on `nomatch`
+      const match = rule.tryMatch(tokens);
+
+      if (match.kind === 'match') {
+        return {
+          kind: 'match',
+          // typescript fails us with understand here that the type is correct
+          match: match.match as TupleItemsUnion<T>,
+          optionalAttempts: MatchAttempts.merge(
+            attempts,
+            match.optionalAttempts
+          ),
+        };
+      } else {
+        attempts = MatchAttempts.merge(attempts, match.attempts);
+      }
     }
 
-    return rest.reduce((acc, curr) => acc.or(curr));
-  }
-
-  tryMatch(tokens: LexerTokenStream): RuleResult<F | S> {
-    // Basic rules automatically restore `tokens` state on `nomatch`
-    const firstMatch = this.first.tryMatch(tokens);
-    if (firstMatch.kind === 'match') {
-      return firstMatch;
-    }
-
-    const secondMatch = this.second.tryMatch(tokens);
-    if (secondMatch.kind === 'match') {
+    if (attempts === undefined) {
+      // `this.rules` is an empty array
       return {
-        ...secondMatch,
-        optionalAttempts: firstMatch.attempts.merge(
-          secondMatch.optionalAttempts
-        ),
+        kind: 'nomatch',
+        attempts: new MatchAttempts(tokens.peek().value, [this]),
+      };
+    } else {
+      return {
+        kind: 'nomatch',
+        attempts: attempts,
       };
     }
-
-    return {
-      kind: 'nomatch',
-      attempts: firstMatch.attempts.merge(secondMatch.attempts),
-    };
   }
 
   [Symbol.toStringTag](): string {
-    return this.first.toString() + ' or ' + this.second.toString();
+    return this.rules.map(r => r.toString()).join(' or ');
   }
 }
 
-/** Matches `first` followed by `second`.
- *
- * Use `.andFollowedBy` to chain additional `followedBy` rules to flatten the `match` tuple.
- */
 export class SyntaxRuleFollowedBy<
-  F extends readonly unknown[],
-  S
-> extends SyntaxRule<[...F, S]> {
-  constructor(readonly first: SyntaxRule<F>, readonly second: SyntaxRule<S>) {
+  T extends readonly unknown[]
+> extends SyntaxRule<T> {
+  readonly rules: WrapTupleSyntaxRule<T>;
+
+  constructor(...rules: WrapTupleSyntaxRule<T>) {
     super();
+
+    this.rules = rules;
   }
 
-  andFollowedBy<R>(rule: SyntaxRule<R>): SyntaxRuleFollowedBy<[...F, S], R> {
-    return new SyntaxRuleFollowedBy(this, rule);
-  }
-
-  tryMatch(tokens: LexerTokenStream): RuleResult<[...F, S]> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<T> {
     const save = tokens.save();
 
-    const firstMatch = this.first.tryMatch(tokens);
-    if (firstMatch.kind === 'nomatch') {
-      tokens.rollback(save);
+    let optionalAttempts = undefined;
+    const matches = [];
 
-      return firstMatch;
-    }
+    for (const rule of this.rules) {
+      const match = rule.tryMatch(tokens);
 
-    const secondMatch = this.second.tryMatch(tokens);
-    if (secondMatch.kind === 'nomatch') {
-      tokens.rollback(save);
+      if (match.kind === 'nomatch') {
+        tokens.rollback(save);
 
-      return {
-        ...secondMatch,
-        attempts: secondMatch.attempts.merge(firstMatch.optionalAttempts),
-      };
+        return {
+          ...match,
+          attempts: MatchAttempts.merge(optionalAttempts, match.attempts),
+        };
+      } else {
+        optionalAttempts = MatchAttempts.merge(
+          optionalAttempts,
+          match.optionalAttempts
+        );
+        matches.push(match.match);
+      }
     }
 
     return {
       kind: 'match',
-      match: [...firstMatch.match, secondMatch.match],
-      optionalAttempts: MatchAttempts.merge(
-        firstMatch.optionalAttempts,
-        secondMatch.optionalAttempts
-      ),
+      // we force the type here because typescript cannot check it for us
+      // the value of `matches` is a collection of matches of all `this.rules` in order - i.e. `F`.
+      match: matches as unknown as T,
+      optionalAttempts,
     };
   }
 
   [Symbol.toStringTag](): string {
-    return this.first.toString() + ' -> ' + this.second.toString();
+    return this.rules.map(r => r.toString()).join(' -> ');
   }
 }
 
