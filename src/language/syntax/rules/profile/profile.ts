@@ -100,7 +100,7 @@ export const ENUM_VALUE: SyntaxRule<WithLocation<EnumValueNode>> =
       '}',
       '\n'
     ).map(([name, maybeAssignment]): WithLocation<EnumValueNode> => {
-      let variantName: string = name.data.identifier;
+      const variantName: string = name.data.identifier;
       let variantValue: string | number | boolean;
 
       if (maybeAssignment === undefined) {
