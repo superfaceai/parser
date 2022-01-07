@@ -43,7 +43,7 @@
     "ts-jest": "^26.5.1"
   },
   "dependencies": {
-    "@superfaceai/ast": "1.1.0-beta.0",
+    "@superfaceai/ast": "1.1.0-rc.0",
     "@types/debug": "^4.1.5",
     "debug": "^4.3.1",
     "typescript": "^4"
