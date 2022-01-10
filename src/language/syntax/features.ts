@@ -1,5 +1,5 @@
 import { LexerTokenStream } from '../lexer';
-import { RuleResult, SyntaxRule, SyntaxRuleOr } from './rule';
+import { RuleResult, SyntaxRule } from './rule';
 
 export type ParserFeature =
   | 'nested_object_literals'
@@ -93,11 +93,11 @@ export class SyntaxRuleFeatureOr<B, E> extends SyntaxRule<B | E> {
   ) {
     super();
 
-    this.orRule = SyntaxRuleOr.chainOr<B | E>(base, ...enabled);
+    this.orRule = SyntaxRule.or(base, ...enabled);
     this.lastExecutionFeatureState = PARSER_FEATURES[this.feature];
   }
 
-  tryMatch(tokens: LexerTokenStream): RuleResult<E | B> {
+  tryMatch(tokens: LexerTokenStream): RuleResult<B | E> {
     this.lastExecutionFeatureState = PARSER_FEATURES[this.feature];
 
     if (this.lastExecutionFeatureState) {

@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Http call can now select service id, e.g. `http VERB "id" "url" {`
 - `ExampleValidator` class to validate examples defined in profile usecase
 - `validateExamples` function similar to `validateMap` for using `ExampleValidator`
 
@@ -23,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unwrap non null structure in validation of nested properties
 - Remove limited validation of binary expressions and let other constructs handle them
 - Propagation of validation issues on top of issues from jessie expression nodes 
+- `SyntaxRuleNever` causing a wrong error message
 
 ## [1.0.0] - 2021-11-04
 ### Added

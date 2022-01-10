@@ -15,7 +15,7 @@ import {
   StringTokenData,
   TerminationTokens,
 } from '../../lexer/token';
-import { LexerTokenMatch, RuleResult, SyntaxRule, SyntaxRuleOr } from '../rule';
+import { LexerTokenMatch, RuleResult, SyntaxRule } from '../rule';
 import { extractDocumentation } from '../util';
 
 // HELPER RULES //
@@ -94,21 +94,22 @@ export function computeLocationSpan<A extends (HasLocation | undefined)[]>(
 export function documentedNode<N extends DocumentedNode>(
   rule: SyntaxRule<N>
 ): SyntaxRule<N> {
-  return SyntaxRule.optional(SyntaxRule.string())
-    .followedBy(rule)
-    .map(([maybeDoc, result]): N => {
-      const doc = extractDocumentation(maybeDoc?.data.string);
+  return SyntaxRule.followedBy(
+    SyntaxRule.optional(SyntaxRule.string()),
+    rule
+  ).map(([maybeDoc, result]): N => {
+    const doc = extractDocumentation(maybeDoc?.data.string);
 
-      if (maybeDoc !== undefined && doc !== undefined) {
-        result.documentation = {
-          title: doc.title,
-          description: doc.description,
-          location: maybeDoc.location,
-        };
-      }
+    if (maybeDoc !== undefined && doc !== undefined) {
+      result.documentation = {
+        title: doc.title,
+        description: doc.description,
+        location: maybeDoc.location,
+      };
+    }
 
-      return result;
-    });
+    return result;
+  });
 }
 
 /**
@@ -136,9 +137,10 @@ export function mapAssignmentPath(
 }
 
 const ASSIGNMENT_KEY = SyntaxRule.identifier().or(SyntaxRule.string());
-export const ASSIGNMENT_PATH_KEY = ASSIGNMENT_KEY.followedBy(
-  SyntaxRule.optional(
-    SyntaxRule.repeat(SyntaxRule.operator('.').followedBy(ASSIGNMENT_KEY))
+export const ASSIGNMENT_PATH_KEY = SyntaxRule.followedBy(
+  ASSIGNMENT_KEY,
+  SyntaxRule.optionalRepeat(
+    SyntaxRule.followedBy(SyntaxRule.operator('.'), ASSIGNMENT_KEY)
   )
 ).map(
   ([first, maybeRest]): (
@@ -174,7 +176,7 @@ export function TERMINATOR_TOKEN_FACTORY(
 ): TerminatorTokenRule {
   const rules = terminators.map(ter => TERMINATOR_TOKENS[ter]);
 
-  return SyntaxRuleOr.chainOr(...rules);
+  return SyntaxRule.or(...rules);
 }
 
 /** Utility rule builder which expects the rule to be terminated and the optionally skips `,` or `;` */

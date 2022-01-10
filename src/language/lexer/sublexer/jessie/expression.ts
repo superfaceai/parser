@@ -33,7 +33,7 @@ function processScriptText(
       errors: transRes.errors.map(err => {
         return {
           detail: err.detail,
-          hint: err.hint,
+          hints: err.hints,
           category: err.category,
           relativeSpan: {
             start: err.relativeSpan.start - SCRIPT_WRAP.start.length,
