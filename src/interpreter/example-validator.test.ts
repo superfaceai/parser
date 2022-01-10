@@ -1,8 +1,8 @@
+import './test/validate-custom-matcher';
+
 import { ProfileDocumentNode } from '@superfaceai/ast';
 
 import { parseProfile, Source } from '..';
-import { formatIssues } from '.';
-import { ExampleValidator } from './example-validator';
 
 const parseProfileFromSource = (source: string): ProfileDocumentNode =>
   parseProfile(
@@ -26,12 +26,10 @@ describe('ExampleValidator', () => {
             }
         }`
       );
-      const exampleValidator = new ExampleValidator(profileAst);
-      const result = exampleValidator.validate();
 
-      expect(!result.pass && formatIssues(result.errors)).toEqual(
-        '8:24 ComlinkPrimitiveLiteral - Wrong Structure: expected boolean, but got 1'
-      );
+      expect(profileAst).not.toBeValidExample([
+        'ComlinkPrimitiveLiteral - Wrong Structure: expected boolean, but got "1"',
+      ]);
     });
 
     it('enum', () => {
@@ -47,12 +45,10 @@ describe('ExampleValidator', () => {
             }
         }`
       );
-      const exampleValidator = new ExampleValidator(profileAst);
-      const result = exampleValidator.validate();
 
-      expect(!result.pass && formatIssues(result.errors)).toEqual(
-        '11:24 ComlinkPrimitiveLiteral - Wrong Structure: expected NOTFOUND or BADREQUEST, but got "NOTFOUNDFOUND"'
-      );
+      expect(profileAst).not.toBeValidExample([
+        'ComlinkPrimitiveLiteral - Wrong Structure: expected NOTFOUND or BADREQUEST, but got "NOTFOUNDFOUND"',
+      ]);
     });
 
     it('list', () => {
@@ -74,12 +70,11 @@ describe('ExampleValidator', () => {
             }
         }`
       );
-      const exampleValidator = new ExampleValidator(profileAst);
-      const result = exampleValidator.validate();
 
-      expect(!result.pass && formatIssues(result.errors)).toEqual(
-        '9:23 ComlinkPrimitiveLiteral - Wrong Structure: expected boolean | number, but got "string"\n15:26 ComlinkPrimitiveLiteral - Wrong Structure: expected number, but got "string"'
-      );
+      expect(profileAst).not.toBeValidExample([
+        'ComlinkPrimitiveLiteral - Wrong Structure: expected UnionStructure, but got "string"',
+        'ComlinkPrimitiveLiteral - Wrong Structure: expected number, but got "string"',
+      ]);
     });
 
     it('object', () => {
@@ -98,12 +93,10 @@ describe('ExampleValidator', () => {
               }
           }`
       );
-      const exampleValidator = new ExampleValidator(profileAst);
-      const result = exampleValidator.validate();
 
-      expect(!result.pass && formatIssues(result.errors)).toEqual(
-        '13:28 ComlinkPrimitiveLiteral - Wrong Structure: expected [boolean | number], but got "string"'
-      );
+      expect(profileAst).not.toBeValidExample([
+        'ComlinkPrimitiveLiteral - Wrong Structure: expected ListStructure, but got "string"',
+      ]);
     });
   });
 });
