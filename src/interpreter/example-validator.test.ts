@@ -28,7 +28,7 @@ describe('ExampleValidator', () => {
       );
 
       expect(profileAst).not.toBeValidExample([
-        'ComlinkPrimitiveLiteral - Wrong Structure: expected boolean, but got "1"',
+        'ComlinkPrimitiveLiteral - Wrong Structure: expected boolean, but got 1',
       ]);
     });
 
@@ -72,7 +72,7 @@ describe('ExampleValidator', () => {
       );
 
       expect(profileAst).not.toBeValidExample([
-        'ComlinkPrimitiveLiteral - Wrong Structure: expected UnionStructure, but got "string"',
+        'ComlinkPrimitiveLiteral - Wrong Structure: expected boolean | number, but got "string"',
         'ComlinkPrimitiveLiteral - Wrong Structure: expected number, but got "string"',
       ]);
     });
@@ -95,7 +95,7 @@ describe('ExampleValidator', () => {
       );
 
       expect(profileAst).not.toBeValidExample([
-        'ComlinkPrimitiveLiteral - Wrong Structure: expected ListStructure, but got "string"',
+        'ComlinkPrimitiveLiteral - Wrong Structure: expected [boolean | number], but got "string"',
       ]);
     });
   });
