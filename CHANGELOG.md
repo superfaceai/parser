@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Http call can now select service id, e.g. `http VERB "id" "url" {`
 - `ExampleValidator` class to validate examples defined in profile usecase
 - `validateExamples` function similar to `validateMap` for using `ExampleValidator`
+- `EnumValueNode` now has a `name` field
 
 ### Changed
 - `ErrorContext` field `path` to object containing location span and node kind

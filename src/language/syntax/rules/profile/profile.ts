@@ -88,7 +88,8 @@ export const PRIMITIVE_TYPE_NAME: SyntaxRule<
 export const ENUM_VALUE: SyntaxRule<WithLocation<EnumValueNode>> =
   documentedNode(
     expectTerminated(
-      SyntaxRule.identifier().followedBy(
+      SyntaxRule.followedBy(
+        SyntaxRule.identifier(),
         SyntaxRule.optional(
           SyntaxRule.operator('=').followedBy(
             SyntaxRule.literal().or(SyntaxRule.string())
@@ -99,19 +100,21 @@ export const ENUM_VALUE: SyntaxRule<WithLocation<EnumValueNode>> =
       '}',
       '\n'
     ).map(([name, maybeAssignment]): WithLocation<EnumValueNode> => {
-      let enumValue: string | number | boolean;
+      const variantName: string = name.data.identifier;
+      let variantValue: string | number | boolean;
+
       if (maybeAssignment === undefined) {
-        enumValue = name.data.identifier;
+        variantValue = variantName;
       } else {
         const match = maybeAssignment[1];
 
         switch (match.data.kind) {
           case LexerTokenKind.LITERAL:
-            enumValue = match.data.literal;
+            variantValue = match.data.literal;
             break;
 
           case LexerTokenKind.STRING:
-            enumValue = match.data.string;
+            variantValue = match.data.string;
             break;
 
           default:
@@ -123,7 +126,8 @@ export const ENUM_VALUE: SyntaxRule<WithLocation<EnumValueNode>> =
 
       return {
         kind: 'EnumValue',
-        value: enumValue,
+        name: variantName,
+        value: variantValue,
         location: computeLocationSpan(name, ...(maybeAssignment ?? [])),
       };
     })
