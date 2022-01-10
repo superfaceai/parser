@@ -131,11 +131,15 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
       case 'UseCaseSlotDefinition':
         return this.visitUseCaseSlotDefinition(node);
       case 'UseCaseExample':
+        return this.visitUseCaseExampleNode(node);
       case 'ComlinkPrimitiveLiteral':
+        return this.visitComlinkPrimitiveLiteralNode(node);
       case 'ComlinkListLiteral':
+        return this.visitComlinkListLiteralNode(node);
       case 'ComlinkObjectLiteral':
+        return this.visitComlinkObjectLiteralNode(node);
       case 'ComlinkAssignment':
-        throw new Error('TODO: Not implemented');
+        return this.visitComlinkAssignmentNode(node);
       default:
         assertUnreachable(node);
     }
@@ -297,6 +301,26 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
     });
   }
 
+  visitUseCaseExampleNode(_node: UseCaseExampleNode): void {
+    throw new Error('Not Implemented');
+  }
+
+  visitComlinkPrimitiveLiteralNode(_node: ComlinkPrimitiveLiteralNode): void {
+    throw new Error('Not Implemented');
+  }
+
+  visitComlinkListLiteralNode(_node: ComlinkListLiteralNode): void {
+    throw new Error('Not Implemented');
+  }
+
+  visitComlinkObjectLiteralNode(_node: ComlinkObjectLiteralNode): void {
+    throw new Error('Not Implemented');
+  }
+
+  visitComlinkAssignmentNode(_node: ComlinkAssignmentNode): void {
+    throw new Error('Not Implemented');
+  }
+
   /**
    * store the named fields for later reference
    */
@@ -313,41 +337,5 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
     for (const model of models) {
       this.namedModels[model.modelName] = model;
     }
-  }
-
-  // TODO: Implemented in another PR
-  visitUseCaseExampleNode(
-    _node: UseCaseExampleNode,
-    ..._parameters: unknown[]
-  ): unknown {
-    throw new Error('Method not implemented.');
-  }
-
-  visitComlinkPrimitiveLiteralNode(
-    _node: ComlinkPrimitiveLiteralNode,
-    ..._parameters: unknown[]
-  ): unknown {
-    throw new Error('Method not implemented.');
-  }
-
-  visitComlinkObjectLiteralNode(
-    _node: ComlinkObjectLiteralNode,
-    ..._parameters: unknown[]
-  ): unknown {
-    throw new Error('Method not implemented.');
-  }
-
-  visitComlinkListLiteralNode(
-    _node: ComlinkListLiteralNode,
-    ..._parameters: unknown[]
-  ): unknown {
-    throw new Error('Method not implemented.');
-  }
-
-  visitComlinkAssignmentNode(
-    _node: ComlinkAssignmentNode,
-    ..._parameters: unknown[]
-  ): unknown {
-    throw new Error('Method not implemented.');
   }
 }

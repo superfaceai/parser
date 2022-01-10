@@ -8,9 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Http call can now select service id, e.g. `http VERB "id" "url" {`
+- `ExampleValidator` class to validate examples defined in profile usecase
+- `validateExamples` function similar to `validateMap` for using `ExampleValidator`
 
 ### Changed
 - `ErrorContext` field `path` to object containing location span and node kind
+- Formatting of validation issues into more intuitive way
+- Validation issues `inputNotFound`, `resultNotFound` and `errorNotFound` merged into `useCaseSlotNotFound`
+- Validation issues `resultNotDefined` and `errorNotDefined` merged into `outcomeNotDefined`
 
 ### Fixed
 - Handling variables that are written with dot notation, e.g. `output.is.nested = true`
@@ -18,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Validate arguments in inline call only against input
 - Unwrap non null structure in validation of nested properties
 - Remove limited validation of binary expressions and let other constructs handle them
+- Propagation of validation issues on top of issues from jessie expression nodes 
 - `SyntaxRuleNever` causing a wrong error message
 
 ## [1.0.0] - 2021-11-04

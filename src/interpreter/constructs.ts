@@ -1,7 +1,7 @@
 import { LocationSpan } from '@superfaceai/ast';
 import * as ts from 'typescript';
 
-import { IssueLocation } from '.';
+import { IssueLocation, UseCaseSlotType } from '.';
 import { ValidationIssue } from './issue';
 import { ValidationResult } from './map-validator';
 import {
@@ -206,7 +206,7 @@ function compareStructures(
     pass: false,
     errors: [
       {
-        kind: 'wrongStructure',
+        kind: 'wrongInput',
         context: {
           path: getPath(node, initialLocation),
           expected: outputStructure,
@@ -266,7 +266,7 @@ function getFieldStructure(
 ): StructureType | undefined {
   if (ts.isIdentifier(node)) {
     if (!objectStructure.fields) {
-      throw new Error('This should not happen!');
+      throw new Error('Validated object structure does not contain fields');
     }
 
     return objectStructure.fields[property];
@@ -304,6 +304,7 @@ export const RETURN_CONSTRUCTS: {
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
+      // TODO: take `UnionStructure` in consideration
       if (
         isScalarStructure(outputStructure) ||
         isStringStructure(outputStructure)
@@ -341,6 +342,7 @@ export const RETURN_CONSTRUCTS: {
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
+      // TODO: take `UnionStructure` in consideration
       if (
         isScalarStructure(outputStructure) ||
         isNumberStructure(outputStructure)
@@ -378,6 +380,7 @@ export const RETURN_CONSTRUCTS: {
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
+      // TODO: take `UnionStructure` in consideration
       if (
         isScalarStructure(outputStructure) ||
         (isPrimitiveStructure(outputStructure) &&
@@ -416,6 +419,7 @@ export const RETURN_CONSTRUCTS: {
       if (isNonNullStructure(outputStructure)) {
         outputStructure = outputStructure.value;
       }
+      // TODO: take `UnionStructure` in consideration
       if (
         isScalarStructure(outputStructure) ||
         (isPrimitiveStructure(outputStructure) &&
@@ -560,9 +564,10 @@ export const RETURN_CONSTRUCTS: {
         if (!inputStructure || !inputStructure.fields) {
           return returnIssue(
             {
-              kind: 'inputNotFound',
+              kind: 'useCaseSlotNotFound',
               context: {
                 path: getPath(node, initialLocation),
+                expected: UseCaseSlotType.INPUT,
                 actual: getVariableName(node),
               },
             },
@@ -635,9 +640,10 @@ export const RETURN_CONSTRUCTS: {
         if (!inputStructure || !inputStructure.fields) {
           return returnIssue(
             {
-              kind: 'inputNotFound',
+              kind: 'useCaseSlotNotFound',
               context: {
                 path: getPath(node, initialLocation),
+                expected: UseCaseSlotType.INPUT,
                 actual: getVariableName(node),
               },
             },
@@ -709,9 +715,10 @@ export const RETURN_CONSTRUCTS: {
 
         if (!inputStructure || !inputStructure.fields) {
           const issue: ValidationIssue = {
-            kind: 'inputNotFound',
+            kind: 'useCaseSlotNotFound',
             context: {
               path: getPath(node, initialLocation),
+              expected: UseCaseSlotType.INPUT,
               actual: getVariableName(node),
             },
           };
@@ -808,6 +815,7 @@ export const RETURN_CONSTRUCTS: {
         return mergeResults(...results);
       }
 
+      // TODO: take `UnionStructure` in consideration
       if (!isObjectStructure(outputStructure)) {
         const issue: ValidationIssue = {
           kind: 'wrongStructure',
@@ -831,7 +839,7 @@ export const RETURN_CONSTRUCTS: {
       }
 
       if (!structureOfProperties) {
-        throw new Error('This should not happen!');
+        throw new Error('Validated object structure does not contain fields');
       }
 
       // all fields
@@ -876,7 +884,7 @@ export const RETURN_CONSTRUCTS: {
           kind: 'missingRequired',
           context: {
             path: getPath(node, initialLocation),
-            field: key,
+            expected: key,
           },
         };
 
@@ -888,7 +896,7 @@ export const RETURN_CONSTRUCTS: {
           kind: 'wrongObjectStructure',
           context: {
             path: getPath(node, initialLocation),
-            expected: structureOfProperties,
+            expected: outputStructure,
             actual: node.getText(),
           },
         };
@@ -947,6 +955,7 @@ export const RETURN_CONSTRUCTS: {
         },
       };
 
+      // TODO: take `UnionStructure` in consideration
       if (!isListStructure(outputStructure)) {
         return mergeResults(
           ...results,
@@ -981,10 +990,8 @@ export const RETURN_CONSTRUCTS: {
       }
 
       if (!structureOfTypes) {
-        throw new Error('This should not happen!');
+        throw new Error('Validated types in list structure are not defined');
       }
-
-      const typeValues = Object.values(structureOfTypes);
 
       for (const element of node.elements) {
         if (isTypescriptIdentifier(element)) {
@@ -1003,7 +1010,7 @@ export const RETURN_CONSTRUCTS: {
 
         let diff = 0;
 
-        for (const value of typeValues) {
+        for (const value of structureOfTypes) {
           const result = visitConstruct(
             element,
             initialLocation,
@@ -1018,7 +1025,7 @@ export const RETURN_CONSTRUCTS: {
           }
         }
 
-        if (diff === typeValues.length) {
+        if (diff === structureOfTypes.length) {
           results.push(
             returnIssue(
               wrongStructureIssue,
