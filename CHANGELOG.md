@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - `ExampleValidator` class to validate examples defined in profile usecase
+- `validateExamples` function similar to `validateMap` for using `ExampleValidator`
 
 ### Changed
 - `ErrorContext` field `path` to object containing location span and node kind
