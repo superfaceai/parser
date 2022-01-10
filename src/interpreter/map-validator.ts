@@ -6,6 +6,7 @@ import {
   HttpRequestNode,
   HttpResponseHandlerNode,
   InlineCallNode,
+  isInlineCallNode,
   isMapDefinitionNode,
   isObjectLiteralNode,
   isOperationDefinitionNode,
@@ -26,7 +27,7 @@ import {
 import createDebug from 'debug';
 import * as ts from 'typescript';
 
-import { buildAssignment, IssueLocation } from '.';
+import { buildAssignment, IssueLocation, UseCaseSlotType } from '.';
 import { RETURN_CONSTRUCTS } from './constructs';
 import { ValidationIssue } from './issue';
 import {
@@ -252,10 +253,11 @@ export class MapValidator implements MapAstVisitor {
       getOutcomes(node, false).length === 0
     ) {
       this.errors.push({
-        kind: 'resultNotDefined',
+        kind: 'outcomeNotDefined',
         context: {
           path: this.getPath(node),
-          expectedResult: usecase.result,
+          slot: UseCaseSlotType.RESULT,
+          expected: usecase.result,
         },
       });
     }
@@ -265,10 +267,11 @@ export class MapValidator implements MapAstVisitor {
       getOutcomes(node, true).length === 0
     ) {
       this.errors.push({
-        kind: 'errorNotDefined',
+        kind: 'outcomeNotDefined',
         context: {
           path: this.getPath(node),
-          expectedError: usecase.error,
+          slot: UseCaseSlotType.ERROR,
+          expected: usecase.error,
         },
       });
     }
@@ -343,10 +346,11 @@ export class MapValidator implements MapAstVisitor {
     if (node.isError) {
       if (!this.currentUseCase?.error) {
         this.warnings.push({
-          kind: 'errorNotFound',
+          kind: 'useCaseSlotNotFound',
           context: {
             path: this.getPath(node),
-            actualError: node.value,
+            expected: UseCaseSlotType.ERROR,
+            actual: node.value,
           },
         });
       }
@@ -354,10 +358,11 @@ export class MapValidator implements MapAstVisitor {
     } else {
       if (!this.currentUseCase?.result) {
         this.warnings.push({
-          kind: 'resultNotFound',
+          kind: 'useCaseSlotNotFound',
           context: {
             path: this.getPath(node),
-            actualResult: node.value,
+            expected: UseCaseSlotType.RESULT,
+            actual: node.value,
           },
         });
       }
@@ -375,8 +380,10 @@ export class MapValidator implements MapAstVisitor {
       // Init new variables if object used in dot notation wasn't defined before
       if (assignment.key.length > 1) {
         const keys = [];
-        for (const key of assignment.key) {
-          keys.push(key);
+        for (let i = 0; i < assignment.key.length - 1; i++) {
+          const item = assignment.key[i];
+
+          keys.push(item);
 
           if (this.variables[keys.join('.')] === undefined) {
             this.addVariableToStack(
@@ -392,7 +399,10 @@ export class MapValidator implements MapAstVisitor {
       }
 
       this.visit(assignment.value);
-      this.addVariableToStack(assignment, false);
+
+      if (!isInlineCallNode(assignment.value)) {
+        this.addVariableToStack(assignment, false);
+      }
     });
   }
 
@@ -409,16 +419,16 @@ export class MapValidator implements MapAstVisitor {
   }
 
   visitInlineCallNode(node: InlineCallNode): boolean {
-    const originalStructure = this.currentStructure;
-
-    // set current structure to undefined to validate only input
-    this.currentStructure = undefined;
-
     if (node.arguments.length > 0) {
-      node.arguments.forEach(argument => this.visit(argument));
-    }
+      const originalStructure = this.currentStructure;
 
-    this.currentStructure = originalStructure;
+      // set current structure to undefined to validate only input
+      this.currentStructure = undefined;
+
+      node.arguments.forEach(argument => this.visit(argument));
+
+      this.currentStructure = originalStructure;
+    }
 
     return true;
   }
@@ -447,35 +457,6 @@ export class MapValidator implements MapAstVisitor {
     );
 
     let result = constructResult.pass;
-
-    if (this.currentStructure && constructResult.invalidOutput) {
-      this.addIssue({
-        kind: 'wrongStructure',
-        context: {
-          path: this.getPath(node),
-          expected: this.currentStructure,
-          actual: node.source ?? node.expression,
-        },
-      });
-    }
-    if (this.inputStructure && constructResult.invalidInput) {
-      this.addIssue({
-        kind: 'wrongInput',
-        context: {
-          path: this.getPath(node),
-          expected: this.inputStructure,
-          actual: node.source ?? node.expression,
-        },
-      });
-    } else if (constructResult.invalidInput) {
-      this.addIssue({
-        kind: 'inputNotFound',
-        context: {
-          path: this.getPath(node),
-          actual: node.source ?? node.expression,
-        },
-      });
-    }
 
     if (!constructResult.pass) {
       this.errors.push(...constructResult.errors);
@@ -543,7 +524,7 @@ export class MapValidator implements MapAstVisitor {
       return true;
     }
 
-    const { structureOfFields, isValid } = compareStructure(
+    const { objectStructure, isValid } = compareStructure(
       node,
       this.currentStructure
     );
@@ -561,13 +542,15 @@ export class MapValidator implements MapAstVisitor {
       return this.isOutcomeWithCondition ? true : false;
     }
 
-    if (!structureOfFields) {
-      throw new Error('Validated object structure does not contain fields');
+    if (!objectStructure || !objectStructure.fields) {
+      throw new Error(
+        'Validated object structure is not defined or does not contain fields'
+      );
     }
 
     // all fields
-    const profileFields = Object.entries(structureOfFields);
-    const profileFieldNames = Object.keys(structureOfFields);
+    const profileFields = Object.entries(objectStructure.fields);
+    const profileFieldNames = Object.keys(objectStructure.fields);
     const mapFieldNames = node.fields.map(field => field.key[0]);
 
     // required fields
@@ -587,7 +570,7 @@ export class MapValidator implements MapAstVisitor {
     let result = true;
     for (const field of matchingFields) {
       let visitResult = true;
-      this.currentStructure = structureOfFields[field.key[0]];
+      this.currentStructure = objectStructure.fields[field.key[0]];
 
       // it should not validate against final value when dot.notation is used
       if (field.key.length > 1) {
@@ -611,7 +594,7 @@ export class MapValidator implements MapAstVisitor {
         kind: 'missingRequired',
         context: {
           path: this.getPath(node),
-          field: value ? value.kind : 'undefined',
+          expected: value ? value.kind : 'undefined',
         },
       });
     }
@@ -621,8 +604,8 @@ export class MapValidator implements MapAstVisitor {
         kind: 'wrongObjectStructure',
         context: {
           path: this.getPath(node),
-          expected: structureOfFields,
-          actual: node.fields,
+          expected: objectStructure,
+          actual: node,
         },
       });
     }

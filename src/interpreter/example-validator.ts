@@ -35,8 +35,8 @@ import {
   ProfileIOAnalyzer,
   ProfileOutput,
   StructureType,
+  UseCaseSlotType,
   ValidationIssue,
-  ValidationIssueSlot,
   ValidationResult,
 } from '.';
 
@@ -47,11 +47,11 @@ function assertUnreachable(node: ProfileASTNode): never {
   throw new Error(`Invalid Node kind: ${node.kind}`);
 }
 
-export class ExamplesValidator implements ProfileAstVisitor {
+export class ExampleValidator implements ProfileAstVisitor {
   private errors: ValidationIssue[] = [];
   private warnings: ValidationIssue[] = [];
 
-  private slotType: ValidationIssueSlot | undefined;
+  private slotType: UseCaseSlotType | undefined;
   private currentStructure: StructureType | undefined;
   private currentUseCase: string | undefined;
 
@@ -163,7 +163,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
 
     if (node.input) {
       this.currentStructure = usecase?.input;
-      this.slotType = ValidationIssueSlot.INPUT;
+      this.slotType = UseCaseSlotType.INPUT;
 
       this.visit(node.input);
 
@@ -173,7 +173,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
 
     if (node.result) {
       this.currentStructure = usecase?.result;
-      this.slotType = ValidationIssueSlot.RESULT;
+      this.slotType = UseCaseSlotType.RESULT;
 
       this.visit(node.result);
 
@@ -183,7 +183,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
 
     if (node.asyncResult) {
       this.currentStructure = usecase?.async;
-      this.slotType = ValidationIssueSlot.ASYNCRESULT;
+      this.slotType = UseCaseSlotType.ASYNCRESULT;
 
       this.visit(node.asyncResult);
 
@@ -193,7 +193,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
 
     if (node.error) {
       this.currentStructure = usecase?.error;
-      this.slotType = ValidationIssueSlot.ERROR;
+      this.slotType = UseCaseSlotType.ERROR;
 
       this.visit(node.error);
 
@@ -232,46 +232,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
 
     assertDefinedStructure(this.currentStructure);
 
-    const { listType, isValid } = compareStructure(node, this.currentStructure);
-
-    if (!isValid) {
-      this.errors.push({
-        kind: 'wrongStructure',
-        context: {
-          path: this.getPath(node),
-          expected: this.currentStructure,
-          actual: node,
-        },
-      });
-
-      return false;
-    }
-
-    if (!listType) {
-      throw new Error('Validated types in list structure are not defined');
-    }
-
-    const originalStructure = this.currentStructure;
-
-    let result = true;
-    for (const item of node.items) {
-      this.currentStructure = listType;
-      result &&= this.visit(item);
-    }
-
-    this.currentStructure = originalStructure;
-
-    return result;
-  }
-
-  visitComlinkObjectLiteralNode(node: ComlinkObjectLiteralNode): boolean {
-    if (this.structureIsPrepared(node)) {
-      return true;
-    }
-
-    assertDefinedStructure(this.currentStructure);
-
-    const { structureOfFields, isValid } = compareStructure(
+    const { listStructure, isValid } = compareStructure(
       node,
       this.currentStructure
     );
@@ -289,13 +250,57 @@ export class ExamplesValidator implements ProfileAstVisitor {
       return false;
     }
 
-    if (!structureOfFields) {
-      throw new Error('Validated object structure does not exist');
+    if (!listStructure) {
+      throw new Error('Validated list structure is not defined');
+    }
+
+    const originalStructure = this.currentStructure;
+
+    let result = true;
+    for (const item of node.items) {
+      this.currentStructure = listStructure.value;
+      result &&= this.visit(item);
+    }
+
+    this.currentStructure = originalStructure;
+
+    return result;
+  }
+
+  visitComlinkObjectLiteralNode(node: ComlinkObjectLiteralNode): boolean {
+    if (this.structureIsPrepared(node)) {
+      return true;
+    }
+
+    assertDefinedStructure(this.currentStructure);
+
+    const { objectStructure, isValid } = compareStructure(
+      node,
+      this.currentStructure
+    );
+
+    if (!isValid) {
+      this.errors.push({
+        kind: 'wrongStructure',
+        context: {
+          path: this.getPath(node),
+          expected: this.currentStructure,
+          actual: node,
+        },
+      });
+
+      return false;
+    }
+
+    if (!objectStructure || !objectStructure.fields) {
+      throw new Error(
+        'Validated object structure is not defined or does not contain fields'
+      );
     }
 
     // all fields
-    const profileFields = Object.entries(structureOfFields);
-    const profileFieldNames = Object.keys(structureOfFields);
+    const profileFields = Object.entries(objectStructure.fields);
+    const profileFieldNames = Object.keys(objectStructure.fields);
     const mapFieldNames = node.fields.map(field => field.key[0]);
 
     // required fields
@@ -315,7 +320,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
     let result = true;
     for (const field of matchingFields) {
       let visitResult = true;
-      this.currentStructure = structureOfFields[field.key[0]];
+      this.currentStructure = objectStructure.fields[field.key[0]];
 
       // it should not validate against final value when dot.notation is used
       if (field.key.length > 1) {
@@ -348,7 +353,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
         kind: 'missingRequired',
         context: {
           path: this.getPath(node),
-          field: value ? value.kind : 'undefined',
+          expected: value ? value.kind : 'undefined',
         },
       });
     }
@@ -358,8 +363,8 @@ export class ExamplesValidator implements ProfileAstVisitor {
         kind: 'wrongObjectStructure',
         context: {
           path: this.getPath(node),
-          expected: structureOfFields,
-          actual: node.fields,
+          expected: objectStructure,
+          actual: node,
         },
       });
     }
@@ -425,7 +430,7 @@ export class ExamplesValidator implements ProfileAstVisitor {
         kind: 'useCaseSlotNotFound',
         context: {
           path: this.getPath(node),
-          slot: this.slotType,
+          expected: this.slotType,
           actual: node,
         },
       });

@@ -12,7 +12,7 @@ import {
   ValidationIssue,
   ValidationResult,
 } from '..';
-import { ExamplesValidator } from '../example-validator';
+import { ExampleValidator } from '../example-validator';
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -158,7 +158,7 @@ expect.extend({
     errors?: string[],
     warnings?: string[]
   ) {
-    const exampleValidator = new ExamplesValidator(profile);
+    const exampleValidator = new ExampleValidator(profile);
     const result = exampleValidator.validate();
 
     const issues = {
