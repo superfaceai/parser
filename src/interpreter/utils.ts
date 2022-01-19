@@ -1,36 +1,40 @@
 import {
+  AssignmentNode,
+  ComlinkAssignmentNode,
+  ComlinkLiteralNode,
   isCallStatementNode,
+  isComlinkListLiteralNode,
+  isComlinkObjectLiteralNode,
+  isComlinkPrimitiveLiteralNode,
   isHttpCallStatementNode,
   isObjectLiteralNode,
   isOutcomeStatementNode,
   isPrimitiveLiteralNode,
   isUseCaseDefinitionNode,
   LiteralNode,
+  LocationSpan,
   MapASTNode,
   MapDefinitionNode,
   OperationDefinitionNode,
   OutcomeStatementNode,
+  ProfileASTNode,
   ProfileDocumentNode,
 } from '@superfaceai/ast';
 import * as ts from 'typescript';
 
 import { TypescriptIdentifier } from './constructs';
-import { ValidationIssue } from './issue';
+import { ExampleValidator } from './example-validator';
+import { UseCaseSlotType, ValidationIssue } from './issue';
 import { MapValidator, ValidationResult } from './map-validator';
 import { ProfileIOAnalyzer } from './profile-io-analyzer';
 import {
-  ObjectCollection,
+  ListStructure,
   ObjectStructure,
   ProfileOutput,
   StructureType,
   VersionStructure,
 } from './profile-output';
-import {
-  isEnumStructure,
-  isNonNullStructure,
-  isObjectStructure,
-  isPrimitiveStructure,
-} from './profile-output.utils';
+import { isObjectStructure } from './profile-output.utils';
 
 export function composeVersion(version: VersionStructure): string {
   return (
@@ -38,6 +42,73 @@ export function composeVersion(version: VersionStructure): string {
     (version.patch !== undefined ? `.${version.patch}` : '') +
     (version.label ? `-${version.label}` : '')
   );
+}
+
+function formatPrimitive(value: string | number | boolean): string {
+  if (typeof value === 'string') {
+    return `"${value}"`;
+  }
+
+  return value.toString();
+}
+
+function formatStructure(structure: StructureType | string): string {
+  if (typeof structure === 'string') {
+    return structure;
+  }
+
+  switch (structure.kind) {
+    case 'EnumStructure':
+      return structure.enums.map(enumValue => enumValue.value).join(' or ');
+    case 'ListStructure':
+      return `[${formatStructure(structure.value)}]`;
+    case 'NonNullStructure':
+      return `${formatStructure(structure.value)}!`;
+    case 'ObjectStructure':
+      return `{${Object.entries(structure.fields ?? [])
+        .map(([key, type]) => `${key}: ${formatStructure(type)}`)
+        .join(', ')}}`;
+    case 'PrimitiveStructure':
+      return structure.type;
+    case 'ScalarStructure':
+      return 'any';
+    case 'UnionStructure':
+      return structure.types.map(type => formatStructure(type)).join(' | ');
+  }
+}
+
+function formatLiteral(
+  literal:
+    | LiteralNode
+    | ComlinkLiteralNode
+    | AssignmentNode
+    | ComlinkAssignmentNode
+    | string
+): string {
+  if (typeof literal === 'string') {
+    return literal;
+  }
+
+  switch (literal.kind) {
+    case 'PrimitiveLiteral':
+    case 'ComlinkPrimitiveLiteral':
+      return formatPrimitive(literal.value);
+    case 'ObjectLiteral':
+    case 'ComlinkObjectLiteral':
+      return `{${literal.fields.map(formatLiteral).join(', ')}}`;
+    case 'JessieExpression':
+      return literal.source ?? literal.expression;
+    case 'InlineCall':
+      return `call ${literal.operationName}(${literal.arguments
+        .map(formatLiteral)
+        .join(', ')})`;
+    case 'ComlinkListLiteral':
+      return `[${literal.items.map(formatLiteral).join(', ')}]`;
+
+    case 'ComlinkAssignment':
+    case 'Assignment':
+      return `${literal.key.join('.')}: ${formatLiteral(literal.value)}`;
+  }
 }
 
 export function formatIssueContext(issue: ValidationIssue): string {
@@ -51,147 +122,72 @@ export function formatIssueContext(issue: ValidationIssue): string {
       }, but got ${issue.context.actual ?? 'no scope in map'}`;
 
     case 'wrongProfileName':
-      return `Wrong Profile Name: expected ${issue.context.expected}, but got ${issue.context.actual}`;
+      return `Wrong Profile Name: expected "${issue.context.expected}", but got "${issue.context.actual}"`;
 
     case 'wrongProfileVersion':
-      return `Wrong Profile Version: profile is ${composeVersion(
+      return `Wrong Profile Version: expected "${composeVersion(
         issue.context.expected
-      )}, but map requests ${composeVersion(issue.context.actual)}`;
+      )}", but map requests "${composeVersion(issue.context.actual)}"`;
 
     case 'mapNotFound':
-      return `Map not found: ${issue.context.expected}`;
+      return `Map not found: "${issue.context.expected}"`;
 
     case 'extraMapsFound':
-      return `Extra Maps Found: ${issue.context.expected.join(
+      return `Extra Maps Found: "${issue.context.expected.join(
         ','
-      )}, but got ${issue.context.actual.join(', ')}`;
+      )}", but got "${issue.context.actual.join(', ')}"`;
 
-    case 'resultNotDefined':
-      return 'Result not defined';
+    case 'outcomeNotDefined':
+      return `No ${issue.context.slot} outcome defined`;
 
-    case 'errorNotDefined':
-      return 'Error not defined';
+    case 'useCaseSlotNotFound':
+      actual = `${
+        issue.context.expected === UseCaseSlotType.INPUT ? '' : 'returning '
+      }${formatLiteral(issue.context.actual)}`;
 
-    case 'resultNotFound':
-      if (isPrimitiveLiteralNode(issue.context.actualResult)) {
-        actual = issue.context.actualResult.value;
-      } else {
-        actual = issue.context.actualResult.kind;
-      }
-
-      return `Result Not Found: returning "${actual.toString()}", but there is no result defined in usecase`;
-
-    case 'errorNotFound':
-      if (isPrimitiveLiteralNode(issue.context.actualError)) {
-        actual = issue.context.actualError.value;
-      } else {
-        actual = issue.context.actualError.kind;
-      }
-
-      return `Error Not Found: returning "${actual.toString()}", but there is no error defined in usecase`;
-
-    case 'inputNotFound':
-      return `Input Not Found: ${issue.context.actual} - there is no input defined in usecase`;
+      return `${issue.context.expected} Not Found: ${actual}, but there is no ${issue.context.expected} defined in usecase`;
 
     case 'wrongObjectStructure':
-      expected = Object.keys(issue.context.expected).join(', ');
-      actual =
-        typeof issue.context.actual === 'string'
-          ? issue.context.actual
-          : issue.context.actual.map(val => val.key.join('.')).join(', ');
+      expected = formatStructure(issue.context.expected);
+      actual = formatLiteral(issue.context.actual);
 
       return `Wrong Object Structure: expected ${expected}, but got ${actual}`;
 
     case 'wrongStructure':
-      if (isPrimitiveStructure(issue.context.expected)) {
-        expected = issue.context.expected.type;
-      } else if (isNonNullStructure(issue.context.expected)) {
-        if (isPrimitiveStructure(issue.context.expected.value)) {
-          expected = issue.context.expected.value.type;
-        } else {
-          expected = issue.context.expected.value.kind;
-        }
-      } else if (isEnumStructure(issue.context.expected)) {
-        expected = issue.context.expected.enums
-          .map(enumValue => enumValue.value)
-          .join(' or ');
-      } else {
-        expected = issue.context.expected.kind;
-      }
+      expected = formatStructure(issue.context.expected);
+      actual = formatLiteral(issue.context.actual);
 
-      if (typeof issue.context.actual !== 'string') {
-        if (issue.context.actual.kind === 'PrimitiveLiteral') {
-          actual = issue.context.actual.value;
-        } else {
-          actual = issue.context.actual.kind;
-        }
-      } else {
-        actual = issue.context.actual;
-      }
-
-      return `Wrong Structure: expected ${expected}, but got "${actual.toString()}"`;
+      return `Wrong Structure: expected ${expected}, but got ${actual}`;
 
     case 'missingRequired':
       return 'Missing required field';
 
     case 'wrongInput':
-      if (!issue.context.expected.fields) {
-        throw new Error('This should not happen!');
-      }
-      expected = Object.keys(issue.context.expected.fields).join(', ');
+      expected = formatStructure(issue.context.expected);
+      actual = formatStructure(issue.context.actual);
 
-      return `Wrong Input Structure: expected ${expected}, but got ${issue.context.actual}`;
+      return `Wrong Input Structure: expected ${expected}, but got ${actual}`;
 
     case 'wrongVariableStructure':
-      if (isPrimitiveStructure(issue.context.expected)) {
-        expected = issue.context.expected.type;
-      } else if (isNonNullStructure(issue.context.expected)) {
-        if (isPrimitiveStructure(issue.context.expected.value)) {
-          expected = issue.context.expected.value.type;
-        } else {
-          expected = issue.context.expected.value.kind;
-        }
-      } else if (isEnumStructure(issue.context.expected)) {
-        expected = issue.context.expected.enums
-          .map(enumValue => enumValue.value)
-          .join(' or ');
-      } else {
-        expected = issue.context.expected.kind;
-      }
+      expected = formatStructure(issue.context.expected);
+      actual = formatLiteral(issue.context.actual);
 
-      if (typeof issue.context.actual !== 'string') {
-        if (isPrimitiveLiteralNode(issue.context.actual)) {
-          actual = issue.context.actual.value;
-        } else {
-          actual = issue.context.actual.kind;
-        }
-      } else {
-        actual = issue.context.actual;
-      }
-
-      return `Wrong Variable Structure: variable ${
-        issue.context.name
-      } expected ${expected}, but got ${actual.toString()}`;
+      return `Wrong Variable Structure: variable ${issue.context.name} expected ${expected}, but got ${actual}`;
 
     default:
       throw new Error('Invalid issue!');
   }
 }
 
-export function formatIssues(issues?: ValidationIssue[]): string {
-  if (!issues) {
-    return 'Unknown issue';
-  }
-
+export function formatIssues(issues: ValidationIssue[]): string {
   return issues
     .map(issue => {
-      const location = issue.context
-        ? issue.context.path
-          ? issue.context.path.join(' ')
-          : ''
-        : '';
+      const { kind, location } = issue.context.path;
+      const path = location
+        ? `${location.start.line}:${location.start.column} ${kind}`
+        : kind;
 
-      return `${location} - ${formatIssueContext(issue)}`;
+      return `${path} - ${formatIssueContext(issue)}`;
     })
     .join('\n');
 }
@@ -202,17 +198,17 @@ export function formatIssues(issues?: ValidationIssue[]): string {
  * @param structure represent Result or Error and their descendent structure
  */
 export function compareStructure(
-  node: LiteralNode,
+  node: LiteralNode | ComlinkLiteralNode,
   structure: StructureType
 ): {
   isValid: boolean;
-  structureOfFields?: ObjectCollection;
-  nonNull?: boolean;
+  objectStructure?: ObjectStructure;
+  listStructure?: ListStructure;
 } {
   switch (structure.kind) {
     case 'PrimitiveStructure':
       if (
-        isPrimitiveLiteralNode(node) &&
+        (isPrimitiveLiteralNode(node) || isComlinkPrimitiveLiteralNode(node)) &&
         typeof node.value === structure.type
       ) {
         return { isValid: true };
@@ -220,14 +216,20 @@ export function compareStructure(
       break;
 
     case 'ObjectStructure':
-      if (isObjectLiteralNode(node)) {
-        return { isValid: true, structureOfFields: structure.fields };
+      if (isObjectLiteralNode(node) || isComlinkObjectLiteralNode(node)) {
+        return { isValid: true, objectStructure: structure };
+      }
+      break;
+
+    case 'ListStructure':
+      if (isComlinkListLiteralNode(node)) {
+        return { isValid: true, listStructure: structure };
       }
       break;
 
     case 'EnumStructure':
       if (
-        isPrimitiveLiteralNode(node) &&
+        (isPrimitiveLiteralNode(node) || isComlinkPrimitiveLiteralNode(node)) &&
         structure.enums.map(enumValue => enumValue.value).includes(node.value)
       ) {
         return { isValid: true };
@@ -235,8 +237,9 @@ export function compareStructure(
       break;
 
     case 'UnionStructure':
-      for (const type of Object.values(structure.types)) {
+      for (const type of structure.types) {
         const compareResult = compareStructure(node, type);
+
         if (compareResult.isValid) {
           return compareResult;
         }
@@ -321,6 +324,15 @@ export const getProfileOutput = (
   const analyzer = new ProfileIOAnalyzer();
 
   return analyzer.visit(profile);
+};
+
+export const validateExamples = (
+  profileAst: ProfileASTNode,
+  profileOutput?: ProfileOutput
+): ValidationResult => {
+  const exampleValidator = new ExampleValidator(profileAst, profileOutput);
+
+  return exampleValidator.validate();
 };
 
 export const validateMap = (
@@ -471,3 +483,9 @@ export function getVariableName(
 
   return 'undefined';
 }
+
+export const buildAssignment = (
+  key: string[],
+  value: LiteralNode,
+  location?: LocationSpan
+): AssignmentNode => ({ kind: 'Assignment', key, value, location });

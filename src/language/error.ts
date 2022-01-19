@@ -139,13 +139,17 @@ function generateErrorVisualization(
   const maxLineNumberLog =
     Math.log10(sourceLocation.start.line + sourceTextLines.length) + 1;
 
-  const visualization = renderErrorVisualization(
-    sourceTextLines,
-    location,
-    maxLineNumberLog,
-    sourceLocation.start.line + visBlock.lineOffset,
-    visBlock.start
-  );
+  // Generate visualization only if the error span is not empty
+  let visualization = '';
+  if (location.start.charIndex < location.end.charIndex) {
+    visualization = renderErrorVisualization(
+      sourceTextLines,
+      location,
+      maxLineNumberLog,
+      sourceLocation.start.line + visBlock.lineOffset,
+      visBlock.start
+    );
+  }
 
   return {
     visualization,
@@ -159,10 +163,34 @@ export const enum SyntaxErrorCategory {
   LEXER = 'Lexer',
   /** Parser rule error */
   PARSER = 'Parser',
-  /** Jessie syntax error */
-  JESSIE_SYNTAX = 'Jessie syntax',
-  /** Jessie forbidden construct error */
-  JESSIE_VALIDATION = 'Jessie validation',
+  /** Script syntax error */
+  SCRIPT_SYNTAX = 'Script syntax',
+  /** Script forbidden construct error */
+  SCRIPT_VALIDATION = 'Script validation',
+}
+type ErrorCategoryStrings = {
+  categoryDetail?: string;
+  categoryHints: string[];
+};
+function errorCategoryStrings(
+  category: SyntaxErrorCategory
+): ErrorCategoryStrings {
+  const result: ErrorCategoryStrings = {
+    categoryDetail: undefined,
+    categoryHints: [],
+  };
+
+  switch (category) {
+    case SyntaxErrorCategory.SCRIPT_SYNTAX:
+    case SyntaxErrorCategory.SCRIPT_VALIDATION:
+      result.categoryDetail = 'Error in script syntax';
+      result.categoryHints.push(
+        'This was parsed in script context, it might be an error in comlink syntax instead'
+      );
+      break;
+  }
+
+  return result;
 }
 
 export type ProtoError = {
@@ -170,12 +198,13 @@ export type ProtoError = {
   readonly relativeSpan: CharIndexSpan;
   readonly detail?: string;
   readonly category: SyntaxErrorCategory;
-  readonly hint?: string;
+  readonly hints: string[];
 };
 
 export class SyntaxError {
   /** Additional message attached to the error. */
   readonly detail: string;
+  readonly hints: string[];
 
   constructor(
     /** Input source that is being parsed. */
@@ -185,10 +214,20 @@ export class SyntaxError {
     /** Category of this error. */
     readonly category: SyntaxErrorCategory,
     detail?: string,
-    /** Optional hint that is emitted to help with the resolution. */
-    readonly hint?: string
+    /** Optional hints that are emitted to help with the resolution. */
+    hints?: string[]
   ) {
+    const { categoryDetail, categoryHints } = errorCategoryStrings(
+      this.category
+    );
+
     this.detail = detail ?? 'Invalid or unexpected token';
+    if (categoryDetail !== undefined) {
+      this.detail = `${categoryDetail}: ${this.detail}`;
+    }
+
+    this.hints = hints ?? [];
+    this.hints.push(...categoryHints);
   }
 
   static fromSyntaxRuleNoMatch(
@@ -219,6 +258,7 @@ export class SyntaxError {
       }
     }
 
+    // The default location is invalid on purpose
     const location = result.attempts.token?.location ?? {
       start: { line: 0, column: 0, charIndex: 0 },
       end: { line: 0, column: 0, charIndex: 0 },
@@ -246,26 +286,35 @@ export class SyntaxError {
     );
   }
 
-  format(): string {
+  formatVisualization(): string {
     // Generate the lines
     const { visualization, maxLineNumberLog, sourceLocation } =
       generateErrorVisualization(this.source, this.location);
 
-    let categoryInfo = '';
-    switch (this.category) {
-      case SyntaxErrorCategory.JESSIE_SYNTAX:
-      case SyntaxErrorCategory.JESSIE_VALIDATION:
-        categoryInfo = 'Error in script syntax: ';
-        break;
-    }
-
-    const errorLine = `SyntaxError: ${categoryInfo}${this.detail}`;
     const locationLinePrefix = ' '.repeat(maxLineNumberLog) + '--> ';
     const locationLine = `${locationLinePrefix}${this.source.fileName}:${sourceLocation.start.line}:${sourceLocation.start.column}`;
 
-    const maybeHint = this.hint ? `Hint: ${this.hint}\n` : '';
+    return `${locationLine}\n${visualization}`;
+  }
 
-    return `${errorLine}\n${locationLine}\n${visualization}\n${maybeHint}`;
+  formatHints(): string {
+    function isString(i: string | undefined): i is string {
+      return i !== undefined;
+    }
+
+    const filtered: string[] = this.hints.filter(isString);
+
+    if (filtered.length === 0) {
+      return '';
+    }
+
+    return filtered.map(h => `Hint: ${h}`).join('\n');
+  }
+
+  format(): string {
+    return `SyntaxError: ${
+      this.detail
+    }\n${this.formatVisualization()}\n${this.formatHints()}`;
   }
 
   get message(): string {

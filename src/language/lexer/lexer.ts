@@ -289,7 +289,7 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
     if (tokenParseResult.kind === 'error') {
       let category: SyntaxErrorCategory;
       let detail: string | undefined;
-      let hint: string | undefined;
+      let hints: string[];
       let relativeSpan: CharIndexSpan;
 
       // Single-error results are easy
@@ -298,15 +298,16 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
 
         category = error.category;
         detail = error.detail;
-        hint = error.hint;
+        hints = error.hints;
         relativeSpan = error.relativeSpan;
       } else {
         // multi-error results combine all errors and hints into one, the span is the one that covers all the errors
         category = SyntaxErrorCategory.LEXER;
+
         detail = tokenParseResult.errors
           .map(err => err.detail ?? '')
           .join('; ');
-        hint = tokenParseResult.errors.map(err => err.hint ?? '').join('; ');
+        hints = tokenParseResult.errors.flatMap(err => err.hints);
         relativeSpan = tokenParseResult.errors
           .map(err => err.relativeSpan)
           .reduce((acc, curr) => {
@@ -351,7 +352,7 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
         errorLocation,
         category,
         detail,
-        hint
+        hints
       );
 
       return new LexerToken(

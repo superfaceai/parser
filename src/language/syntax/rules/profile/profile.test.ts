@@ -177,6 +177,7 @@ describe('profile syntax rules', () => {
               tesMatch(
                 {
                   kind: 'EnumValue',
+                  name: (tokens[2].data as IdentifierTokenData).identifier,
                   value: (tokens[4].data as LiteralTokenData).literal,
                 },
                 tokens[2],
@@ -185,6 +186,7 @@ describe('profile syntax rules', () => {
               tesMatch(
                 {
                   kind: 'EnumValue',
+                  name: (tokens[6].data as IdentifierTokenData).identifier,
                   value: (tokens[8].data as LiteralTokenData).literal,
                 },
                 tokens[6],
@@ -193,6 +195,7 @@ describe('profile syntax rules', () => {
               tesMatch(
                 {
                   kind: 'EnumValue',
+                  name: (tokens[10].data as IdentifierTokenData).identifier,
                   value: (tokens[12].data as StringTokenData).string,
                 },
                 tokens[10],
@@ -201,6 +204,7 @@ describe('profile syntax rules', () => {
               tesMatch(
                 {
                   kind: 'EnumValue',
+                  name: (tokens[15].data as IdentifierTokenData).identifier,
                   value: (tokens[15].data as IdentifierTokenData).identifier,
                 },
                 tokens[15]
@@ -421,6 +425,7 @@ describe('profile syntax rules', () => {
                   tesMatch(
                     {
                       kind: 'EnumValue',
+                      name: (tokens[2].data as IdentifierTokenData).identifier,
                       value: (tokens[2].data as IdentifierTokenData).identifier,
                     },
                     tokens[2]
@@ -428,6 +433,7 @@ describe('profile syntax rules', () => {
                   tesMatch(
                     {
                       kind: 'EnumValue',
+                      name: (tokens[4].data as IdentifierTokenData).identifier,
                       value: (tokens[4].data as IdentifierTokenData).identifier,
                     },
                     tokens[4]
@@ -510,6 +516,8 @@ describe('profile syntax rules', () => {
                     tesMatch(
                       {
                         kind: 'EnumValue',
+                        name: (tokens[2].data as IdentifierTokenData)
+                          .identifier,
                         value: (tokens[2].data as IdentifierTokenData)
                           .identifier,
                       },
@@ -518,6 +526,8 @@ describe('profile syntax rules', () => {
                     tesMatch(
                       {
                         kind: 'EnumValue',
+                        name: (tokens[4].data as IdentifierTokenData)
+                          .identifier,
                         value: (tokens[4].data as IdentifierTokenData)
                           .identifier,
                       },
@@ -936,6 +946,7 @@ describe('profile syntax rules', () => {
                   tesMatch(
                     {
                       kind: 'EnumValue',
+                      name: (tokens[4].data as IdentifierTokenData).identifier,
                       value: (tokens[4].data as IdentifierTokenData).identifier,
                     },
                     tokens[4]
@@ -1263,6 +1274,8 @@ describe('profile syntax rules', () => {
                             tesMatch(
                               {
                                 kind: 'EnumValue',
+                                name: (tokens[22].data as IdentifierTokenData)
+                                  .identifier,
                                 value: (tokens[22].data as IdentifierTokenData)
                                   .identifier,
                               },
