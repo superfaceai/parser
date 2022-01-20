@@ -1,6 +1,8 @@
 import * as ts from 'typescript';
 
-import { validateAndTranspile } from '../../../jessie';
+import { ScriptExpressionCompiler } from '../../../../common/script';
+import { ProtoError } from '../../../error';
+import { mapScriptDiagnostic, mapValidatorDiagnostic } from '../../../jessie';
 import {
   JessieSublexerTokenData,
   LexerTokenKind,
@@ -11,60 +13,29 @@ import { ParseResult } from '../result';
 function processScriptText(
   scriptText: string
 ): ParseResult<JessieSublexerTokenData> {
-  const SCRIPT_WRAP = {
-    start: 'let __jessieValue = ',
-    end: ';',
-    transpiled: {
-      start: 'var __jessieValue = ',
-      end: ';',
-      varName: '__jessieValue',
-    },
-  };
+  const compiler = new ScriptExpressionCompiler(scriptText);
 
-  // Diagnose the script text, put it in a position where an expression would be required
-  const transRes = validateAndTranspile(
-    SCRIPT_WRAP.start + scriptText + SCRIPT_WRAP.end
-  );
-  if (transRes.kind === 'failure') {
+  let errors: ProtoError[] = compiler.diagnose().map(mapScriptDiagnostic);
+  if (errors.length === 0) {
+    errors = compiler.validate().map(mapValidatorDiagnostic);
+  }
+  if (errors.length > 0) {
     return {
       kind: 'error',
       tokenKind: LexerTokenKind.JESSIE_SCRIPT,
-      // map the errors to get the correct spans
-      errors: transRes.errors.map(err => {
-        return {
-          detail: err.detail,
-          hints: err.hints,
-          category: err.category,
-          relativeSpan: {
-            start: err.relativeSpan.start - SCRIPT_WRAP.start.length,
-            end: err.relativeSpan.end - SCRIPT_WRAP.start.length,
-          },
-        };
-      }),
+      errors,
     };
   }
 
-  // With some syntax the transpiler creates a polyfill for the function
-  // For example for the spread operator `...`
-  // Here we detect that case and wrap the output in an immediatelly invoked function expression
-  let scriptOutput = transRes.output;
-  if (!transRes.output.startsWith(SCRIPT_WRAP.transpiled.start)) {
-    scriptOutput = `(function() {\n${scriptOutput}\nreturn ${SCRIPT_WRAP.transpiled.varName};\n})()`;
-  } else {
-    // strip the prefix and postfix added by the processing here (to force expression position)
-    scriptOutput = scriptOutput.slice(
-      SCRIPT_WRAP.transpiled.start.length,
-      scriptOutput.length - SCRIPT_WRAP.transpiled.end.length
-    );
-  }
+  const { output, sourceMap } = compiler.transpile();
 
   return {
     kind: 'match',
     data: {
       kind: LexerTokenKind.JESSIE_SCRIPT,
-      script: scriptOutput,
       sourceScript: scriptText,
-      sourceMap: transRes.sourceMap,
+      script: output,
+      sourceMap,
     },
     relativeSpan: { start: 0, end: scriptText.length },
   };

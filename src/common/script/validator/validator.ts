@@ -1,6 +1,6 @@
 import * as ts from 'typescript';
 
-import { ProtoError, SyntaxErrorCategory } from '../../error';
+import { CharIndexSpan } from '../../source';
 import { ALLOWED_SYNTAX, FORBIDDEN_CONSTRUCTS } from './constructs';
 
 function constructDebugVisualTree(root: ts.Node): string {
@@ -43,20 +43,16 @@ function constructDebugVisualTree(root: ts.Node): string {
   return debugTree;
 }
 
-export type ForbiddenConstructProtoError = ProtoError & {
+export type ValidatorDiagnostic = {
   detail: string;
-  category: SyntaxErrorCategory.SCRIPT_VALIDATION;
+  hints: string[];
+  relativeSpan: CharIndexSpan;
 };
-export function validateScript(input: string): ForbiddenConstructProtoError[] {
-  const errors: ForbiddenConstructProtoError[] = [];
-
-  const rootNode = ts.createSourceFile(
-    'scripts.js',
-    input,
-    ts.ScriptTarget.ES2015,
-    true,
-    ts.ScriptKind.JS
-  );
+export function validateScript(
+  sourceNode: ts.Node,
+  sourceText: string
+): ValidatorDiagnostic[] {
+  const diagnostics: ValidatorDiagnostic[] = [];
 
   function nodeVisitor<T extends ts.Node>(node: T): void {
     // Go over forbidden constructs and check if any of them applies
@@ -66,21 +62,19 @@ export function validateScript(input: string): ForbiddenConstructProtoError[] {
       if (rule.predicate?.(node) ?? true) {
         anyRuleBroken = true;
 
-        errors.push({
+        diagnostics.push({
           detail: `${ts.SyntaxKind[node.kind]} construct is not supported`,
-          hints: [rule.hint(input, node)],
+          hints: [rule.hint(sourceText, node)],
           relativeSpan: { start: node.getStart(), end: node.getEnd() },
-          category: SyntaxErrorCategory.SCRIPT_VALIDATION,
         });
       }
     }
 
     // If none of the rules applied, but the syntax is not valid anyway, add an error without a hint
     if (!anyRuleBroken && !ALLOWED_SYNTAX.includes(node.kind)) {
-      errors.push({
+      diagnostics.push({
         detail: `${ts.SyntaxKind[node.kind]} construct is not supported`,
         relativeSpan: { start: node.getStart(), end: node.getEnd() },
-        category: SyntaxErrorCategory.SCRIPT_VALIDATION,
         hints: [],
       });
     }
@@ -88,13 +82,13 @@ export function validateScript(input: string): ForbiddenConstructProtoError[] {
     // Recurse into children
     ts.forEachChild(node, nodeVisitor);
   }
-  nodeVisitor(rootNode);
+  nodeVisitor(sourceNode);
 
   if (process.env.LOG_LEVEL === 'debug') {
-    if (errors.length > 0) {
-      console.debug(constructDebugVisualTree(rootNode));
+    if (diagnostics.length > 0) {
+      console.debug(constructDebugVisualTree(sourceNode));
     }
   }
 
-  return errors;
+  return diagnostics;
 }

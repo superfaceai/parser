@@ -67,11 +67,11 @@ Object {
 exports[`MapValidator result & error error is a list non null primitive type then validation will fail 1`] = `
 Object {
   "profile-provider": Object {
-    "errors": "5:25 NullKeyword - Wrong Structure: expected boolean!, but got null
-6:25 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}
-7:37 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}
-8:37 FirstLiteralToken - Wrong Structure: expected boolean, but got 2
-9:25 ArrayLiteralExpression - Wrong Structure: expected boolean, but got [true]",
+    "errors": "5:24 NullKeyword - Wrong Structure: expected boolean!, but got null
+6:24 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}
+7:30 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}
+8:30 FirstLiteralToken - Wrong Structure: expected boolean, but got 2
+9:24 ArrayLiteralExpression - Wrong Structure: expected boolean, but got [true]",
   },
 }
 `;
@@ -101,8 +101,8 @@ Object {
 exports[`MapValidator result & error error is a list primitive type then validation will fail 1`] = `
 Object {
   "profile-provider": Object {
-    "errors": "5:25 FirstLiteralToken - Wrong Structure: expected boolean, but got 2
-6:25 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}",
+    "errors": "5:24 FirstLiteralToken - Wrong Structure: expected boolean, but got 2
+6:24 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}",
   },
 }
 `;
@@ -366,11 +366,11 @@ Object {
 exports[`MapValidator result & error result is a list non null primitive type then validation will fail 1`] = `
 Object {
   "profile-provider": Object {
-    "errors": "5:26 NullKeyword - Wrong Structure: expected boolean!, but got null
-6:26 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}
-7:38 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}
-8:38 FirstLiteralToken - Wrong Structure: expected boolean, but got 2
-9:26 ArrayLiteralExpression - Wrong Structure: expected boolean, but got [true]",
+    "errors": "5:25 NullKeyword - Wrong Structure: expected boolean!, but got null
+6:25 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}
+7:31 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}
+8:31 FirstLiteralToken - Wrong Structure: expected boolean, but got 2
+9:25 ArrayLiteralExpression - Wrong Structure: expected boolean, but got [true]",
   },
 }
 `;
@@ -400,8 +400,8 @@ Object {
 exports[`MapValidator result & error result is a list primitive type then validation will fail 1`] = `
 Object {
   "profile-provider": Object {
-    "errors": "5:26 FirstLiteralToken - Wrong Structure: expected boolean, but got 2
-6:26 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}",
+    "errors": "5:25 FirstLiteralToken - Wrong Structure: expected boolean, but got 2
+6:25 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}",
   },
 }
 `;

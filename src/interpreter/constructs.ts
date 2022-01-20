@@ -1,9 +1,8 @@
-import { LocationSpan } from '@superfaceai/ast';
 import * as ts from 'typescript';
 
-import { IssueLocation, UseCaseSlotType } from '.';
+import { CharIndexSpan } from '../common/source';
+import { UseCaseSlotType } from '.';
 import { ValidationIssue } from './issue';
-import { ValidationResult } from './map-validator';
 import {
   ArrayCollection,
   ObjectStructure,
@@ -38,16 +37,25 @@ export type ReferencedVariables = {
   type: StructureType;
 };
 
-export type ConstructResult = ValidationResult & {
+export type RelativeValidationIssue = ValidationIssue & {
+  context: { path: { relativeSpan: CharIndexSpan } };
+};
+export type ConstructResult = {
   variables?: ReferencedVariables[];
   invalidInput: boolean;
   invalidOutput: boolean;
-};
+} & (
+  | { pass: true; warnings: RelativeValidationIssue[] }
+  | {
+      pass: false;
+      warnings: RelativeValidationIssue[];
+      errors: RelativeValidationIssue[];
+    }
+);
 
 export interface VisitConstruct<T extends ts.Node = ts.Node> {
   visit(
     node: T,
-    initialLocation: LocationSpan | undefined,
     outputStructure?: StructureType,
     inputStructure?: ObjectStructure,
     isOutcomeWithCondition?: boolean
@@ -58,6 +66,7 @@ const VALID_CONSTRUCT_RESULT: ConstructResult = {
   pass: true,
   invalidInput: false,
   invalidOutput: false,
+  warnings: [],
 };
 
 function mergeResults(...results: ConstructResult[]): ConstructResult {
@@ -91,49 +100,11 @@ function mergeResults(...results: ConstructResult[]): ConstructResult {
   }, VALID_CONSTRUCT_RESULT);
 }
 
-function getPath(
-  node: ts.Node,
-  initialLocation: LocationSpan | undefined
-): IssueLocation {
-  if (initialLocation) {
-    let lineOffset = 0;
-    let columnOffset = -2; // -2 because expression passed in parent source file is wrapped in parenthesis
-
-    const start = node
-      .getSourceFile()
-      .getLineAndCharacterOfPosition(node.getStart());
-
-    lineOffset = start.line + initialLocation.start.line;
-
-    // if jessie expression is on multiple lines - do not preserve initial column location
-    if (lineOffset > initialLocation.start.line) {
-      columnOffset += start.character;
-    } else {
-      columnOffset += start.character + initialLocation.start.column;
-    }
-
-    const end = node
-      .getSourceFile()
-      .getLineAndCharacterOfPosition(node.getEnd());
-
-    return {
-      kind: ts.SyntaxKind[node.kind],
-      location: {
-        start: {
-          line: start.line + lineOffset,
-          column: start.character + columnOffset,
-          charIndex: start.character - 1,
-        },
-        end: {
-          line: end.line + lineOffset,
-          column: end.character + columnOffset,
-          charIndex: end.character - 1,
-        },
-      },
-    };
-  } else {
-    return { kind: ts.SyntaxKind[node.kind] };
-  }
+function getPath(node: ts.Node): { kind: string; relativeSpan: CharIndexSpan } {
+  return {
+    kind: ts.SyntaxKind[node.kind],
+    relativeSpan: { start: node.getStart(), end: node.getEnd() },
+  };
 }
 
 function isTypescriptIdentifier(node: ts.Node): node is TypescriptIdentifier {
@@ -147,7 +118,6 @@ function isTypescriptIdentifier(node: ts.Node): node is TypescriptIdentifier {
 
 function compareStructures(
   node: ts.Node,
-  initialLocation: LocationSpan | undefined,
   inputStructure: StructureType,
   outputStructure: StructureType
 ): ConstructResult {
@@ -208,20 +178,20 @@ function compareStructures(
       {
         kind: 'wrongInput',
         context: {
-          path: getPath(node, initialLocation),
+          path: getPath(node),
           expected: outputStructure,
           actual: inputStructure,
         },
       },
     ],
+    warnings: [],
     invalidInput: false,
     invalidOutput: true,
   };
 }
 
-function visitConstruct(
+export function visitConstruct(
   node: ts.Node,
-  initialLocation: LocationSpan | undefined,
   outputStructure?: StructureType,
   inputStructure?: ObjectStructure,
   isOutcomeWithCondition?: boolean,
@@ -230,7 +200,6 @@ function visitConstruct(
   return construct
     ? construct.visit(
         node,
-        initialLocation,
         outputStructure,
         inputStructure,
         isOutcomeWithCondition
@@ -239,7 +208,7 @@ function visitConstruct(
 }
 
 function returnIssue(
-  issue: ValidationIssue,
+  issue: RelativeValidationIssue,
   invalidInput: boolean,
   invalidOutput: boolean,
   isOutcomeWithCondition?: boolean
@@ -253,6 +222,7 @@ function returnIssue(
       }
     : {
         pass: false,
+        warnings: [],
         errors: [issue],
         invalidInput,
         invalidOutput,
@@ -293,7 +263,6 @@ export const RETURN_CONSTRUCTS: {
   [ts.SyntaxKind.StringLiteral]: {
     visit: (
       node: ts.StringLiteral,
-      initialLocation: LocationSpan | undefined,
       outputStructure?: StructureType,
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
@@ -316,7 +285,7 @@ export const RETURN_CONSTRUCTS: {
         {
           kind: 'wrongStructure',
           context: {
-            path: getPath(node, initialLocation),
+            path: getPath(node),
             actual: node.text,
             expected: outputStructure,
           },
@@ -331,7 +300,6 @@ export const RETURN_CONSTRUCTS: {
   [ts.SyntaxKind.NumericLiteral]: {
     visit: (
       node: ts.NumericLiteral,
-      initialLocation: LocationSpan | undefined,
       outputStructure?: StructureType,
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
@@ -354,7 +322,7 @@ export const RETURN_CONSTRUCTS: {
         {
           kind: 'wrongStructure',
           context: {
-            path: getPath(node, initialLocation),
+            path: getPath(node),
             actual: node.text,
             expected: outputStructure,
           },
@@ -369,7 +337,6 @@ export const RETURN_CONSTRUCTS: {
   [ts.SyntaxKind.FalseKeyword]: {
     visit: (
       node: ts.FalseLiteral,
-      initialLocation: LocationSpan | undefined,
       outputStructure?: StructureType,
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
@@ -393,7 +360,7 @@ export const RETURN_CONSTRUCTS: {
         {
           kind: 'wrongStructure',
           context: {
-            path: getPath(node, initialLocation),
+            path: getPath(node),
             actual: 'false',
             expected: outputStructure,
           },
@@ -408,7 +375,6 @@ export const RETURN_CONSTRUCTS: {
   [ts.SyntaxKind.TrueKeyword]: {
     visit: (
       node: ts.TrueLiteral,
-      initialLocation: LocationSpan | undefined,
       outputStructure?: StructureType,
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
@@ -432,7 +398,7 @@ export const RETURN_CONSTRUCTS: {
         {
           kind: 'wrongStructure',
           context: {
-            path: getPath(node, initialLocation),
+            path: getPath(node),
             actual: 'true',
             expected: outputStructure,
           },
@@ -447,7 +413,6 @@ export const RETURN_CONSTRUCTS: {
   [ts.SyntaxKind.NullKeyword]: {
     visit: (
       node: ts.NullLiteral,
-      initialLocation: LocationSpan | undefined,
       outputStructure?: StructureType,
       _inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
@@ -460,7 +425,7 @@ export const RETURN_CONSTRUCTS: {
           {
             kind: 'wrongStructure',
             context: {
-              path: getPath(node, initialLocation),
+              path: getPath(node),
               actual: 'null',
               expected: outputStructure,
             },
@@ -478,7 +443,6 @@ export const RETURN_CONSTRUCTS: {
   [ts.SyntaxKind.BinaryExpression]: {
     visit: (
       node: ts.BinaryExpression,
-      initialLocation: LocationSpan | undefined,
       outputStructure?: StructureType,
       inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
@@ -491,7 +455,6 @@ export const RETURN_CONSTRUCTS: {
           results.push(
             visitConstruct(
               node.left,
-              initialLocation,
               undefined,
               inputStructure,
               isOutcomeWithCondition,
@@ -503,7 +466,6 @@ export const RETURN_CONSTRUCTS: {
           results.push(
             visitConstruct(
               node.right,
-              initialLocation,
               undefined,
               inputStructure,
               isOutcomeWithCondition,
@@ -532,7 +494,6 @@ export const RETURN_CONSTRUCTS: {
       results.push(
         visitConstruct(
           node.left,
-          initialLocation,
           outputStructure,
           undefined,
           isOutcomeWithCondition,
@@ -540,7 +501,6 @@ export const RETURN_CONSTRUCTS: {
         ),
         visitConstruct(
           node.right,
-          initialLocation,
           outputStructure,
           undefined,
           isOutcomeWithCondition,
@@ -555,7 +515,6 @@ export const RETURN_CONSTRUCTS: {
   [ts.SyntaxKind.Identifier]: {
     visit: (
       node: ts.Identifier,
-      initialLocation: LocationSpan | undefined,
       outputStructure?: StructureType,
       inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
@@ -566,7 +525,7 @@ export const RETURN_CONSTRUCTS: {
             {
               kind: 'useCaseSlotNotFound',
               context: {
-                path: getPath(node, initialLocation),
+                path: getPath(node),
                 expected: UseCaseSlotType.INPUT,
                 actual: getVariableName(node),
               },
@@ -578,12 +537,7 @@ export const RETURN_CONSTRUCTS: {
         }
 
         if (outputStructure) {
-          return compareStructures(
-            node,
-            initialLocation,
-            inputStructure,
-            outputStructure
-          );
+          return compareStructures(node, inputStructure, outputStructure);
         }
 
         return VALID_CONSTRUCT_RESULT;
@@ -597,7 +551,7 @@ export const RETURN_CONSTRUCTS: {
               {
                 kind: 'wrongStructure',
                 context: {
-                  path: getPath(node, initialLocation),
+                  path: getPath(node),
                   actual: getVariableName(node),
                   expected: outputStructure.value,
                 },
@@ -627,7 +581,6 @@ export const RETURN_CONSTRUCTS: {
   [ts.SyntaxKind.PropertyAccessExpression]: {
     visit(
       node: ts.PropertyAccessExpression,
-      initialLocation: LocationSpan | undefined,
       outputStructure?: StructureType,
       inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
@@ -642,7 +595,7 @@ export const RETURN_CONSTRUCTS: {
             {
               kind: 'useCaseSlotNotFound',
               context: {
-                path: getPath(node, initialLocation),
+                path: getPath(node),
                 expected: UseCaseSlotType.INPUT,
                 actual: getVariableName(node),
               },
@@ -653,10 +606,10 @@ export const RETURN_CONSTRUCTS: {
           );
         }
 
-        const issue: ValidationIssue = {
+        const issue: RelativeValidationIssue = {
           kind: 'wrongInput',
           context: {
-            path: getPath(node, initialLocation),
+            path: getPath(node),
             expected: inputStructure,
             actual: getVariableName(node),
           },
@@ -674,12 +627,7 @@ export const RETURN_CONSTRUCTS: {
         }
 
         if (outputStructure) {
-          return compareStructures(
-            node,
-            initialLocation,
-            fieldValue,
-            outputStructure
-          );
+          return compareStructures(node, fieldValue, outputStructure);
         }
 
         return VALID_CONSTRUCT_RESULT;
@@ -703,7 +651,6 @@ export const RETURN_CONSTRUCTS: {
   [ts.SyntaxKind.ElementAccessExpression]: {
     visit(
       node: ts.ElementAccessExpression,
-      initialLocation: LocationSpan | undefined,
       outputStructure?: StructureType,
       inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
@@ -714,10 +661,10 @@ export const RETURN_CONSTRUCTS: {
         }
 
         if (!inputStructure || !inputStructure.fields) {
-          const issue: ValidationIssue = {
+          const issue: RelativeValidationIssue = {
             kind: 'useCaseSlotNotFound',
             context: {
-              path: getPath(node, initialLocation),
+              path: getPath(node),
               expected: UseCaseSlotType.INPUT,
               actual: getVariableName(node),
             },
@@ -726,10 +673,10 @@ export const RETURN_CONSTRUCTS: {
           return returnIssue(issue, true, false, isOutcomeWithCondition);
         }
 
-        const issue: ValidationIssue = {
+        const issue: RelativeValidationIssue = {
           kind: 'wrongInput',
           context: {
-            path: getPath(node, initialLocation),
+            path: getPath(node),
             expected: inputStructure,
             actual: getVariableName(node),
           },
@@ -747,12 +694,7 @@ export const RETURN_CONSTRUCTS: {
         }
 
         if (outputStructure) {
-          return compareStructures(
-            node,
-            initialLocation,
-            fieldValue,
-            outputStructure
-          );
+          return compareStructures(node, fieldValue, outputStructure);
         }
 
         return VALID_CONSTRUCT_RESULT;
@@ -776,7 +718,6 @@ export const RETURN_CONSTRUCTS: {
   [ts.SyntaxKind.ObjectLiteralExpression]: {
     visit(
       node: ts.ObjectLiteralExpression,
-      initialLocation: LocationSpan | undefined,
       outputStructure?: StructureType,
       inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
@@ -792,7 +733,6 @@ export const RETURN_CONSTRUCTS: {
             results.push(
               visitConstruct(
                 property.initializer,
-                initialLocation,
                 undefined,
                 inputStructure,
                 isOutcomeWithCondition,
@@ -817,10 +757,10 @@ export const RETURN_CONSTRUCTS: {
 
       // TODO: take `UnionStructure` in consideration
       if (!isObjectStructure(outputStructure)) {
-        const issue: ValidationIssue = {
+        const issue: RelativeValidationIssue = {
           kind: 'wrongStructure',
           context: {
-            path: getPath(node, initialLocation),
+            path: getPath(node),
             actual: node.getText(),
             expected: outputStructure,
           },
@@ -870,7 +810,6 @@ export const RETURN_CONSTRUCTS: {
         results.push(
           visitConstruct(
             property.initializer,
-            initialLocation,
             structureOfProperties[(property.name as ts.Identifier).text],
             undefined,
             isOutcomeWithCondition,
@@ -880,10 +819,10 @@ export const RETURN_CONSTRUCTS: {
       }
 
       for (const [key] of requiredPropertiesNotFound) {
-        const issue: ValidationIssue = {
+        const issue: RelativeValidationIssue = {
           kind: 'missingRequired',
           context: {
-            path: getPath(node, initialLocation),
+            path: getPath(node),
             expected: key,
           },
         };
@@ -892,10 +831,10 @@ export const RETURN_CONSTRUCTS: {
       }
 
       if (extraProperties.length > 0) {
-        const issue: ValidationIssue = {
+        const issue: RelativeValidationIssue = {
           kind: 'wrongObjectStructure',
           context: {
-            path: getPath(node, initialLocation),
+            path: getPath(node),
             expected: outputStructure,
             actual: node.getText(),
           },
@@ -911,7 +850,6 @@ export const RETURN_CONSTRUCTS: {
   [ts.SyntaxKind.ArrayLiteralExpression]: {
     visit(
       node: ts.ArrayLiteralExpression,
-      initialLocation: LocationSpan | undefined,
       outputStructure?: StructureType,
       inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
@@ -924,7 +862,6 @@ export const RETURN_CONSTRUCTS: {
             results.push(
               visitConstruct(
                 element,
-                initialLocation,
                 undefined,
                 inputStructure,
                 isOutcomeWithCondition,
@@ -946,10 +883,10 @@ export const RETURN_CONSTRUCTS: {
         return mergeResults(...results);
       }
 
-      const wrongStructureIssue: ValidationIssue = {
+      const wrongStructureIssue: RelativeValidationIssue = {
         kind: 'wrongStructure',
         context: {
-          path: getPath(node, initialLocation),
+          path: getPath(node),
           actual: node.getText(),
           expected: outputStructure,
         },
@@ -977,7 +914,6 @@ export const RETURN_CONSTRUCTS: {
           results.push(
             visitConstruct(
               element,
-              initialLocation,
               structureOfType,
               undefined,
               isOutcomeWithCondition,
@@ -998,7 +934,6 @@ export const RETURN_CONSTRUCTS: {
           results.push(
             visitConstruct(
               element,
-              initialLocation,
               outputStructure.value,
               undefined,
               isOutcomeWithCondition,
@@ -1013,7 +948,6 @@ export const RETURN_CONSTRUCTS: {
         for (const value of structureOfTypes) {
           const result = visitConstruct(
             element,
-            initialLocation,
             value,
             undefined,
             isOutcomeWithCondition,
@@ -1044,14 +978,12 @@ export const RETURN_CONSTRUCTS: {
   [ts.SyntaxKind.ParenthesizedExpression]: {
     visit(
       node: ts.ParenthesizedExpression,
-      initialLocation: LocationSpan | undefined,
       outputStructure?: StructureType,
       inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult {
       return visitConstruct(
         node.expression,
-        initialLocation,
         outputStructure,
         inputStructure,
         isOutcomeWithCondition,
@@ -1063,14 +995,12 @@ export const RETURN_CONSTRUCTS: {
   [ts.SyntaxKind.ExpressionStatement]: {
     visit(
       node: ts.ExpressionStatement,
-      initialLocation: LocationSpan | undefined,
       outputStructure?: StructureType,
       inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
     ): ConstructResult {
       return visitConstruct(
         node.expression,
-        initialLocation,
         outputStructure,
         inputStructure,
         isOutcomeWithCondition,
@@ -1082,7 +1012,6 @@ export const RETURN_CONSTRUCTS: {
   [ts.SyntaxKind.SourceFile]: {
     visit(
       node: ts.SourceFile,
-      initialLocation: LocationSpan | undefined,
       outputStructure?: StructureType,
       inputStructure?: ObjectStructure,
       isOutcomeWithCondition?: boolean
@@ -1091,7 +1020,6 @@ export const RETURN_CONSTRUCTS: {
 
       return visitConstruct(
         statement,
-        initialLocation,
         outputStructure,
         inputStructure,
         isOutcomeWithCondition,

@@ -1,6 +1,6 @@
+import * as util from '../../../../common/source';
 import { SyntaxErrorCategory } from '../../../error';
 import { LexerTokenKind, LiteralTokenData } from '../../token';
-import * as util from '../../util';
 import { ParseResult } from '../result';
 
 export function tryParseNumberLiteral(

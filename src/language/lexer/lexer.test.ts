@@ -1,5 +1,4 @@
-import { CharIndexSpan } from '..';
-import { Source } from '../source';
+import { CharIndexSpan, Source } from '../../common/source';
 import { LexerContext, LexerContextType } from './context';
 import { DEFAULT_TOKEN_KIND_FILTER, Lexer } from './lexer';
 import {
