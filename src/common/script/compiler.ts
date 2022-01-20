@@ -1,4 +1,5 @@
 import createDebug from 'debug';
+
 import * as ts from 'typescript';
 
 import { CharIndexSpan } from '../source';
