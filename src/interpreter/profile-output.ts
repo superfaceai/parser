@@ -36,7 +36,10 @@ export interface PrimitiveStructure extends Structure, DocumentedStructure {
  */
 export interface EnumStructure extends Structure, DocumentedStructure {
   kind: 'EnumStructure';
-  enums: ({ value: string | number | boolean } & DocumentedStructure)[];
+  enums: ({
+    name?: string | undefined;
+    value: string | number | boolean;
+  } & DocumentedStructure)[];
 }
 
 /**

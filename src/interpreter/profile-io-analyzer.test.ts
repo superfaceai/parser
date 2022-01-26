@@ -115,6 +115,35 @@ describe('ProfileIOAnalyzer', () => {
       });
     });
 
+    describe('and Result is Enum Type with named variant', () => {
+      const ast = parseProfileFromSource(
+        `usecase Test {
+          input {}
+          result enum { a, b = 'c' }
+        }`
+      );
+
+      const analyzer = new ProfileIOAnalyzer();
+      const expected: ProfileOutput = {
+        header,
+        usecases: [
+          {
+            useCaseName: 'Test',
+
+            result: {
+              kind: 'EnumStructure',
+              enums: [{ value: 'a' }, { name: 'b', value: 'c' }],
+            },
+          },
+        ],
+      };
+
+      test('then result contain EnumStructure', () => {
+        const output = analyzer.visit(ast);
+        expect(output).toMatchObject(expected);
+      });
+    });
+
     describe('and Result is Model Type which is defined in definition aswell as useCaseDefinition', () => {
       const ast = parseProfileFromSource(
         `model myModel boolean
