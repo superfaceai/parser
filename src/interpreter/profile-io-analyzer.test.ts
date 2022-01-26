@@ -703,10 +703,12 @@ describe('ProfileIOAnalyzer', () => {
                 description: 'It is either bad or badder',
                 enums: [
                   {
+                    name: 'bad',
                     value: 'bad',
                     title: 'This means bad',
                   },
                   {
+                    name: 'badder',
                     value: 'badder',
                     title: 'This means badder',
                   },
