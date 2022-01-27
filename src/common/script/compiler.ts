@@ -219,16 +219,14 @@ export class ScriptExpressionCompiler extends ScriptCompiler {
   /** @internal */
   get rawExpressionNode(): ts.Expression {
     const statement = this.sourceFile.statements[0];
-    if (statement.kind !== ts.SyntaxKind.VariableStatement) {
+    if (!ts.isVariableStatement(statement)) {
       throw new Error('Invalid script compiler state');
     }
-    const declaration: ts.VariableDeclaration = (
-      statement as ts.VariableStatement
-    ).declarationList.declarations[0];
+    const declaration = statement.declarationList.declarations[0];
 
     if (
       declaration === undefined ||
-      declaration.kind !== ts.SyntaxKind.VariableDeclaration ||
+      !ts.isVariableDeclaration(declaration) ||
       declaration.name.getText() !==
         ScriptExpressionCompiler.SCRIPT_WRAP.varName ||
       declaration.initializer === undefined
