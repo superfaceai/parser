@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- `EnumStructure` added name field
+
 ## [1.1.0] - 2022-01-19
 ### Added
 - Http call can now select service id, e.g. `http VERB "id" "url" {`
