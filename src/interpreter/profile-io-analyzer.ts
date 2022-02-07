@@ -155,7 +155,7 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
     return {
       kind: 'EnumStructure',
       enums: node.values.map(value =>
-        addDoc(value, { value: this.visit(value) })
+        addDoc(value, { name: value.name, value: this.visit(value) })
       ),
     };
   }
