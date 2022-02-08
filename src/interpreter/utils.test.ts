@@ -14,10 +14,10 @@ const mockParserGetter = jest.fn();
 
 jest.mock('../metadata', () => ({
   parseMetadataVersion: jest.fn(),
-  get PARSED_AST_VERSION() {
+  get PARSED_AST_VERSION(): jest.Mock {
     return mockASTGetter();
   },
-  get PARSED_VERSION() {
+  get PARSED_VERSION(): jest.Mock {
     return mockParserGetter();
   },
 }));
