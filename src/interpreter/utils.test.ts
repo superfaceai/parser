@@ -5,15 +5,21 @@ import {
   OutcomeStatementNode,
   SetStatementNode,
 } from '@superfaceai/ast';
-import { mocked } from 'ts-jest/utils';
 
-import { parseMetadataVersion } from '../metadata';
 import { isCompatible } from '.';
 import { getOutcomes } from './utils';
 
+const mockASTGetter = jest.fn();
+const mockParserGetter = jest.fn();
+
 jest.mock('../metadata', () => ({
-  ...jest.requireActual('../metadata'),
   parseMetadataVersion: jest.fn(),
+  get PARSED_AST_VERSION() {
+    return mockASTGetter();
+  },
+  get PARSED_VERSION() {
+    return mockParserGetter();
+  },
 }));
 
 describe('utils', () => {
@@ -148,54 +154,59 @@ describe('utils', () => {
       sourceChecksum: '',
     };
 
+    interface Version {
+      major: number;
+      minor: number;
+      patch: number;
+    }
+
+    const getVersion = (
+      major: number,
+      minor?: number,
+      patch?: number
+    ): Version => ({
+      major,
+      minor: minor ?? 0,
+      patch: patch ?? 0,
+    });
+
     describe('returns false', () => {
-      it('when specified AST is old and current AST version is newer', () => {
-        const parseMetadataVersionSpy = mocked(
-          parseMetadataVersion
-        ).mockReturnValue({ major: 1, minor: 0, patch: 0 });
+      it('when specified AST is 0.1.0 and current AST version is 1.0.0', () => {
+        mockASTGetter.mockReturnValue(getVersion(1, 0, 0));
 
         expect(isCompatible(oldMetaData)).toBeFalsy();
-        expect(parseMetadataVersionSpy).toBeCalledTimes(1);
+        expect(mockASTGetter).toHaveBeenCalledTimes(1);
       });
 
-      it('when specified AST is old and current Parser version is newer', () => {
-        // first call to get PARSED_AST_VERSION, another to PARSED_VERSION
-        const parseMetadataVersionSpy = mocked(
-          parseMetadataVersion
-        ).mockReturnValueOnce({ major: 0, minor: 1, patch: 0 })
-        .mockReturnValueOnce({ major: 1, minor: 0, patch: 0 });
+      it('when specified Parser is 0.0.12 and current Parser version is 1.0.0', () => {
+        mockASTGetter.mockReturnValue(getVersion(0, 1, 0));
+        mockParserGetter.mockReturnValue(getVersion(1, 0, 0));
 
         expect(isCompatible(oldMetaData)).toBeFalsy();
-        expect(parseMetadataVersionSpy).toBeCalledTimes(2);
+        expect(mockASTGetter).toHaveBeenCalledTimes(1);
+        expect(mockParserGetter).toHaveBeenCalledTimes(1);
       });
 
-      it('when specified AST is new and current AST version is older', () => {
-        const parseMetadataVersionSpy = mocked(
-          parseMetadataVersion
-        ).mockReturnValueOnce({ major: 1, minor: 0, patch: 0 });
+      it('when specified AST is 3.1.0 and current AST version is 0.1.0', () => {
+        mockASTGetter.mockReturnValue(getVersion(0, 1, 0));
 
         expect(isCompatible(newMetadata)).toBeFalsy();
-        expect(parseMetadataVersionSpy).toBeCalledTimes(1);
       });
 
-      it('when specified AST is new and current Parser version is older', () => {
-        const parseMetadataVersionSpy = mocked(parseMetadataVersion)
-          .mockReturnValueOnce({ major: 3, minor: 1, patch: 0 })
-          .mockReturnValueOnce({ major: 1, minor: 0, patch: 0 });
+      it('when specified Parser is 2.4.0 and current Parser version is 1.0.0', () => {
+        mockASTGetter.mockReturnValue(getVersion(3, 1, 0));
+        mockParserGetter.mockReturnValue(getVersion(1, 0, 0));
 
         expect(isCompatible(newMetadata)).toBeFalsy();
-        expect(parseMetadataVersionSpy).toBeCalledTimes(2);
       });
     });
 
     describe('returns true', () => {
-      it('when specified AST has identical major versions in metadata', () => {
-        const parseMetadataVersionSpy = mocked(parseMetadataVersion)
-          .mockReturnValueOnce({ major: 3, minor: 0, patch: 0 })
-          .mockReturnValueOnce({ major: 2, minor: 0, patch: 0 });
+      it('when specified AST and Parser have identical major versions in metadata', () => {
+        mockASTGetter.mockReturnValue(getVersion(3, 0, 0));
+        mockParserGetter.mockReturnValue(getVersion(2, 0, 0));
 
         expect(isCompatible(newMetadata)).toBeTruthy();
-        expect(parseMetadataVersionSpy).toBeCalledTimes(2);
       });
     });
   });
