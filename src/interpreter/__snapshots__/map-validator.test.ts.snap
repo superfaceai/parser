@@ -734,7 +734,7 @@ exports[`MapValidator usecase-map compatibility wrong version then validation wi
 Object {
   "test-test": Object {
     "errors": "1:1 MapHeader - Wrong Profile Name: expected \\"profile\\", but got \\"test\\"
-1:1 MapHeader - Wrong Profile Version: expected \\"1.0.0\\", but map requests \\"2.0.0\\"",
+1:1 MapHeader - Version is not matching: expected \\"1.0.0\\", but map requests \\"2.0.0\\"",
   },
 }
 `;
