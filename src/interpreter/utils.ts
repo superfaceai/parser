@@ -125,7 +125,7 @@ export function formatIssueContext(issue: ValidationIssue): string {
       return `Wrong Profile Name: expected "${issue.context.expected}", but got "${issue.context.actual}"`;
 
     case 'wrongProfileVersion':
-      return `Wrong Profile Version: expected "${composeVersion(
+      return `Version does not match: expected "${composeVersion(
         issue.context.expected
       )}", but map requests "${composeVersion(issue.context.actual)}"`;
 
