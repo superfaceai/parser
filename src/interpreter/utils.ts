@@ -117,9 +117,8 @@ export function formatIssueContext(issue: ValidationIssue): string {
 
   switch (issue.kind) {
     case 'wrongScope':
-      return `Wrong Scope: expected ${
-        issue.context.expected ?? 'no scope in profile'
-      }, but got ${issue.context.actual ?? 'no scope in map'}`;
+      return `Wrong Scope: expected ${issue.context.expected ?? 'no scope in profile'
+        }, but got ${issue.context.actual ?? 'no scope in map'}`;
 
     case 'wrongProfileName':
       return `Wrong Profile Name: expected "${issue.context.expected}", but got "${issue.context.actual}"`;
@@ -141,9 +140,8 @@ export function formatIssueContext(issue: ValidationIssue): string {
       return `No ${issue.context.slot} outcome defined`;
 
     case 'useCaseSlotNotFound':
-      actual = `${
-        issue.context.expected === UseCaseSlotType.INPUT ? '' : 'returning '
-      }${formatLiteral(issue.context.actual)}`;
+      actual = `${issue.context.expected === UseCaseSlotType.INPUT ? '' : 'returning '
+        }${formatLiteral(issue.context.actual)}`;
 
       return `${issue.context.expected} Not Found: ${actual}, but there is no ${issue.context.expected} defined in usecase`;
 
