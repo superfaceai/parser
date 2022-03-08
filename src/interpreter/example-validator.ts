@@ -28,7 +28,6 @@ import createDebug from 'debug';
 
 import {
   assertDefinedStructure,
-  compareStructure,
   isNonNullStructure,
   isScalarStructure,
   IssueLocation,
@@ -39,6 +38,11 @@ import {
   ValidationIssue,
   ValidationResult,
 } from '.';
+import {
+  validateListStructure,
+  validateObjectLiteral,
+  validatePrimitiveLiteral,
+} from './utils';
 
 const debug = createDebug('superface-parser:example-validator');
 
@@ -209,7 +213,7 @@ export class ExampleValidator implements ProfileAstVisitor {
 
     assertDefinedStructure(this.currentStructure);
 
-    const { isValid } = compareStructure(node, this.currentStructure);
+    const { isValid } = validatePrimitiveLiteral(this.currentStructure, node);
 
     if (!isValid) {
       this.errors.push({
@@ -232,12 +236,9 @@ export class ExampleValidator implements ProfileAstVisitor {
 
     assertDefinedStructure(this.currentStructure);
 
-    const { listStructure, isValid } = compareStructure(
-      node,
-      this.currentStructure
-    );
+    const validationResult = validateListStructure(this.currentStructure, node);
 
-    if (!isValid) {
+    if (!validationResult.isValid) {
       this.errors.push({
         kind: 'wrongStructure',
         context: {
@@ -250,10 +251,7 @@ export class ExampleValidator implements ProfileAstVisitor {
       return false;
     }
 
-    if (!listStructure) {
-      throw new Error('Validated list structure is not defined');
-    }
-
+    const listStructure = validationResult.listStructure;
     const originalStructure = this.currentStructure;
 
     let result = true;
@@ -274,12 +272,9 @@ export class ExampleValidator implements ProfileAstVisitor {
 
     assertDefinedStructure(this.currentStructure);
 
-    const { objectStructure, isValid } = compareStructure(
-      node,
-      this.currentStructure
-    );
+    const validationResult = validateObjectLiteral(this.currentStructure, node);
 
-    if (!isValid) {
+    if (!validationResult.isValid) {
       this.errors.push({
         kind: 'wrongStructure',
         context: {
@@ -292,7 +287,8 @@ export class ExampleValidator implements ProfileAstVisitor {
       return false;
     }
 
-    if (!objectStructure || !objectStructure.fields) {
+    const objectStructure = validationResult.objectStructure;
+    if (objectStructure.fields === undefined) {
       throw new Error(
         'Validated object structure is not defined or does not contain fields'
       );

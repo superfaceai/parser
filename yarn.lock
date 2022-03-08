@@ -560,10 +560,10 @@
   dependencies:
     "@sinonjs/commons" "^1.7.0"
 
-"@superfaceai/ast@1.2.0-beta.0":
-  version "1.2.0-beta.0"
-  resolved "https://registry.yarnpkg.com/@superfaceai/ast/-/ast-1.2.0-beta.0.tgz#a9a3eb402d377fa5d0fddc04dab355237baa33ee"
-  integrity sha512-IRvRo7aLcpgDlz3yLgRz71GIpxTzqnekBfwPb+pKY6tdCNVnY97gzQPCjDekf1MsmCgq2pUP42AbdUB9t6zo+g==
+"@superfaceai/ast@^1.2.0-rc.2":
+  version "1.2.0-rc.2"
+  resolved "https://registry.yarnpkg.com/@superfaceai/ast/-/ast-1.2.0-rc.2.tgz#5e7774fd150568c5b6a1aac7fe481d1a944dc429"
+  integrity sha512-LsKJ7GfYbcbYFKk5/qrsMloijzeLbGAbcck6yZjkHjVU9DP8FvTyi2OAwKePEMasb98yCwEnftpgDtJZV/uStg==
   dependencies:
     ajv "^8.8.2"
     ajv-formats "^2.1.1"

@@ -1,22 +1,22 @@
 import {
   AssignmentNode,
   ComlinkAssignmentNode,
+  ComlinkListLiteralNode,
   ComlinkLiteralNode,
+  ComlinkObjectLiteralNode,
+  ComlinkPrimitiveLiteralNode,
   isCallStatementNode,
-  isComlinkListLiteralNode,
-  isComlinkObjectLiteralNode,
-  isComlinkPrimitiveLiteralNode,
   isHttpCallStatementNode,
-  isObjectLiteralNode,
   isOutcomeStatementNode,
-  isPrimitiveLiteralNode,
   isUseCaseDefinitionNode,
   LiteralNode,
   LocationSpan,
   MapASTNode,
   MapDefinitionNode,
+  ObjectLiteralNode,
   OperationDefinitionNode,
   OutcomeStatementNode,
+  PrimitiveLiteralNode,
   ProfileASTNode,
   ProfileDocumentNode,
 } from '@superfaceai/ast';
@@ -117,8 +117,9 @@ export function formatIssueContext(issue: ValidationIssue): string {
 
   switch (issue.kind) {
     case 'wrongScope':
-      return `Wrong Scope: expected ${issue.context.expected ?? 'no scope in profile'
-        }, but got ${issue.context.actual ?? 'no scope in map'}`;
+      return `Wrong Scope: expected ${
+        issue.context.expected ?? 'no scope in profile'
+      }, but got ${issue.context.actual ?? 'no scope in map'}`;
 
     case 'wrongProfileName':
       return `Wrong Profile Name: expected "${issue.context.expected}", but got "${issue.context.actual}"`;
@@ -140,8 +141,9 @@ export function formatIssueContext(issue: ValidationIssue): string {
       return `No ${issue.context.slot} outcome defined`;
 
     case 'useCaseSlotNotFound':
-      actual = `${issue.context.expected === UseCaseSlotType.INPUT ? '' : 'returning '
-        }${formatLiteral(issue.context.actual)}`;
+      actual = `${
+        issue.context.expected === UseCaseSlotType.INPUT ? '' : 'returning '
+      }${formatLiteral(issue.context.actual)}`;
 
       return `${issue.context.expected} Not Found: ${actual}, but there is no ${issue.context.expected} defined in usecase`;
 
@@ -190,58 +192,79 @@ export function formatIssues(issues: ValidationIssue[]): string {
     .join('\n');
 }
 
-/**
- * Compares the node with profile output structure. The arguments represent the actual nested level in structure.
- * @param node represents LiteralNode
- * @param structure represent Result or Error and their descendent structure
- */
-export function compareStructure(
-  node: LiteralNode | ComlinkLiteralNode,
-  structure: StructureType
-): {
-  isValid: boolean;
-  objectStructure?: ObjectStructure;
-  listStructure?: ListStructure;
-} {
-  switch (structure.kind) {
-    case 'PrimitiveStructure':
-      if (
-        (isPrimitiveLiteralNode(node) || isComlinkPrimitiveLiteralNode(node)) &&
-        typeof node.value === structure.type
-      ) {
-        return { isValid: true };
-      }
-      break;
+export function validatePrimitiveLiteral(
+  structure: StructureType,
+  node: PrimitiveLiteralNode | ComlinkPrimitiveLiteralNode
+): { isValid: boolean } {
+  if (
+    structure.kind === 'PrimitiveStructure' &&
+    typeof node.value === structure.type
+  ) {
+    return { isValid: true };
+  }
 
-    case 'ObjectStructure':
-      if (isObjectLiteralNode(node) || isComlinkObjectLiteralNode(node)) {
-        return { isValid: true, objectStructure: structure };
-      }
-      break;
+  if (
+    structure.kind === 'EnumStructure' &&
+    structure.enums.find(enumValue => enumValue.value === node.value) !==
+      undefined
+  ) {
+    return { isValid: true };
+  }
 
-    case 'ListStructure':
-      if (isComlinkListLiteralNode(node)) {
-        return { isValid: true, listStructure: structure };
-      }
-      break;
+  if (structure.kind === 'UnionStructure') {
+    for (const type of structure.types) {
+      const result = validatePrimitiveLiteral(type, node);
 
-    case 'EnumStructure':
-      if (
-        (isPrimitiveLiteralNode(node) || isComlinkPrimitiveLiteralNode(node)) &&
-        structure.enums.map(enumValue => enumValue.value).includes(node.value)
-      ) {
-        return { isValid: true };
+      if (result.isValid) {
+        return result;
       }
-      break;
+    }
+  }
 
-    case 'UnionStructure':
-      for (const type of structure.types) {
-        const compareResult = compareStructure(node, type);
+  return { isValid: false };
+}
 
-        if (compareResult.isValid) {
-          return compareResult;
-        }
+export function validateObjectLiteral(
+  structure: StructureType,
+  node: ObjectLiteralNode | ComlinkObjectLiteralNode
+):
+  | { isValid: true; objectStructure: ObjectStructure }
+  | { isValid: false; objectStructure?: undefined } {
+  if (structure.kind === 'ObjectStructure') {
+    return { isValid: true, objectStructure: structure };
+  }
+
+  if (structure.kind === 'UnionStructure') {
+    for (const type of structure.types) {
+      const result = validateObjectLiteral(type, node);
+
+      if (result.isValid) {
+        return result;
       }
+    }
+  }
+
+  return { isValid: false };
+}
+
+export function validateListStructure(
+  structure: StructureType,
+  node: ComlinkListLiteralNode
+):
+  | { isValid: true; listStructure: ListStructure }
+  | { isValid: false; listStructure?: undefined } {
+  if (structure.kind === 'ListStructure') {
+    return { isValid: true, listStructure: structure };
+  }
+
+  if (structure.kind === 'UnionStructure') {
+    for (const type of structure.types) {
+      const result = validateListStructure(type, node);
+
+      if (result.isValid) {
+        return result;
+      }
+    }
   }
 
   return { isValid: false };
