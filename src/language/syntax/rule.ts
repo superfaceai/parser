@@ -1,3 +1,4 @@
+import { LocationSpan } from '../../common/source';
 import { LexerContext, LexerContextType } from '../lexer/context';
 import { LexerTokenStream } from '../lexer/lexer';
 import {
@@ -17,7 +18,6 @@ import {
   StringTokenData,
   TerminationTokens,
 } from '../lexer/token';
-import { LocationSpan } from '../source';
 
 export class MatchAttempts {
   constructor(

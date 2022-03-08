@@ -4,7 +4,8 @@ import {
   ProfileDocumentNode,
 } from '@superfaceai/ast';
 
-import { parseMap, parseProfile, Source } from '..';
+import { parseMap, parseProfile } from '..';
+import { Source } from '../common/source';
 import {
   invalidWithErrors,
   validWithWarnings,

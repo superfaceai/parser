@@ -25,10 +25,15 @@ import {
   SetStatementNode,
 } from '@superfaceai/ast';
 import createDebug from 'debug';
-import * as ts from 'typescript';
 
+import { ScriptExpressionCompiler } from '../common/script';
+import { computeEndLocation, Location } from '../common/source';
 import { buildAssignment, IssueLocation, UseCaseSlotType } from '.';
-import { RETURN_CONSTRUCTS } from './constructs';
+import {
+  RelativeValidationIssue,
+  RETURN_CONSTRUCTS,
+  visitConstruct,
+} from './constructs';
 import { ValidationIssue } from './issue';
 import {
   ObjectStructure,
@@ -433,35 +438,73 @@ export class MapValidator implements MapAstVisitor {
     return true;
   }
 
-  visitJessieExpressionNode(node: JessieExpressionNode): boolean {
-    const rootNode = ts.createSourceFile(
-      'scripts.js',
-      `(${node.source ?? node.expression})`,
-      ts.ScriptTarget.ES2015,
-      true,
-      ts.ScriptKind.JS
+  private static mapRelativeValidationIssue(
+    nodeSource: string,
+    startLocation: Location | undefined,
+    issue: RelativeValidationIssue
+  ): ValidationIssue {
+    const relativeSpan = ScriptExpressionCompiler.fixupRelativeSpan(
+      issue.context.path.relativeSpan
     );
 
-    const construct = RETURN_CONSTRUCTS[rootNode.kind];
+    // instead of reconstructing the issue we just delete the member
+    delete (issue.context.path as { relativeSpan?: unknown }).relativeSpan;
 
-    if (!construct) {
-      throw new Error('Rule construct not found!');
+    const result: ValidationIssue = issue;
+
+    // bail if we don't know the location
+    if (startLocation === undefined) {
+      return result;
     }
 
-    const constructResult = construct.visit(
+    // and set the location member
+    result.context.path.location = {
+      start: computeEndLocation(
+        nodeSource.slice(0, relativeSpan.start),
+        startLocation
+      ),
+      end: computeEndLocation(
+        nodeSource.slice(0, relativeSpan.end),
+        startLocation
+      ),
+    };
+
+    return result;
+  }
+
+  visitJessieExpressionNode(node: JessieExpressionNode): boolean {
+    const nodeSource = node.source ?? node.expression;
+    const rootNode = new ScriptExpressionCompiler(nodeSource).rawExpressionNode;
+
+    const constructResult = visitConstruct(
       rootNode,
-      node.location,
       this.currentStructure,
       this.inputStructure,
-      this.isOutcomeWithCondition
+      this.isOutcomeWithCondition,
+      RETURN_CONSTRUCTS[rootNode.kind]
     );
 
     let result = constructResult.pass;
-
     if (!constructResult.pass) {
-      this.errors.push(...constructResult.errors);
+      this.errors.push(
+        ...constructResult.errors.map(issue =>
+          MapValidator.mapRelativeValidationIssue(
+            nodeSource,
+            node.location?.start,
+            issue
+          )
+        )
+      );
     }
-    this.warnings.push(...(constructResult.warnings ?? []));
+    this.warnings.push(
+      ...constructResult.warnings.map(issue =>
+        MapValidator.mapRelativeValidationIssue(
+          nodeSource,
+          node.location?.start,
+          issue
+        )
+      )
+    );
 
     // validate variables from jessie
     for (const { jessieNode, type } of constructResult.variables ?? []) {

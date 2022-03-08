@@ -1,8 +1,8 @@
 import fs from 'fs';
 import { join } from 'path';
 
+import { Source } from '../common/source';
 import { PARSED_AST_VERSION, PARSED_VERSION } from '../metadata';
-import { Source } from './source';
 import {
   parseMap,
   parseProfile,

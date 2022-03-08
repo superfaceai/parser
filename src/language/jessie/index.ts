@@ -1,1 +1,0 @@
-export { validateAndTranspile } from './glue';
