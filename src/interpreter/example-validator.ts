@@ -39,7 +39,7 @@ import {
   ValidationResult,
 } from '.';
 import {
-  validateListStructure,
+  validateListLiteral,
   validateObjectLiteral,
   validatePrimitiveLiteral,
 } from './utils';
@@ -236,7 +236,7 @@ export class ExampleValidator implements ProfileAstVisitor {
 
     assertDefinedStructure(this.currentStructure);
 
-    const validationResult = validateListStructure(this.currentStructure, node);
+    const validationResult = validateListLiteral(this.currentStructure, node);
 
     if (!validationResult.isValid) {
       this.errors.push({

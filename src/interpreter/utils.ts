@@ -247,7 +247,7 @@ export function validateObjectLiteral(
   return { isValid: false };
 }
 
-export function validateListStructure(
+export function validateListLiteral(
   structure: StructureType,
   node: ComlinkListLiteralNode
 ):
@@ -259,7 +259,7 @@ export function validateListStructure(
 
   if (structure.kind === 'UnionStructure') {
     for (const type of structure.types) {
-      const result = validateListStructure(type, node);
+      const result = validateListLiteral(type, node);
 
       if (result.isValid) {
         return result;
