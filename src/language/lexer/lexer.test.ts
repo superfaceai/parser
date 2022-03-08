@@ -644,8 +644,7 @@ ng2"
         kind: LexerTokenKind.JESSIE_SCRIPT,
         sourceMap: 'not checked',
         sourceScript: 'not checked',
-        script:
-          '"Template " + string + " with " + (more + (nested + " and " + complex)) + " expressions " + here',
+        script: '"Template ".concat(string, " with ").concat(more + "".concat(nested, " and ").concat(complex), " expressions ").concat(here)'
       });
 
       expect(lexer.advance()).toHaveTokenData({

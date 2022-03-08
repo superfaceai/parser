@@ -716,7 +716,7 @@ describe('map strict', () => {
           value: {
             kind: 'JessieExpression',
             expression:
-              '"format " + (formatMe + ("" + nested)) + " and " + formatThat + " please"',
+              '"format ".concat(formatMe + "".concat(nested), " and ").concat(formatThat, " please")',
           },
         },
         {
@@ -802,7 +802,7 @@ describe('map strict', () => {
                   key: ['foo'],
                   value: {
                     kind: 'JessieExpression',
-                    expression: '"Hello " + world',
+                    expression: '"Hello ".concat(world)',
                     source: '`Hello ${world}`',
                   },
                 },
@@ -820,7 +820,7 @@ describe('map strict', () => {
                       key: ['bar', 'baz'],
                       value: {
                         kind: 'JessieExpression',
-                        expression: '"Farewell " + world',
+                        expression: '"Farewell ".concat(world)',
                         source: '`Farewell ${world}`',
                       },
                     },
