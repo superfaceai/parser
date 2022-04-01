@@ -4,7 +4,7 @@ import {
 } from '@superfaceai/ast';
 import { createHash } from 'crypto';
 
-import { isNewline } from './lexer/util';
+import { isNewline } from './util';
 
 export type Location = AstLocation;
 export type LocationSpan = AstLocationSpan;

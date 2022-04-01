@@ -1,4 +1,5 @@
-import { ForbiddenConstructProtoError, validateScript } from './validator';
+import { ScriptCompiler } from '../compiler';
+import { ValidatorDiagnostic } from './validator';
 
 // Declare custom matcher for sake of Typescript
 declare global {
@@ -12,13 +13,13 @@ declare global {
 // Add the actual custom matcher
 expect.extend({
   toBeValidScript(script: string, ...errors: string[]) {
-    function formatError(err: ForbiddenConstructProtoError): string {
+    function formatError(err: ValidatorDiagnostic): string {
       const hint = err.hints.join('; ') ?? 'not provided';
 
       return `${err.detail} (hint: ${hint})`;
     }
 
-    const protoErrors = validateScript(script);
+    const protoErrors = new ScriptCompiler(script).validate();
 
     let pass = true;
     let message = '';
@@ -249,11 +250,10 @@ describe('validator', () => {
     it('returns correct error', () => {
       const script = 'Object.keys(something).map(name => ({ name, foo: foo }))';
 
-      const errors = validateScript(script);
+      const errors = new ScriptCompiler(script).validate();
 
       expect(errors.length).toBe(1);
       expect(errors[0]).toStrictEqual({
-        category: 'Script validation',
         detail: 'ShorthandPropertyAssignment construct is not supported',
         hints: ['Use `{ name: name, foo: foo }` instead'],
         relativeSpan: {

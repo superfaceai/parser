@@ -1,3 +1,4 @@
+import * as util from '../../../../common/source';
 import {
   CommentTokenData,
   IdentifierTokenData,
@@ -10,7 +11,6 @@ import {
   SEPARATORS,
   SeparatorTokenData,
 } from '../../token';
-import * as util from '../../util';
 import { ParseResult } from '../result';
 
 function tryParseScannerRules<T>(

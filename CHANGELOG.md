@@ -7,7 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
 - `EnumStructure` added name field
+
+### Changed
+- Internal refactor of script compilation
+
+### Fixed
+- Validator issue locations
 
 ## [1.1.0] - 2022-01-19
 ### Added

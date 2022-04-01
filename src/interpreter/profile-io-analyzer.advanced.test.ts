@@ -1,6 +1,7 @@
 import { ProfileDocumentNode } from '@superfaceai/ast';
 
-import { parseProfile, Source } from '..';
+import { parseProfile } from '..';
+import { Source } from '../common/source';
 import { ProfileIOAnalyzer } from './profile-io-analyzer';
 import { ObjectStructure, ProfileOutput } from './profile-output';
 

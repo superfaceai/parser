@@ -1,3 +1,4 @@
+import { Source } from '../../../../common/source';
 import { PARSED_AST_VERSION, PARSED_VERSION } from '../../../../metadata';
 import { SyntaxError } from '../../../error';
 import { LexerTokenStream } from '../../../lexer';
@@ -10,7 +11,6 @@ import {
   LiteralTokenData,
   StringTokenData,
 } from '../../../lexer/token';
-import { Source } from '../../../source';
 import { allFeatures, PARSER_FEATURES, ParserFeature } from '../../features';
 import { RuleResult, SyntaxRule } from '../../rule';
 import { ArrayLexerStream } from '../../util';

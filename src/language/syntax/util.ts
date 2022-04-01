@@ -1,9 +1,9 @@
+import { Source } from '../../common/source';
 import { LexerContext, LexerToken, LexerTokenStream } from '../lexer';
 import {
   DEFAULT_TOKEN_KIND_FILTER,
   LexerTokenKindFilter,
 } from '../lexer/lexer';
-import { Source } from '../source';
 
 /**
  * LexerTokenStream implementation that takes tokens from an array instead of a Lexer.

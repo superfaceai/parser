@@ -1,5 +1,4 @@
-import { CharIndexSpan } from '..';
-import { Source } from '../source';
+import { CharIndexSpan, Source } from '../../common/source';
 import { LexerContext, LexerContextType } from './context';
 import { DEFAULT_TOKEN_KIND_FILTER, Lexer } from './lexer';
 import {
@@ -644,8 +643,7 @@ ng2"
         kind: LexerTokenKind.JESSIE_SCRIPT,
         sourceMap: 'not checked',
         sourceScript: 'not checked',
-        script:
-          '"Template " + string + " with " + (more + (nested + " and " + complex)) + " expressions " + here',
+        script: '"Template ".concat(string, " with ").concat(more + "".concat(nested, " and ").concat(complex), " expressions ").concat(here)'
       });
 
       expect(lexer.advance()).toHaveTokenData({
