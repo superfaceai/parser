@@ -312,6 +312,14 @@ export const RETURN_CONSTRUCTS: {
         return VALID_CONSTRUCT_RESULT;
       }
 
+      if (isEnumStructure(outputStructure)) {
+        const enumValues = outputStructure.enums.map(value => value.value);
+
+        if (enumValues.includes(node.text)) {
+          return VALID_CONSTRUCT_RESULT;
+        }
+      }
+
       return returnIssue(
         {
           kind: 'wrongStructure',
