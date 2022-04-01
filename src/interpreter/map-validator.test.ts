@@ -1790,6 +1790,66 @@ describe('MapValidator', () => {
       });
     });
 
+    describe('result is enum', () => {
+      const profileAst = parseProfileFromSource(`usecase FaceDetection {
+        result {
+          emotions! emotions!
+        }!
+      }
+      
+      model emotions {
+        happiness! likelihood!
+        anger! likelihood!
+        sadness! likelihood!
+        surprise! likelihood!
+      }
+      
+      model likelihood enum {
+        unknown
+        veryUnlikely
+        unlikely
+        possible
+        likely
+        veryLikely
+      }`);
+
+      const validMapAst = parseMapFromSource(`map FaceDetection {
+        map result {
+          emotions: {
+            anger: "unknown",
+            happiness: "veryUnlikely",
+            sadness: "unlikely",
+            surprise: "veryLikely",
+          },
+        }
+      }`);
+
+      const invalidMapAst = parseMapFromSource(`map FaceDetection {
+        map result {
+          emotions: {
+            anger: "invalid",
+            happiness: "invalid",
+            sadness: "invalid",
+            surprise: "invalid",
+          },
+        }
+      }`);
+
+      validWithWarnings(profileAst, [validMapAst]);
+
+      invalidWithErrors(
+        profileAst,
+        [invalidMapAst],
+        [
+          'StringLiteral - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
+          'StringLiteral - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
+          'StringLiteral - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
+          'StringLiteral - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
+        ],
+        []
+      );
+    });
+
     describe('result is variable', () => {
       const profileAst = parseProfileFromSource(
         `usecase Test {
