@@ -260,6 +260,22 @@ function getFieldStructure(
 export const RETURN_CONSTRUCTS: {
   [kind in ts.SyntaxKind]?: VisitConstruct;
 } = {
+  [ts.SyntaxKind.FirstTemplateToken]: {
+    visit: (
+      node: ts.StringLiteralLike,
+      outputStructure?: StructureType,
+      _inputStructure?: ObjectStructure,
+      isOutcomeWithCondition?: boolean
+    ): ConstructResult => {
+      return visitConstruct(
+        node,
+        outputStructure,
+        _inputStructure,
+        isOutcomeWithCondition,
+        RETURN_CONSTRUCTS[ts.SyntaxKind.StringLiteral]
+      );
+    },
+  },
   [ts.SyntaxKind.StringLiteral]: {
     visit: (
       node: ts.StringLiteral,

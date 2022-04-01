@@ -1814,7 +1814,7 @@ describe('MapValidator', () => {
         veryLikely
       }`);
 
-      const validMapAst = parseMapFromSource(`map FaceDetection {
+      const validMapAst1 = parseMapFromSource(`map FaceDetection {
         map result {
           emotions: {
             anger: "unknown",
@@ -1825,7 +1825,18 @@ describe('MapValidator', () => {
         }
       }`);
 
-      const invalidMapAst = parseMapFromSource(`map FaceDetection {
+      const validMapAst2 = parseMapFromSource(`map FaceDetection {
+        map result {
+          emotions: {
+            anger: \`unknown\`,
+            happiness: \`veryUnlikely\`,
+            sadness: \`unlikely\`,
+            surprise: \`veryLikely\`,
+          },
+        }
+      }`);
+
+      const invalidMapAst1 = parseMapFromSource(`map FaceDetection {
         map result {
           emotions: {
             anger: "invalid",
@@ -1836,16 +1847,34 @@ describe('MapValidator', () => {
         }
       }`);
 
-      validWithWarnings(profileAst, [validMapAst]);
+      const invalidMapAst2 = parseMapFromSource(`map FaceDetection {
+        map result {
+          emotions: {
+            anger: \`invalid\`,
+            happiness: \`invalid\`,
+            sadness: \`invalid\`,
+            surprise: \`invalid\`,
+          },
+        }
+      }`);
+
+      validWithWarnings(profileAst, [validMapAst1, validMapAst2]);
 
       invalidWithErrors(
         profileAst,
-        [invalidMapAst],
+        [invalidMapAst1, invalidMapAst2],
         [
           'StringLiteral - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
           'StringLiteral - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
           'StringLiteral - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
           'StringLiteral - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
+        ],
+        [],
+        [
+          'FirstTemplateToken - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
+          'FirstTemplateToken - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
+          'FirstTemplateToken - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
+          'FirstTemplateToken - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
         ],
         []
       );
