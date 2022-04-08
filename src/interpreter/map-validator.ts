@@ -43,11 +43,12 @@ import {
 } from './profile-output';
 import { isNonNullStructure, isScalarStructure } from './profile-output.utils';
 import {
-  compareStructure,
   findTypescriptIdentifier,
   getOutcomes,
   getVariableName,
   mergeVariables,
+  validateObjectLiteral,
+  validatePrimitiveLiteral,
 } from './utils';
 
 const debug = createDebug('superface-parser:map-validator');
@@ -567,12 +568,9 @@ export class MapValidator implements MapAstVisitor {
       return true;
     }
 
-    const { objectStructure, isValid } = compareStructure(
-      node,
-      this.currentStructure
-    );
+    const validationResult = validateObjectLiteral(this.currentStructure, node);
 
-    if (!isValid) {
+    if (!validationResult.isValid) {
       this.addIssue({
         kind: 'wrongStructure',
         context: {
@@ -585,7 +583,9 @@ export class MapValidator implements MapAstVisitor {
       return this.isOutcomeWithCondition ? true : false;
     }
 
-    if (!objectStructure || !objectStructure.fields) {
+    // unpack here, otherwise TS fails to infer that is cannot be undefined
+    const objectStructure = validationResult.objectStructure;
+    if (objectStructure.fields === undefined) {
       throw new Error(
         'Validated object structure is not defined or does not contain fields'
       );
@@ -669,7 +669,7 @@ export class MapValidator implements MapAstVisitor {
       return true;
     }
 
-    const { isValid } = compareStructure(node, this.currentStructure);
+    const { isValid } = validatePrimitiveLiteral(this.currentStructure, node);
 
     if (!isValid) {
       this.addIssue({
