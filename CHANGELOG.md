@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2022-04-13
 ### Added
 - `EnumStructure` added name field
 
@@ -227,7 +228,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation extraction from doc strings
 - Usecase result parsing as optional
 
-[Unreleased]: https://github.com/superfaceai/parser/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/superfaceai/parser/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/superfaceai/parser/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/superfaceai/parser/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/superfaceai/parser/compare/v0.0.23...v1.0.0
 [0.0.23]: https://github.com/superfaceai/parser/compare/v0.0.22...v0.0.23
