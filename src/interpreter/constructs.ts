@@ -260,6 +260,22 @@ function getFieldStructure(
 export const RETURN_CONSTRUCTS: {
   [kind in ts.SyntaxKind]?: VisitConstruct;
 } = {
+  [ts.SyntaxKind.FirstTemplateToken]: {
+    visit: (
+      node: ts.StringLiteralLike,
+      outputStructure?: StructureType,
+      _inputStructure?: ObjectStructure,
+      isOutcomeWithCondition?: boolean
+    ): ConstructResult => {
+      return visitConstruct(
+        node,
+        outputStructure,
+        _inputStructure,
+        isOutcomeWithCondition,
+        RETURN_CONSTRUCTS[ts.SyntaxKind.StringLiteral]
+      );
+    },
+  },
   [ts.SyntaxKind.StringLiteral]: {
     visit: (
       node: ts.StringLiteral,
@@ -279,6 +295,14 @@ export const RETURN_CONSTRUCTS: {
         isStringStructure(outputStructure)
       ) {
         return VALID_CONSTRUCT_RESULT;
+      }
+
+      if (isEnumStructure(outputStructure)) {
+        const enumValues = outputStructure.enums.map(value => value.value);
+
+        if (enumValues.includes(node.text)) {
+          return VALID_CONSTRUCT_RESULT;
+        }
       }
 
       return returnIssue(
