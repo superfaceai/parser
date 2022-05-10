@@ -34,7 +34,6 @@ import {
   StructureType,
   VersionStructure,
 } from './profile-output';
-import { isObjectStructure } from './profile-output.utils';
 
 export function composeVersion(version: VersionStructure): string {
   return (
@@ -383,52 +382,6 @@ export const REDUDANT_EXPRESSION_CHARACTERS_REGEX = /['"[\]]/g;
 
 export function replaceRedudantCharacters(text: string): string {
   return text.replace(REDUDANT_EXPRESSION_CHARACTERS_REGEX, '');
-}
-
-export function validateObjectStructure(
-  node: TypescriptIdentifier,
-  structure: ObjectStructure
-): StructureType | undefined {
-  if (ts.isIdentifier(node)) {
-    return structure;
-  }
-
-  let expression: ts.LeftHandSideExpression;
-  let name: ts.PrivateIdentifier | ts.Expression;
-
-  if (ts.isElementAccessExpression(node)) {
-    expression = node.expression;
-    name = node.argumentExpression;
-  } else {
-    expression = node.expression;
-    name = node.name;
-  }
-
-  const key = replaceRedudantCharacters(name.getText());
-  let outputStructure: StructureType | undefined;
-
-  if (
-    ts.isPropertyAccessExpression(expression) ||
-    ts.isElementAccessExpression(expression)
-  ) {
-    outputStructure = validateObjectStructure(expression, structure);
-  } else if (ts.isIdentifier(expression)) {
-    if (!structure.fields) {
-      return undefined;
-    }
-
-    return structure.fields[key];
-  }
-
-  if (
-    !outputStructure ||
-    !isObjectStructure(outputStructure) ||
-    !outputStructure.fields
-  ) {
-    return undefined;
-  }
-
-  return outputStructure.fields[key];
 }
 
 export function findTypescriptIdentifier(name: string, node: ts.Node): boolean {

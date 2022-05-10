@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Script sublexer infinite loop on some invalid scripts (nesting ignoring EOF token)
+- Validator now properly handles list property access
 
 ## [1.2.0] - 2022-04-13
 ### Added
