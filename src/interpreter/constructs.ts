@@ -234,8 +234,6 @@ function getStructureProperty(
   structure: ObjectStructure | ListStructure,
   property: string
 ): StructureType | undefined {
-  console.debug('DEBUG', 'getting property', property, 'in', structure);
-
   if (isObjectStructure(structure)) {
     return structure.fields?.[property];
   }
