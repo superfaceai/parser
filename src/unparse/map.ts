@@ -15,13 +15,14 @@ import {
   OutcomeStatementNode,
   PrimitiveLiteralNode,
   SetStatementNode,
-  StatementConditionNode,
+  ConditionAtomNode,
+  IterationAtomNode,
+  MapAstVisitor
 } from '@superfaceai/ast';
-import { MapVisitor } from '@superfaceai/sdk';
 
 import { UnparserBase } from './common';
 
-export class MapUnparser extends UnparserBase implements MapVisitor {
+export class MapUnparser extends UnparserBase implements MapAstVisitor {
   private currentDefinitionContext: 'map' | 'operation';
 
   constructor(
@@ -58,8 +59,10 @@ export class MapUnparser extends UnparserBase implements MapVisitor {
 
       case 'Assignment':
         return this.visitAssignmentNode(node);
-      case 'StatementCondition':
-        return this.visitStatementConditionNode(node);
+      case 'ConditionAtom':
+        return this.visitConditionAtomNode(node);
+      case 'IterationAtom':
+        return this.visitIterationAtomNode(node);
       case 'HttpResponseHandler':
         return this.visitHttpResponseHandlerNode(node);
       case 'InlineCall':
@@ -73,19 +76,24 @@ export class MapUnparser extends UnparserBase implements MapVisitor {
         return this.visitJessieExpressionNode(node);
 
       default:
-        throw 'unreachable';
+        throw 'unreachable: ' + node.kind;
     }
   }
 
   private visitCallHead(call: {
     operationName: string;
+    condition?: ConditionAtomNode;
+    iteration?: IterationAtomNode;
     arguments: AssignmentNode[];
   }): string {
+    const cond = call.condition !== undefined ? ' ' + this.visitConditionAtomNode(call.condition) : '';
+    const iter = call.iteration !== undefined ? this.visitIterationAtomNode(call.iteration) + ' ' : '';
+
     const args = call.arguments
       .map(a => this.stripLast(this.visit(a)).trimLeft())
       .join(', ');
 
-    return `call ${call.operationName}(${args})`;
+    return `call ${iter}${call.operationName}(${args})${cond}`;
   }
 
   visitMapDocumentNode(document: MapDocumentNode): string {
@@ -196,7 +204,7 @@ export class MapUnparser extends UnparserBase implements MapVisitor {
 
     const start = keyword;
     const condition =
-      outcome.condition !== undefined ? this.visit(outcome.condition) : '';
+      outcome.condition !== undefined ? this.visit(outcome.condition) + ' ' : '';
     const value = this.stripLast(this.visit(outcome.value).trimLeft());
 
     return this.indentJoinLines(start + condition + value);
@@ -210,10 +218,16 @@ export class MapUnparser extends UnparserBase implements MapVisitor {
     );
   }
 
-  visitStatementConditionNode(cond: StatementConditionNode): string {
+  visitConditionAtomNode(cond: ConditionAtomNode): string {
     const expr = this.stripLast(this.visit(cond.expression)).trimLeft();
 
-    return `if (${expr}) `;
+    return `if (${expr})`;
+  }
+
+  visitIterationAtomNode(iter: IterationAtomNode): string {
+    const expr = this.stripLast(this.visit(iter.iterable)).trimLeft();
+
+    return `foreach (${iter.iterationVariable} of ${expr})`;
   }
 
   visitHttpRequestNode(req: HttpRequestNode): string {

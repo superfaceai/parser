@@ -130,7 +130,7 @@ describe('map unparser', () => {
                       isError: true,
                       terminateFlow: true,
                       condition: {
-                        kind: 'StatementCondition',
+                        kind: 'ConditionAtom',
                         expression: {
                           kind: 'JessieExpression',
                           expression:
@@ -266,7 +266,7 @@ describe('map unparser', () => {
     );
   });
 
-  it('should parse something else', () => {
+  it('should unparse something else', () => {
     const ast = {
       kind: 'MapDocument',
       header: {
@@ -346,6 +346,87 @@ describe('map unparser', () => {
         '\t}',
         '}',
         '',
+      ].join('\n')
+    );
+  });
+
+  it('should unparse call with iteration and condition', () => {
+    const ast = {
+      kind: 'MapDocument',
+      header: {
+        kind: 'MapHeader',
+        profile: {
+          name: 'testy',
+          version: {
+            major: 45,
+            minor: 56,
+            patch: 12345,
+          },
+        },
+        provider: 'provider',
+      },
+      definitions: [
+        {
+          kind: 'MapDefinition',
+          name: 'UseMe',
+          usecaseName: 'UseMe',
+          statements: [
+            {
+              kind: 'CallStatement',
+              operationName: 'Foo',
+              arguments: [
+                {
+                  kind: 'Assignment',
+                  key: ['x'],
+                  value: {
+                    kind: 'JessieExpression',
+                    expression: 'x'
+                  }
+                }
+              ],
+              iteration: {
+                kind: 'IterationAtom',
+                iterationVariable: 'x',
+                iterable: {
+                  kind: 'JessieExpression',
+                  expression: '[1, 2, 3].map(n => n * n)'
+                }
+              },
+              condition: {
+                kind: 'ConditionAtom',
+                expression: {
+                  kind: 'JessieExpression',
+                  expression: 'x % 3 === 0'
+                }
+              },
+              statements: [
+                {
+                  kind: 'OutcomeStatement',
+                  terminatesFlow: false,
+                  value: {
+                    kind: 'JessieExpression',
+                    expression: 'outcome.data',
+                  },
+                },
+              ],
+            }
+          ]
+        }
+      ]
+    };
+
+    const unparser = new MapUnparser(ast as any, { indent: '   ' });
+    expect(unparser.unparse()).toBe(
+      [
+        'profile = "testy@45.56"',
+        'provider = "provider"',
+        '',
+        'map UseMe {',
+        '   call foreach (x of [1, 2, 3].map(n => n * n)) Foo(x = x) if (x % 3 === 0) {',
+        '      map result outcome.data',
+        '   }',
+        '}',
+        ''
       ].join('\n')
     );
   });
