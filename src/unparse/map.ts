@@ -303,6 +303,6 @@ export class MapUnparser extends UnparserBase implements MapVisitor {
 
   visitJessieExpressionNode(jessie: JessieExpressionNode): string {
     // TODO: formatting of inner indentation
-    return this.indentJoinLines(jessie.source);
+    return this.indentJoinLines(jessie.source ?? jessie.expression);
   }
 }
