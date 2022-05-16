@@ -840,14 +840,6 @@ const TERMINATION_TOKEN_TO_TS_TOKEN: {
   '\n': ts.SyntaxKind.NewLineTrivia,
 };
 
-/** empty statements are not supported in jessie, so ; is a good fallback */
-const FALLBACK_TERMINATOR_TOKENS: ReadonlyArray<TerminationTokens> = [';'];
-/** Tokens that are always terminator token */
-const HARD_TERMINATOR_TOKENS: ReadonlyArray<ts.SyntaxKind> = [
-  ts.SyntaxKind.EndOfFileToken,
-  ts.SyntaxKind.SingleLineCommentTrivia,
-];
-
 const NESTED_OPEN_TOKENS: ReadonlyArray<ts.SyntaxKind> = [
   ts.SyntaxKind.OpenBraceToken, // {
   ts.SyntaxKind.OpenBracketToken, // [
@@ -859,21 +851,38 @@ const NESTED_CLOSE_TOKENS: ReadonlyArray<ts.SyntaxKind> = [
   ts.SyntaxKind.CloseParenToken, // )
 ];
 
+function resolveTerminationTokens(tokens?: ReadonlyArray<TerminationTokens>): ts.SyntaxKind[] {
+  // Need at least one termination token
+  if (tokens === undefined || tokens.length === 0) {
+    // Empty statements are not supported in script, so ; is a good fallback
+    tokens = [';'];
+  }
+
+  const termTokens = tokens.map(
+    tok => TERMINATION_TOKEN_TO_TS_TOKEN[tok]
+  );
+
+  // Tokens that are always terminator tokens
+  // What isn't included here is the ts.SyntaxKind.EndOfFileToken token - this token is hardcoded into the scanner because it ignores nesting
+  if (!(ts.SyntaxKind.SingleLineCommentTrivia in termTokens)) {
+    termTokens.push(ts.SyntaxKind.SingleLineCommentTrivia);
+  }
+
+  return termTokens;
+}
+
 export function tryParseJessieScriptExpression(
   slice: string,
   terminationTokens?: ReadonlyArray<TerminationTokens>
 ): ParseResult<JessieSublexerTokenData> {
-  // need at least one terminator token, so we always fall back to something
-  let termTokensMut = terminationTokens;
-  if (termTokensMut === undefined || termTokensMut.length === 0) {
-    termTokensMut = FALLBACK_TERMINATOR_TOKENS;
-  }
-  const termTokens = termTokensMut.map(
-    tok => TERMINATION_TOKEN_TO_TS_TOKEN[tok]
-  );
+  const termTokens = resolveTerminationTokens(terminationTokens);
 
   // Set the scanner text thus reusing the old scanner instance
   SCANNER.setText(slice);
+  if (debug.enabled) {
+    const length = Math.min(slice.length, 128);
+    debug('Scanning slice "%s"...', slice.slice(0, length));
+  }
 
   // Counts the number of open (), [] and {} pairs.
   let depthCounter = 0;
@@ -913,10 +922,13 @@ export function tryParseJessieScriptExpression(
     }
 
     // Look ahead for a termination token
+    // Always terminate at EOF
     if (
-      depthCounter === 0 &&
-      templateStringDepthCounter === 0 &&
-      (termTokens.includes(token) || HARD_TERMINATOR_TOKENS.includes(token))
+      token === ts.SyntaxKind.EndOfFileToken || (
+        depthCounter === 0 &&
+        templateStringDepthCounter === 0 &&
+        termTokens.includes(token)
+      ) 
     ) {
       break;
     }

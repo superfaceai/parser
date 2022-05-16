@@ -1,12 +1,15 @@
 import {
   AssignmentNode,
   CallStatementNode,
+  ConditionAtomNode,
   HttpCallStatementNode,
   HttpRequestNode,
   HttpResponseHandlerNode,
   InlineCallNode,
+  IterationAtomNode,
   JessieExpressionNode,
   MapASTNode,
+  MapAstVisitor,
   MapDefinitionNode,
   MapDocumentNode,
   MapHeaderNode,
@@ -15,9 +18,6 @@ import {
   OutcomeStatementNode,
   PrimitiveLiteralNode,
   SetStatementNode,
-  ConditionAtomNode,
-  IterationAtomNode,
-  MapAstVisitor
 } from '@superfaceai/ast';
 
 import { UnparserBase } from './common';
@@ -86,11 +86,17 @@ export class MapUnparser extends UnparserBase implements MapAstVisitor {
     iteration?: IterationAtomNode;
     arguments: AssignmentNode[];
   }): string {
-    const cond = call.condition !== undefined ? ' ' + this.visitConditionAtomNode(call.condition) : '';
-    const iter = call.iteration !== undefined ? this.visitIterationAtomNode(call.iteration) + ' ' : '';
+    const cond =
+      call.condition !== undefined
+        ? ' ' + this.visitConditionAtomNode(call.condition)
+        : '';
+    const iter =
+      call.iteration !== undefined
+        ? this.visitIterationAtomNode(call.iteration) + ' '
+        : '';
 
     const args = call.arguments
-      .map(a => this.stripLast(this.visit(a)).trimLeft())
+      .map(a => this.stripLast(this.visit(a)).trimStart())
       .join(', ');
 
     return `call ${iter}${call.operationName}(${args})${cond}`;
@@ -126,7 +132,7 @@ export class MapUnparser extends UnparserBase implements MapAstVisitor {
     const statements = map.statements.map(stmt => this.visit(stmt));
     this.currentDepth -= 1;
 
-    return [start, ...statements, end].join('');
+    return [start, statements.join('\n'), end].join('');
   }
 
   visitOperationDefinitionNode(operation: OperationDefinitionNode): string {
@@ -143,8 +149,13 @@ export class MapUnparser extends UnparserBase implements MapAstVisitor {
   }
 
   visitSetStatementNode(set: SetStatementNode): string {
-    if (set.assignments.length > 1) {
-      const start = this.indentJoinLines('set {');
+    if (set.assignments.length > 1 || set.condition !== undefined) {
+      let start = this.indentJoinLines('set {');
+      if (set.condition !== undefined) {
+        const condition = this.visit(set.condition);
+        start = this.indentJoinLines(`set ${condition} {`);
+      }
+
       this.currentDepth += 1;
       const asses = set.assignments.map(ass => this.visit(ass)).join('');
       this.currentDepth -= 1;
@@ -204,8 +215,10 @@ export class MapUnparser extends UnparserBase implements MapAstVisitor {
 
     const start = keyword;
     const condition =
-      outcome.condition !== undefined ? this.visit(outcome.condition) + ' ' : '';
-    const value = this.stripLast(this.visit(outcome.value).trimLeft());
+      outcome.condition !== undefined
+        ? this.visit(outcome.condition) + ' '
+        : '';
+    const value = this.stripLast(this.visit(outcome.value).trimStart());
 
     return this.indentJoinLines(start + condition + value);
   }
@@ -214,18 +227,18 @@ export class MapUnparser extends UnparserBase implements MapAstVisitor {
     return this.indentJoinLines(
       ass.key.join('.') +
         ' = ' +
-        this.stripLast(this.visit(ass.value).trimLeft())
+        this.stripLast(this.visit(ass.value).trimStart())
     );
   }
 
   visitConditionAtomNode(cond: ConditionAtomNode): string {
-    const expr = this.stripLast(this.visit(cond.expression)).trimLeft();
+    const expr = this.stripLast(this.visit(cond.expression)).trimStart();
 
     return `if (${expr})`;
   }
 
   visitIterationAtomNode(iter: IterationAtomNode): string {
-    const expr = this.stripLast(this.visit(iter.iterable)).trimLeft();
+    const expr = this.stripLast(this.visit(iter.iterable)).trimStart();
 
     return `foreach (${iter.iterationVariable} of ${expr})`;
   }
@@ -247,14 +260,14 @@ export class MapUnparser extends UnparserBase implements MapAstVisitor {
     if (req.query !== undefined) {
       query =
         this.stripLast(this.indentJoinLines('query ')) +
-        this.visit(req.query).trimLeft();
+        this.visit(req.query).trimStart();
     }
 
     let headers = '';
     if (req.headers !== undefined) {
       headers =
         this.stripLast(this.indentJoinLines('headers ')) +
-        this.visit(req.headers).trimLeft();
+        this.visit(req.headers).trimStart();
     }
 
     let body = '';
@@ -262,7 +275,7 @@ export class MapUnparser extends UnparserBase implements MapAstVisitor {
       // TODO: assignment
       body =
         this.stripLast(this.indentJoinLines('body ')) +
-        this.visit(req.body).trimLeft();
+        this.visit(req.body).trimStart();
     }
     this.currentDepth -= 1;
 

@@ -30,9 +30,9 @@ export abstract class UnparserBase {
   }
 
   protected visitDocumentedNode(node: DocumentedNode): string | undefined {
-    let doc = node.title;
-    if (node.description !== undefined) {
-      doc = (doc ?? '') + '\n\n' + node.description;
+    let doc = node.documentation?.title;
+    if (node.documentation?.description !== undefined) {
+      doc = (doc ?? '') + '\n\n' + node.documentation?.description;
     }
 
     if (doc !== undefined) {

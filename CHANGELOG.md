@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Script sublexer, script compiler and syntax rules now produce debug logs for debugging
 
+### Fixed
+- Script sublexer infinite loop on some invalid scripts (nesting ignoring EOF token)
+
 ## [1.2.0] - 2022-04-13
 ### Added
 - `EnumStructure` added name field
