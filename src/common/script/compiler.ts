@@ -1,3 +1,4 @@
+import createDebug from 'debug';
 import * as ts from 'typescript';
 
 import { CharIndexSpan } from '../source';
@@ -9,6 +10,8 @@ export type ScriptDiagnostic = {
   relativeSpan: CharIndexSpan;
 };
 
+const debug = createDebug('superface-parser:script:compiler');
+
 // Most of the functionality of this class comes from typescript src/services/transpile.ts
 // and related typescript modules which are sadly internal
 export class ScriptCompiler {
@@ -19,6 +22,8 @@ export class ScriptCompiler {
   protected readonly tsProgram: ts.Program;
 
   constructor(protected readonly sourceText: string) {
+    debug('Initializing compiler with script "%s"', sourceText);
+
     const compilerOptions = ScriptCompiler.buildTranspileOptions();
 
     this.sourceFile = ts.createSourceFile(
@@ -83,9 +88,10 @@ export class ScriptCompiler {
         return carriageReturnLineFeed;
       case ts.NewLineKind.LineFeed:
         return lineFeed;
-    }
 
-    return ts.sys ? ts.sys.newLine : carriageReturnLineFeed;
+      default:
+        return ts.sys ? ts.sys.newLine : carriageReturnLineFeed;
+    }
   }
 
   private static buildCompilerHost(
@@ -166,10 +172,12 @@ export class ScriptCompiler {
 
     const output = outputRaw
       .replace('//# sourceMappingURL=module.js.map', '')
-      .trimRight();
+      .trimEnd();
 
     const sourceMapJson: unknown = JSON.parse(sourceMapRaw);
     ScriptCompiler.assertSourceMapFormat(sourceMapJson);
+
+    debug('Transpiled script "%s" into "%s"', this.sourceText, output);
 
     return { output, sourceMap: sourceMapJson.mappings };
   }

@@ -38,7 +38,7 @@ function tokMatch(token: LexerToken): LexerTokenMatch {
   };
 }
 
-describe('syntax rule factory', () => {
+describe('syntax rule', () => {
   describe('separator', () => {
     it('should match separator rule', () => {
       const tokens: ReadonlyArray<LexerToken> = [
@@ -548,6 +548,90 @@ describe('syntax rule factory', () => {
         kind: 'nomatch',
         attempts: new MatchAttempts(tokens[0], [rule]),
       });
+    });
+  });
+
+  describe('toString', () => {
+    it('should produce legible stringified representation', () => {
+      const rule = SyntaxRule.followedBy(
+        SyntaxRule.identifier('verb'),
+        SyntaxRule.identifier(),
+        SyntaxRule.separator('{'),
+        SyntaxRule.or(
+          SyntaxRule.optional(
+            SyntaxRule.followedBy(
+              SyntaxRule.identifier('verb2'),
+              SyntaxRule.or(SyntaxRule.identifier(), SyntaxRule.string())
+            )
+          ),
+          SyntaxRule.optional(
+            SyntaxRule.followedBy(
+              SyntaxRule.identifier('verb3'),
+              SyntaxRule.operator('='),
+              SyntaxRule.or(SyntaxRule.literal(), SyntaxRule.jessie())
+            )
+          ),
+          SyntaxRule.optional(
+            SyntaxRule.repeat(
+              SyntaxRule.followedBy(
+                SyntaxRule.identifier('verb4'),
+                SyntaxRule.literal(),
+                SyntaxRule.separator('{'),
+                SyntaxRule.separator('}')
+              )
+            )
+          ),
+          SyntaxRule.repeat(
+            SyntaxRule.followedBy(
+              SyntaxRule.identifier('verb5'),
+              SyntaxRule.literal(),
+              SyntaxRule.operator('='),
+              SyntaxRule.literal()
+            )
+          )
+        ),
+        SyntaxRule.separator('}')
+      );
+
+      const stringified = rule.toString();
+
+      expect(stringified).toBe(
+        `FollowedBy(
+  \`verb\`,
+  identifier,
+  \`{\`,
+  Or(
+    Optional(FollowedBy(
+      \`verb2\`,
+      Or(
+        identifier,
+        string
+      )
+    )),
+    Optional(FollowedBy(
+      \`verb3\`,
+      \`=\`,
+      Or(
+        number or boolean literal,
+        jessie script
+      )
+    )),
+    Optional(Repeat(FollowedBy(
+      \`verb4\`,
+      number or boolean literal,
+      \`{\`,
+      \`}\`
+    ))),
+    Repeat(FollowedBy(
+      \`verb5\`,
+      number or boolean literal,
+      \`=\`,
+      number or boolean literal
+    ))
+  ),
+  \`}\`
+)`
+      );
     });
   });
 });

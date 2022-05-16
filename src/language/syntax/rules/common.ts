@@ -15,7 +15,12 @@ import {
   StringTokenData,
   TerminationTokens,
 } from '../../lexer/token';
-import { LexerTokenMatch, RuleResult, SyntaxRule } from '../rule';
+import {
+  LexerTokenMatch,
+  RuleFmtOptions,
+  RuleResult,
+  SyntaxRule,
+} from '../rule';
 import { extractDocumentation } from '../util';
 
 // HELPER RULES //
@@ -204,7 +209,7 @@ export class SyntaxRuleSourceChecksum extends SyntaxRule<string> {
     };
   }
 
-  [Symbol.toStringTag](): string {
+  toStringFmt(_options: RuleFmtOptions): string {
     return '<CHECKSUM>';
   }
 }
