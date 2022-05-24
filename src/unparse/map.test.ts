@@ -8,10 +8,12 @@ import { MapUnparser } from './map';
 async function readFixture(name: string): Promise<string> {
   return readFile(joinPath('fixtures', 'unparse', name), { encoding: 'utf-8' });
 }
+
 describe('map unparser', () => {
   it.each(
     [
-      ['social-media.publish-post.pinterest.suma']
+      ['social-media.publish-post.pinterest.suma'],
+      ['full-example.suma']
     ]
   )('map %s', async (name) => {
     const map = await readFixture(name);
@@ -20,6 +22,7 @@ describe('map unparser', () => {
     const unparser = new MapUnparser(ast);
     const result = unparser.unparse();
 
-    expect(result).toBe(map);
+    // expect(result).toBe(map);
+    expect(result).toMatchSnapshot();
   });  
 });

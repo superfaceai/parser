@@ -20,6 +20,7 @@ import {
   SetStatementNode,
 } from '@superfaceai/ast';
 
+import { isValidIdentifierChar,isValidIdentifierStartChar } from '../common/source';
 import { UnparserBase } from './common';
 
 export class MapUnparser extends UnparserBase implements MapAstVisitor {
@@ -179,7 +180,12 @@ export class MapUnparser extends UnparserBase implements MapAstVisitor {
   }
 
   visitHttpCallStatementNode(http: HttpCallStatementNode): string {
-    const start = this.indentJoinLines(`http ${http.method} "${http.url}" {`);
+    let service = 'default';
+    if (http.serviceId !== undefined) {
+      service = `"${http.serviceId}"`;
+    }
+    
+    const start = this.indentJoinLines(`http ${http.method} ${service} "${http.url}" {`);
     const end = this.indentJoinLines('}');
 
     this.currentDepth += 1;
@@ -224,8 +230,22 @@ export class MapUnparser extends UnparserBase implements MapAstVisitor {
   }
 
   visitAssignmentNode(ass: AssignmentNode): string {
+    const key = ass.key.map(
+      key => {
+        const isValidIdentifier = isValidIdentifierStartChar(key.charCodeAt(0)) && Array.from(key).every(
+          ch => isValidIdentifierChar(ch.charCodeAt(0))
+        );
+
+        if (isValidIdentifier) {
+          return key;
+        } else {
+          return UnparserBase.wrapValidToken(key, '"');
+        }
+      }
+    );
+
     return this.indentJoinLines(
-      ass.key.join('.') +
+      key.join('.') +
         ' = ' +
         this.stripLast(this.visit(ass.value).trimStart())
     );
@@ -244,18 +264,26 @@ export class MapUnparser extends UnparserBase implements MapAstVisitor {
   }
 
   visitHttpRequestNode(req: HttpRequestNode): string {
-    let contentInfo = '';
-    if (req.contentType) {
-      contentInfo = `${contentInfo}"${req.contentType}" `;
-    }
-    if (req.contentLanguage) {
-      contentInfo = `${contentInfo}"${req.contentLanguage}" `;
+    let securityPrefix = this.indentJoinLines('security none');
+    if (req.security.length > 0) {
+      securityPrefix = this.indentJoinLines(
+        ...req.security.map(
+          s => `security "${s.id}"`
+        )
+      );
     }
 
-    const start = this.indentJoinLines(`request ${contentInfo}{`);
-    const end = this.indentJoinLines('}');
-
+    const start = this.indentJoinLines(
+      UnparserBase.joinValidTokens(
+        'request',
+        ...req.contentLanguage !== undefined
+          ? [UnparserBase.wrapValidToken(req.contentType ?? '*', '"'), UnparserBase.wrapValidToken(req.contentLanguage, '"')]
+          : [UnparserBase.wrapValidToken(req.contentType, '"')],
+        '{'
+      )
+    );
     this.currentDepth += 1;
+
     let query = '';
     if (req.query !== undefined) {
       query =
@@ -272,34 +300,40 @@ export class MapUnparser extends UnparserBase implements MapAstVisitor {
 
     let body = '';
     if (req.body !== undefined) {
-      // TODO: assignment
-      body =
-        this.stripLast(this.indentJoinLines('body ')) +
-        this.visit(req.body).trimStart();
+      if (req.body.kind === 'ObjectLiteral') {
+        body =
+          this.stripLast(this.indentJoinLines('body ')) +
+          this.visit(req.body).trimStart();
+      } else {
+        body =
+          this.stripLast(this.indentJoinLines('body = ')) +
+          this.visit(req.body).trimStart();
+      }
     }
+    
     this.currentDepth -= 1;
+    const end = this.indentJoinLines('}');
 
-    return start + query + headers + body + end;
+    return securityPrefix + '\n' + start + query + headers + body + end;
   }
 
   visitHttpResponseHandlerNode(hand: HttpResponseHandlerNode): string {
-    let filter = '';
-    if (hand.statusCode !== undefined) {
-      filter = `${filter}${hand.statusCode} `;
-    }
-    if (hand.contentType !== undefined) {
-      filter = `${filter}"${hand.contentType}" `;
-    }
-    if (hand.contentLanguage !== undefined) {
-      filter = `${filter}"${hand.contentLanguage}" `;
-    }
-
-    const start = this.indentJoinLines(`response ${filter}{`);
-    const end = this.indentJoinLines('}');
-
+    const start = this.indentJoinLines(
+      UnparserBase.joinValidTokens(
+        'response',
+        hand.statusCode,
+        ...hand.contentLanguage !== undefined
+          ? [UnparserBase.wrapValidToken(hand.contentType ?? '*', '"'), UnparserBase.wrapValidToken(hand.contentLanguage, '"')]
+          : [UnparserBase.wrapValidToken(hand.contentType, '"')],
+        '{'
+      )
+    );
     this.currentDepth += 1;
+
     const statements = hand.statements.map(s => this.visit(s)).join('\n');
+    
     this.currentDepth -= 1;
+    const end = this.indentJoinLines('}');
 
     return start + statements + end;
   }

@@ -1,5 +1,7 @@
 import { DocumentedNode } from '@superfaceai/ast';
 
+type TokenType = string | number | boolean;
+
 export abstract class UnparserBase {
   protected currentDepth: number;
   protected readonly options: { indent: string };
@@ -12,13 +14,39 @@ export abstract class UnparserBase {
     };
   }
 
+  protected static wrapValidToken(token: TokenType | undefined, wrap: string): string | undefined {
+    if (token === undefined) {
+      return undefined;
+    }
+
+    return `${wrap}${token.toString()}${wrap}`;
+  }
+
+  protected static joinValidTokens(...tokens: (TokenType | undefined)[]): string {
+    const toks = [];
+    for (const token of tokens) {
+      if (token === undefined) {
+        continue;
+      }
+
+      const tok = token.toString();
+      if (tok.length === 0) {
+        continue;
+      }
+
+      toks.push(tok);
+    }
+    
+    return toks.join(' ');
+  }
+
   protected indentJoinLines(...strings: (string | undefined)[]): string {
     let result = '';
 
     for (const str of strings) {
       if (str !== undefined) {
         result +=
-          this.options.indent.repeat(this.currentDepth) + str.trimLeft() + '\n';
+          this.options.indent.repeat(this.currentDepth) + str.trimStart() + '\n';
       }
     }
 
