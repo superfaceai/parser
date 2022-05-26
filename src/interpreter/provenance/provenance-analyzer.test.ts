@@ -1,8 +1,8 @@
-import { MapDocumentNode } from "@superfaceai/ast";
+import { MapDocumentNode } from '@superfaceai/ast';
 
-import { parseMap } from "../../language";
-import { ProvenanceAnalyzer } from "./provenance-analyzer";
 import { Source } from '../../common/source';
+import { parseMap } from '../../language';
+import { ProvenanceAnalyzer } from './provenance-analyzer';
 
 const parseMapSource = (source: string): MapDocumentNode =>
   parseMap(
@@ -30,16 +30,12 @@ it('should trace simple literals', () => {
 
   const analyzer = new ProvenanceAnalyzer(map);
 
-  expect(
-    analyzer.queryOutcomes('Foo')
-  ).toStrictEqual(
-    {
-      result: {
-        kind: 'source',
-        sourceKind: 'literal',
-        expression: 1
-      },
-      error: undefined
-    }
-  );
+  expect(analyzer.queryOutcomes('Foo')).toStrictEqual({
+    result: {
+      kind: 'source',
+      sourceKind: 'literal',
+      expression: 1,
+    },
+    error: undefined,
+  });
 });

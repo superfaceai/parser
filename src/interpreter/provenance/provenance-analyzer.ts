@@ -1,7 +1,32 @@
+import {
+  AssignmentNode,
+  CallStatementNode,
+  ConditionAtomNode,
+  HttpCallStatementNode,
+  HttpRequestNode,
+  HttpResponseHandlerNode,
+  InlineCallNode,
+  IterationAtomNode,
+  JessieExpressionNode,
+  LiteralNode,
+  MapASTNode,
+  MapAstVisitor,
+  MapDefinitionNode,
+  MapDocumentNode,
+  MapHeaderNode,
+  ObjectLiteralNode,
+  OperationDefinitionNode,
+  OutcomeStatementNode,
+  PrimitiveLiteralNode,
+  SetStatementNode,
+} from '@superfaceai/ast';
 import createDebug from 'debug';
 
-import { AssignmentNode, CallStatementNode, ConditionAtomNode, HttpCallStatementNode, HttpRequestNode, HttpResponseHandlerNode, InlineCallNode, IterationAtomNode, JessieExpressionNode, LiteralNode, MapASTNode, MapAstVisitor, MapDefinitionNode, MapDocumentNode, MapHeaderNode, ObjectLiteralNode, OperationDefinitionNode, OutcomeStatementNode, PrimitiveLiteralNode, SetStatementNode } from "@superfaceai/ast";
-import { ProvenanceItem, ProvenanceOperationCompose, ProvenanceSourceLiteral } from './items';
+import {
+  ProvenanceItem,
+  ProvenanceOperationCompose,
+  ProvenanceSourceLiteral,
+} from './items';
 import { ScriptProvenanceAnalyzer } from './provenance-analyzer-script';
 
 const debug = createDebug('superface-parser:provenance-analyzer');
@@ -17,35 +42,38 @@ type OutcomeResult = {
 };
 export class ProvenanceAnalyzer implements MapAstVisitor {
   /**
-  * Cache for operations that have already been visited.
-  * 
-  * May contain args placeholders.
-  */
-  private resolvedOperations: Record<string, { result: ProvenanceItem, error: ProvenanceItem }> = {};
-  
+   * Cache for operations that have already been visited.
+   *
+   * May contain args placeholders.
+   */
+  //private resolvedOperations: Record<string, { result: ProvenanceItem, error: ProvenanceItem }> = {};
+
   private currentMapInfo?: OutcomeResult & { name: string } = undefined;
   private variablesStack: Record<string, ProvenanceItem>[] = [];
-  
-  constructor(
-    private readonly mapAst: MapASTNode
-  ) {}
+
+  constructor(private readonly mapAst: MapASTNode) {}
 
   queryOutcomes(mapName: string): OutcomeResult {
     const { result, error } = this.analyze(mapName);
-    
+
     return { result, error };
   }
 
-  queryVariable(mapName: string, variableName: string): ProvenanceItem | undefined {
+  queryVariable(
+    mapName: string,
+    variableName: string
+  ): ProvenanceItem | undefined {
     const { variables } = this.analyze(mapName);
 
     return variables[variableName];
   }
 
-  private analyze(mapName: string): OutcomeResult & { variables: Record<string, ProvenanceItem> } {
+  private analyze(
+    mapName: string
+  ): OutcomeResult & { variables: Record<string, ProvenanceItem> } {
     // set up
     this.currentMapInfo = {
-      name: mapName
+      name: mapName,
     };
     this.variablesStack.push({});
 
@@ -65,7 +93,7 @@ export class ProvenanceAnalyzer implements MapAstVisitor {
     return {
       result,
       error,
-      variables
+      variables,
     };
   }
 
@@ -121,10 +149,10 @@ export class ProvenanceAnalyzer implements MapAstVisitor {
         return this.visitObjectLiteralNode(node);
       case 'PrimitiveLiteral':
         return this.visitPrimitiveLiteralNode(node);
-    
+
       default:
         assertUnreachable(node);
-      }
+    }
   }
 
   // entry nodes
@@ -152,42 +180,45 @@ export class ProvenanceAnalyzer implements MapAstVisitor {
     }
   }
 
-  visitMapHeaderNode(node: MapHeaderNode): unknown {
-    throw new Error("Method not implemented.");
+  visitMapHeaderNode(_node: MapHeaderNode): unknown {
+    throw new Error('Method not implemented.');
   }
 
-  visitOperationDefinitionNode(node: OperationDefinitionNode): OutcomeResult {
-    throw new Error("Method not implemented.");
+  visitOperationDefinitionNode(_node: OperationDefinitionNode): OutcomeResult {
+    throw new Error('Method not implemented.');
   }
 
   // expressions nodes
 
-  visitPrimitiveLiteralNode(node: PrimitiveLiteralNode): ProvenanceSourceLiteral {
+  visitPrimitiveLiteralNode(
+    node: PrimitiveLiteralNode
+  ): ProvenanceSourceLiteral {
     return ProvenanceItem.literal(node.value);
   }
 
   visitObjectLiteralNode(node: ObjectLiteralNode): ProvenanceOperationCompose {
     return ProvenanceItem.compose(
-      ...node.fields.map(
-        (assignment): [ProvenanceItem, ProvenanceItem] => {
-          const [key, value] = this.visit(assignment);
+      ...node.fields.map((assignment): [ProvenanceItem, ProvenanceItem] => {
+        const [key, value] = this.visit(assignment);
 
-          return [ProvenanceItem.literal(key), value];
-        }
-      )
+        return [ProvenanceItem.literal(key), value];
+      })
     );
   }
 
-  visitAssignmentNode(node: AssignmentNode): [key: string, value: ProvenanceItem] {
+  visitAssignmentNode(
+    node: AssignmentNode
+  ): [key: string, value: ProvenanceItem] {
     if (node.key.length === 0) {
-      throw new Error("Invalid assignment node");
+      throw new Error('Invalid assignment node');
     }
 
     let value: ProvenanceItem = this.visit(node.value);
     for (let i = node.key.length - 1; i > 0; i -= 1) {
-      value = ProvenanceItem.compose(
-        [ProvenanceItem.literal(node.key[i]), value]
-      );
+      value = ProvenanceItem.compose([
+        ProvenanceItem.literal(node.key[i]),
+        value,
+      ]);
     }
 
     return [node.key[0], value];
@@ -207,8 +238,8 @@ export class ProvenanceAnalyzer implements MapAstVisitor {
     return this.visit(node.expression);
   }
 
-  visitIterationAtomNode(node: IterationAtomNode): unknown {
-    throw new Error("Method not implemented.");
+  visitIterationAtomNode(_node: IterationAtomNode): unknown {
+    throw new Error('Method not implemented.');
   }
 
   // variables
@@ -217,7 +248,10 @@ export class ProvenanceAnalyzer implements MapAstVisitor {
     return this.variablesStack[this.variablesStack.length - 1];
   }
 
-  private static mergeItems(left: ProvenanceItem | undefined, right: ProvenanceItem): ProvenanceItem {
+  private static mergeItems(
+    _left: ProvenanceItem | undefined,
+    right: ProvenanceItem
+  ): ProvenanceItem {
     // TODO: objects
     return right;
   }
@@ -229,25 +263,28 @@ export class ProvenanceAnalyzer implements MapAstVisitor {
 
       newVariables[key] = value;
     }
-    
+
     if (node.condition !== undefined) {
       // const condition = this.visit(node.condition);
 
-      throw new Error("Method not implemented.");
+      throw new Error('Method not implemented.');
     } else {
       for (const [key, value] of Object.entries(newVariables)) {
-        this.currentVariables[key] = ProvenanceAnalyzer.mergeItems(this.currentVariables[key],value);
+        this.currentVariables[key] = ProvenanceAnalyzer.mergeItems(
+          this.currentVariables[key],
+          value
+        );
       }
     }
 
-    debug("Updated variables", this.currentVariables);
+    debug('Updated variables', this.currentVariables);
   }
 
   visitOutcomeStatementNode(node: OutcomeStatementNode): void {
     const value = this.visit(node.value);
-    
+
     if (node.condition !== undefined) {
-      throw new Error("Method not implemented.");
+      throw new Error('Method not implemented.');
     } else {
       if (node.isError) {
         this.currentMap.error = value;
@@ -259,25 +296,25 @@ export class ProvenanceAnalyzer implements MapAstVisitor {
 
   // calls
 
-  visitInlineCallNode(node: InlineCallNode): ProvenanceItem {
-    throw new Error("Method not implemented.");
+  visitInlineCallNode(_node: InlineCallNode): ProvenanceItem {
+    throw new Error('Method not implemented.');
   }
 
-  visitCallStatementNode(node: CallStatementNode): unknown {
-    throw new Error("Method not implemented.");
+  visitCallStatementNode(_node: CallStatementNode): unknown {
+    throw new Error('Method not implemented.');
   }
 
   // http statement
 
-  visitHttpCallStatementNode(node: HttpCallStatementNode): unknown {
-    throw new Error("Method not implemented.");
+  visitHttpCallStatementNode(_node: HttpCallStatementNode): unknown {
+    throw new Error('Method not implemented.');
   }
 
-  visitHttpRequestNode(node: HttpRequestNode): unknown {
-    throw new Error("Method not implemented.");
+  visitHttpRequestNode(_node: HttpRequestNode): unknown {
+    throw new Error('Method not implemented.');
   }
 
-  visitHttpResponseHandlerNode(node: HttpResponseHandlerNode): unknown {
-    throw new Error("Method not implemented.");
+  visitHttpResponseHandlerNode(_node: HttpResponseHandlerNode): unknown {
+    throw new Error('Method not implemented.');
   }
 }

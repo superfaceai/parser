@@ -1,9 +1,8 @@
 import createDebug from 'debug';
+import * as ts from 'typescript';
 
-import ts from "typescript";
-
-import { ScriptExpressionCompiler } from "../../common/script";
-import { ProvenanceItem } from "./items";
+import { ScriptExpressionCompiler } from '../../common/script';
+import { ProvenanceItem } from './items';
 
 const debug = createDebug('superface-parser:provenance-analyzer-script');
 
@@ -52,19 +51,19 @@ export class ScriptProvenanceAnalyzer {
     if (variable !== undefined) {
       return variable;
     }
-    
+
     // resolve known sources, as long as they weren't overriden by variable names
     if (node.text === 'input') {
       return {
         kind: 'source',
-        sourceKind: 'input'
+        sourceKind: 'input',
       };
     }
 
     if (node.text === 'parameters') {
       return {
         kind: 'source',
-        sourceKind: 'parameters'
+        sourceKind: 'parameters',
       };
     }
 
@@ -72,7 +71,7 @@ export class ScriptProvenanceAnalyzer {
 
     return {
       kind: 'placeholder',
-      placeholderKind: 'missing'
+      placeholderKind: 'missing',
     };
   }
 }

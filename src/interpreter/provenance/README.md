@@ -6,10 +6,10 @@ The provenance analyzer tracks the provenance (history, source, origin) of items
 
 The sources of values are the roots of all provenance chains. There are:
 
-* literals - intialized directly in the code
-* input - entering into maps through the `input` object, the fields are defined in the profile
-* context parameters - entering into maps through the `parameters` object, the fields are defined in provider definition
-* http response - entering into maps through HTTP call responses, their types are mostly unknown and may only be guessed
+- literals - intialized directly in the code
+- input - entering into maps through the `input` object, the fields are defined in the profile
+- context parameters - entering into maps through the `parameters` object, the fields are defined in provider definition
+- http response - entering into maps through HTTP call responses, their types are mostly unknown and may only be guessed
 
 ## Item operations
 

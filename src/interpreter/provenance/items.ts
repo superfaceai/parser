@@ -3,7 +3,7 @@
 
 export type ProvenanceItemBase = {
   kind: string;
-}
+};
 
 /////////////////////////////////////////////////////////////////////
 // SOURCE
@@ -41,11 +41,11 @@ export type ProvenancePlaceholderBase = ProvenanceItemBase & {
 export type ProvenancePlaceholderArgs = ProvenancePlaceholderBase & {
   kind: 'placeholder';
   placeholderKind: 'args';
-}
+};
 export type ProvenancePlaceholderMissing = ProvenancePlaceholderBase & {
   kind: 'placeholder';
   placeholderKind: 'missing';
-}
+};
 
 /////////////////////////////////////////////////////////////////////
 // OPERATION
@@ -111,9 +111,16 @@ export type ProvenanceOperationCondition = ProvenanceOperationBase & {
 /////////////////////////////////////////////////////////////////////
 // FINAL
 
-export type ProvenanceSource = ProvenanceSourceLiteral | ProvenanceSourceInput | ProvenanceSourceParameters | ProvenanceSourceHttpResponse;
-export type ProvenancePlaceholder = ProvenancePlaceholderArgs | ProvenancePlaceholderMissing;
-export type ProvenanceOperation = ProvenanceOperationLogicalNot
+export type ProvenanceSource =
+  | ProvenanceSourceLiteral
+  | ProvenanceSourceInput
+  | ProvenanceSourceParameters
+  | ProvenanceSourceHttpResponse;
+export type ProvenancePlaceholder =
+  | ProvenancePlaceholderArgs
+  | ProvenancePlaceholderMissing;
+export type ProvenanceOperation =
+  | ProvenanceOperationLogicalNot
   | ProvenanceOperationBitwiseNot
   | ProvenanceOperationUnaryPlus
   | ProvenanceOperationUnaryMinus
@@ -121,22 +128,27 @@ export type ProvenanceOperation = ProvenanceOperationLogicalNot
   | ProvenanceOperationIndex
   | ProvenanceOperationCompose
   | ProvenanceOperationCondition;
-export type ProvenanceItem = ProvenanceSource | ProvenancePlaceholder | ProvenanceOperation;
+export type ProvenanceItem =
+  | ProvenanceSource
+  | ProvenancePlaceholder
+  | ProvenanceOperation;
 
-export namespace ProvenanceItem {
-  export function literal(expression: string | number | boolean): ProvenanceSourceLiteral {
+export const ProvenanceItem = {
+  literal(expression: string | number | boolean): ProvenanceSourceLiteral {
     return {
       kind: 'source',
       sourceKind: 'literal',
-      expression
-    }
-  }
+      expression,
+    };
+  },
 
-  export function compose(...entries: [key: ProvenanceItem, value: ProvenanceItem][]): ProvenanceOperationCompose {
+  compose(
+    ...entries: [key: ProvenanceItem, value: ProvenanceItem][]
+  ): ProvenanceOperationCompose {
     return {
       kind: 'operation',
       operationKind: 'compose',
-      entries
-    }
-  }
-}
+      entries,
+    };
+  },
+};
