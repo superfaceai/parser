@@ -149,7 +149,7 @@ class TestSyntaxRule<
     return this.result;
   }
 
-  [Symbol.toStringTag](): string {
+  toStringFmt(_options: unknown): string {
     return this.name ?? '[test rule]';
   }
 }
@@ -405,7 +405,7 @@ df'
             return this.second;
           }
 
-          [Symbol.toStringTag](): string {
+          toStringFmt(_options: unknown): string {
             return '[repeat test rule]';
           }
         }

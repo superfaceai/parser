@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Script sublexer, script compiler and syntax rules now produce debug logs for debugging
+
 ## [1.2.0] - 2022-04-13
 ### Added
 - `EnumStructure` added name field
