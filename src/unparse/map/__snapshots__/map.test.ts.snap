@@ -66,22 +66,22 @@ map Foo {
 
   map result true
 
-  http GET default \\"/api/v1/resource/{key}/{ another.key}\\" {
+  http GET \\"/api/v1/resource/{key}/{ another.key}\\" {
+
   }
 
-  http PUT default \\"/api/{url}\\" {
-    security none
-
+  http PUT \\"/api/{url}\\" {
     request {
+
     }
 
     response {
+
     }
   }
 
   http POST \\"service-name\\" \\"/api/thing\\" {
     security \\"bearer\\"
-
     request \\"application/json\\" \\"en-US\\" {
       query {
         foo = 1
@@ -89,22 +89,24 @@ map Foo {
     }
 
     response 200 {
+
     }
 
     response \\"application/json\\" {
+
     }
 
     response \\"*\\" \\"en-US\\" {
+
     }
   }
 
-  http GET default \\"/api\\" {
-    security none
-
+  http GET \\"/api\\" {
     request \\"text/plain\\" {
       headers {
         \\"my-header.here\\" = \\"hello\\"
       }
+
       body = {
         key: \\"value\\",
         thing: true
@@ -122,17 +124,17 @@ map Foo {
     }
   }
 
-  http GET default \\"/api\\" {
-    security none
-
+  http GET \\"/api\\" {
     request \\"*\\" \\"en-US\\" {
       query {
         foo = 1
         bar = 2
       }
+
       headers {
         oh = \\"no\\"
       }
+
       body = [1, 2, 3]
     }
 
@@ -148,20 +150,25 @@ map Foo {
 
 operation Fop {
   foo = 1
+
   foo.bar = true
+
   set {
     \\"quz.a\\" = \\"hello\\"
     foo.\\"bar-man\\".qux = 1 + 2
   }
+
   set if (condition === true) {
     fuz = foo.bar
   }
+
   set {
     foo = call Fop(arg1 = \`String goes \${here}\`, arg2 = \\"hello\\" + \\" world\\")
     foo = call foreach (x of array) Fop(arg = x)
     foo = call Fop(arg = x) if (x % 2 === 0)
     foo = call foreach (x of array) Fop(arg = x) if (x % 2 === 0)
   }
+
   call Fop(arg2 = 1) {
     foo = 1
 
@@ -172,6 +179,7 @@ operation Fop {
 
     return if (cond) \\"what\\"
   }
+
   call foreach (x of array) Fop(arg = 1) {
     return {
       x = \\"hello\\"
@@ -181,11 +189,13 @@ operation Fop {
       banana = true
     }
   }
+
   call Fop(arg = 1) if (x % 2 === 0) {
     fail \\"ERROR\\"
 
     fail if (outcome.error) outcome.error
   }
+
   call foreach (x of array) Fop(arg = 1) if (x % 2 === 0) {
     fail {
       e = \\"rror\\"
@@ -196,21 +206,25 @@ operation Fop {
       b = \\"ye\\"
     }
   }
-  return true
-  http GET default \\"/api/v1/resource/{key}/{ another.key}\\" {
-  }
-  http PUT default \\"/api/{url}\\" {
-    security none
 
+  return true
+
+  http GET \\"/api/v1/resource/{key}/{ another.key}\\" {
+
+  }
+
+  http PUT \\"/api/{url}\\" {
     request {
+
     }
 
     response {
+
     }
   }
+
   http POST \\"service-name\\" \\"/api/thing\\" {
     security \\"bearer\\"
-
     request \\"application/json\\" \\"en-US\\" {
       query {
         foo = 1
@@ -218,21 +232,24 @@ operation Fop {
     }
 
     response 200 {
+
     }
 
     response \\"application/json\\" {
+
     }
 
     response \\"*\\" \\"en-US\\" {
+
     }
   }
-  http GET default \\"/api\\" {
-    security none
 
+  http GET \\"/api\\" {
     request \\"text/plain\\" {
       headers {
         \\"my-header.here\\" = \\"hello\\"
       }
+
       body = {
         key: \\"value\\",
         thing: true
@@ -249,17 +266,18 @@ operation Fop {
       fail if (!body.ok) 7
     }
   }
-  http GET default \\"/api\\" {
-    security none
 
+  http GET \\"/api\\" {
     request \\"*\\" \\"en-US\\" {
       query {
         foo = 1
         bar = 2
       }
+
       headers {
         oh = \\"no\\"
       }
+
       body = [1, 2, 3]
     }
 
@@ -271,8 +289,7 @@ operation Fop {
       }
     }
   }
-}
-"
+}"
 `;
 
 exports[`map unparser map social-media.publish-post.pinterest.suma 1`] = `
@@ -320,13 +337,12 @@ map PublishPost {
     detail = \\"Only PNG or JPG images are supported.\\"
   }
 
-  http POST default \\"/v5/pins\\" {
-    security none
-
+  http POST \\"/v5/pins\\" {
     request {
       headers {
         authorization = \\"Bearer \\" + parameters.accessToken
       }
+
       body {
         board_id = input.profileId
         link = input.link
@@ -391,6 +407,5 @@ map PublishPost {
       }
     }
   }
-}
-"
+}"
 `;
