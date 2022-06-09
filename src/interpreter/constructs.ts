@@ -5,6 +5,7 @@ import { UseCaseSlotType } from '.';
 import { ValidationIssue } from './issue';
 import {
   ArrayCollection,
+  ListStructure,
   ObjectStructure,
   StructureType,
 } from './profile-output';
@@ -23,8 +24,7 @@ import {
 import {
   findTypescriptIdentifier,
   findTypescriptProperty,
-  getVariableName,
-  validateObjectStructure,
+  getVariableName
 } from './utils';
 
 export type TypescriptIdentifier =
@@ -229,32 +229,101 @@ function returnIssue(
       };
 }
 
-function getFieldStructure(
-  property: string,
-  node: ts.LeftHandSideExpression,
-  objectStructure: ObjectStructure
+const LIST_INDEX_REGEX = /^[0-9]+$/;
+function getStructureProperty(
+  structure: ObjectStructure | ListStructure,
+  property: string
 ): StructureType | undefined {
-  if (ts.isIdentifier(node)) {
-    if (!objectStructure.fields) {
-      throw new Error('Validated object structure does not contain fields');
-    }
+  if (isObjectStructure(structure)) {
+    return structure.fields?.[property];
+  }
 
-    return objectStructure.fields[property];
-  } else if (ts.isPropertyAccessExpression(node)) {
-    let structure = validateObjectStructure(node, objectStructure);
+  // spec says arrays always have length property 
+  if (property === 'length') {
+    return {
+      kind: 'PrimitiveStructure',
+      type: 'number',
+    };
+  }
 
-    if (structure && isNonNullStructure(structure)) {
-      structure = structure.value;
-    }
-
-    if (!structure || !isObjectStructure(structure) || !structure.fields) {
-      return undefined;
-    }
-
-    return structure.fields[property];
+  // arrays can be indexed using numbers
+  if (LIST_INDEX_REGEX.test(property)) {
+    return structure.value;
   }
 
   return undefined;
+}
+
+function getAccessNodeProperty(
+  node: ts.PropertyAccessExpression | ts.ElementAccessExpression
+): { kind: 'static', property: string } | { kind: 'dynamic' } {
+  if (ts.isPropertyAccessExpression(node)) {
+    return { kind: 'static', property: node.name.text };
+  }
+
+  if (ts.isElementAccessExpression(node)) {
+    if (
+      ts.isNumericLiteral(node.argumentExpression)
+      || ts.isStringLiteral(node.argumentExpression)
+    ) {
+      return { kind: 'static', property: node.argumentExpression.text };
+    }
+
+    if (node.argumentExpression.kind === ts.SyntaxKind.TrueKeyword) {
+      return { kind: 'static', property: 'true' };
+    }
+    if (node.argumentExpression.kind === ts.SyntaxKind.FalseKeyword) {
+      return { kind: 'static', property: 'false' };
+    }
+  }
+
+  return { kind: 'dynamic' };
+}
+
+// Assumes `structure` is the base object which is being accessed
+function accessStructure(
+  structure: ObjectStructure | ListStructure,
+  accessNode: ts.PropertyAccessExpression | ts.ElementAccessExpression
+): StructureType | undefined {
+  // note that this will be in reverse order (last property to access first)
+  const propertyChain: string[] = [];
+
+  let currentNode: ts.LeftHandSideExpression = accessNode;
+  while (ts.isPropertyAccessExpression(currentNode) || ts.isElementAccessExpression(currentNode)) {
+    const property = getAccessNodeProperty(currentNode);
+
+    if (property.kind === 'dynamic') {
+      // TODO-future: This would attempt to resolve the dynamic property
+      return undefined;
+    }
+
+    propertyChain.push(property.property);
+    currentNode = currentNode.expression;
+  }
+  propertyChain.reverse();
+
+  let currentStructure: StructureType | undefined = structure;
+  for (const property of propertyChain) {
+    if (currentStructure === undefined) {
+      break;
+    }
+
+    // unpack non-nulls
+    // TODO: what to do with unions?
+    if (isNonNullStructure(currentStructure)) {
+      currentStructure = currentStructure.value;
+    }
+
+    if (!isObjectStructure(currentStructure) && !isListStructure(currentStructure)) {
+      // TODO: Or return a more descriptive error here to allow better reporting?
+      currentStructure = undefined;
+      break;
+    }
+
+    currentStructure = getStructureProperty(currentStructure, property);
+  }
+
+  return currentStructure;
 }
 
 export const RETURN_CONSTRUCTS: {
@@ -639,12 +708,7 @@ export const RETURN_CONSTRUCTS: {
           },
         };
 
-        const property = node.name.text;
-        const fieldValue = getFieldStructure(
-          property,
-          node.expression,
-          inputStructure
-        );
+        const fieldValue = accessStructure(inputStructure, node);
 
         if (!fieldValue) {
           return returnIssue(issue, true, false, isOutcomeWithCondition);
@@ -706,12 +770,7 @@ export const RETURN_CONSTRUCTS: {
           },
         };
 
-        const property = (node.argumentExpression as ts.Identifier).text;
-        const fieldValue = getFieldStructure(
-          property,
-          node.expression,
-          inputStructure
-        );
+        const fieldValue = accessStructure(inputStructure, node);
 
         if (!fieldValue) {
           return returnIssue(issue, true, false, isOutcomeWithCondition);
