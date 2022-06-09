@@ -6,6 +6,7 @@ import {
   HttpRequestNode,
   HttpResponseHandlerNode,
   InlineCallNode,
+  isInlineCallNode,
   isMapDefinitionNode,
   isObjectLiteralNode,
   isOperationDefinitionNode,
@@ -24,10 +25,20 @@ import {
   SetStatementNode,
 } from '@superfaceai/ast';
 import createDebug from 'debug';
-import * as ts from 'typescript';
 
-import { buildAssignment, isCompatible, IssueLocation } from '.';
-import { RETURN_CONSTRUCTS } from './constructs';
+import { ScriptExpressionCompiler } from '../common/script';
+import { computeEndLocation, Location } from '../common/source';
+import {
+  buildAssignment,
+  isCompatible,
+  IssueLocation,
+  UseCaseSlotType,
+} from '.';
+import {
+  RelativeValidationIssue,
+  RETURN_CONSTRUCTS,
+  visitConstruct,
+} from './constructs';
 import { ValidationIssue } from './issue';
 import {
   ObjectStructure,
@@ -37,11 +48,12 @@ import {
 } from './profile-output';
 import { isNonNullStructure, isScalarStructure } from './profile-output.utils';
 import {
-  compareStructure,
   findTypescriptIdentifier,
   getOutcomes,
   getVariableName,
   mergeVariables,
+  validateObjectLiteral,
+  validatePrimitiveLiteral,
 } from './utils';
 
 const debug = createDebug('superface-parser:map-validator');
@@ -257,10 +269,11 @@ export class MapValidator implements MapAstVisitor {
       getOutcomes(node, false).length === 0
     ) {
       this.errors.push({
-        kind: 'resultNotDefined',
+        kind: 'outcomeNotDefined',
         context: {
           path: this.getPath(node),
-          expectedResult: usecase.result,
+          slot: UseCaseSlotType.RESULT,
+          expected: usecase.result,
         },
       });
     }
@@ -270,10 +283,11 @@ export class MapValidator implements MapAstVisitor {
       getOutcomes(node, true).length === 0
     ) {
       this.errors.push({
-        kind: 'errorNotDefined',
+        kind: 'outcomeNotDefined',
         context: {
           path: this.getPath(node),
-          expectedError: usecase.error,
+          slot: UseCaseSlotType.ERROR,
+          expected: usecase.error,
         },
       });
     }
@@ -348,10 +362,11 @@ export class MapValidator implements MapAstVisitor {
     if (node.isError) {
       if (!this.currentUseCase?.error) {
         this.warnings.push({
-          kind: 'errorNotFound',
+          kind: 'useCaseSlotNotFound',
           context: {
             path: this.getPath(node),
-            actualError: node.value,
+            expected: UseCaseSlotType.ERROR,
+            actual: node.value,
           },
         });
       }
@@ -359,10 +374,11 @@ export class MapValidator implements MapAstVisitor {
     } else {
       if (!this.currentUseCase?.result) {
         this.warnings.push({
-          kind: 'resultNotFound',
+          kind: 'useCaseSlotNotFound',
           context: {
             path: this.getPath(node),
-            actualResult: node.value,
+            expected: UseCaseSlotType.RESULT,
+            actual: node.value,
           },
         });
       }
@@ -380,8 +396,10 @@ export class MapValidator implements MapAstVisitor {
       // Init new variables if object used in dot notation wasn't defined before
       if (assignment.key.length > 1) {
         const keys = [];
-        for (const key of assignment.key) {
-          keys.push(key);
+        for (let i = 0; i < assignment.key.length - 1; i++) {
+          const item = assignment.key[i];
+
+          keys.push(item);
 
           if (this.variables[keys.join('.')] === undefined) {
             this.addVariableToStack(
@@ -397,7 +415,10 @@ export class MapValidator implements MapAstVisitor {
       }
 
       this.visit(assignment.value);
-      this.addVariableToStack(assignment, false);
+
+      if (!isInlineCallNode(assignment.value)) {
+        this.addVariableToStack(assignment, false);
+      }
     });
   }
 
@@ -414,78 +435,87 @@ export class MapValidator implements MapAstVisitor {
   }
 
   visitInlineCallNode(node: InlineCallNode): boolean {
-    const originalStructure = this.currentStructure;
-
-    // set current structure to undefined to validate only input
-    this.currentStructure = undefined;
-
     if (node.arguments.length > 0) {
-      node.arguments.forEach(argument => this.visit(argument));
-    }
+      const originalStructure = this.currentStructure;
 
-    this.currentStructure = originalStructure;
+      // set current structure to undefined to validate only input
+      this.currentStructure = undefined;
+
+      node.arguments.forEach(argument => this.visit(argument));
+
+      this.currentStructure = originalStructure;
+    }
 
     return true;
   }
 
-  visitJessieExpressionNode(node: JessieExpressionNode): boolean {
-    const rootNode = ts.createSourceFile(
-      'scripts.js',
-      `(${node.source ?? node.expression})`,
-      ts.ScriptTarget.ES2015,
-      true,
-      ts.ScriptKind.JS
+  private static mapRelativeValidationIssue(
+    nodeSource: string,
+    startLocation: Location | undefined,
+    issue: RelativeValidationIssue
+  ): ValidationIssue {
+    const relativeSpan = ScriptExpressionCompiler.fixupRelativeSpan(
+      issue.context.path.relativeSpan
     );
 
-    const construct = RETURN_CONSTRUCTS[rootNode.kind];
+    // instead of reconstructing the issue we just delete the member
+    delete (issue.context.path as { relativeSpan?: unknown }).relativeSpan;
 
-    if (!construct) {
-      throw new Error('Rule construct not found!');
+    const result: ValidationIssue = issue;
+
+    // bail if we don't know the location
+    if (startLocation === undefined) {
+      return result;
     }
 
-    const constructResult = construct.visit(
+    // and set the location member
+    result.context.path.location = {
+      start: computeEndLocation(
+        nodeSource.slice(0, relativeSpan.start),
+        startLocation
+      ),
+      end: computeEndLocation(
+        nodeSource.slice(0, relativeSpan.end),
+        startLocation
+      ),
+    };
+
+    return result;
+  }
+
+  visitJessieExpressionNode(node: JessieExpressionNode): boolean {
+    const nodeSource = node.source ?? node.expression;
+    const rootNode = new ScriptExpressionCompiler(nodeSource).rawExpressionNode;
+
+    const constructResult = visitConstruct(
       rootNode,
-      node.location,
       this.currentStructure,
       this.inputStructure,
-      this.isOutcomeWithCondition
+      this.isOutcomeWithCondition,
+      RETURN_CONSTRUCTS[rootNode.kind]
     );
 
     let result = constructResult.pass;
-
-    if (this.currentStructure && constructResult.invalidOutput) {
-      this.addIssue({
-        kind: 'wrongStructure',
-        context: {
-          path: this.getPath(node),
-          expected: this.currentStructure,
-          actual: node.source ?? node.expression,
-        },
-      });
-    }
-    if (this.inputStructure && constructResult.invalidInput) {
-      this.addIssue({
-        kind: 'wrongInput',
-        context: {
-          path: this.getPath(node),
-          expected: this.inputStructure,
-          actual: node.source ?? node.expression,
-        },
-      });
-    } else if (constructResult.invalidInput) {
-      this.addIssue({
-        kind: 'inputNotFound',
-        context: {
-          path: this.getPath(node),
-          actual: node.source ?? node.expression,
-        },
-      });
-    }
-
     if (!constructResult.pass) {
-      this.errors.push(...constructResult.errors);
+      this.errors.push(
+        ...constructResult.errors.map(issue =>
+          MapValidator.mapRelativeValidationIssue(
+            nodeSource,
+            node.location?.start,
+            issue
+          )
+        )
+      );
     }
-    this.warnings.push(...(constructResult.warnings ?? []));
+    this.warnings.push(
+      ...constructResult.warnings.map(issue =>
+        MapValidator.mapRelativeValidationIssue(
+          nodeSource,
+          node.location?.start,
+          issue
+        )
+      )
+    );
 
     // validate variables from jessie
     for (const { jessieNode, type } of constructResult.variables ?? []) {
@@ -548,12 +578,9 @@ export class MapValidator implements MapAstVisitor {
       return true;
     }
 
-    const { structureOfFields, isValid } = compareStructure(
-      node,
-      this.currentStructure
-    );
+    const validationResult = validateObjectLiteral(this.currentStructure, node);
 
-    if (!isValid) {
+    if (!validationResult.isValid) {
       this.addIssue({
         kind: 'wrongStructure',
         context: {
@@ -566,13 +593,17 @@ export class MapValidator implements MapAstVisitor {
       return this.isOutcomeWithCondition ? true : false;
     }
 
-    if (!structureOfFields) {
-      throw new Error('This should not happen!');
+    // unpack here, otherwise TS fails to infer that is cannot be undefined
+    const objectStructure = validationResult.objectStructure;
+    if (objectStructure.fields === undefined) {
+      throw new Error(
+        'Validated object structure is not defined or does not contain fields'
+      );
     }
 
     // all fields
-    const profileFields = Object.entries(structureOfFields);
-    const profileFieldNames = Object.keys(structureOfFields);
+    const profileFields = Object.entries(objectStructure.fields);
+    const profileFieldNames = Object.keys(objectStructure.fields);
     const mapFieldNames = node.fields.map(field => field.key[0]);
 
     // required fields
@@ -592,7 +623,7 @@ export class MapValidator implements MapAstVisitor {
     let result = true;
     for (const field of matchingFields) {
       let visitResult = true;
-      this.currentStructure = structureOfFields[field.key[0]];
+      this.currentStructure = objectStructure.fields[field.key[0]];
 
       // it should not validate against final value when dot.notation is used
       if (field.key.length > 1) {
@@ -616,7 +647,7 @@ export class MapValidator implements MapAstVisitor {
         kind: 'missingRequired',
         context: {
           path: this.getPath(node),
-          field: value ? value.kind : 'undefined',
+          expected: value ? value.kind : 'undefined',
         },
       });
     }
@@ -626,8 +657,8 @@ export class MapValidator implements MapAstVisitor {
         kind: 'wrongObjectStructure',
         context: {
           path: this.getPath(node),
-          expected: structureOfFields,
-          actual: node.fields,
+          expected: objectStructure,
+          actual: node,
         },
       });
     }
@@ -648,7 +679,7 @@ export class MapValidator implements MapAstVisitor {
       return true;
     }
 
-    const { isValid } = compareStructure(node, this.currentStructure);
+    const { isValid } = validatePrimitiveLiteral(this.currentStructure, node);
 
     if (!isValid) {
       this.addIssue({

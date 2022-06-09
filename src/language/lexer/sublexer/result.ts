@@ -1,5 +1,5 @@
+import { CharIndexSpan } from '../../../common/source';
 import { ProtoError } from '../../error';
-import { CharIndexSpan } from '../../source';
 import { LexerTokenData, LexerTokenKind } from '../token';
 
 /** The match is successful */

@@ -1,3 +1,4 @@
+import { Source } from '../../../../common/source';
 import { PARSED_AST_VERSION, PARSED_VERSION } from '../../../../metadata';
 import { SyntaxError } from '../../../error';
 import { LexerTokenStream } from '../../../lexer';
@@ -10,7 +11,6 @@ import {
   LiteralTokenData,
   StringTokenData,
 } from '../../../lexer/token';
-import { Source } from '../../../source';
 import { allFeatures, PARSER_FEATURES, ParserFeature } from '../../features';
 import { RuleResult, SyntaxRule } from '../../rule';
 import { ArrayLexerStream } from '../../util';
@@ -747,6 +747,66 @@ describe('strict map syntax rules', () => {
           },
           tokens[0],
           tokens[4]
+        ),
+        stream,
+        mapRules.MAP_SUBSTATEMENT,
+        ...allFeatures()
+      );
+    });
+
+    it('should parse http call with service selection', () => {
+      const tokens = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'http' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'GET' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'service-id' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
+
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+      ] as const;
+      const stream = new ArrayLexerStream(tokens);
+
+      expectAllToBeAMatch(
+        tesMatch(
+          {
+            kind: 'HttpCallStatement',
+            method: (tokens[1].data as IdentifierTokenData).identifier,
+            url: (tokens[3].data as StringTokenData).string,
+            serviceId: (tokens[2].data as StringTokenData).string,
+            responseHandlers: [],
+          },
+          tokens[0],
+          tokens[5]
+        ),
+        stream,
+        mapRules.MAP_SUBSTATEMENT,
+        ...allFeatures()
+      );
+    });
+
+    it('should parse http call with default service selection', () => {
+      const tokens = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'http' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'GET' }),
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'default' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'https://example.com' }),
+
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),
+        tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '}' }),
+      ] as const;
+      const stream = new ArrayLexerStream(tokens);
+
+      expectAllToBeAMatch(
+        tesMatch(
+          {
+            kind: 'HttpCallStatement',
+            method: (tokens[1].data as IdentifierTokenData).identifier,
+            url: (tokens[3].data as StringTokenData).string,
+            serviceId: undefined,
+            responseHandlers: [],
+          },
+          tokens[0],
+          tokens[5]
         ),
         stream,
         mapRules.MAP_SUBSTATEMENT,

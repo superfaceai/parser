@@ -1,6 +1,9 @@
+import {
+  isAny,
+  isNotValidIdentifierChar,
+  LocationSpan,
+} from '../../common/source';
 import { SyntaxError } from '../error';
-import { LocationSpan } from '../source';
-import * as util from './util';
 
 /** Supported termination tokens */
 export type TerminationTokens = ';' | ',' | '\n' | ')' | ']' | '}';
@@ -35,31 +38,31 @@ export type SeparatorValue =
 export const SEPARATORS: {
   [P in SeparatorParen | SeparatorBracket | SeparatorBrace]: LexerScanRule<P>;
 } = {
-  '(': ['(', util.isAny],
-  ')': [')', util.isAny],
-  '[': ['[', util.isAny],
-  ']': [']', util.isAny],
-  '{': ['{', util.isAny],
-  '}': ['}', util.isAny],
+  '(': ['(', isAny],
+  ')': [')', isAny],
+  '[': ['[', isAny],
+  ']': [']', isAny],
+  '{': ['{', isAny],
+  '}': ['}', isAny],
 };
 
 // Operators
 export type OperatorValue = ':' | '!' | '|' | '=' | '@' | ',' | ';' | '.';
 export const OPERATORS: { [P in OperatorValue]: LexerScanRule<P> } = {
-  ':': [':', util.isAny],
-  '!': ['!', util.isAny],
-  '|': ['|', util.isAny],
-  '=': ['=', util.isAny],
-  '@': ['@', util.isAny],
-  ',': [',', util.isAny],
-  ';': [';', util.isAny],
-  '.': ['.', util.isAny],
+  ':': [':', isAny],
+  '!': ['!', isAny],
+  '|': ['|', isAny],
+  '=': ['=', isAny],
+  '@': ['@', isAny],
+  ',': [',', isAny],
+  ';': [';', isAny],
+  '.': ['.', isAny],
 };
 
 // Literals
 export const LITERALS_BOOL: Record<string, LexerScanRule<boolean>> = {
-  true: [true, util.isNotValidIdentifierChar],
-  false: [false, util.isNotValidIdentifierChar],
+  true: [true, isNotValidIdentifierChar],
+  false: [false, isNotValidIdentifierChar],
 };
 export type LiteralValue = number | boolean;
 export type StringValue = string;

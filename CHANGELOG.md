@@ -6,11 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
 ### Added
+- Script sublexer, script compiler and syntax rules now produce debug logs for debugging
 - Compatibility check of AST metadata into validators
+
+### Fixed
+- Script sublexer infinite loop on some invalid scripts (nesting ignoring EOF token)
+- Validator now properly handles list property access
+
+## [1.2.0] - 2022-04-13
+### Added
+- `EnumStructure` added name field
+
+### Changed
+- Internal refactor of script compilation
+
+### Fixed
+- Validator issue locations
+
+## [1.1.0] - 2022-01-19
+### Added
+- Http call can now select service id, e.g. `http VERB "id" "url" {`
+- `ExampleValidator` class to validate examples defined in profile usecase
+- `validateExamples` function similar to `validateMap` for using `ExampleValidator`
+- `EnumValueNode` now has a `name` field
 
 ### Changed
 - `ErrorContext` field `path` to object containing location span and node kind
+- Formatting of validation issues into more intuitive way
+- Validation issues `inputNotFound`, `resultNotFound` and `errorNotFound` merged into `useCaseSlotNotFound`
+- Validation issues `resultNotDefined` and `errorNotDefined` merged into `outcomeNotDefined`
 
 ### Fixed
 - Handling variables that are written with dot notation, e.g. `output.is.nested = true`
@@ -18,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Validate arguments in inline call only against input
 - Unwrap non null structure in validation of nested properties
 - Remove limited validation of binary expressions and let other constructs handle them
+- Propagation of validation issues on top of issues from jessie expression nodes
 - `SyntaxRuleNever` causing a wrong error message
 
 ## [1.0.0] - 2021-11-04
@@ -209,7 +236,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation extraction from doc strings
 - Usecase result parsing as optional
 
-[Unreleased]: https://github.com/superfaceai/parser/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/superfaceai/parser/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/superfaceai/parser/compare/v1.1.0...v1.2.0
+[1.1.0]: https://github.com/superfaceai/parser/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/superfaceai/parser/compare/v0.0.23...v1.0.0
 [0.0.23]: https://github.com/superfaceai/parser/compare/v0.0.22...v0.0.23
 [0.0.22]: https://github.com/superfaceai/parser/compare/v0.0.21...v0.0.22

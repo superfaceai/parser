@@ -1,8 +1,8 @@
 import fs from 'fs';
 import { join } from 'path';
 
+import { Source } from '../common/source';
 import { PARSED_AST_VERSION, PARSED_VERSION } from '../metadata';
-import { Source } from './source';
 import {
   parseMap,
   parseProfile,
@@ -716,7 +716,7 @@ describe('map strict', () => {
           value: {
             kind: 'JessieExpression',
             expression:
-              '"format " + (formatMe + ("" + nested)) + " and " + formatThat + " please"',
+              '"format ".concat(formatMe + "".concat(nested), " and ").concat(formatThat, " please")',
           },
         },
         {
@@ -802,7 +802,7 @@ describe('map strict', () => {
                   key: ['foo'],
                   value: {
                     kind: 'JessieExpression',
-                    expression: '"Hello " + world',
+                    expression: '"Hello ".concat(world)',
                     source: '`Hello ${world}`',
                   },
                 },
@@ -820,13 +820,76 @@ describe('map strict', () => {
                       key: ['bar', 'baz'],
                       value: {
                         kind: 'JessieExpression',
-                        expression: '"Farewell " + world',
+                        expression: '"Farewell ".concat(world)',
                         source: '`Farewell ${world}`',
                       },
                     },
                   ],
                 },
               },
+            },
+          ],
+        },
+      ],
+    });
+  });
+
+  it('should parse http call head', () => {
+    const input = `
+      profile = "example/profile@0.1"
+      provider = "example-provider"
+
+      map Test {
+        http POST "service-id" "hello.localhost" {
+
+        }
+
+        http GET default "hi.localhost" {
+
+        }
+
+        http PUT "default" "heya.localhost" {
+
+        }
+
+        http DELETE "ahoy.localhost" {
+
+        }
+      }
+    `;
+
+    const source = new Source(input);
+
+    const map = parseMap(source);
+    expect(map).toMatchObject({
+      kind: 'MapDocument',
+      definitions: [
+        {
+          kind: 'MapDefinition',
+          statements: [
+            {
+              kind: 'HttpCallStatement',
+              method: 'POST',
+              serviceId: 'service-id',
+              url: 'hello.localhost',
+            },
+            {
+              kind: 'HttpCallStatement',
+              method: 'GET',
+              serviceId: undefined,
+              url: 'hi.localhost',
+            },
+            {
+              kind: 'HttpCallStatement',
+              method: 'PUT',
+              serviceId: 'default',
+              url: 'heya.localhost',
+            },
+            {
+              kind: 'HttpCallStatement',
+              method: 'DELETE',
+              serviceId: undefined,
+              url: 'ahoy.localhost',
             },
           ],
         },

@@ -1,3 +1,4 @@
+import { isNewline } from '../../../../common/source';
 import {
   DefaultSublexerTokenData,
   LexerTokenData,
@@ -5,7 +6,6 @@ import {
   LiteralTokenData,
   NewlineTokenData,
 } from '../../token';
-import { isNewline } from '../../util';
 import { ParseResult } from '../result';
 import { tryParseNumberLiteral } from './number';
 import {

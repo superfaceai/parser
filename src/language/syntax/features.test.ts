@@ -76,7 +76,7 @@ describe('features', () => {
         'nested_object_literals',
         new SyntaxRuleOperator(':')
       );
-      expect(instance[Symbol.toStringTag]()).toEqual('`EOF` or `:`');
+      expect(instance[Symbol.toStringTag]()).toEqual('Or(\n  `EOF`,\n  `:`\n)');
     });
   });
 });

@@ -1,5 +1,5 @@
+import { CharIndexSpan, LocationSpan, Source } from '../common/source';
 import { formatTokenData, LexerTokenKind } from './lexer/token';
-import { CharIndexSpan, LocationSpan, Source } from './source';
 import { RuleResultNoMatch } from './syntax/rule';
 
 /**
