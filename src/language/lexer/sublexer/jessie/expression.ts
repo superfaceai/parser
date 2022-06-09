@@ -851,16 +851,16 @@ const NESTED_CLOSE_TOKENS: ReadonlyArray<ts.SyntaxKind> = [
   ts.SyntaxKind.CloseParenToken, // )
 ];
 
-function resolveTerminationTokens(tokens?: ReadonlyArray<TerminationTokens>): ts.SyntaxKind[] {
+function resolveTerminationTokens(
+  tokens?: ReadonlyArray<TerminationTokens>
+): ts.SyntaxKind[] {
   // Need at least one termination token
   if (tokens === undefined || tokens.length === 0) {
     // Empty statements are not supported in script, so ; is a good fallback
     tokens = [';'];
   }
 
-  const termTokens = tokens.map(
-    tok => TERMINATION_TOKEN_TO_TS_TOKEN[tok]
-  );
+  const termTokens = tokens.map(tok => TERMINATION_TOKEN_TO_TS_TOKEN[tok]);
 
   // Tokens that are always terminator tokens
   // What isn't included here is the ts.SyntaxKind.EndOfFileToken token - this token is hardcoded into the scanner because it ignores nesting
@@ -924,11 +924,10 @@ export function tryParseJessieScriptExpression(
     // Look ahead for a termination token
     // Always terminate at EOF
     if (
-      token === ts.SyntaxKind.EndOfFileToken || (
-        depthCounter === 0 &&
+      token === ts.SyntaxKind.EndOfFileToken ||
+      (depthCounter === 0 &&
         templateStringDepthCounter === 0 &&
-        termTokens.includes(token)
-      ) 
+        termTokens.includes(token))
     ) {
       break;
     }

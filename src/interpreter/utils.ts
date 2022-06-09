@@ -1,5 +1,6 @@
 import {
   AssignmentNode,
+  AstMetadata,
   ComlinkAssignmentNode,
   ComlinkListLiteralNode,
   ComlinkLiteralNode,
@@ -22,6 +23,7 @@ import {
 } from '@superfaceai/ast';
 import * as ts from 'typescript';
 
+import { PARSED_AST_VERSION, PARSED_VERSION } from '../metadata';
 import { TypescriptIdentifier } from './constructs';
 import { ExampleValidator } from './example-validator';
 import { UseCaseSlotType, ValidationIssue } from './issue';
@@ -463,3 +465,17 @@ export const buildAssignment = (
   value: LiteralNode,
   location?: LocationSpan
 ): AssignmentNode => ({ kind: 'Assignment', key, value, location });
+
+export function isCompatible(metadata: AstMetadata): boolean {
+  // check ast versions
+  if (metadata.astVersion.major !== PARSED_AST_VERSION.major) {
+    return false;
+  }
+
+  // check parser versions
+  if (metadata.parserVersion.major !== PARSED_VERSION.major) {
+    return false;
+  }
+
+  return true;
+}

@@ -24,7 +24,7 @@ import {
 import {
   findTypescriptIdentifier,
   findTypescriptProperty,
-  getVariableName
+  getVariableName,
 } from './utils';
 
 export type TypescriptIdentifier =
@@ -238,7 +238,7 @@ function getStructureProperty(
     return structure.fields?.[property];
   }
 
-  // spec says arrays always have length property 
+  // spec says arrays always have length property
   if (property === 'length') {
     return {
       kind: 'PrimitiveStructure',
@@ -256,15 +256,15 @@ function getStructureProperty(
 
 function getAccessNodeProperty(
   node: ts.PropertyAccessExpression | ts.ElementAccessExpression
-): { kind: 'static', property: string } | { kind: 'dynamic' } {
+): { kind: 'static'; property: string } | { kind: 'dynamic' } {
   if (ts.isPropertyAccessExpression(node)) {
     return { kind: 'static', property: node.name.text };
   }
 
   if (ts.isElementAccessExpression(node)) {
     if (
-      ts.isNumericLiteral(node.argumentExpression)
-      || ts.isStringLiteral(node.argumentExpression)
+      ts.isNumericLiteral(node.argumentExpression) ||
+      ts.isStringLiteral(node.argumentExpression)
     ) {
       return { kind: 'static', property: node.argumentExpression.text };
     }
@@ -289,7 +289,10 @@ function accessStructure(
   const propertyChain: string[] = [];
 
   let currentNode: ts.LeftHandSideExpression = accessNode;
-  while (ts.isPropertyAccessExpression(currentNode) || ts.isElementAccessExpression(currentNode)) {
+  while (
+    ts.isPropertyAccessExpression(currentNode) ||
+    ts.isElementAccessExpression(currentNode)
+  ) {
     const property = getAccessNodeProperty(currentNode);
 
     if (property.kind === 'dynamic') {
@@ -314,7 +317,10 @@ function accessStructure(
       currentStructure = currentStructure.value;
     }
 
-    if (!isObjectStructure(currentStructure) && !isListStructure(currentStructure)) {
+    if (
+      !isObjectStructure(currentStructure) &&
+      !isListStructure(currentStructure)
+    ) {
       // TODO: Or return a more descriptive error here to allow better reporting?
       currentStructure = undefined;
       break;

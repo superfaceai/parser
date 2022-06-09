@@ -371,7 +371,7 @@ export class MapUnparser
       ...Tok.addGlue(
         [Tok.newline(), Tok.newline()],
         document.definitions.map(d => this.visit(d))
-      )
+      ),
     ];
   }
 }

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Script sublexer, script compiler and syntax rules now produce debug logs for debugging
+- Compatibility check of AST metadata into validators
 
 ### Fixed
 - Script sublexer infinite loop on some invalid scripts (nesting ignoring EOF token)

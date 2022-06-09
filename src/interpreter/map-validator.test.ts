@@ -12,7 +12,10 @@ import {
 } from './test/validate-custom-matcher';
 import { formatIssues, getProfileOutput, validateMap } from './utils';
 
-function getIssues(profile: ProfileDocumentNode, maps: MapASTNode[]): Record<string, { errors?: string, warnings?: string }> {
+function getIssues(
+  profile: ProfileDocumentNode,
+  maps: MapASTNode[]
+): Record<string, { errors?: string; warnings?: string }> {
   const profileOutput = getProfileOutput(profile);
   const output: Record<string, { errors?: string; warnings?: string }> = {};
   let id: string | undefined;
@@ -50,8 +53,8 @@ function valid(profile: ProfileDocumentNode, maps: MapASTNode[]): void {
     expect(allIssues).toMatchSnapshot();
 
     for (const issues of Object.values(allIssues)) {
-      expect(issues.warnings ?? '').toBe('')
-      expect(issues.errors ?? '').toBe('')
+      expect(issues.warnings ?? '').toBe('');
+      expect(issues.errors ?? '').toBe('');
     }
   });
 }
@@ -62,8 +65,8 @@ function validWarn(profile: ProfileDocumentNode, maps: MapASTNode[]): void {
     expect(allIssues).toMatchSnapshot();
 
     for (const issues of Object.values(allIssues)) {
-      expect(issues.warnings ?? '').not.toBe('')
-      expect(issues.errors ?? '').toBe('')
+      expect(issues.warnings ?? '').not.toBe('');
+      expect(issues.errors ?? '').toBe('');
     }
   });
 }
@@ -74,7 +77,7 @@ function invalid(profile: ProfileDocumentNode, maps: MapASTNode[]): void {
     expect(allIssues).toMatchSnapshot();
 
     for (const issues of Object.values(allIssues)) {
-      expect(issues.errors ?? '').not.toBe('')
+      expect(issues.errors ?? '').not.toBe('');
     }
   });
 }
@@ -672,7 +675,7 @@ describe('MapValidator', () => {
 
         validWarn(profileAst, [mapAst1]);
       });
-      
+
       describe('possibly null field f1', () => {
         const profileAst = parseProfileFromSource(
           `usecase Test {
@@ -2324,8 +2327,8 @@ describe('MapValidator', () => {
           map error if (thing.foo !== "ok") "error"
         }`
       );
-    const map2 = parseMapFromSource(
-      `map Test {
+      const map2 = parseMapFromSource(
+        `map Test {
         set {
           rebind = input.arr,
           then = rebind[0]
@@ -2334,7 +2337,7 @@ describe('MapValidator', () => {
         map result "ok"
         map error if (thing.foo !== "ok") "error"
       }`
-    );
+      );
 
       valid(profile, [map1, map2]);
     });

@@ -28,7 +28,12 @@ import createDebug from 'debug';
 
 import { ScriptExpressionCompiler } from '../common/script';
 import { computeEndLocation, Location } from '../common/source';
-import { buildAssignment, IssueLocation, UseCaseSlotType } from '.';
+import {
+  buildAssignment,
+  isCompatible,
+  IssueLocation,
+  UseCaseSlotType,
+} from '.';
 import {
   RelativeValidationIssue,
   RETURN_CONSTRUCTS,
@@ -143,6 +148,11 @@ export class MapValidator implements MapAstVisitor {
   }
 
   visitMapDocumentNode(node: MapDocumentNode): void {
+    if (!isCompatible(node.astMetadata)) {
+      // TODO: throw error or add error to state and stop validation?
+      throw new Error('Specified AST is not compatible with linter');
+    }
+
     // check the valid ProfileID
     this.visit(node.header);
 
