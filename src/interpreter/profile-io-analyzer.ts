@@ -234,7 +234,7 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
 
         return obj;
       },
-      { kind: 'ObjectStructure' }
+      { kind: 'ObjectStructure', fields: {} }
     );
   }
 
