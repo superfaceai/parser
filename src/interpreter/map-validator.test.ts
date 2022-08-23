@@ -157,6 +157,40 @@ describe('MapValidator', () => {
     });
 
     describe('result is an object', () => {
+      describe('empty object', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result {}    
+          }`
+        );
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            map result {}
+          }`
+        );
+
+        // TODO: complete this
+        // const mapAst2 = parseMapFromSource(
+        //   `map Test {
+        //     map result {
+        //       f2 = "what"
+        //     }
+        //   }`
+        // );
+
+        validWithWarnings(
+          profileAst,
+          [
+            mapAst1,
+            // mapAst2
+          ],
+          [
+            '',
+            // 'ObjectLiteral - Wrong Object Structure: expected {}, but got {f2: "what"}',
+          ]
+        );
+      });
+
       describe('extra field', () => {
         const profileAst = parseProfileFromSource(
           `usecase Test {

@@ -43,13 +43,11 @@ describe('ProfileValidator Advanced', () => {
         usecases: [
           {
             useCaseName: 'Test',
-            input: {
-              kind: 'ObjectStructure',
-            },
+            input: { kind: 'ObjectStructure', fields: {} },
             result: {
               kind: 'UnionStructure',
               types: [
-                { kind: 'ObjectStructure' },
+                { kind: 'ObjectStructure', fields: {} },
                 {
                   kind: 'NonNullStructure',
                   value: {
@@ -167,6 +165,7 @@ describe('ProfileValidator Advanced', () => {
             useCaseName: 'Test',
             input: {
               kind: 'ObjectStructure',
+              fields: {},
             },
             result: {
               kind: 'UnionStructure',
@@ -221,6 +220,7 @@ describe('ProfileValidator Advanced', () => {
             useCaseName: 'Test',
             input: {
               kind: 'ObjectStructure',
+              fields: {},
             },
             result: {
               kind: 'UnionStructure',
