@@ -63,7 +63,7 @@ export interface ListStructure extends Structure {
  */
 export interface ObjectStructure extends Structure, DocumentedStructure {
   kind: 'ObjectStructure';
-  fields?: ObjectCollection;
+  fields: ObjectCollection;
 }
 
 /**

@@ -323,6 +323,7 @@ describe('ProfileIOAnalyzer', () => {
             useCaseName: 'Test',
             result: {
               kind: 'ObjectStructure',
+              fields: {}
             },
           },
         ],

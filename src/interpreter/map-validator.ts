@@ -595,11 +595,6 @@ export class MapValidator implements MapAstVisitor {
 
     // unpack here, otherwise TS fails to infer that is cannot be undefined
     const objectStructure = validationResult.objectStructure;
-    if (objectStructure.fields === undefined) {
-      throw new Error(
-        'Validated object structure is not defined or does not contain fields'
-      );
-    }
 
     // all fields
     const profileFields = Object.entries(objectStructure.fields);
