@@ -169,24 +169,20 @@ describe('MapValidator', () => {
           }`
         );
 
-        // TODO: complete this
-        // const mapAst2 = parseMapFromSource(
-        //   `map Test {
-        //     map result {
-        //       f2 = "what"
-        //     }
-        //   }`
-        // );
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result {
+              f2 = "what"
+            }
+          }`
+        );
 
         validWithWarnings(
           profileAst,
+          [mapAst1, mapAst2],
+          [''],
           [
-            mapAst1,
-            // mapAst2
-          ],
-          [
-            '',
-            // 'ObjectLiteral - Wrong Object Structure: expected {}, but got {f2: "what"}',
+            'ObjectLiteral - Wrong Object Structure: expected {}, but got {f2: "what"}',
           ]
         );
       });
