@@ -323,7 +323,7 @@ describe('ProfileIOAnalyzer', () => {
             useCaseName: 'Test',
             result: {
               kind: 'ObjectStructure',
-              fields: {}
+              fields: {},
             },
           },
         ],
@@ -668,6 +668,7 @@ describe('ProfileIOAnalyzer', () => {
           useCaseName: 'Test',
           title: 'The Test Case',
           description: 'It tests the case',
+          safety: undefined,
           input: {
             kind: 'ObjectStructure',
             fields: {
@@ -782,5 +783,30 @@ describe('ProfileIOAnalyzer', () => {
 
     const output = analyzer.visit(ast);
     expect(output).toMatchObject(expected);
+  });
+
+  describe('when use-case safety is defined', () => {
+    it('extracts safety correctly', () => {
+      const ast = parseProfileFromSource(`
+        usecase Safe safe {
+          result string
+        }
+
+        usecase Unsafe unsafe {
+          result string
+        } 
+
+        usecase Idempotent idempotent {
+          result string
+        }
+      `);
+
+      const analyzer = new ProfileIOAnalyzer();
+      const output = analyzer.visit(ast);
+
+      expect(output.usecases[0].safety).toBe('safe');
+      expect(output.usecases[1].safety).toBe('unsafe');
+      expect(output.usecases[2].safety).toBe('idempotent');
+    });
   });
 });

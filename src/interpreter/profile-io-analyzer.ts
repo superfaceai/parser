@@ -301,6 +301,7 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
   visitUseCaseDefinitionNode(node: UseCaseDefinitionNode): UseCaseStructure {
     return addDoc(node, {
       useCaseName: node.useCaseName,
+      safety: node.safety,
       input: this.visit(node.input),
       result: this.visit(node.result),
       error: this.visit(node.error),
