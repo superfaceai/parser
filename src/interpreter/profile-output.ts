@@ -104,6 +104,7 @@ export type StructureType =
  */
 export interface UseCaseStructure extends DocumentedStructure {
   useCaseName: string;
+  safety?: 'safe' | 'unsafe' | 'idempotent';
   input?: ObjectStructure;
   result?: StructureType;
   async?: StructureType;
