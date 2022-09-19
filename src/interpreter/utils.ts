@@ -452,8 +452,8 @@ export function getVariableName(
 
   if (ts.isElementAccessExpression(node)) {
     return name !== ''
-    ? `${getTypescriptIdentifierName(node)}.${name}`
-    : getTypescriptIdentifierName(node);
+      ? `${getTypescriptIdentifierName(node)}.${name}`
+      : getTypescriptIdentifierName(node);
   }
 
   return 'undefined';
