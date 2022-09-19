@@ -593,16 +593,7 @@ exports[`MapValidator result & error result is an object required field enum f1 
 Object {
   "profile-provider#0": Object {},
   "profile-provider#1": Object {},
-  "profile-provider#2": Object {
-    "errors": "5:24 ObjectLiteralExpression - Wrong Structure: expected unknown or ready, but got {
-              ready: \\"ready\\",
-              unknown: \\"unknown\\",
-            }
-14:20 JessieExpression - Wrong Variable Structure: variable mapState expected unknown or ready!, but got {
-              ready: \\"ready\\",
-              unknown: \\"unknown\\",
-            }",
-  },
+  "profile-provider#2": Object {},
 }
 `;
 

@@ -556,7 +556,7 @@ describe('MapValidator', () => {
         invalid(profileAst, [mapAst3]);
       });
 
-      describe.only('required field enum f1', () => {
+      describe('required field enum f1', () => {
         const profileAst = parseProfileFromSource(
           `usecase Test {
             result {

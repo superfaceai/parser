@@ -417,7 +417,7 @@ export function findTypescriptProperty(name: string, node: ts.Node): boolean {
 }
 
 export function getTypescriptIdentifierName(node: ts.Node): string {
-  if (ts.isIdentifier(node)) {
+  if (ts.isIdentifier(node) || ts.isStringLiteral(node)) {
     return node.text;
   }
 
@@ -451,10 +451,9 @@ export function getVariableName(
   }
 
   if (ts.isElementAccessExpression(node)) {
-    const nodeName = (node.argumentExpression as ts.Identifier).text;
-    name = name !== '' ? `${nodeName}.${name}` : nodeName;
-
-    return getVariableName(node.expression, name);
+    return name !== ''
+    ? `${getTypescriptIdentifierName(node)}.${name}`
+    : getTypescriptIdentifierName(node);
   }
 
   return 'undefined';
