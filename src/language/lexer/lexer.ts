@@ -1,11 +1,18 @@
+import {
+  CharIndexSpan,
+  computeEndLocation,
+  countStarting,
+  isNewline,
+  isWhitespace,
+  Location,
+  Source,
+} from '../../common/source';
 import { SyntaxError, SyntaxErrorCategory } from '../error';
-import { CharIndexSpan, computeEndLocation, Location, Source } from '../source';
 import { LexerContext, LexerContextType, Sublexer } from './context';
 import { tryParseDefault } from './sublexer/default';
 import { tryParseJessieScriptExpression } from './sublexer/jessie';
 import { ParseResult } from './sublexer/result';
 import { LexerToken, LexerTokenData, LexerTokenKind } from './token';
-import * as util from './util';
 
 export type LexerTokenKindFilter = { [K in LexerTokenKind]: boolean };
 export const DEFAULT_TOKEN_KIND_FILTER: LexerTokenKindFilter = {
@@ -208,8 +215,8 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
    */
   private computeNextTokenStartLocation(lastToken: LexerToken): Location {
     // Count number of non-newline whitespace tokens after the last token.
-    const whitespaceAfterLast = util.countStarting(
-      ch => !util.isNewline(ch) && util.isWhitespace(ch),
+    const whitespaceAfterLast = countStarting(
+      ch => !isNewline(ch) && isWhitespace(ch),
       this.source.body.slice(lastToken.location.end.charIndex)
     );
 
@@ -302,7 +309,15 @@ export class Lexer implements LexerTokenStream<[LexerToken, boolean]> {
         relativeSpan = error.relativeSpan;
       } else {
         // multi-error results combine all errors and hints into one, the span is the one that covers all the errors
-        category = SyntaxErrorCategory.LEXER;
+        category = tokenParseResult.errors
+          .map(e => e.category)
+          .reduce((acc, curr) => {
+            if (acc === curr) {
+              return acc;
+            } else {
+              return SyntaxErrorCategory.LEXER;
+            }
+          });
 
         detail = tokenParseResult.errors
           .map(err => err.detail ?? '')

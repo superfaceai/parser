@@ -1,8 +1,15 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
+exports[`MapValidator input input has an array with element access then validation will pass 1`] = `
+Object {
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
+}
+`;
+
 exports[`MapValidator result & error error is PrimitiveTypeName then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "5:21 PrimitiveLiteral - Wrong Structure: expected NOTFOUND or BADREQUEST, but got \\"wrong\\"",
   },
 }
@@ -10,13 +17,16 @@ Object {
 
 exports[`MapValidator result & error error is PrimitiveTypeName then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
 }
 `;
 
 exports[`MapValidator result & error error is a list non null list with primitive or object type then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
+    "errors": "4:7 MapDefinition - No Error outcome defined",
+  },
+  "profile-provider#1": Object {
     "errors": "5:23 ArrayLiteralExpression - Wrong Structure: expected [boolean | {}], but got [true, 2]
 6:23 ArrayLiteralExpression - Wrong Structure: expected [boolean | {}], but got [true, 2, {}]
 7:23 ArrayLiteralExpression - Wrong Structure: expected [boolean | {}], but got [[true]]",
@@ -26,13 +36,14 @@ Object {
 
 exports[`MapValidator result & error error is a list non null list with primitive or object type then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error error is a list non null primitive or object type then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "5:23 ArrayLiteralExpression - Wrong Structure: expected [boolean! | {}!], but got [null]
 6:23 ArrayLiteralExpression - Wrong Structure: expected [boolean! | {}!], but got [undefined]
 7:23 ArrayLiteralExpression - Wrong Structure: expected [boolean! | {}!], but got [true, 2]
@@ -44,13 +55,14 @@ Object {
 
 exports[`MapValidator result & error error is a list non null primitive or object type then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error error is a list non null primitive type or possibly null object type then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "5:23 ArrayLiteralExpression - Wrong Structure: expected [boolean! | {}], but got [true, 2]
 6:23 ArrayLiteralExpression - Wrong Structure: expected [boolean! | {}], but got [true, 2, {}]
 7:23 ArrayLiteralExpression - Wrong Structure: expected [boolean! | {}], but got [[true]]",
@@ -60,31 +72,33 @@ Object {
 
 exports[`MapValidator result & error error is a list non null primitive type or possibly null object type then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error error is a list non null primitive type then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
-    "errors": "5:25 NullKeyword - Wrong Structure: expected boolean!, but got null
-6:25 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}
-7:37 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}
-8:37 FirstLiteralToken - Wrong Structure: expected boolean, but got 2
-9:25 ArrayLiteralExpression - Wrong Structure: expected boolean, but got [true]",
+  "profile-provider#0": Object {
+    "errors": "5:24 NullKeyword - Wrong Structure: expected boolean!, but got null
+6:24 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}
+7:30 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}
+8:30 FirstLiteralToken - Wrong Structure: expected boolean, but got 2
+9:24 ArrayLiteralExpression - Wrong Structure: expected boolean, but got [true]",
   },
 }
 `;
 
 exports[`MapValidator result & error error is a list non null primitive type then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error error is a list primitive or object type then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "5:23 ArrayLiteralExpression - Wrong Structure: expected [boolean | {}], but got [2]
 6:23 ArrayLiteralExpression - Wrong Structure: expected [boolean | {}], but got [[true]]
 7:23 ArrayLiteralExpression - Wrong Structure: expected [boolean | {}], but got [true, 2, {}]",
@@ -94,28 +108,38 @@ Object {
 
 exports[`MapValidator result & error error is a list primitive or object type then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error error is a list primitive type then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
-    "errors": "5:25 FirstLiteralToken - Wrong Structure: expected boolean, but got 2
-6:25 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}",
+  "profile-provider#0": Object {
+    "errors": "5:24 FirstLiteralToken - Wrong Structure: expected boolean, but got 2
+6:24 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}",
   },
 }
 `;
 
 exports[`MapValidator result & error error is a list primitive type then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
+}
+`;
+
+exports[`MapValidator result & error error is an object extra field then validation will pass with warnings 1`] = `
+Object {
+  "profile-provider#0": Object {
+    "warnings": "5:23 ObjectLiteral - Wrong Object Structure: expected {f1: string}, but got {f2: \\"what\\"}",
+  },
 }
 `;
 
 exports[`MapValidator result & error error is an object fields: f1, f2, where f2 is non null then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "7:20 NullKeyword - Wrong Structure: expected number!, but got null
 10:20 NullKeyword - Wrong Structure: expected number!, but got null",
     "warnings": "9:23 ObjectLiteral - Wrong Object Structure: expected {f1: string, f2: number!}, but got {f2: null, f3: 3}",
@@ -125,16 +149,14 @@ Object {
 
 exports[`MapValidator result & error error is an object fields: f1, f2, where f2 is non null then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "24:23 ObjectLiteral - Wrong Object Structure: expected {f1: string, f2: number!}, but got {f1: \\"some string\\", f2: 2, f3: 3}
-29:23 ObjectLiteral - Wrong Object Structure: expected {f1: string, f2: number!}, but got {f2: 2, f3: 3}",
-  },
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error error is an object non null field f1 then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "6:20 NullKeyword - Wrong Structure: expected string!, but got null
 9:20 ArrayLiteralExpression - Wrong Structure: expected string, but got [\\"some\\", \\"key\\"]",
   },
@@ -143,16 +165,14 @@ Object {
 
 exports[`MapValidator result & error error is an object non null field f1 then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "10:23 ObjectLiteral - Wrong Object Structure: expected {f1: string!}, but got {f1: \\"some string\\", f3: 3}
-14:23 ObjectLiteral - Wrong Object Structure: expected {f1: string!}, but got {f3: 3}",
-  },
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error error is an object non null fields: f1, f2 then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "6:20 NullKeyword - Wrong Structure: expected string!, but got null
 9:20 NullKeyword - Wrong Structure: expected string!, but got null
 10:20 NullKeyword - Wrong Structure: expected number!, but got null",
@@ -162,16 +182,17 @@ Object {
 
 exports[`MapValidator result & error error is an object non null fields: f1, f2 then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "17:23 ObjectLiteral - Wrong Object Structure: expected {f1: string!, f2: number!}, but got {f1: \\"some string\\", f3: 3}
-21:23 ObjectLiteral - Wrong Object Structure: expected {f1: string!, f2: number!}, but got {f1: \\"some string\\", f2: 2, f3: 3}",
-  },
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error error is an object non null object with two required fields f1, f2 then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
+    "errors": "4:7 MapDefinition - No Error outcome defined",
+  },
+  "profile-provider#1": Object {
     "errors": "5:23 ObjectLiteral - Missing required field
 5:23 ObjectLiteral - Missing required field
 8:20 NullKeyword - Wrong Structure: expected string!, but got null
@@ -184,15 +205,13 @@ Object {
 
 exports[`MapValidator result & error error is an object non null object with two required fields f1, f2 then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "9:23 ObjectLiteral - Wrong Object Structure: expected {f1: string!, f2: number!}, but got {f1: \\"some string\\", f2: 2, f3: 3}",
-  },
+  "profile-provider#0": Object {},
 }
 `;
 
 exports[`MapValidator result & error error is an object one required and one not required field: f1, f2 then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "5:23 ObjectLiteral - Missing required field
 8:20 NullKeyword - Wrong Structure: expected string!, but got null
 11:20 NullKeyword - Wrong Structure: expected boolean!, but got null
@@ -206,16 +225,14 @@ Object {
 
 exports[`MapValidator result & error error is an object one required and one not required field: f1, f2 then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "12:23 ObjectLiteral - Wrong Object Structure: expected {f1: string!, f2: boolean!}, but got {f1: \\"some string\\", f3: 3}
-16:23 ObjectLiteral - Wrong Object Structure: expected {f1: string!, f2: boolean!}, but got {f1: \\"some string\\", f2: false, f3: 3}",
-  },
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error error is an object one required field: f1 then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "5:23 ObjectLiteral - Missing required field
 8:20 NullKeyword - Wrong Structure: expected string!, but got null",
   },
@@ -224,15 +241,14 @@ Object {
 
 exports[`MapValidator result & error error is an object one required field: f1 then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "8:23 ObjectLiteral - Wrong Object Structure: expected {f1: string!}, but got {f1: \\"some string\\", f3: 3}",
-  },
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error error is an object possibly null field f1 then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "ObjectLiteral - Wrong Structure: expected string, but got {inner: 2}",
   },
 }
@@ -240,17 +256,14 @@ Object {
 
 exports[`MapValidator result & error error is an object possibly null field f1 then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "10:23 ObjectLiteral - Wrong Object Structure: expected {f1: string}, but got {f1: null, f2: null}
-14:23 ObjectLiteral - Wrong Object Structure: expected {f1: string}, but got {f1: \\"some string\\", f2: 2}
-18:23 ObjectLiteral - Wrong Object Structure: expected {f1: string}, but got {f2: 2}",
-  },
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error error is an object possibly null fields: f1, f2 then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "6:20 ArrayLiteralExpression - Wrong Structure: expected string, but got [\\"some\\", \\"key\\"]",
   },
 }
@@ -258,16 +271,14 @@ Object {
 
 exports[`MapValidator result & error error is an object possibly null fields: f1, f2 then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "27:23 ObjectLiteral - Wrong Object Structure: expected {f1: string, f2: number}, but got {f1: \\"some string\\", f3: 3}
-31:23 ObjectLiteral - Wrong Object Structure: expected {f1: string, f2: number}, but got {f3: 3}",
-  },
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error error is an object required fields: f1, f2 then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "5:23 ObjectLiteral - Missing required field
 5:23 ObjectLiteral - Missing required field
 8:20 NullKeyword - Wrong Structure: expected string!, but got null
@@ -284,24 +295,20 @@ Object {
 
 exports[`MapValidator result & error error is an object required fields: f1, f2 then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "9:23 ObjectLiteral - Wrong Object Structure: expected {f1: string!, f2: boolean!}, but got {f1: \\"some string\\", f2: true, f3: 3}",
-  },
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error error is conditioned then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "6:24 ObjectLiteralExpression - Wrong Structure: expected string, but got {}
-8:31 PrimitiveLiteral - Wrong Structure: expected {f1: {inner: string}}, but got \\"some string\\"",
-  },
+  "profile-provider#0": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is PrimitiveTypeName then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "5:22 PrimitiveLiteral - Wrong Structure: expected NOTFOUND or BADREQUEST, but got \\"wrong\\"",
   },
 }
@@ -309,13 +316,16 @@ Object {
 
 exports[`MapValidator result & error result is PrimitiveTypeName then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is a list non null list with primitive or object type then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
+    "errors": "4:7 MapDefinition - No Result outcome defined",
+  },
+  "profile-provider#1": Object {
     "errors": "5:24 ArrayLiteralExpression - Wrong Structure: expected [boolean | {}], but got [true, 2]
 6:24 ArrayLiteralExpression - Wrong Structure: expected [boolean | {}], but got [true, 2, {}]
 7:24 ArrayLiteralExpression - Wrong Structure: expected [boolean | {}], but got [[true]]",
@@ -325,13 +335,14 @@ Object {
 
 exports[`MapValidator result & error result is a list non null list with primitive or object type then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is a list non null primitive or object type then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "5:24 ArrayLiteralExpression - Wrong Structure: expected [boolean! | {}!], but got [null]
 6:24 ArrayLiteralExpression - Wrong Structure: expected [boolean! | {}!], but got [undefined]
 7:24 ArrayLiteralExpression - Wrong Structure: expected [boolean! | {}!], but got [true, 2]
@@ -343,13 +354,14 @@ Object {
 
 exports[`MapValidator result & error result is a list non null primitive or object type then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is a list non null primitive type or possibly null object type then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "5:24 ArrayLiteralExpression - Wrong Structure: expected [boolean! | {}], but got [true, 2]
 6:24 ArrayLiteralExpression - Wrong Structure: expected [boolean! | {}], but got [true, 2, {}]
 7:24 ArrayLiteralExpression - Wrong Structure: expected [boolean! | {}], but got [[true]]",
@@ -359,31 +371,33 @@ Object {
 
 exports[`MapValidator result & error result is a list non null primitive type or possibly null object type then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is a list non null primitive type then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
-    "errors": "5:26 NullKeyword - Wrong Structure: expected boolean!, but got null
-6:26 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}
-7:38 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}
-8:38 FirstLiteralToken - Wrong Structure: expected boolean, but got 2
-9:26 ArrayLiteralExpression - Wrong Structure: expected boolean, but got [true]",
+  "profile-provider#0": Object {
+    "errors": "5:25 NullKeyword - Wrong Structure: expected boolean!, but got null
+6:25 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}
+7:31 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}
+8:31 FirstLiteralToken - Wrong Structure: expected boolean, but got 2
+9:25 ArrayLiteralExpression - Wrong Structure: expected boolean, but got [true]",
   },
 }
 `;
 
 exports[`MapValidator result & error result is a list non null primitive type then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is a list primitive or object type then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "5:24 ArrayLiteralExpression - Wrong Structure: expected [boolean | {}], but got [2]
 6:24 ArrayLiteralExpression - Wrong Structure: expected [boolean | {}], but got [[true]]
 7:24 ArrayLiteralExpression - Wrong Structure: expected [boolean | {}], but got [true, 2, {}]",
@@ -393,28 +407,38 @@ Object {
 
 exports[`MapValidator result & error result is a list primitive or object type then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is a list primitive type then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
-    "errors": "5:26 FirstLiteralToken - Wrong Structure: expected boolean, but got 2
-6:26 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}",
+  "profile-provider#0": Object {
+    "errors": "5:25 FirstLiteralToken - Wrong Structure: expected boolean, but got 2
+6:25 ObjectLiteralExpression - Wrong Structure: expected boolean, but got {}",
   },
 }
 `;
 
 exports[`MapValidator result & error result is a list primitive type then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
+}
+`;
+
+exports[`MapValidator result & error result is an object extra field then validation will pass with warnings 1`] = `
+Object {
+  "profile-provider#0": Object {
+    "warnings": "5:24 ObjectLiteral - Wrong Object Structure: expected {f1: string}, but got {f2: \\"what\\"}",
+  },
 }
 `;
 
 exports[`MapValidator result & error result is an object fields: f1, f2, where f2 is non null then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "7:20 NullKeyword - Wrong Structure: expected number!, but got null
 10:20 NullKeyword - Wrong Structure: expected number!, but got null",
     "warnings": "9:24 ObjectLiteral - Wrong Object Structure: expected {f1: string, f2: number!}, but got {f2: null, f3: 3}",
@@ -424,16 +448,14 @@ Object {
 
 exports[`MapValidator result & error result is an object fields: f1, f2, where f2 is non null then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "24:24 ObjectLiteral - Wrong Object Structure: expected {f1: string, f2: number!}, but got {f1: \\"some string\\", f2: 2, f3: 3}
-29:24 ObjectLiteral - Wrong Object Structure: expected {f1: string, f2: number!}, but got {f2: 2, f3: 3}",
-  },
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is an object non null field f1 then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "6:20 NullKeyword - Wrong Structure: expected string!, but got null
 9:20 ArrayLiteralExpression - Wrong Structure: expected string, but got [\\"some\\", \\"key\\"]",
   },
@@ -442,16 +464,14 @@ Object {
 
 exports[`MapValidator result & error result is an object non null field f1 then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "10:24 ObjectLiteral - Wrong Object Structure: expected {f1: string!}, but got {f1: \\"some string\\", f3: 3}
-14:24 ObjectLiteral - Wrong Object Structure: expected {f1: string!}, but got {f3: 3}",
-  },
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is an object non null fields: f1, f2 then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "6:20 NullKeyword - Wrong Structure: expected string!, but got null
 9:20 NullKeyword - Wrong Structure: expected string!, but got null
 10:20 NullKeyword - Wrong Structure: expected number!, but got null",
@@ -461,16 +481,17 @@ Object {
 
 exports[`MapValidator result & error result is an object non null fields: f1, f2 then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "17:24 ObjectLiteral - Wrong Object Structure: expected {f1: string!, f2: number!}, but got {f1: \\"some string\\", f3: 3}
-21:24 ObjectLiteral - Wrong Object Structure: expected {f1: string!, f2: number!}, but got {f1: \\"some string\\", f2: 2, f3: 3}",
-  },
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is an object non null object with two required fields f1, f2 then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
+    "errors": "4:7 MapDefinition - No Result outcome defined",
+  },
+  "profile-provider#1": Object {
     "errors": "5:24 ObjectLiteral - Missing required field
 5:24 ObjectLiteral - Missing required field
 8:20 NullKeyword - Wrong Structure: expected string!, but got null
@@ -483,15 +504,13 @@ Object {
 
 exports[`MapValidator result & error result is an object non null object with two required fields f1, f2 then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "9:24 ObjectLiteral - Wrong Object Structure: expected {f1: string!, f2: number!}, but got {f1: \\"some string\\", f2: 2, f3: 3}",
-  },
+  "profile-provider#0": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is an object one required and one not required field: f1, f2 then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "5:24 ObjectLiteral - Missing required field
 8:20 NullKeyword - Wrong Structure: expected string!, but got null
 11:20 NullKeyword - Wrong Structure: expected boolean!, but got null
@@ -505,16 +524,14 @@ Object {
 
 exports[`MapValidator result & error result is an object one required and one not required field: f1, f2 then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "12:24 ObjectLiteral - Wrong Object Structure: expected {f1: string!, f2: boolean!}, but got {f1: \\"some string\\", f3: 3}
-16:24 ObjectLiteral - Wrong Object Structure: expected {f1: string!, f2: boolean!}, but got {f1: \\"some string\\", f2: false, f3: 3}",
-  },
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is an object one required field: f1 then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "5:24 ObjectLiteral - Missing required field
 8:20 NullKeyword - Wrong Structure: expected string!, but got null",
   },
@@ -523,15 +540,14 @@ Object {
 
 exports[`MapValidator result & error result is an object one required field: f1 then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "8:24 ObjectLiteral - Wrong Object Structure: expected {f1: string!}, but got {f1: \\"some string\\", f3: 3}",
-  },
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is an object possibly null field f1 then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "ObjectLiteral - Wrong Structure: expected string, but got {inner: 2}",
   },
 }
@@ -539,13 +555,14 @@ Object {
 
 exports[`MapValidator result & error result is an object possibly null field f1 then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is an object possibly null fields: f1, f2 then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "6:20 ArrayLiteralExpression - Wrong Structure: expected string, but got [\\"some\\", \\"key\\"]",
   },
 }
@@ -553,16 +570,14 @@ Object {
 
 exports[`MapValidator result & error result is an object possibly null fields: f1, f2 then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "27:24 ObjectLiteral - Wrong Object Structure: expected {f1: string, f2: number}, but got {f1: \\"some string\\", f3: 3}
-31:24 ObjectLiteral - Wrong Object Structure: expected {f1: string, f2: number}, but got {f3: 3}",
-  },
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is an object required fields: f1, f2 then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "5:24 ObjectLiteral - Missing required field
 5:24 ObjectLiteral - Missing required field
 8:20 NullKeyword - Wrong Structure: expected string!, but got null
@@ -579,23 +594,20 @@ Object {
 
 exports[`MapValidator result & error result is an object required fields: f1, f2 then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "9:24 ObjectLiteral - Wrong Object Structure: expected {f1: string!, f2: boolean!}, but got {f1: \\"some string\\", f2: true, f3: 3}",
-  },
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is conditioned then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "6:24 ObjectLiteralExpression - Wrong Structure: expected string, but got {}",
-  },
+  "profile-provider#0": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is variable in different scopes then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "5:19 PrimitiveLiteral - Wrong Structure: expected string, but got false
 18:24 JessieExpression - Wrong Variable Structure: variable a.c expected string, but got false",
   },
@@ -604,7 +616,7 @@ Object {
 
 exports[`MapValidator result & error result is variable reassigned (object) then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "7:19 PrimitiveLiteral - Wrong Structure: expected {f1: string, f2: boolean}, but got \\"string\\"
 8:24 JessieExpression - Wrong Variable Structure: variable foo expected {f1: string, f2: boolean}, but got \\"string\\"",
   },
@@ -613,13 +625,17 @@ Object {
 
 exports[`MapValidator result & error result is variable reassigned (object) then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is variable reassigned (string) then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
+    "errors": "6:17 PrimitiveLiteral - Wrong Structure: expected string, but got false
+7:24 JessieExpression - Wrong Variable Structure: variable a expected string, but got false",
+  },
+  "profile-provider#1": Object {
     "errors": "6:19 PrimitiveLiteral - Wrong Structure: expected string, but got false
 7:24 JessieExpression - Wrong Variable Structure: variable a.b expected string, but got false",
   },
@@ -628,13 +644,14 @@ Object {
 
 exports[`MapValidator result & error result is variable reassigned (string) then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is variable referenced in outcome then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "5:13 ObjectLiteral - Wrong Structure: expected string, but got {c: \\"string\\"}
 6:24 JessieExpression - Wrong Variable Structure: variable a expected string, but got {c: \\"string\\"}",
   },
@@ -643,13 +660,13 @@ Object {
 
 exports[`MapValidator result & error result is variable referenced in outcome then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is variable using variable with string key then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "5:25 PrimitiveLiteral - Wrong Structure: expected string, but got false
 6:24 JessieExpression - Wrong Variable Structure: variable foo.bar.a expected string, but got false",
   },
@@ -658,13 +675,14 @@ Object {
 
 exports[`MapValidator result & error result is variable using variable with string key then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {},
+  "profile-provider#0": Object {},
+  "profile-provider#1": Object {},
 }
 `;
 
 exports[`MapValidator result & error result is variable wrong structure then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "5:19 PrimitiveLiteral - Wrong Structure: expected string, but got false
 6:24 JessieExpression - Wrong Variable Structure: variable a.b expected string, but got false",
   },
@@ -673,7 +691,7 @@ Object {
 
 exports[`MapValidator usecase-map compatibility missing maps then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "2:7 MapDocument - Map not found: \\"Test2\\"",
   },
 }
@@ -681,15 +699,13 @@ Object {
 
 exports[`MapValidator usecase-map compatibility multiple maps then validation will pass 1`] = `
 Object {
-  "profile-provider": Object {
-    "warnings": "2:7 MapDocument - Extra Maps Found: \\"Test\\", but got \\"Test, Test2\\"",
-  },
+  "profile-provider#0": Object {},
 }
 `;
 
-exports[`MapValidator usecase-map compatibility profile error missing then validation will pass 1`] = `
+exports[`MapValidator usecase-map compatibility profile error missing then validation will pass with warnings 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "warnings": "5:11 OutcomeStatement - Error Not Found: returning \\"some string\\", but there is no Error defined in usecase",
   },
 }
@@ -697,7 +713,7 @@ Object {
 
 exports[`MapValidator usecase-map compatibility profile input missing then validation will fail 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "errors": "7:25 PropertyAccessExpression - Input Not Found: input.something, but there is no Input defined in usecase
 9:40 PropertyAccessExpression - Input Not Found: input.some.variable, but there is no Input defined in usecase",
     "warnings": "11:11 OutcomeStatement - Result Not Found: returning output, but there is no Result defined in usecase",
@@ -705,9 +721,9 @@ Object {
 }
 `;
 
-exports[`MapValidator usecase-map compatibility profile result missing then validation will pass 1`] = `
+exports[`MapValidator usecase-map compatibility profile result missing then validation will pass with warnings 1`] = `
 Object {
-  "profile-provider": Object {
+  "profile-provider#0": Object {
     "warnings": "5:11 OutcomeStatement - Result Not Found: returning \\"some string\\", but there is no Result defined in usecase",
   },
 }
@@ -715,7 +731,7 @@ Object {
 
 exports[`MapValidator usecase-map compatibility wrong profile name then validation will fail 1`] = `
 Object {
-  "wrong-test": Object {
+  "wrong-test#0": Object {
     "errors": "1:1 MapHeader - Wrong Profile Name: expected \\"profile\\", but got \\"wrong\\"",
   },
 }
@@ -723,7 +739,7 @@ Object {
 
 exports[`MapValidator usecase-map compatibility wrong scope then validation will fail 1`] = `
 Object {
-  "test-test": Object {
+  "test-test#0": Object {
     "errors": "1:1 MapHeader - Wrong Scope: expected no scope in profile, but got starwars
 1:1 MapHeader - Wrong Profile Name: expected \\"profile\\", but got \\"test\\"",
   },
@@ -732,9 +748,9 @@ Object {
 
 exports[`MapValidator usecase-map compatibility wrong version then validation will fail 1`] = `
 Object {
-  "test-test": Object {
+  "test-test#0": Object {
     "errors": "1:1 MapHeader - Wrong Profile Name: expected \\"profile\\", but got \\"test\\"
-1:1 MapHeader - Wrong Profile Version: expected \\"1.0.0\\", but map requests \\"2.0.0\\"",
+1:1 MapHeader - Version does not match: expected \\"1.0.0\\", but map requests \\"2.0.0\\"",
   },
 }
 `;

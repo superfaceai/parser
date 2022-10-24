@@ -1,5 +1,5 @@
 import { LexerTokenStream } from '../lexer';
-import { RuleResult, SyntaxRule } from './rule';
+import { RuleFmtOptions, RuleResult, SyntaxRule } from './rule';
 
 export type ParserFeature =
   | 'nested_object_literals'
@@ -64,11 +64,11 @@ export class SyntaxRuleFeatureSubstitute<B, E> extends SyntaxRule<B | E> {
     }
   }
 
-  [Symbol.toStringTag](): string {
+  toStringFmt(options: RuleFmtOptions): string {
     if (this.lastExecutionFeatureState) {
-      return this.enabled.toString();
+      return this.enabled.toStringFmt(options);
     } else {
-      return this.base.toString();
+      return this.base.toStringFmt(options);
     }
   }
 }
@@ -107,11 +107,11 @@ export class SyntaxRuleFeatureOr<B, E> extends SyntaxRule<B | E> {
     }
   }
 
-  [Symbol.toStringTag](): string {
+  toStringFmt(options: RuleFmtOptions): string {
     if (this.lastExecutionFeatureState) {
-      return this.orRule.toString();
+      return this.orRule.toStringFmt(options);
     } else {
-      return this.base.toString();
+      return this.base.toStringFmt(options);
     }
   }
 }

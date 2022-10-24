@@ -1,27 +1,29 @@
 import {
   AssignmentNode,
+  AstMetadata,
   ComlinkAssignmentNode,
+  ComlinkListLiteralNode,
   ComlinkLiteralNode,
+  ComlinkObjectLiteralNode,
+  ComlinkPrimitiveLiteralNode,
   isCallStatementNode,
-  isComlinkListLiteralNode,
-  isComlinkObjectLiteralNode,
-  isComlinkPrimitiveLiteralNode,
   isHttpCallStatementNode,
-  isObjectLiteralNode,
   isOutcomeStatementNode,
-  isPrimitiveLiteralNode,
   isUseCaseDefinitionNode,
   LiteralNode,
   LocationSpan,
   MapASTNode,
   MapDefinitionNode,
+  ObjectLiteralNode,
   OperationDefinitionNode,
   OutcomeStatementNode,
+  PrimitiveLiteralNode,
   ProfileASTNode,
   ProfileDocumentNode,
 } from '@superfaceai/ast';
 import * as ts from 'typescript';
 
+import { PARSED_AST_VERSION, PARSED_VERSION } from '../metadata';
 import { TypescriptIdentifier } from './constructs';
 import { ExampleValidator } from './example-validator';
 import { UseCaseSlotType, ValidationIssue } from './issue';
@@ -34,7 +36,6 @@ import {
   StructureType,
   VersionStructure,
 } from './profile-output';
-import { isObjectStructure } from './profile-output.utils';
 
 export function composeVersion(version: VersionStructure): string {
   return (
@@ -125,7 +126,7 @@ export function formatIssueContext(issue: ValidationIssue): string {
       return `Wrong Profile Name: expected "${issue.context.expected}", but got "${issue.context.actual}"`;
 
     case 'wrongProfileVersion':
-      return `Wrong Profile Version: expected "${composeVersion(
+      return `Version does not match: expected "${composeVersion(
         issue.context.expected
       )}", but map requests "${composeVersion(issue.context.actual)}"`;
 
@@ -192,58 +193,79 @@ export function formatIssues(issues: ValidationIssue[]): string {
     .join('\n');
 }
 
-/**
- * Compares the node with profile output structure. The arguments represent the actual nested level in structure.
- * @param node represents LiteralNode
- * @param structure represent Result or Error and their descendent structure
- */
-export function compareStructure(
-  node: LiteralNode | ComlinkLiteralNode,
-  structure: StructureType
-): {
-  isValid: boolean;
-  objectStructure?: ObjectStructure;
-  listStructure?: ListStructure;
-} {
-  switch (structure.kind) {
-    case 'PrimitiveStructure':
-      if (
-        (isPrimitiveLiteralNode(node) || isComlinkPrimitiveLiteralNode(node)) &&
-        typeof node.value === structure.type
-      ) {
-        return { isValid: true };
-      }
-      break;
+export function validatePrimitiveLiteral(
+  structure: StructureType,
+  node: PrimitiveLiteralNode | ComlinkPrimitiveLiteralNode
+): { isValid: boolean } {
+  if (
+    structure.kind === 'PrimitiveStructure' &&
+    typeof node.value === structure.type
+  ) {
+    return { isValid: true };
+  }
 
-    case 'ObjectStructure':
-      if (isObjectLiteralNode(node) || isComlinkObjectLiteralNode(node)) {
-        return { isValid: true, objectStructure: structure };
-      }
-      break;
+  if (
+    structure.kind === 'EnumStructure' &&
+    structure.enums.find(enumValue => enumValue.value === node.value) !==
+      undefined
+  ) {
+    return { isValid: true };
+  }
 
-    case 'ListStructure':
-      if (isComlinkListLiteralNode(node)) {
-        return { isValid: true, listStructure: structure };
-      }
-      break;
+  if (structure.kind === 'UnionStructure') {
+    for (const type of structure.types) {
+      const result = validatePrimitiveLiteral(type, node);
 
-    case 'EnumStructure':
-      if (
-        (isPrimitiveLiteralNode(node) || isComlinkPrimitiveLiteralNode(node)) &&
-        structure.enums.map(enumValue => enumValue.value).includes(node.value)
-      ) {
-        return { isValid: true };
+      if (result.isValid) {
+        return result;
       }
-      break;
+    }
+  }
 
-    case 'UnionStructure':
-      for (const type of structure.types) {
-        const compareResult = compareStructure(node, type);
+  return { isValid: false };
+}
 
-        if (compareResult.isValid) {
-          return compareResult;
-        }
+export function validateObjectLiteral(
+  structure: StructureType,
+  node: ObjectLiteralNode | ComlinkObjectLiteralNode
+):
+  | { isValid: true; objectStructure: ObjectStructure }
+  | { isValid: false; objectStructure?: undefined } {
+  if (structure.kind === 'ObjectStructure') {
+    return { isValid: true, objectStructure: structure };
+  }
+
+  if (structure.kind === 'UnionStructure') {
+    for (const type of structure.types) {
+      const result = validateObjectLiteral(type, node);
+
+      if (result.isValid) {
+        return result;
       }
+    }
+  }
+
+  return { isValid: false };
+}
+
+export function validateListLiteral(
+  structure: StructureType,
+  node: ComlinkListLiteralNode
+):
+  | { isValid: true; listStructure: ListStructure }
+  | { isValid: false; listStructure?: undefined } {
+  if (structure.kind === 'ListStructure') {
+    return { isValid: true, listStructure: structure };
+  }
+
+  if (structure.kind === 'UnionStructure') {
+    for (const type of structure.types) {
+      const result = validateListLiteral(type, node);
+
+      if (result.isValid) {
+        return result;
+      }
+    }
   }
 
   return { isValid: false };
@@ -364,52 +386,6 @@ export function replaceRedudantCharacters(text: string): string {
   return text.replace(REDUDANT_EXPRESSION_CHARACTERS_REGEX, '');
 }
 
-export function validateObjectStructure(
-  node: TypescriptIdentifier,
-  structure: ObjectStructure
-): StructureType | undefined {
-  if (ts.isIdentifier(node)) {
-    return structure;
-  }
-
-  let expression: ts.LeftHandSideExpression;
-  let name: ts.PrivateIdentifier | ts.Expression;
-
-  if (ts.isElementAccessExpression(node)) {
-    expression = node.expression;
-    name = node.argumentExpression;
-  } else {
-    expression = node.expression;
-    name = node.name;
-  }
-
-  const key = replaceRedudantCharacters(name.getText());
-  let outputStructure: StructureType | undefined;
-
-  if (
-    ts.isPropertyAccessExpression(expression) ||
-    ts.isElementAccessExpression(expression)
-  ) {
-    outputStructure = validateObjectStructure(expression, structure);
-  } else if (ts.isIdentifier(expression)) {
-    if (!structure.fields) {
-      return undefined;
-    }
-
-    return structure.fields[key];
-  }
-
-  if (
-    !outputStructure ||
-    !isObjectStructure(outputStructure) ||
-    !outputStructure.fields
-  ) {
-    return undefined;
-  }
-
-  return outputStructure.fields[key];
-}
-
 export function findTypescriptIdentifier(name: string, node: ts.Node): boolean {
   if (
     ts.isPropertyAccessExpression(node) ||
@@ -489,3 +465,17 @@ export const buildAssignment = (
   value: LiteralNode,
   location?: LocationSpan
 ): AssignmentNode => ({ kind: 'Assignment', key, value, location });
+
+export function isCompatible(metadata: AstMetadata): boolean {
+  // check ast versions
+  if (metadata.astVersion.major !== PARSED_AST_VERSION.major) {
+    return false;
+  }
+
+  // check parser versions
+  if (metadata.parserVersion.major !== PARSED_VERSION.major) {
+    return false;
+  }
+
+  return true;
+}

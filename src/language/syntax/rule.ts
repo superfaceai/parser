@@ -1,3 +1,6 @@
+import createDebug from 'debug';
+
+import { LocationSpan } from '../../common/source';
 import { LexerContext, LexerContextType } from '../lexer/context';
 import { LexerTokenStream } from '../lexer/lexer';
 import {
@@ -17,7 +20,44 @@ import {
   StringTokenData,
   TerminationTokens,
 } from '../lexer/token';
-import { LocationSpan } from '../source';
+
+const debug = createDebug('superface-parser:syntax-rule-match');
+const debugTryMatch = (
+  rule: SyntaxRule<unknown>,
+  tokens: LexerTokenStream,
+  context?: LexerContext
+) => {
+  if (!debug.enabled) {
+    return;
+  }
+
+  let sourcePeek = '';
+  let sourceLocation = [-1, -1];
+
+  const peek = tokens.peek(context);
+  if (peek.done !== true) {
+    const nextNewline = tokens.source.body.indexOf(
+      '\n',
+      peek.value.location.start.charIndex
+    );
+    sourcePeek = tokens.source.body.slice(
+      peek.value.location.start.charIndex,
+      nextNewline
+    );
+    sourceLocation = [
+      peek.value.location.start.line,
+      peek.value.location.start.column,
+    ];
+  }
+
+  debug(
+    'Matching rule %s on (%d:%d) %s ...',
+    rule.toStringFmt({ depth: 1, indent: '  ', newline: '\n' }),
+    sourceLocation[0],
+    sourceLocation[1],
+    sourcePeek
+  );
+};
 
 export class MatchAttempts {
   constructor(
@@ -106,6 +146,50 @@ export interface LexerTokenMatch<D extends LexerTokenData = LexerTokenData> {
   readonly location: LocationSpan;
 }
 
+export type RuleFmtOptions = {
+  depth: number;
+  indent: string;
+  newline: string;
+};
+const ruleFmtDeeper = (
+  options: RuleFmtOptions,
+  by?: number
+): RuleFmtOptions => {
+  return {
+    depth: options.depth + (by ?? 1),
+    indent: options.indent,
+    newline: options.newline,
+  };
+};
+const ruleFmtFunclike = (
+  options: RuleFmtOptions,
+  ...innerFns: ((options: RuleFmtOptions) => string)[]
+): string => {
+  if (innerFns.length === 0) {
+    return '()';
+  }
+
+  if (innerFns.length === 1) {
+    return '(' + innerFns[0](options) + ')';
+  }
+
+  const before = '(' + options.newline;
+  const after = options.indent.repeat(options.depth) + ')';
+  const deeper = ruleFmtDeeper(options);
+
+  let middle = '';
+  for (let i = 0; i < innerFns.length; i += 1) {
+    const comma = i < innerFns.length - 1 ? ',' : '';
+    middle +=
+      deeper.indent.repeat(deeper.depth) +
+      innerFns[i](deeper) +
+      comma +
+      deeper.newline;
+  }
+
+  return before + middle + after;
+};
+
 export abstract class SyntaxRule<T> {
   /**
    * Attempts to match rule to tokens.
@@ -123,6 +207,8 @@ export abstract class SyntaxRule<T> {
     predicate: (token: LexerToken) => T | undefined,
     context?: LexerContext
   ): RuleResult<T> {
+    debugTryMatch(this, tokens, context);
+
     const save = tokens.save();
 
     const next = tokens.next(context);
@@ -146,11 +232,15 @@ export abstract class SyntaxRule<T> {
     };
   }
 
+  abstract toStringFmt(options: RuleFmtOptions): string;
+
+  [Symbol.toStringTag](): string {
+    return this.toStringFmt({ depth: 0, indent: '  ', newline: '\n' });
+  }
+
   toString(): string {
     return this[Symbol.toStringTag]();
   }
-
-  abstract [Symbol.toStringTag](): string;
 
   // Factory methods for basic rules
 
@@ -298,7 +388,7 @@ export class SyntaxRuleSeparator extends SyntaxRule<
     });
   }
 
-  [Symbol.toStringTag](): string {
+  toStringFmt(_options: RuleFmtOptions): string {
     if (this.separator !== undefined) {
       return '`' + this.separator + '`';
     }
@@ -334,7 +424,7 @@ export class SyntaxRuleOperator extends SyntaxRule<
     });
   }
 
-  [Symbol.toStringTag](): string {
+  toStringFmt(_options: RuleFmtOptions): string {
     if (this.operator !== undefined) {
       return '`' + this.operator + '`';
     }
@@ -370,7 +460,7 @@ export class SyntaxRuleIdentifier extends SyntaxRule<
     });
   }
 
-  [Symbol.toStringTag](): string {
+  toStringFmt(_options: RuleFmtOptions): string {
     if (this.identifier !== undefined) {
       return '`' + this.identifier + '`';
     }
@@ -397,7 +487,7 @@ export class SyntaxRuleLiteral extends SyntaxRule<
     });
   }
 
-  [Symbol.toStringTag](): string {
+  toStringFmt(_options: RuleFmtOptions): string {
     return formatTokenKind(LexerTokenKind.LITERAL);
   }
 }
@@ -420,7 +510,7 @@ export class SyntaxRuleString extends SyntaxRule<
     });
   }
 
-  [Symbol.toStringTag](): string {
+  toStringFmt(_options: RuleFmtOptions): string {
     return formatTokenKind(LexerTokenKind.STRING);
   }
 }
@@ -452,7 +542,7 @@ export class SyntaxRuleNewline extends SyntaxRule<
     return result;
   }
 
-  [Symbol.toStringTag](): string {
+  toStringFmt(_options: RuleFmtOptions): string {
     return formatTokenKind(LexerTokenKind.NEWLINE);
   }
 }
@@ -486,13 +576,14 @@ export class SyntaxRuleJessie extends SyntaxRule<
     );
   }
 
-  [Symbol.toStringTag](): string {
+  toStringFmt(_options: RuleFmtOptions): string {
     return formatTokenKind(LexerTokenKind.JESSIE_SCRIPT);
   }
 }
 
 // COMBINATORS //
 
+/** Peels `[SyntaxRule<A>, SyntaxRule<B>, SyntaxRule<C>]` into `[A, B, C]`. */
 type PeelTupleSyntaxRule<R> = {
   [k in keyof R]: R[k] extends SyntaxRule<infer T> ? T : never;
 };
@@ -513,6 +604,8 @@ export class SyntaxRuleOr<T extends readonly unknown[]> extends SyntaxRule<
   }
 
   tryMatch(tokens: LexerTokenStream): RuleResult<TupleItemsUnion<T>> {
+    debugTryMatch(this, tokens);
+
     let attempts = undefined;
 
     for (const rule of this.rules) {
@@ -548,8 +641,16 @@ export class SyntaxRuleOr<T extends readonly unknown[]> extends SyntaxRule<
     }
   }
 
-  [Symbol.toStringTag](): string {
-    return this.rules.map(r => r.toString()).join(' or ');
+  toStringFmt(options: RuleFmtOptions): string {
+    return (
+      'Or' +
+      ruleFmtFunclike(
+        options,
+        ...this.rules.map(
+          r => (deeper: RuleFmtOptions) => r.toStringFmt(deeper)
+        )
+      )
+    );
   }
 }
 
@@ -565,6 +666,8 @@ export class SyntaxRuleFollowedBy<
   }
 
   tryMatch(tokens: LexerTokenStream): RuleResult<T> {
+    debugTryMatch(this, tokens);
+
     const save = tokens.save();
 
     let optionalAttempts = undefined;
@@ -598,8 +701,16 @@ export class SyntaxRuleFollowedBy<
     };
   }
 
-  [Symbol.toStringTag](): string {
-    return this.rules.map(r => r.toString()).join(' -> ');
+  toStringFmt(options: RuleFmtOptions): string {
+    return (
+      'FollowedBy' +
+      ruleFmtFunclike(
+        options,
+        ...this.rules.map(
+          r => (deeper: RuleFmtOptions) => r.toStringFmt(deeper)
+        )
+      )
+    );
   }
 }
 
@@ -610,6 +721,8 @@ export class SyntaxRuleRepeat<R> extends SyntaxRule<[R, ...R[]]> {
   }
 
   tryMatch(tokens: LexerTokenStream): RuleResult<[R, ...R[]]> {
+    debugTryMatch(this, tokens);
+
     const matches: R[] = [];
 
     let lastMatch: RuleResultMatch<R> | undefined;
@@ -639,8 +752,11 @@ export class SyntaxRuleRepeat<R> extends SyntaxRule<[R, ...R[]]> {
     return lastResult;
   }
 
-  [Symbol.toStringTag](): string {
-    return 'one or more ' + this.rule.toString();
+  toStringFmt(options: RuleFmtOptions): string {
+    return (
+      'Repeat' +
+      ruleFmtFunclike(options, deeper => this.rule.toStringFmt(deeper))
+    );
   }
 }
 
@@ -651,6 +767,8 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
   }
 
   tryMatch(tokens: LexerTokenStream): RuleResultMatch<R | undefined> {
+    debugTryMatch(this, tokens);
+
     const match = this.rule.tryMatch(tokens);
 
     if (match.kind === 'match') {
@@ -664,8 +782,11 @@ export class SyntaxRuleOptional<R> extends SyntaxRule<R | undefined> {
     };
   }
 
-  [Symbol.toStringTag](): string {
-    return 'optional ' + this.rule.toString();
+  toStringFmt(options: RuleFmtOptions): string {
+    return (
+      'Optional' +
+      ruleFmtFunclike(options, deeper => this.rule.toStringFmt(deeper))
+    );
   }
 }
 
@@ -685,6 +806,8 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
   }
 
   tryMatch(tokens: LexerTokenStream): RuleResult<undefined> {
+    debugTryMatch(this, tokens);
+
     const save = tokens.save();
     const result = this.rule.tryMatch(tokens);
     tokens.rollback(save);
@@ -714,8 +837,12 @@ export class SyntaxRuleLookahead<R> extends SyntaxRule<undefined> {
     return result;
   }
 
-  [Symbol.toStringTag](): string {
-    return (this.invert ? 'not ' : '') + this.rule.toString();
+  toStringFmt(options: RuleFmtOptions): string {
+    const prefix = this.invert ? 'LookaheadNot' : 'Lookahead';
+
+    return (
+      prefix + ruleFmtFunclike(options, deeper => this.rule.toStringFmt(deeper))
+    );
   }
 }
 
@@ -728,6 +855,8 @@ export class SyntaxRuleMap<R, M> extends SyntaxRule<M> {
   }
 
   tryMatch(tokens: LexerTokenStream): RuleResult<M> {
+    debugTryMatch(this, tokens);
+
     const match = this.rule.tryMatch(tokens);
     if (match.kind === 'match') {
       return {
@@ -739,8 +868,8 @@ export class SyntaxRuleMap<R, M> extends SyntaxRule<M> {
     return match;
   }
 
-  [Symbol.toStringTag](): string {
-    return this.rule.toString();
+  toStringFmt(options: RuleFmtOptions): string {
+    return this.rule.toStringFmt(options) + '.map()';
   }
 }
 
@@ -755,6 +884,8 @@ export class SyntaxRuleAndThen<R, M> extends SyntaxRule<M> {
   }
 
   tryMatch(tokens: LexerTokenStream): RuleResult<M> {
+    debugTryMatch(this, tokens);
+
     const peek = tokens.peek().value;
 
     const match = this.rule.tryMatch(tokens);
@@ -781,8 +912,8 @@ export class SyntaxRuleAndThen<R, M> extends SyntaxRule<M> {
     return match;
   }
 
-  [Symbol.toStringTag](): string {
-    return this.description ?? this.rule.toString();
+  toStringFmt(options: RuleFmtOptions): string {
+    return this.description ?? this.rule.toStringFmt(options);
   }
 }
 
@@ -806,6 +937,8 @@ export class SyntaxRuleMutable<R> extends SyntaxRule<R> {
   }
 
   tryMatch(tokens: LexerTokenStream): RuleResult<R> {
+    debugTryMatch(this, tokens);
+
     if (this.rule === undefined) {
       throw 'This method should never be called before the mutable rule is initialized. This is an error in syntax rules definition.';
     }
@@ -813,12 +946,12 @@ export class SyntaxRuleMutable<R> extends SyntaxRule<R> {
     return this.rule.tryMatch(tokens);
   }
 
-  [Symbol.toStringTag](): string {
+  toStringFmt(_options: RuleFmtOptions): string {
     if (this.rule === undefined) {
-      throw 'This method should never be called before the mutable rule is initialized. This is an error in syntax rules definition.';
+      return '<Missing Mutable Rule>';
     }
 
-    return '[Mutable Rule]';
+    return '<Mutable Rule>';
   }
 }
 
@@ -833,14 +966,16 @@ export class SyntaxRuleNever<R> extends SyntaxRule<R> {
   }
 
   tryMatch(tokens: LexerTokenStream): RuleResult<R> {
+    debugTryMatch(this, tokens);
+
     return {
       kind: 'nomatch',
       attempts: new MatchAttempts(tokens.peek().value, [this]),
     };
   }
 
-  [Symbol.toStringTag](): string {
-    return '<NEVER>';
+  toStringFmt(_options: RuleFmtOptions): string {
+    return '<never>';
   }
 }
 
@@ -890,7 +1025,7 @@ export class SyntaxRuleDebugLog<R> extends SyntaxRule<R> {
     return result;
   }
 
-  [Symbol.toStringTag](): string {
-    return this.rule.toString();
+  toStringFmt(options: RuleFmtOptions): string {
+    return this.rule.toStringFmt(options);
   }
 }

@@ -1,0 +1,277 @@
+profile = "example/test@1.2"
+provider = "giver"
+variant = "special"
+
+map Foo {
+  foo = 1
+
+  foo.bar = true
+
+  set {
+    "quz.a" = "hello"
+    foo."bar-man".qux = 1 + 2
+  }
+
+  set if (condition === true) {
+    fuz = foo.bar
+  }
+
+  set {
+    foo = call Fop(arg1 = `String goes ${here}`, arg2 = "hello" + " world")
+    foo = call foreach (x of array) Fop(arg = x)
+    foo = call Fop(arg = x) if (x % 2 === 0)
+    foo = call foreach (x of array) Fop(arg = x) if (x % 2 === 0)
+  }
+
+  call Fop(arg2 = 1) {
+    foo = 1
+
+    map result {
+      a = 1
+      b = 2
+    }
+
+    map result if (cond) "what"
+  }
+
+  call foreach (x of array) Fop(arg = 1) {
+    return map result {
+      x = "hello"
+    }
+
+    return map result if (cond === false) {
+      banana = true
+    }
+  }
+
+  call Fop(arg = 1) if (x % 2 === 0) {
+    map error "ERROR"
+
+    map error if (outcome.error) outcome.error
+  }
+
+  call foreach (x of array) Fop(arg = 1) if (x % 2 === 0) {
+    return map error {
+      e = "rror"
+    }
+
+    return map error if (outcome.error) {
+      e = outcome.error
+      b = "ye"
+    }
+  }
+
+  map result true
+
+  http GET "/api/v1/resource/{key}/{ another.key}" {
+
+  }
+
+  http PUT default "/api/{url}" {
+    security none
+
+    request {
+    }
+
+    response {
+    }
+  }
+
+  http POST "service-name" "/api/thing" {
+    security "bearer"
+
+    request "application/json" "en-US" {
+      query {
+        foo = 1
+      }
+    }
+
+    response 200 {
+    }
+
+    response "application/json" {
+    }
+
+    response "*" "en-US" {
+    }
+  }
+
+  http GET "/api" {
+    request "text/plain" {
+      headers {
+        "my-header.here" = "hello"
+      }
+      body = {
+        key: "value",
+        thing: true
+      }
+    }
+
+    response "*" "en-US" {
+      a = 1
+    }
+
+    response 400 "*" "en-US" {
+      map result if (body.ok) 7
+
+      map error if (!body.ok) 7
+    }
+  }
+
+  http GET "/api" {
+    request "*" "en-US" {
+      query {
+        foo = 1
+        bar = 2
+      }
+      headers {
+        oh = "no"
+      }
+      body = [1, 2, 3]
+    }
+
+    response 300 "application/json" "en-US" {
+      return map result 1
+      return map error {
+        a = "hello"
+      }
+    }
+  }
+}
+
+operation Fop {
+  foo = 1
+
+  foo.bar = true
+
+  set {
+    "quz.a" = "hello"
+    foo."bar-man".qux = 1 + 2
+  }
+
+  set if (condition === true) {
+    fuz = foo.bar
+  }
+
+  set {
+    foo = call Fop(arg1 = `String goes ${here}`, arg2 = "hello" + " world")
+    foo = call foreach (x of array) Fop(arg = x)
+    foo = call Fop(arg = x) if (x % 2 === 0)
+    foo = call foreach (x of array) Fop(arg = x) if (x % 2 === 0)
+  }
+
+  call Fop(arg2 = 1) {
+    foo = 1
+
+    return {
+      a = 1
+      b = 2
+    }
+
+    return if (cond) "what"
+  }
+
+  call foreach (x of array) Fop(arg = 1) {
+    return {
+      x = "hello"
+    }
+
+    return if (cond === false) {
+      banana = true
+    }
+  }
+
+  call Fop(arg = 1) if (x % 2 === 0) {
+    fail "ERROR"
+
+    fail if (outcome.error) outcome.error
+  }
+
+  call foreach (x of array) Fop(arg = 1) if (x % 2 === 0) {
+    fail {
+      e = "rror"
+    }
+
+    fail if (outcome.error) {
+      e = outcome.error
+      b = "ye"
+    }
+  }
+
+  return true
+
+  http GET "/api/v1/resource/{key}/{ another.key}" {
+
+  }
+
+  http PUT default "/api/{url}" {
+    security none
+
+    request {
+    }
+
+    response {
+    }
+  }
+
+  http POST "service-name" "/api/thing" {
+    security "bearer"
+
+    request "application/json" "en-US" {
+      query {
+        foo = 1
+      }
+    }
+
+    response 200 {
+    }
+
+    response "application/json" {
+    }
+
+    response "*" "en-US" {
+    }
+  }
+
+  http GET "/api" {
+    request "text/plain" {
+      headers {
+        "my-header.here" = "hello"
+      }
+      body = {
+        key: "value",
+        thing: true
+      }
+    }
+
+    response "*" "en-US" {
+      a = 1
+    }
+
+    response 400 "*" "en-US" {
+      return if (body.ok) 7
+
+      fail if (!body.ok) 7
+    }
+  }
+
+  http GET "/api" {
+    request "*" "en-US" {
+      query {
+        foo = 1
+        bar = 2
+      }
+      headers {
+        oh = "no"
+      }
+      body = [1, 2, 3]
+    }
+
+    response 300 "application/json" "en-US" {
+      return 1
+      fail {
+        a = "hello"
+      }
+    }
+  }
+}

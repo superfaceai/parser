@@ -36,7 +36,10 @@ export interface PrimitiveStructure extends Structure, DocumentedStructure {
  */
 export interface EnumStructure extends Structure, DocumentedStructure {
   kind: 'EnumStructure';
-  enums: ({ value: string | number | boolean } & DocumentedStructure)[];
+  enums: ({
+    name?: string | undefined;
+    value: string | number | boolean;
+  } & DocumentedStructure)[];
 }
 
 /**
@@ -60,7 +63,7 @@ export interface ListStructure extends Structure {
  */
 export interface ObjectStructure extends Structure, DocumentedStructure {
   kind: 'ObjectStructure';
-  fields?: ObjectCollection;
+  fields: ObjectCollection;
 }
 
 /**
@@ -101,6 +104,7 @@ export type StructureType =
  */
 export interface UseCaseStructure extends DocumentedStructure {
   useCaseName: string;
+  safety?: 'safe' | 'unsafe' | 'idempotent';
   input?: ObjectStructure;
   result?: StructureType;
   async?: StructureType;

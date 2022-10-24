@@ -1,5 +1,4 @@
-import { CharIndexSpan } from '..';
-import { Source } from '../source';
+import { CharIndexSpan, Source } from '../../common/source';
 import { LexerContext, LexerContextType } from './context';
 import { DEFAULT_TOKEN_KIND_FILTER, Lexer } from './lexer';
 import {
@@ -122,7 +121,7 @@ expect.extend({
 
   toReturnError(actual: LexerToken, needle?: string) {
     let message =
-      this.utils.matcherHint('toYieldUnknownWithError', undefined, undefined, {
+      this.utils.matcherHint('toReturnError', undefined, undefined, {
         isNot: this.isNot,
         promise: this.promise,
       }) + '\n\n';
@@ -148,7 +147,7 @@ expect.extend({
       return { pass: true, message: () => message };
     }
 
-    message += 'Needle does not match error';
+    message += 'Needle does not match error: \n' + err.message;
 
     return { pass: false, message: () => message };
   },
@@ -645,7 +644,7 @@ ng2"
         sourceMap: 'not checked',
         sourceScript: 'not checked',
         script:
-          '"Template " + string + " with " + (more + (nested + " and " + complex)) + " expressions " + here',
+          '"Template ".concat(string, " with ").concat(more + "".concat(nested, " and ").concat(complex), " expressions ").concat(here)',
       });
 
       expect(lexer.advance()).toHaveTokenData({
@@ -843,7 +842,7 @@ ng2"
       });
     });
 
-    test('Jessie non-expression with expression context', () => {
+    test('script non-expression with expression context', () => {
       const lexer = new Lexer(new Source('var f = 1 ;'));
 
       lexer.advance(); // SOF
@@ -856,7 +855,7 @@ ng2"
       ).toReturnError('Expression expected.');
     });
 
-    test('non-Jessie construct in jessie context', () => {
+    test('non-script construct in script context', () => {
       const lexer = new Lexer(new Source('(function() {})() }'));
 
       lexer.advance(); // SOF

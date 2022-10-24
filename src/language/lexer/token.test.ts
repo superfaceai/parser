@@ -1,5 +1,5 @@
+import { Source } from '../../common/source';
 import { SyntaxError } from '../error';
-import { Source } from '../source';
 import { MatchAttempts } from '../syntax/rule';
 import {
   formatTokenData,

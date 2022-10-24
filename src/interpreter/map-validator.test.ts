@@ -4,21 +4,26 @@ import {
   ProfileDocumentNode,
 } from '@superfaceai/ast';
 
-import { parseMap, parseProfile, Source } from '..';
+import { parseMap, parseProfile } from '..';
+import { Source } from '../common/source';
 import {
   invalidWithErrors,
   validWithWarnings,
 } from './test/validate-custom-matcher';
 import { formatIssues, getProfileOutput, validateMap } from './utils';
 
-function getIssues(profile: ProfileDocumentNode, maps: MapASTNode[]) {
+function getIssues(
+  profile: ProfileDocumentNode,
+  maps: MapASTNode[]
+): Record<string, { errors?: string; warnings?: string }> {
   const profileOutput = getProfileOutput(profile);
   const output: Record<string, { errors?: string; warnings?: string }> = {};
   let id: string | undefined;
 
-  for (const map of maps) {
+  for (let i = 0; i < maps.length; i += 1) {
+    const map = maps[i];
     if (isMapDocumentNode(map)) {
-      id = `${map.header.profile.name}-${map.header.provider}`;
+      id = `${map.header.profile.name}-${map.header.provider}#${i}`;
     }
 
     const result = validateMap(profileOutput, map);
@@ -44,13 +49,36 @@ function getIssues(profile: ProfileDocumentNode, maps: MapASTNode[]) {
 
 function valid(profile: ProfileDocumentNode, maps: MapASTNode[]): void {
   it('then validation will pass', () => {
-    expect(getIssues(profile, maps)).toMatchSnapshot();
+    const allIssues = getIssues(profile, maps);
+    expect(allIssues).toMatchSnapshot();
+
+    for (const issues of Object.values(allIssues)) {
+      expect(issues.warnings ?? '').toBe('');
+      expect(issues.errors ?? '').toBe('');
+    }
+  });
+}
+
+function validWarn(profile: ProfileDocumentNode, maps: MapASTNode[]): void {
+  it('then validation will pass with warnings', () => {
+    const allIssues = getIssues(profile, maps);
+    expect(allIssues).toMatchSnapshot();
+
+    for (const issues of Object.values(allIssues)) {
+      expect(issues.warnings ?? '').not.toBe('');
+      expect(issues.errors ?? '').toBe('');
+    }
   });
 }
 
 function invalid(profile: ProfileDocumentNode, maps: MapASTNode[]): void {
   it('then validation will fail', () => {
-    expect(getIssues(profile, maps)).toMatchSnapshot();
+    const allIssues = getIssues(profile, maps);
+    expect(allIssues).toMatchSnapshot();
+
+    for (const issues of Object.values(allIssues)) {
+      expect(issues.errors ?? '').not.toBe('');
+    }
   });
 }
 
@@ -129,6 +157,55 @@ describe('MapValidator', () => {
     });
 
     describe('result is an object', () => {
+      describe('empty object', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result {}    
+          }`
+        );
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            map result {}
+          }`
+        );
+
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result {
+              f2 = "what"
+            }
+          }`
+        );
+
+        validWithWarnings(
+          profileAst,
+          [mapAst1, mapAst2],
+          [''],
+          [
+            'ObjectLiteral - Wrong Object Structure: expected {}, but got {f2: "what"}',
+          ]
+        );
+      });
+
+      describe('extra field', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result {
+              f1 string
+            }    
+          }`
+        );
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            map result {
+              f2 = "what"
+            }
+          }`
+        );
+
+        validWarn(profileAst, [mapAst1]);
+      });
+
       describe('possibly null field f1', () => {
         const profileAst = parseProfileFromSource(
           `usecase Test {
@@ -195,11 +272,8 @@ describe('MapValidator', () => {
             }
             map result {
               f1 = "some string"
-              f3 = 3
             }
-            map result {
-              f3 = 3
-            }
+            map result {}
           }`
         );
         const mapAst3 = parseMapFromSource(
@@ -220,6 +294,7 @@ describe('MapValidator', () => {
           `usecase Test {
             result {
               f1 string!
+              f3
             }
           }`
         );
@@ -288,15 +363,6 @@ describe('MapValidator', () => {
               f1 = "some string"
               f2 = 2
             }
-            map result {
-              f1 = "some string"
-              f2 = 2
-              f3 = 3
-            }
-            map result {
-              f2 = 2
-              f3 = 3
-            }
           }`
         );
         const mapAst3 = parseMapFromSource(
@@ -341,15 +407,6 @@ describe('MapValidator', () => {
               f1 = "some string"
               f2 = 2
             }
-            map result {
-              f1 = "some string"
-              f3 = 3
-            }
-            map result {
-              f1 = "some string"
-              f2 = 2
-              f3 = 3
-            }
           }`
         );
         const mapAst3 = parseMapFromSource(
@@ -381,10 +438,6 @@ describe('MapValidator', () => {
           `map Test {
             map result {
               f1 = "some string"
-            }
-            map result {
-              f1 = "some string"
-              f3 = 3
             }
           }`
         );
@@ -424,12 +477,7 @@ describe('MapValidator', () => {
             }
             map result {
               f1 = "some string"
-              f3 = 3
-            }
-            map result {
-              f1 = "some string"
               f2 = false
-              f3 = 3
             }
           }`
         );
@@ -477,7 +525,6 @@ describe('MapValidator', () => {
             map result {
               f1 = "some string"
               f2 = true
-              f3 = 3
             }
           }`
         );
@@ -523,11 +570,6 @@ describe('MapValidator', () => {
             map result {
               f1 = "some string"
               f2 = 2
-            }
-            map result {
-              f1 = "some string"
-              f2 = 2
-              f3 = 3
             }
           }`
         );
@@ -645,6 +687,25 @@ describe('MapValidator', () => {
     });
 
     describe('error is an object', () => {
+      describe('extra field', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            error {
+              f1 string
+            }    
+          }`
+        );
+        const mapAst1 = parseMapFromSource(
+          `map Test {
+            map error {
+              f2 = "what"
+            }
+          }`
+        );
+
+        validWarn(profileAst, [mapAst1]);
+      });
+
       describe('possibly null field f1', () => {
         const profileAst = parseProfileFromSource(
           `usecase Test {
@@ -663,14 +724,9 @@ describe('MapValidator', () => {
             }
             map error {
               f1 = null
-              f2 = null
             }
             map error {
               f1 = "some string"
-              f2 = 2
-            }
-            map error {
-              f2 = 2
             }
           }`
         );
@@ -720,13 +776,6 @@ describe('MapValidator', () => {
               f1 = "some string"
               f2 = 2
             }
-            map error {
-              f1 = "some string"
-              f3 = 3
-            }
-            map error {
-              f3 = 3
-            }
           }`
         );
         const mapAst3 = parseMapFromSource(
@@ -757,13 +806,6 @@ describe('MapValidator', () => {
             }
             map error {
               f1 = "some string"
-            }
-            map error {
-              f1 = "some string"
-              f3 = 3
-            }
-            map error {
-              f3 = 3
             }
           }`
         );
@@ -813,15 +855,6 @@ describe('MapValidator', () => {
               f1 = "some string"
               f2 = 2
             }
-            map error {
-              f1 = "some string"
-              f2 = 2
-              f3 = 3
-            }
-            map error {
-              f2 = 2
-              f3 = 3
-            }
           }`
         );
         const mapAst3 = parseMapFromSource(
@@ -865,15 +898,6 @@ describe('MapValidator', () => {
               f1 = "some string"
               f2 = 2
             }
-            map error {
-              f1 = "some string"
-              f3 = 3
-            }
-            map error {
-              f1 = "some string"
-              f2 = 2
-              f3 = 3
-            }
           }`
         );
         const mapAst3 = parseMapFromSource(
@@ -905,10 +929,6 @@ describe('MapValidator', () => {
           `map Test {
             map error {
               f1 = "some string"
-            }
-            map error {
-              f1 = "some string"
-              f3 = 3
             }
           }`
         );
@@ -944,15 +964,6 @@ describe('MapValidator', () => {
             map error {
               f1 = "some string"
               f2 = true
-            }
-            map error {
-              f1 = "some string"
-              f3 = 3
-            }
-            map error {
-              f1 = "some string"
-              f2 = false
-              f3 = 3
             }
           }`
         );
@@ -995,11 +1006,6 @@ describe('MapValidator', () => {
             map error {
               f1 = "some string"
               f2 = true
-            }
-            map error {
-              f1 = "some string"
-              f2 = true
-              f3 = 3
             }
           }`
         );
@@ -1044,11 +1050,6 @@ describe('MapValidator', () => {
             map error {
               f1 = "some string"
               f2 = 2
-            }
-            map error {
-              f1 = "some string"
-              f2 = 2
-              f3 = 3
             }
           }`
         );
@@ -1790,6 +1791,95 @@ describe('MapValidator', () => {
       });
     });
 
+    describe('result is enum', () => {
+      const profileAst = parseProfileFromSource(`usecase FaceDetection {
+        result {
+          emotions! emotions!
+        }!
+      }
+      
+      model emotions {
+        happiness! likelihood!
+        anger! likelihood!
+        sadness! likelihood!
+        surprise! likelihood!
+      }
+      
+      model likelihood enum {
+        unknown
+        veryUnlikely
+        unlikely
+        possible
+        likely
+        veryLikely
+      }`);
+
+      const validMapAst1 = parseMapFromSource(`map FaceDetection {
+        map result {
+          emotions: {
+            anger: "unknown",
+            happiness: "veryUnlikely",
+            sadness: "unlikely",
+            surprise: "veryLikely",
+          },
+        }
+      }`);
+
+      const validMapAst2 = parseMapFromSource(`map FaceDetection {
+        map result {
+          emotions: {
+            anger: \`unknown\`,
+            happiness: \`veryUnlikely\`,
+            sadness: \`unlikely\`,
+            surprise: \`veryLikely\`,
+          },
+        }
+      }`);
+
+      const invalidMapAst1 = parseMapFromSource(`map FaceDetection {
+        map result {
+          emotions: {
+            anger: "invalid",
+            happiness: "invalid",
+            sadness: "invalid",
+            surprise: "invalid",
+          },
+        }
+      }`);
+
+      const invalidMapAst2 = parseMapFromSource(`map FaceDetection {
+        map result {
+          emotions: {
+            anger: \`invalid\`,
+            happiness: \`invalid\`,
+            sadness: \`invalid\`,
+            surprise: \`invalid\`,
+          },
+        }
+      }`);
+
+      validWithWarnings(profileAst, [validMapAst1, validMapAst2]);
+
+      invalidWithErrors(
+        profileAst,
+        [invalidMapAst1, invalidMapAst2],
+        [
+          'StringLiteral - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
+          'StringLiteral - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
+          'StringLiteral - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
+          'StringLiteral - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
+        ],
+        [],
+        [
+          'FirstTemplateToken - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
+          'FirstTemplateToken - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
+          'FirstTemplateToken - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
+          'FirstTemplateToken - Wrong Structure: expected unknown or veryUnlikely or unlikely or possible or likely or veryLikely, but got invalid',
+        ],
+        []
+      );
+    });
+
     describe('result is variable', () => {
       const profileAst = parseProfileFromSource(
         `usecase Test {
@@ -1953,7 +2043,7 @@ describe('MapValidator', () => {
       const mapAst = parseMapFromSource(
         `map Test {
           map result if (cond) {
-            f1.inner = {}
+            f1.inner = "hi"
           }
         }`
       );
@@ -1974,9 +2064,8 @@ describe('MapValidator', () => {
       const mapAst = parseMapFromSource(
         `map Test {
           map error if (cond) {
-            f1.inner = {}
+            f1.inner = "heyo"
           }
-          map error if (cond) "some string"
         }`
       );
 
@@ -2240,6 +2329,48 @@ describe('MapValidator', () => {
         );
       });
     });
+
+    describe('input has an array with element access', () => {
+      const profile = parseProfileFromSource(
+        `usecase Test {
+          input {
+            arr [InputItem]
+            and [{ another! { one! [number] } }]
+          }
+
+          result string!
+          error string!
+        }
+        
+        model InputItem {
+          foo string!
+        }`
+      );
+      const map1 = parseMapFromSource(
+        `map Test {
+          set {
+            thing = input.arr[0],
+            thang = input.and[1].another.one[0]
+          }
+
+          map result "ok"
+          map error if (thing.foo !== "ok") "error"
+        }`
+      );
+      const map2 = parseMapFromSource(
+        `map Test {
+        set {
+          rebind = input.arr,
+          then = rebind[0]
+        }
+
+        map result "ok"
+        map error if (thing.foo !== "ok") "error"
+      }`
+      );
+
+      valid(profile, [map1, map2]);
+    });
   });
 
   describe('input & result', () => {
@@ -2426,7 +2557,12 @@ describe('MapValidator', () => {
       const profileAst = parseProfileFromSource(
         `usecase Test {
           result string
-        }`
+        }
+        
+        usecase Test2 {
+          result boolean
+        }
+        `
       );
       const mapAst = parseMapFromSource(
         `map Test {
@@ -2525,7 +2661,7 @@ describe('MapValidator', () => {
         }`
       );
 
-      valid(profileAst, [mapAst]);
+      validWarn(profileAst, [mapAst]);
     });
 
     describe('profile error missing', () => {
@@ -2540,7 +2676,7 @@ describe('MapValidator', () => {
         }`
       );
 
-      valid(profileAst, [mapAst]);
+      validWarn(profileAst, [mapAst]);
     });
 
     describe('profile input missing', () => {

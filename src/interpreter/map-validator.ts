@@ -25,10 +25,20 @@ import {
   SetStatementNode,
 } from '@superfaceai/ast';
 import createDebug from 'debug';
-import * as ts from 'typescript';
 
-import { buildAssignment, IssueLocation, UseCaseSlotType } from '.';
-import { RETURN_CONSTRUCTS } from './constructs';
+import { ScriptExpressionCompiler } from '../common/script';
+import { computeEndLocation, Location } from '../common/source';
+import {
+  buildAssignment,
+  isCompatible,
+  IssueLocation,
+  UseCaseSlotType,
+} from '.';
+import {
+  RelativeValidationIssue,
+  RETURN_CONSTRUCTS,
+  visitConstruct,
+} from './constructs';
 import { ValidationIssue } from './issue';
 import {
   ObjectStructure,
@@ -38,11 +48,12 @@ import {
 } from './profile-output';
 import { isNonNullStructure, isScalarStructure } from './profile-output.utils';
 import {
-  compareStructure,
   findTypescriptIdentifier,
   getOutcomes,
   getVariableName,
   mergeVariables,
+  validateObjectLiteral,
+  validatePrimitiveLiteral,
 } from './utils';
 
 const debug = createDebug('superface-parser:map-validator');
@@ -137,6 +148,11 @@ export class MapValidator implements MapAstVisitor {
   }
 
   visitMapDocumentNode(node: MapDocumentNode): void {
+    if (!isCompatible(node.astMetadata)) {
+      // TODO: throw error or add error to state and stop validation?
+      throw new Error('Specified AST is not compatible with linter');
+    }
+
     // check the valid ProfileID
     this.visit(node.header);
 
@@ -433,35 +449,73 @@ export class MapValidator implements MapAstVisitor {
     return true;
   }
 
-  visitJessieExpressionNode(node: JessieExpressionNode): boolean {
-    const rootNode = ts.createSourceFile(
-      'scripts.js',
-      `(${node.source ?? node.expression})`,
-      ts.ScriptTarget.ES2015,
-      true,
-      ts.ScriptKind.JS
+  private static mapRelativeValidationIssue(
+    nodeSource: string,
+    startLocation: Location | undefined,
+    issue: RelativeValidationIssue
+  ): ValidationIssue {
+    const relativeSpan = ScriptExpressionCompiler.fixupRelativeSpan(
+      issue.context.path.relativeSpan
     );
 
-    const construct = RETURN_CONSTRUCTS[rootNode.kind];
+    // instead of reconstructing the issue we just delete the member
+    delete (issue.context.path as { relativeSpan?: unknown }).relativeSpan;
 
-    if (!construct) {
-      throw new Error('Rule construct not found!');
+    const result: ValidationIssue = issue;
+
+    // bail if we don't know the location
+    if (startLocation === undefined) {
+      return result;
     }
 
-    const constructResult = construct.visit(
+    // and set the location member
+    result.context.path.location = {
+      start: computeEndLocation(
+        nodeSource.slice(0, relativeSpan.start),
+        startLocation
+      ),
+      end: computeEndLocation(
+        nodeSource.slice(0, relativeSpan.end),
+        startLocation
+      ),
+    };
+
+    return result;
+  }
+
+  visitJessieExpressionNode(node: JessieExpressionNode): boolean {
+    const nodeSource = node.source ?? node.expression;
+    const rootNode = new ScriptExpressionCompiler(nodeSource).rawExpressionNode;
+
+    const constructResult = visitConstruct(
       rootNode,
-      node.location,
       this.currentStructure,
       this.inputStructure,
-      this.isOutcomeWithCondition
+      this.isOutcomeWithCondition,
+      RETURN_CONSTRUCTS[rootNode.kind]
     );
 
     let result = constructResult.pass;
-
     if (!constructResult.pass) {
-      this.errors.push(...constructResult.errors);
+      this.errors.push(
+        ...constructResult.errors.map(issue =>
+          MapValidator.mapRelativeValidationIssue(
+            nodeSource,
+            node.location?.start,
+            issue
+          )
+        )
+      );
     }
-    this.warnings.push(...(constructResult.warnings ?? []));
+    this.warnings.push(
+      ...constructResult.warnings.map(issue =>
+        MapValidator.mapRelativeValidationIssue(
+          nodeSource,
+          node.location?.start,
+          issue
+        )
+      )
+    );
 
     // validate variables from jessie
     for (const { jessieNode, type } of constructResult.variables ?? []) {
@@ -524,12 +578,9 @@ export class MapValidator implements MapAstVisitor {
       return true;
     }
 
-    const { objectStructure, isValid } = compareStructure(
-      node,
-      this.currentStructure
-    );
+    const validationResult = validateObjectLiteral(this.currentStructure, node);
 
-    if (!isValid) {
+    if (!validationResult.isValid) {
       this.addIssue({
         kind: 'wrongStructure',
         context: {
@@ -542,11 +593,8 @@ export class MapValidator implements MapAstVisitor {
       return this.isOutcomeWithCondition ? true : false;
     }
 
-    if (!objectStructure || !objectStructure.fields) {
-      throw new Error(
-        'Validated object structure is not defined or does not contain fields'
-      );
-    }
+    // unpack here, otherwise TS fails to infer that is cannot be undefined
+    const objectStructure = validationResult.objectStructure;
 
     // all fields
     const profileFields = Object.entries(objectStructure.fields);
@@ -626,7 +674,7 @@ export class MapValidator implements MapAstVisitor {
       return true;
     }
 
-    const { isValid } = compareStructure(node, this.currentStructure);
+    const { isValid } = validatePrimitiveLiteral(this.currentStructure, node);
 
     if (!isValid) {
       this.addIssue({

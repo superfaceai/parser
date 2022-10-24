@@ -29,6 +29,7 @@ import {
 } from '@superfaceai/ast';
 import createDebug from 'debug';
 
+import { isCompatible } from '.';
 import {
   DocumentedStructure,
   ObjectStructure,
@@ -155,7 +156,7 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
     return {
       kind: 'EnumStructure',
       enums: node.values.map(value =>
-        addDoc(value, { value: this.visit(value) })
+        addDoc(value, { name: value.name, value: this.visit(value) })
       ),
     };
   }
@@ -233,7 +234,7 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
 
         return obj;
       },
-      { kind: 'ObjectStructure' }
+      { kind: 'ObjectStructure', fields: {} }
     );
   }
 
@@ -245,6 +246,11 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
   }
 
   visitProfileDocumentNode(node: ProfileDocumentNode): ProfileOutput {
+    if (!isCompatible(node.astMetadata)) {
+      // TODO: throw error or add error to state and stop validation?
+      throw new Error('Specified AST is not compatible with linter');
+    }
+
     const fields = node.definitions.filter(isNamedFieldDefinitionNode);
     const models = node.definitions.filter(isNamedModelDefinitionNode);
 
@@ -295,6 +301,7 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
   visitUseCaseDefinitionNode(node: UseCaseDefinitionNode): UseCaseStructure {
     return addDoc(node, {
       useCaseName: node.useCaseName,
+      safety: node.safety,
       input: this.visit(node.input),
       result: this.visit(node.result),
       error: this.visit(node.error),

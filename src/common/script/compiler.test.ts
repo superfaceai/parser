@@ -1,10 +1,10 @@
-import * as st from './transpiler';
+import { ScriptCompiler } from './compiler';
 
 test('transpiler basics', () => {
-  const { output, sourceMap } = st.transpileScript(
+  const { output, sourceMap } = new ScriptCompiler(
     `let a = { hello: 1, world: 2 + "3" }
 console.log(a)`
-  );
+  ).transpile();
 
   expect(output).toBe(
     `var a = { hello: 1, world: 2 + "3" };
@@ -17,10 +17,10 @@ console.log(a);`
 });
 
 test('transpiler ES2020', () => {
-  const { output, sourceMap } = st.transpileScript(
+  const { output, sourceMap } = new ScriptCompiler(
     `let nullishCoalescing = undefined ?? (false ?? "truthy")
 		const optionalChaining = console?.log?.(nullishCoalescing)`
-  );
+  ).transpile();
 
   expect(output).toMatch('var nullishCoalescing =');
   expect(output).toMatch('var optionalChaining =');

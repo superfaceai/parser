@@ -1,7 +1,7 @@
+import { Source } from '../common/source';
 import { SyntaxError } from './error';
 import { Lexer, LexerTokenStream } from './lexer/lexer';
 import { UnknownTokenData } from './lexer/token';
-import { Source } from './source';
 import { parseMap, parseProfile, parseRule } from './syntax/parser';
 import {
   MatchAttempts,
@@ -149,7 +149,7 @@ class TestSyntaxRule<
     return this.result;
   }
 
-  [Symbol.toStringTag](): string {
+  toStringFmt(_options: unknown): string {
     return this.name ?? '[test rule]';
   }
 }
@@ -405,7 +405,7 @@ df'
             return this.second;
           }
 
-          [Symbol.toStringTag](): string {
+          toStringFmt(_options: unknown): string {
             return '[repeat test rule]';
           }
         }

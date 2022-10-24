@@ -1,8 +1,8 @@
 import { MapDocumentNode, ProfileDocumentNode } from '@superfaceai/ast';
 
+import { Source } from '../../common/source';
 import { SyntaxError } from '../error';
 import { Lexer } from '../lexer/lexer';
-import { Source } from '../source';
 import { SyntaxRule } from './rule';
 import * as mapRules from './rules/map';
 import * as profileRules from './rules/profile';

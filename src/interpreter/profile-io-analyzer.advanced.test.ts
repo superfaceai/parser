@@ -1,6 +1,7 @@
 import { ProfileDocumentNode } from '@superfaceai/ast';
 
-import { parseProfile, Source } from '..';
+import { parseProfile } from '..';
+import { Source } from '../common/source';
 import { ProfileIOAnalyzer } from './profile-io-analyzer';
 import { ObjectStructure, ProfileOutput } from './profile-output';
 
@@ -42,13 +43,11 @@ describe('ProfileValidator Advanced', () => {
         usecases: [
           {
             useCaseName: 'Test',
-            input: {
-              kind: 'ObjectStructure',
-            },
+            input: { kind: 'ObjectStructure', fields: {} },
             result: {
               kind: 'UnionStructure',
               types: [
-                { kind: 'ObjectStructure' },
+                { kind: 'ObjectStructure', fields: {} },
                 {
                   kind: 'NonNullStructure',
                   value: {
@@ -166,6 +165,7 @@ describe('ProfileValidator Advanced', () => {
             useCaseName: 'Test',
             input: {
               kind: 'ObjectStructure',
+              fields: {},
             },
             result: {
               kind: 'UnionStructure',
@@ -220,6 +220,7 @@ describe('ProfileValidator Advanced', () => {
             useCaseName: 'Test',
             input: {
               kind: 'ObjectStructure',
+              fields: {},
             },
             result: {
               kind: 'UnionStructure',
