@@ -5,9 +5,15 @@ import {
   OutcomeStatementNode,
   SetStatementNode,
 } from '@superfaceai/ast';
+import {
+  ElementAccessExpression,
+  Identifier,
+  PropertyAccessExpression,
+} from 'typescript';
 
 import { isCompatible } from '.';
-import { getOutcomes } from './utils';
+import { ScriptExpressionCompiler } from '../common/script';
+import { getOutcomes, getVariableName } from './utils';
 
 const mockASTGetter = jest.fn();
 const mockParserGetter = jest.fn();
@@ -208,6 +214,47 @@ describe('utils', () => {
 
         expect(isCompatible(newMetadata)).toBeTruthy();
       });
+    });
+  });
+
+  describe('getVariableName', () => {
+    it('returns o for `o`', () => {
+      const jessieExpression = new ScriptExpressionCompiler('o');
+      const expr = jessieExpression.rawExpressionNode as Identifier;
+
+      expect(getVariableName(expr)).toBe('o');
+    });
+
+    it('returns o.f1.f2 for `o.f1.f2`', () => {
+      const jessieExpression = new ScriptExpressionCompiler('o.f1.f2');
+      const expr =
+        jessieExpression.rawExpressionNode as PropertyAccessExpression;
+
+      expect(getVariableName(expr)).toBe('o.f1.f2');
+    });
+
+    it("returns o.f1.f2 for `o['f1']['f2']`", () => {
+      const jessieExpression = new ScriptExpressionCompiler("o['f1']['f2']");
+      const expr =
+        jessieExpression.rawExpressionNode as ElementAccessExpression;
+
+      expect(getVariableName(expr)).toBe('o.f1.f2');
+    });
+
+    it("returns o.f1.f2 for `o.f1.['f2']`", () => {
+      const jessieExpression = new ScriptExpressionCompiler("o.f1['f2']");
+      const expr =
+        jessieExpression.rawExpressionNode as ElementAccessExpression;
+
+      expect(getVariableName(expr)).toBe('o.f1.f2');
+    });
+
+    it("returns o.f1.f2 for `o['f1'].f2`", () => {
+      const jessieExpression = new ScriptExpressionCompiler("o['f1'].f2");
+      const expr =
+        jessieExpression.rawExpressionNode as ElementAccessExpression;
+
+      expect(getVariableName(expr)).toBe('o.f1.f2');
     });
   });
 });
