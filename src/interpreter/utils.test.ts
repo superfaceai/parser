@@ -11,8 +11,8 @@ import {
   PropertyAccessExpression,
 } from 'typescript';
 
-import { isCompatible } from '.';
 import { ScriptExpressionCompiler } from '../common/script';
+import { isCompatible } from '.';
 import { getOutcomes, getVariableName } from './utils';
 
 const mockASTGetter = jest.fn();
