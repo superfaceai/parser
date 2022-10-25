@@ -225,6 +225,30 @@ describe('utils', () => {
       expect(getVariableName(expr)).toBe('o');
     });
 
+    it('returns o.f1 for `o.f1`', () => {
+      const jessieExpression = new ScriptExpressionCompiler('o.f1');
+      const expr =
+        jessieExpression.rawExpressionNode as PropertyAccessExpression;
+
+      expect(getVariableName(expr)).toBe('o.f1');
+    });
+
+    it("returns o.f1 for `o['f1']`", () => {
+      const jessieExpression = new ScriptExpressionCompiler("o['f1']");
+      const expr =
+        jessieExpression.rawExpressionNode as ElementAccessExpression;
+
+      expect(getVariableName(expr)).toBe('o.f1');
+    });
+
+    it("returns o[obj.state] for `o[obj.state]`", () => {
+      const jessieExpression = new ScriptExpressionCompiler("o[obj.state]");
+      const expr =
+        jessieExpression.rawExpressionNode as ElementAccessExpression;
+
+      expect(getVariableName(expr)).toBe('o[obj.state]');
+    });
+
     it('returns o.f1.f2 for `o.f1.f2`', () => {
       const jessieExpression = new ScriptExpressionCompiler('o.f1.f2');
       const expr =
@@ -239,6 +263,14 @@ describe('utils', () => {
         jessieExpression.rawExpressionNode as ElementAccessExpression;
 
       expect(getVariableName(expr)).toBe('o.f1.f2');
+    });
+
+    it("returns o.f1[obj.state] for `o['f1'][obj.state]`", () => {
+      const jessieExpression = new ScriptExpressionCompiler("o['f1'][obj.state]");
+      const expr =
+        jessieExpression.rawExpressionNode as ElementAccessExpression;
+
+      expect(getVariableName(expr)).toBe('o.f1[obj.state]');
     });
 
     it("returns o.f1.f2 for `o.f1.['f2']`", () => {
