@@ -416,8 +416,10 @@ export function findTypescriptProperty(name: string, node: ts.Node): boolean {
   return false;
 }
 
-export function getTypescriptIdentifierName(node: ts.Node): string {
-  if (ts.isIdentifier(node) || ts.isStringLiteral(node)) {
+export function getVariableName(
+  node: TypescriptIdentifier,
+): string {
+  if (ts.isIdentifier(node)) {
     return node.text;
   }
 
@@ -429,31 +431,6 @@ export function getTypescriptIdentifierName(node: ts.Node): string {
     return replaceRedudantCharacters(
       `${node.expression.getText()}.${node.argumentExpression.getText()}`
     );
-  }
-
-  return 'undefined';
-}
-
-export function getVariableName(
-  node: TypescriptIdentifier | ts.LeftHandSideExpression,
-  name?: string
-): string {
-  name = name ? replaceRedudantCharacters(name) : '';
-
-  if (ts.isIdentifier(node) || ts.isStringLiteral(node)) {
-    return name !== '' ? `${node.text}.${name}` : node.text;
-  }
-
-  if (ts.isPropertyAccessExpression(node)) {
-    name = name !== '' ? `${node.name.text}.${name}` : node.name.text;
-
-    return getVariableName(node.expression, name);
-  }
-
-  if (ts.isElementAccessExpression(node)) {
-    return name !== ''
-      ? `${getTypescriptIdentifierName(node)}.${name}`
-      : getTypescriptIdentifierName(node);
   }
 
   return 'undefined';
