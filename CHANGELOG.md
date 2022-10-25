@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added `expression` to `getPath`
+- `getAccessKey` returns error for dynamic expressions
+- Added `isAccessKeyError` and `isAccessKey`
+
+### Changed
+- Renamed `getVariableName` to `getAccessKey`
 
 ## [2.0.0-rc.1] - 2022-09-07
 ### Added

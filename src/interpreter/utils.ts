@@ -118,9 +118,8 @@ export function formatIssueContext(issue: ValidationIssue): string {
 
   switch (issue.kind) {
     case 'wrongScope':
-      return `Wrong Scope: expected ${
-        issue.context.expected ?? 'no scope in profile'
-      }, but got ${issue.context.actual ?? 'no scope in map'}`;
+      return `Wrong Scope: expected ${issue.context.expected ?? 'no scope in profile'
+        }, but got ${issue.context.actual ?? 'no scope in map'}`;
 
     case 'wrongProfileName':
       return `Wrong Profile Name: expected "${issue.context.expected}", but got "${issue.context.actual}"`;
@@ -142,9 +141,8 @@ export function formatIssueContext(issue: ValidationIssue): string {
       return `No ${issue.context.slot} outcome defined`;
 
     case 'useCaseSlotNotFound':
-      actual = `${
-        issue.context.expected === UseCaseSlotType.INPUT ? '' : 'returning '
-      }${formatLiteral(issue.context.actual)}`;
+      actual = `${issue.context.expected === UseCaseSlotType.INPUT ? '' : 'returning '
+        }${formatLiteral(issue.context.actual)}`;
 
       return `${issue.context.expected} Not Found: ${actual}, but there is no ${issue.context.expected} defined in usecase`;
 
@@ -207,7 +205,7 @@ export function validatePrimitiveLiteral(
   if (
     structure.kind === 'EnumStructure' &&
     structure.enums.find(enumValue => enumValue.value === node.value) !==
-      undefined
+    undefined
   ) {
     return { isValid: true };
   }
@@ -416,24 +414,65 @@ export function findTypescriptProperty(name: string, node: ts.Node): boolean {
   return false;
 }
 
-export function getVariableName(
-  node: TypescriptIdentifier,
-): string {
+
+type AccessKey = { kind: 'AccessKey', key: string };
+type AccessKeyError = { kind: 'AccessKeyError', message: string }
+type AccessKeyResult = AccessKey | AccessKeyError;
+
+export function isAccessKey(accessKey: AccessKeyResult): accessKey is AccessKey {
+  return accessKey.kind === 'AccessKey';
+}
+
+export function isAccessKeyError(accessKey: AccessKeyResult): accessKey is AccessKeyError {
+  return accessKey.kind === 'AccessKeyError';
+}
+
+export function getAccessKey(
+  node: ts.Identifier | ts.AccessExpression | ts.LeftHandSideExpression
+): AccessKeyResult {
   if (ts.isIdentifier(node)) {
-    return node.text;
+    return { kind: 'AccessKey', key: node.text };
+  }
+
+  if (ts.isStringLiteral(node)) {
+    return { kind: 'AccessKey', key: node.text };
   }
 
   if (ts.isPropertyAccessExpression(node)) {
-    return replaceRedudantCharacters(node.getText());
+    const expression = getAccessKey(node.expression);
+    const name = getAccessKey(node.name);
+
+    if (isAccessKeyError(expression)) {
+      return expression;
+    }
+
+    if (isAccessKeyError(name)) {
+      return name;
+    }
+
+    return { kind: 'AccessKey', key: `${expression.key}.${name.key}` };
   }
 
   if (ts.isElementAccessExpression(node)) {
-    return replaceRedudantCharacters(
-      `${node.expression.getText()}.${node.argumentExpression.getText()}`
-    );
+    if (ts.isLiteralExpression(node.argumentExpression)) {
+      const expression = getAccessKey(node.expression);
+      const argumentExpression = getAccessKey(node.argumentExpression);
+
+      if (isAccessKeyError(expression)) {
+        return expression;
+      }
+
+      if (isAccessKeyError(argumentExpression)) {
+        return argumentExpression;
+      }
+
+      return { kind: 'AccessKey', key: `${expression.key}.${argumentExpression.key}` };
+    }
+
+    return { kind: 'AccessKeyError', message: "Access key with dynamic part can't be resolved" }
   }
 
-  return 'undefined';
+  return { kind: 'AccessKeyError', message: `${node.kind} is not supported as access key` };
 }
 
 export const buildAssignment = (
