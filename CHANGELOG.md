@@ -7,21 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
+- Script sublexer, script compiler and syntax rules now produce debug logs for debugging
+- Compatibility check of AST metadata into validators
+- `safety` field to `UseCaseStructure`
 - Added `expression` to `getPath`
 - `getAccessKey` returns error for dynamic expressions
 - Added `isAccessKeyError` and `isAccessKey`
 
 ### Changed
-- Renamed `getVariableName` to `getAccessKey`
-
-## [2.0.0-rc.1] - 2022-09-07
-### Added
-- Script sublexer, script compiler and syntax rules now produce debug logs for debugging
-- Compatibility check of AST metadata into validators
-- `safety` field to `UseCaseStructure`
-
-### Changed
 - **BREAKING CHANGE:** property `fields` in `ObjectStructure` is no longer optional
+- Renamed `getVariableName` to `getAccessKey`
 
 ### Fixed
 - Script sublexer infinite loop on some invalid scripts (nesting ignoring EOF token)
