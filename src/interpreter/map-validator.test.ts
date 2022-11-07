@@ -556,6 +556,71 @@ describe('MapValidator', () => {
         invalid(profileAst, [mapAst3]);
       });
 
+      describe('required field enum f1', () => {
+        const profileAst = parseProfileFromSource(
+          `usecase Test {
+            result {
+              f1! State!
+            }
+          }
+          model State enum {
+            unknown
+            ready
+          }`
+        );
+
+        const mapAst1 = parseMapFromSource('map Test {}');
+        const mapAst2 = parseMapFromSource(
+          `map Test {
+            map result {
+              f1 = "ready"
+            }
+            map result {
+              f1 = "unknown"
+            }
+          }`
+        );
+        const mapAst3 = parseMapFromSource(
+          `map Test {
+            mapState = {
+              ready: "ready",
+              unknown: "unknown",
+            }
+
+            map result {
+              f1 = mapState["ready"]
+            }
+            map result {
+              f1 = mapState[body.state]
+            }
+          }`
+        );
+
+        const mapAst4 = parseMapFromSource(
+          `map Test {
+            map result {}
+            map result {
+              f1 = null
+            }
+            map result {
+              f2 = null
+            }
+            map result {
+              f1 = null
+            }
+            map result {
+              f1 = "some string"
+            }
+            map result {
+              f1 = "some string"
+            } 
+          }`
+        );
+
+        valid(profileAst, [mapAst1, mapAst2, mapAst3]);
+        invalid(profileAst, [mapAst4]);
+      });
+
       describe('non null object with two required fields f1, f2', () => {
         const profileAst = parseProfileFromSource(
           `usecase Test {
