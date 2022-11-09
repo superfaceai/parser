@@ -24,7 +24,8 @@ import {
 import {
   findTypescriptIdentifier,
   findTypescriptProperty,
-  getVariableName,
+  getAccessKey,
+  isAccessKeyError,
 } from './utils';
 
 export type TypescriptIdentifier =
@@ -45,13 +46,13 @@ export type ConstructResult = {
   invalidInput: boolean;
   invalidOutput: boolean;
 } & (
-  | { pass: true; warnings: RelativeValidationIssue[] }
-  | {
+    | { pass: true; warnings: RelativeValidationIssue[] }
+    | {
       pass: false;
       warnings: RelativeValidationIssue[];
       errors: RelativeValidationIssue[];
     }
-);
+  );
 
 export interface VisitConstruct<T extends ts.Node = ts.Node> {
   visit(
@@ -83,27 +84,28 @@ function mergeResults(...results: ConstructResult[]): ConstructResult {
 
     return pass
       ? {
-          pass,
-          warnings,
-          variables,
-          invalidInput,
-          invalidOutput,
-        }
+        pass,
+        warnings,
+        variables,
+        invalidInput,
+        invalidOutput,
+      }
       : {
-          pass,
-          errors,
-          warnings,
-          variables,
-          invalidInput,
-          invalidOutput,
-        };
+        pass,
+        errors,
+        warnings,
+        variables,
+        invalidInput,
+        invalidOutput,
+      };
   }, VALID_CONSTRUCT_RESULT);
 }
 
-function getPath(node: ts.Node): { kind: string; relativeSpan: CharIndexSpan } {
+function getPath(node: ts.Node): { kind: string; relativeSpan: CharIndexSpan, expression: string } {
   return {
     kind: ts.SyntaxKind[node.kind],
     relativeSpan: { start: node.getStart(), end: node.getEnd() },
+    expression: node.getText(),
   };
 }
 
@@ -112,7 +114,7 @@ function isTypescriptIdentifier(node: ts.Node): node is TypescriptIdentifier {
     (ts.isIdentifier(node) ||
       ts.isPropertyAccessExpression(node) ||
       ts.isElementAccessExpression(node)) &&
-    getVariableName(node) !== 'undefined'
+    getAccessKey(node).kind === 'AccessKeyError'
   );
 }
 
@@ -199,11 +201,11 @@ export function visitConstruct(
 ): ConstructResult {
   return construct
     ? construct.visit(
-        node,
-        outputStructure,
-        inputStructure,
-        isOutcomeWithCondition
-      )
+      node,
+      outputStructure,
+      inputStructure,
+      isOutcomeWithCondition
+    )
     : VALID_CONSTRUCT_RESULT;
 }
 
@@ -215,18 +217,18 @@ function returnIssue(
 ): ConstructResult {
   return isOutcomeWithCondition
     ? {
-        pass: true,
-        warnings: [issue],
-        invalidInput,
-        invalidOutput,
-      }
+      pass: true,
+      warnings: [issue],
+      invalidInput,
+      invalidOutput,
+    }
     : {
-        pass: false,
-        warnings: [],
-        errors: [issue],
-        invalidInput,
-        invalidOutput,
-      };
+      pass: false,
+      warnings: [],
+      errors: [issue],
+      invalidInput,
+      invalidOutput,
+    };
 }
 
 const LIST_INDEX_REGEX = /^[0-9]+$/;
@@ -620,13 +622,15 @@ export const RETURN_CONSTRUCTS: {
     ): ConstructResult => {
       if (node.text === 'input') {
         if (!inputStructure || !inputStructure.fields) {
+          const accessKey = getAccessKey(node);
+
           return returnIssue(
             {
               kind: 'useCaseSlotNotFound',
               context: {
                 path: getPath(node),
                 expected: UseCaseSlotType.INPUT,
-                actual: getVariableName(node),
+                actual: isAccessKeyError(accessKey) ? accessKey.message : accessKey.key,
               },
             },
             true,
@@ -645,14 +649,15 @@ export const RETURN_CONSTRUCTS: {
       const variables: ReferencedVariables[] = [];
       if (outputStructure && !isScalarStructure(outputStructure)) {
         if (node.text === 'undefined') {
+          const accessKey = getAccessKey(node);
           if (isNonNullStructure(outputStructure)) {
             return returnIssue(
               {
                 kind: 'wrongStructure',
                 context: {
                   path: getPath(node),
-                  actual: getVariableName(node),
                   expected: outputStructure.value,
+                  actual: isAccessKeyError(accessKey) ? accessKey.message : accessKey.key,
                 },
               },
               false,
@@ -690,13 +695,15 @@ export const RETURN_CONSTRUCTS: {
         }
 
         if (!inputStructure || !inputStructure.fields) {
+          const accessKey = getAccessKey(node);
+
           return returnIssue(
             {
               kind: 'useCaseSlotNotFound',
               context: {
                 path: getPath(node),
                 expected: UseCaseSlotType.INPUT,
-                actual: getVariableName(node),
+                actual: isAccessKeyError(accessKey) ? accessKey.message : accessKey.key,
               },
             },
             true,
@@ -705,12 +712,13 @@ export const RETURN_CONSTRUCTS: {
           );
         }
 
+        const accessKey = getAccessKey(node);
         const issue: RelativeValidationIssue = {
           kind: 'wrongInput',
           context: {
             path: getPath(node),
             expected: inputStructure,
-            actual: getVariableName(node),
+            actual: isAccessKeyError(accessKey) ? accessKey.message : accessKey.key,
           },
         };
 
@@ -755,24 +763,26 @@ export const RETURN_CONSTRUCTS: {
         }
 
         if (!inputStructure || !inputStructure.fields) {
+          const accessKey = getAccessKey(node);
           const issue: RelativeValidationIssue = {
             kind: 'useCaseSlotNotFound',
             context: {
               path: getPath(node),
               expected: UseCaseSlotType.INPUT,
-              actual: getVariableName(node),
+              actual: isAccessKeyError(accessKey) ? accessKey.message : accessKey.key,
             },
           };
 
           return returnIssue(issue, true, false, isOutcomeWithCondition);
         }
 
+        const accessKey = getAccessKey(node);
         const issue: RelativeValidationIssue = {
           kind: 'wrongInput',
           context: {
             path: getPath(node),
             expected: inputStructure,
-            actual: getVariableName(node),
+            actual: accessKey.kind === 'AccessKey' ? accessKey.key : accessKey.message,
           },
         };
 

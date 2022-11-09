@@ -49,8 +49,8 @@ import {
 import { isNonNullStructure, isScalarStructure } from './profile-output.utils';
 import {
   findTypescriptIdentifier,
+  getAccessKey,
   getOutcomes,
-  getVariableName,
   mergeVariables,
   validateObjectLiteral,
   validatePrimitiveLiteral,
@@ -91,7 +91,7 @@ export class MapValidator implements MapAstVisitor {
   constructor(
     private readonly mapAst: MapASTNode,
     private readonly profileOutput: ProfileOutput
-  ) {}
+  ) { }
 
   validate(): ValidationResult {
     this.visit(this.mapAst);
@@ -534,8 +534,11 @@ export class MapValidator implements MapAstVisitor {
         continue;
       }
 
-      const variableName = getVariableName(jessieNode);
-      const variable = this.variables[variableName];
+      const accessKey = getAccessKey(jessieNode);
+      let variable;
+      if (accessKey.kind === 'AccessKey') {
+        variable = this.variables[accessKey.key];
+      }
 
       if (variable !== undefined) {
         this.currentStructure = type;
@@ -547,7 +550,7 @@ export class MapValidator implements MapAstVisitor {
             kind: 'wrongVariableStructure',
             context: {
               path: this.getPath(node),
-              name: variableName,
+              name: accessKey.kind === 'AccessKey' ? accessKey.key : accessKey.message,
               expected: type,
               actual: variable,
             },

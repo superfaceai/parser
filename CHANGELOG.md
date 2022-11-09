@@ -7,14 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [2.0.0-rc.1] - 2022-09-07
+## [2.0.0] - 2022-11-08
 ### Added
 - Script sublexer, script compiler and syntax rules now produce debug logs for debugging
 - Compatibility check of AST metadata into validators
 - `safety` field to `UseCaseStructure`
+- Added `expression` to `getPath`
+- `getAccessKey` returns error for dynamic expressions
+- Added `isAccessKeyError` and `isAccessKey`
 
 ### Changed
 - **BREAKING CHANGE:** property `fields` in `ObjectStructure` is no longer optional
+- Renamed `getVariableName` to `getAccessKey`
 
 ### Fixed
 - Script sublexer infinite loop on some invalid scripts (nesting ignoring EOF token)
@@ -241,8 +245,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Documentation extraction from doc strings
 - Usecase result parsing as optional
 
-[Unreleased]: https://github.com/superfaceai/parser/compare/v2.0.0-rc.1...HEAD
-[2.0.0-rc.1]: https://github.com/superfaceai/parser/compare/v1.2.0...v2.0.0-rc.1
+[Unreleased]: https://github.com/superfaceai/parser/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/superfaceai/parser/compare/v1.2.0...v2.0.0
 [1.2.0]: https://github.com/superfaceai/parser/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/superfaceai/parser/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/superfaceai/parser/compare/v0.0.23...v1.0.0

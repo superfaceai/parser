@@ -5,9 +5,11 @@ import {
   OutcomeStatementNode,
   SetStatementNode,
 } from '@superfaceai/ast';
+import { ElementAccessExpression } from 'typescript';
 
+import { ScriptExpressionCompiler } from '../common/script';
 import { isCompatible } from '.';
-import { getOutcomes } from './utils';
+import { getAccessKey, getOutcomes } from './utils';
 
 const mockASTGetter = jest.fn();
 const mockParserGetter = jest.fn();
@@ -208,6 +210,30 @@ describe('utils', () => {
 
         expect(isCompatible(newMetadata)).toBeTruthy();
       });
+    });
+  });
+
+  describe('getAccessKey', () => {
+    it.each<{ source: string, key: string }>([
+      { source: 'o', key: 'o' },
+      { source: 'o.f1.f2', key: 'o.f1.f2' },
+      { source: "o['f1']['f2']", key: 'o.f1.f2' },
+      { source: ' o . f1 . f2 ', key: 'o.f1.f2' },
+      { source: "o['f1'][ 'f2']", key: 'o.f1.f2' },
+    ])('returns AccessKey $key for $source', ({ source, key }) => {
+      const jessieExpression = new ScriptExpressionCompiler(source);
+      const expr = (jessieExpression.rawExpressionNode as ElementAccessExpression);
+      expect(getAccessKey(expr)).toEqual({ kind: 'AccessKey', key });
+    });
+
+    it.each<{ source: string }>([
+      { source: 'o[x]' },
+      { source: 'o[1 + 1]' },
+      { source: "o['1' + '1']" }
+    ])('returns AccessKeyError for $source', ({ source }) => {
+      const jessieExpression = new ScriptExpressionCompiler(source);
+      const expr = (jessieExpression.rawExpressionNode as ElementAccessExpression);
+      expect(getAccessKey(expr)).toEqual({ kind: 'AccessKeyError', message: "Access key with dynamic part can't be resolved" })
     });
   });
 });
