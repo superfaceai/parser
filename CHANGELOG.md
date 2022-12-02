@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Profile header rule now strictly requires full semver version in version field, as the spec defines
+
 ## [2.0.0] - 2022-11-08
 ### Added
 - Script sublexer, script compiler and syntax rules now produce debug logs for debugging
