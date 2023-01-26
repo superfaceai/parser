@@ -94,6 +94,8 @@ function formatLiteral(
     case 'PrimitiveLiteral':
     case 'ComlinkPrimitiveLiteral':
       return formatPrimitive(literal.value);
+    case 'ComlinkNoneLiteral':
+      return 'None';
     case 'ObjectLiteral':
     case 'ComlinkObjectLiteral':
       return `{${literal.fields.map(formatLiteral).join(', ')}}`;
@@ -267,6 +269,14 @@ export function validateListLiteral(
   }
 
   return { isValid: false };
+}
+
+export function validateNoneLiteral(structure: StructureType): { isValid: boolean } {
+  if (structure.kind === 'NonNullStructure') {
+    return { isValid: false };
+  }
+
+  return { isValid: true }
 }
 
 export function getOutcomes(

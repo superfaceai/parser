@@ -99,5 +99,25 @@ describe('ExampleValidator', () => {
         'ComlinkPrimitiveLiteral - Wrong Structure: expected [boolean | number], but got "string"',
       ]);
     });
+
+    it('none', () => {
+      const profileAst = parseProfileFromSource(
+        `usecase Test {
+              result {
+                  f1 string!
+              }
+  
+              example fail {
+                  result {
+                      f1 = None
+                  }
+              }
+          }`
+      );
+
+      expect(profileAst).not.toBeValidExample([
+        'ComlinkNoneLiteral - Wrong Structure: expected string!, but got None',
+      ]);
+    });
   });
 });

@@ -2,6 +2,7 @@ import {
   ComlinkAssignmentNode,
   ComlinkListLiteralNode,
   ComlinkLiteralNode,
+  ComlinkNoneLiteralNode,
   ComlinkObjectLiteralNode,
   ComlinkPrimitiveLiteralNode,
 } from '@superfaceai/ast';
@@ -90,8 +91,20 @@ export const COMLINK_LIST_LITERAL: SyntaxRule<
   }
 );
 
+export const COMLINK_NONE_LITERAL: SyntaxRule<
+  WithLocation<ComlinkNoneLiteralNode>
+> = SyntaxRule.identifier('None').map(
+  (match): WithLocation<ComlinkNoneLiteralNode> => {
+    return {
+      kind: 'ComlinkNoneLiteral',
+      location: match.location,
+    };
+  }
+);
+
 export const COMLINK_LITERAL = SyntaxRule.or(
   COMLINK_PRIMITIVE_LITERAL,
+  COMLINK_NONE_LITERAL,
   COMLINK_OBJECT_LITERAL,
   COMLINK_LIST_LITERAL
 );

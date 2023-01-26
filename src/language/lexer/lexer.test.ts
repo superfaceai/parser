@@ -348,7 +348,7 @@ describe('lexer', () => {
     test('identifiers', () => {
       const lexer = new Lexer(
         new Source(
-          'ident my fier pls usecaseNOT modelout boolean b00lean a123456789_0'
+          'ident my fier pls usecaseNOT modelout boolean b00lean a123456789_0 None'
         )
       );
       const expectedTokens: (LexerTokenData | IdentifierValue)[] = [
@@ -362,6 +362,7 @@ describe('lexer', () => {
         'boolean',
         'b00lean',
         'a123456789_0',
+        'None',
         { kind: LexerTokenKind.SEPARATOR, separator: 'EOF' },
       ];
 

@@ -179,7 +179,7 @@ export class LexerToken {
     /** Data of the token. */
     readonly data: LexerTokenData,
     readonly location: LocationSpan
-  ) {}
+  ) { }
 
   isSOF(): boolean {
     return (

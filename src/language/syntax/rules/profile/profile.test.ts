@@ -1669,6 +1669,24 @@ describe('profile syntax rules', () => {
       );
     });
 
+    it('should parse none literal', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'None' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = rules.COMLINK_NONE_LITERAL;
+
+      expect(rule.tryMatch(stream)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'ComlinkNoneLiteral',
+          },
+          tokens[0]
+        )
+      );
+    });
+
     it('should parse object literal', () => {
       const tokens: ReadonlyArray<LexerToken> = [
         tesTok({ kind: LexerTokenKind.SEPARATOR, separator: '{' }),

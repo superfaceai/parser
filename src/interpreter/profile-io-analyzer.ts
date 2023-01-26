@@ -1,6 +1,7 @@
 import {
   ComlinkAssignmentNode,
   ComlinkListLiteralNode,
+  ComlinkNoneLiteralNode,
   ComlinkObjectLiteralNode,
   ComlinkPrimitiveLiteralNode,
   DocumentedNode,
@@ -141,6 +142,8 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
         return this.visitComlinkObjectLiteralNode(node);
       case 'ComlinkAssignment':
         return this.visitComlinkAssignmentNode(node);
+      case 'ComlinkNoneLiteral':
+        return this.visitComlinkNoneLiteralNode(node);
       default:
         assertUnreachable(node);
     }
@@ -325,6 +328,10 @@ export class ProfileIOAnalyzer implements ProfileAstVisitor {
   }
 
   visitComlinkAssignmentNode(_node: ComlinkAssignmentNode): void {
+    throw new Error('Not Implemented');
+  }
+
+  visitComlinkNoneLiteralNode(_node: ComlinkNoneLiteralNode): void {
     throw new Error('Not Implemented');
   }
 
