@@ -864,7 +864,7 @@ function resolveTerminationTokens(
 
   // Tokens that are always terminator tokens
   // What isn't included here is the ts.SyntaxKind.EndOfFileToken token - this token is hardcoded into the scanner because it ignores nesting
-  if (!(ts.SyntaxKind.SingleLineCommentTrivia in termTokens)) {
+  if (!termTokens.includes(ts.SyntaxKind.SingleLineCommentTrivia)) {
     termTokens.push(ts.SyntaxKind.SingleLineCommentTrivia);
   }
 
