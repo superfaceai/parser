@@ -1484,7 +1484,7 @@ describe('profile syntax rules', () => {
 
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'version' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-        tesTok({ kind: LexerTokenKind.STRING, string: '11.12' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: '11.12.3' }),
       ];
       const stream = new ArrayLexerStream(tokens);
 
@@ -1498,7 +1498,7 @@ describe('profile syntax rules', () => {
             version: {
               major: 11,
               minor: 12,
-              patch: 0,
+              patch: 3,
             },
             documentation: {
               title: 'Title',
@@ -1522,7 +1522,7 @@ describe('profile syntax rules', () => {
 
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'version' }),
         tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
-        tesTok({ kind: LexerTokenKind.STRING, string: '1' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: '1.2.3' }),
 
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model' }),
         tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'model1' }),
@@ -1559,8 +1559,8 @@ describe('profile syntax rules', () => {
                 name: 'profile',
                 version: {
                   major: 1,
-                  minor: 0,
-                  patch: 0,
+                  minor: 2,
+                  patch: 3,
                 },
               },
               tokens[1],
@@ -1630,6 +1630,23 @@ describe('profile syntax rules', () => {
         )
       );
     });
+
+    it('should require full version in profile header', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'name' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: 'scope/profile' }),
+
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'version' }),
+        tesTok({ kind: LexerTokenKind.OPERATOR, operator: '=' }),
+        tesTok({ kind: LexerTokenKind.STRING, string: '1.2' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = rules.PROFILE_HEADER;
+
+      expect(rule.tryMatch(stream)).not.toBeAMatch();
+    });
   });
 
   describe('comlink literals', () => {
@@ -1646,6 +1663,24 @@ describe('profile syntax rules', () => {
           {
             kind: 'ComlinkPrimitiveLiteral',
             value: 'hello',
+          },
+          tokens[0]
+        )
+      );
+    });
+
+    it('should parse none literal', () => {
+      const tokens: ReadonlyArray<LexerToken> = [
+        tesTok({ kind: LexerTokenKind.IDENTIFIER, identifier: 'None' }),
+      ];
+      const stream = new ArrayLexerStream(tokens);
+
+      const rule = rules.COMLINK_NONE_LITERAL;
+
+      expect(rule.tryMatch(stream)).toBeAMatch(
+        tesMatch(
+          {
+            kind: 'ComlinkNoneLiteral',
           },
           tokens[0]
         )

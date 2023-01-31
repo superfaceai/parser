@@ -467,7 +467,10 @@ describe('profile', () => {
   it('should parse profile with examples', () => {
     const input = `
     usecase Foo {
-      input { f! string! }
+      input {
+        f! string!
+        fn string
+      }
       result number
       error enum {
         FORBIDDEN_WORD
@@ -478,6 +481,7 @@ describe('profile', () => {
         input {
           "hello has 5 letters"
           f = "hello"
+          fn = None
         }
         result 5
         // TODO: do we want this? async result undefined
@@ -531,6 +535,13 @@ describe('profile', () => {
                       title: 'hello has 5 letters',
                     },
                   },
+                  {
+                    kind: 'ComlinkAssignment',
+                    key: ['fn'],
+                    value: {
+                      kind: 'ComlinkNoneLiteral'
+                    }
+                  }
                 ],
               },
             },

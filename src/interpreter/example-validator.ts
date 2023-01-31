@@ -2,6 +2,7 @@ import {
   ComlinkAssignmentNode,
   ComlinkListLiteralNode,
   ComlinkLiteralNode,
+  ComlinkNoneLiteralNode,
   ComlinkObjectLiteralNode,
   ComlinkPrimitiveLiteralNode,
   EnumDefinitionNode,
@@ -40,6 +41,7 @@ import {
 } from '.';
 import {
   validateListLiteral,
+  validateNoneLiteral,
   validateObjectLiteral,
   validatePrimitiveLiteral,
 } from './utils';
@@ -102,6 +104,8 @@ export class ExampleValidator implements ProfileAstVisitor {
         return this.visitComlinkObjectLiteralNode(node);
       case 'ComlinkAssignment':
         return this.visitComlinkAssignmentNode(node);
+      case 'ComlinkNoneLiteral':
+        return this.visitComlinkNoneLiteralNode(node);
       // UNUSED
       case 'FieldDefinition':
         return this.visitFieldDefinitionNode(node);
@@ -214,6 +218,25 @@ export class ExampleValidator implements ProfileAstVisitor {
     assertDefinedStructure(this.currentStructure);
 
     const { isValid } = validatePrimitiveLiteral(this.currentStructure, node);
+
+    if (!isValid) {
+      this.errors.push({
+        kind: 'wrongStructure',
+        context: {
+          path: this.getPath(node),
+          expected: this.currentStructure,
+          actual: node,
+        },
+      });
+    }
+
+    return isValid;
+  }
+
+  visitComlinkNoneLiteralNode(node: ComlinkNoneLiteralNode): boolean {
+    assertDefinedStructure(this.currentStructure);
+
+    const { isValid } = validateNoneLiteral(this.currentStructure);
 
     if (!isValid) {
       this.errors.push({

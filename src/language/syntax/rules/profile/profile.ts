@@ -22,8 +22,8 @@ import {
   UseCaseSlotDefinitionNode,
 } from '@superfaceai/ast';
 
+import { ProfileVersion } from '../../../../common';
 import { parseDocumentId } from '../../../../common/document/parser';
-import { VersionRange } from '../../../../common/document/version';
 import { PARSED_AST_VERSION, PARSED_VERSION } from '../../../../metadata';
 import { IdentifierTokenData, LexerTokenKind } from '../../../lexer/token';
 import {
@@ -568,14 +568,14 @@ const PROFILE_VERSION = SyntaxRule.followedBy(
     } & HasLocation
   >(version => {
     try {
-      const parsedVersion = VersionRange.fromString(version.data.string);
+      const parsedVersion = ProfileVersion.fromString(version.data.string);
 
       return {
         kind: 'match',
         value: {
           major: parsedVersion.major,
-          minor: parsedVersion.minor ?? 0,
-          patch: parsedVersion.patch ?? 0,
+          minor: parsedVersion.minor,
+          patch: parsedVersion.patch,
           label: parsedVersion.label,
           location: version.location,
         },
@@ -583,7 +583,7 @@ const PROFILE_VERSION = SyntaxRule.followedBy(
     } catch (error) {
       return { kind: 'nomatch' };
     }
-  }, 'semver version')
+  }, 'semver version in format `<major>.<minor>.<patch>`')
 ).map(([keyword, op, version]) => {
   return {
     version: {
